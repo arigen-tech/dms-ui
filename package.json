@@ -1,5 +1,5 @@
 {
-  "homepage": "https://happytyagi.github.io/DmsFrontend",
+  "homepage": "https://arigen-tech.github.io/dms-ui",
   "name": "dms",
   "version": "0.1.0",
   "private": true,
@@ -31,7 +31,7 @@
     "start": "react-scripts start",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "build": "set NODE_OPTIONS=--openssl-legacy-provider && react-scripts build"
+    "build": "react-scripts build"
   },
   "eslintConfig": {
     "extends": [

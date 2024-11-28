@@ -3,3 +3,4 @@
 
 # Ignore node_modules/ directory (dependency folder for Node.js projects)
 node_modules/
+build/
