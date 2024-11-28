@@ -67,29 +67,36 @@ const Approve = () => {
     setLoading(true);
     setError('');
     try {
-      const token = localStorage.getItem('tokenKey');
-      const userId = localStorage.getItem('userId');
-      
-      // Fetch user details to get department ID
-      const userResponse = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      const departmentId = userResponse.data.department ? userResponse.data.department.id : 'null';
-      const branchId = userResponse.data.branch ? userResponse.data.branch.id : 'null';
-  
-      const response = await axios.get(`${DOCUMENTHEADER_API}/pendingByBranch/${branchId}/${departmentId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDocuments(response.data);
-    } catch (error) {
-      setError('Error fetching documents.');
-      console.error('Fetch documents error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const token = localStorage.getItem('tokenKey');
+        const userId = localStorage.getItem('userId');
+        
+        // Fetch user details to get department ID
+        const userResponse = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        const departmentId = userResponse.data.department ? userResponse.data.department.id : null;
+        const branchId = userResponse.data.branch ? userResponse.data.branch.id : null;
 
+        // Only send departmentId if it's not null
+        const url = departmentId 
+            ? `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}/${departmentId}`  // With departmentId
+            : `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`;  // Without departmentId
+        
+        const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        setDocuments(response.data);
+    } catch (error) {
+        setError('Error fetching documents.');
+        console.error('Fetch documents error:', error);
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+  
 
   const fetchPaths = async (doc) => {
     try {

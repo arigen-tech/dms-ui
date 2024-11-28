@@ -45,6 +45,10 @@ const UserAddEmployee = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [Message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userBranch, setUserBranch] = useState(null);
+  const [userDepartment, setUserDepartment] = useState(null);
+
+
 
   useEffect(() => {
     fetchEmployees();
@@ -52,25 +56,70 @@ const UserAddEmployee = () => {
   }, []);
 
   const fetchEmployees = async () => {
-    setLoading(true);
-    setError("");
     try {
-      const response = await axios.get(
-        `${ API_HOST }/employee/findAll`,
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("tokenKey");
+  
+      // Fetch user details
+      const userResponse = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-      setEmployees(response.data);
-      console.log(response.data);
+  
+      const userData = userResponse.data;
+      console.log("Complete User Data:", userData);
+  
+      // Explicitly set branch and department
+      const userBranch = userData.branch 
+        ? { id: userData.branch.id, name: userData.branch.name } 
+        : { id: "", name: "" };
+  
+      const userDepartment = userData.department 
+        ? { id: userData.department.id, name: userData.department.name } 
+        : { id: "", name: "" };
+  
+      // Set branch and department states
+      setUserBranch(userBranch);
+      setUserDepartment(userDepartment);
+  
+      // Update form data with user's branch and department
+      setFormData((prevData) => ({
+        ...prevData,
+        branch: userBranch,
+        department: userDepartment,
+      }));
+  
+      // Determine if user is admin
+      const isAdmin = userData.role?.role?.toUpperCase() === "ADMIN";
+      
+      if (isAdmin) {
+        // Fetch all employees if user is an admin
+        const allEmployeesResponse = await axios.get(
+          `${API_HOST}/employee/findAll`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      
+        console.log("All employees data:", allEmployeesResponse.data);
+      
+        setEmployees(allEmployeesResponse.data);
+      } else {
+        setEmployees([userData]);
+      }
+      
     } catch (error) {
-      setError("Error fetching employees.");
-    } finally {
-      setLoading(false);
+      console.error("Error fetching user details or employees:", error);
+      setError("Could not fetch user details or employees");
     }
   };
+  
 
   // const fetchEmployees = async () => {
   //   setLoading(true);
@@ -78,7 +127,7 @@ const UserAddEmployee = () => {
   //   try {
   //     // Retrieve userId from localStorage
   //     const userId = localStorage.getItem("userId");
-  
+
   //     // Fetch branchId using userId
   //     const branchResponse = await axios.get(
   //       `${ API_HOST }/employee/findById/${userId}`,
@@ -88,9 +137,9 @@ const UserAddEmployee = () => {
   //         },
   //       }
   //     );
-      
+
   //     const branchId = branchResponse.data.branch.id; // Adjust this based on your API response structure
-  
+
   //     // Fetch employees using the branchId
   //     const employeeResponse = await axios.get(
   //       `${ API_HOST }/employee/branch/${branchId}`,
@@ -100,7 +149,7 @@ const UserAddEmployee = () => {
   //         },
   //       }
   //     );
-  
+
   //     setEmployees(employeeResponse.data);
   //     console.log(employeeResponse.data);
   //   } catch (error) {
@@ -109,7 +158,7 @@ const UserAddEmployee = () => {
   //     setLoading(false);
   //   }
   // };
-  
+
   const fetchOptions = async () => {
     setLoading(true);
     setError("");
@@ -181,52 +230,49 @@ const UserAddEmployee = () => {
 
   const handleAddEmployee = async () => {
     console.log("Form Data before submit:", formData);
-
+  
     const isFormDataValid = formData.name && formData.email && formData.mobile;
     const isBranchSelected = formData.branch && formData.branch.id;
-    //const isDepartmentSelected = formData.department && formData.department.id;
-
-    // if (isFormDataValid && isBranchSelected && isDepartmentSelected) {
-    if (isFormDataValid && isBranchSelected) {
-
+    const isDepartmentSelected = formData.department && formData.department.id;
+  
+    if (isFormDataValid && isBranchSelected && isDepartmentSelected) {
       setIsSubmitting(true); // Disable button after click
-
       try {
         const token = localStorage.getItem("tokenKey");
-        const userId = localStorage.getItem("userId"); // Retrieve user ID from localStorage
+        const userId = localStorage.getItem("userId");
+  
         console.log("Retrieved Token:", token);
-
+  
         if (!userId) {
           setError("User authentication error. Please log in again.");
           setIsSubmitting(false);
           return;
         }
-
-        // `createdBy` and `updatedBy` should reference an object with at least the `id` field
+  
         const createdBy = { id: userId };
         const updatedBy = { id: userId };
-
+  
         const employeeData = {
-          password: `${formData.name}${formData.mobile.slice(0, 4)}`, // Optional
+          password: `${formData.name}${formData.mobile.slice(0, 4)}`,
           mobile: formData.mobile,
           email: formData.email,
           name: formData.name,
           isActive: 1,
           createdOn: new Date().toISOString(),
           updatedOn: new Date().toISOString(),
-          createdBy, // Pass as an object
-          updatedBy, // Pass as an object
-          // department: {
-          //   id: formData.department.id,
-          //   name: formData.department.name,
-          // },
+          createdBy,
+          updatedBy,
+          department: {
+            id: formData.department.id,
+            name: formData.department.name,
+          },
           branch: { id: formData.branch.id, name: formData.branch.name },
         };
-
+  
         console.log("Employee Data to Send:", employeeData);
-
+  
         const response = await axios.post(
-          `${ API_HOST }/register/create`,
+          `${API_HOST}/register/create`,
           employeeData,
           {
             headers: {
@@ -235,27 +281,27 @@ const UserAddEmployee = () => {
             },
           }
         );
-
+  
         console.log("API Response:", response.data);
-
+  
         if (response.data) {
-          setEmployees([...employees, response.data]);
-
+          setEmployees((prevEmployees) => [...prevEmployees, response.data]);
+  
           if (response.data.token) {
             localStorage.setItem("tokenKey", response.data.token);
           }
-
+  
           setFormData({
             name: "",
             email: "",
             mobile: "",
             branch: { id: "", name: "" },
-            // department: { id: "", name: "" },
+            department: { id: "", name: "" },
           });
-
+  
           setError("");
           setMessage("Employee added successfully!");
-
+  
           // Clear success message after 2 seconds
           setTimeout(() => setMessage(""), 3000);
         }
@@ -263,7 +309,7 @@ const UserAddEmployee = () => {
         console.error("Error adding employee:", error);
         setError(
           error.response?.data?.message ||
-            "Error adding employee. Please try again."
+          "Error adding employee. Please try again."
         );
       } finally {
         setIsSubmitting(false); // Enable button after submission is done
@@ -274,7 +320,7 @@ const UserAddEmployee = () => {
       );
     }
   };
-
+  
   const handleEditEmployee = (employeeId) => {
     const employeeToEdit = employees.find((emp) => emp.id === employeeId);
     if (employeeToEdit) {
@@ -320,7 +366,7 @@ const UserAddEmployee = () => {
         };
 
         const response = await axios.put(
-          `${ API_HOST }/employee/update/${formData.id}`,
+          `${API_HOST}/employee/update/${formData.id}`,
           updatedEmployeeData,
           {
             headers: {
@@ -358,7 +404,7 @@ const UserAddEmployee = () => {
         console.error("Error updating employee:", error);
         setError(
           error.response?.data?.message ||
-            "Error updating employee. Please try again."
+          "Error updating employee. Please try again."
         );
       }
     } else {
@@ -379,7 +425,7 @@ const UserAddEmployee = () => {
 
       // Send the PUT request to update the status
       await axios.put(
-        `${ API_HOST }/employee/updateStatus/${employeeToToggle.id}`, // Updated URL with employee ID
+        `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`, // Updated URL with employee ID
         newStatus, // Send the new status directly as the request body
         {
           headers: {
@@ -519,29 +565,27 @@ const UserAddEmployee = () => {
               value={formData.branch?.id || ""}
               onChange={(e) => handleSelectChange(e, "branch")}
               className="p-2 border rounded-md outline-none"
+              disabled // Make this field non-editable
             >
-              <option value="">Select Branch</option>
-              {branchOptions.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
+              <option value={userBranch?.id || ""}>
+                {userBranch?.name || "Select Branch"}
+              </option>
             </select>
 
+            
+
             {/* Department Selection */}
-            {/* <select
+            <select
               name="department"
               value={formData.department?.id || ""}
               onChange={(e) => handleSelectChange(e, "department")}
               className="p-2 border rounded-md outline-none"
+              disabled // Make this field non-editable
             >
-              <option value="">Select Department</option>
-              {departmentOptions.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select> */}
+              <option value={userDepartment?.id || ""}>
+                {userDepartment?.name || "Select Department"}
+              </option>
+            </select>
           </div>
           <div className="mt-3 flex justify-start">
             {editingIndex === null ? (
@@ -621,7 +665,7 @@ const UserAddEmployee = () => {
               <tbody>
                 {paginatedEmployees.map((employee, index) => (
                   <tr key={employee.id}>
-                    <td className="border p-2">{index + 1}</td>
+                    <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
                     <td className="border p-2">{employee.name}</td>
                     <td className="border p-2">{employee.email}</td>
                     <td className="border p-2">{employee.mobile}</td>
@@ -660,9 +704,8 @@ const UserAddEmployee = () => {
                     <td className="border p-2">
                       <button
                         onClick={() => handleToggleActive(employee)}
-                        className={`p-1 rounded-full ${
-                          employee.active ? "bg-green-500" : "bg-red-500"
-                        }`}
+                        className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"
+                          }`}
                       >
                         {employee.active ? (
                           <LockOpenIcon className="h-5 w-5 text-white p-0.5" />

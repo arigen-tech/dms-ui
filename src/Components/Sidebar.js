@@ -212,7 +212,36 @@ function Sidebar() {
                 icon={DocumentTextIcon}
                 text="Search Documents"
               />
+
+<div>
+                <button
+                  onClick={handleReportToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <DocumentChartBarIcon className="h-5 w-5 mr-3" />
+                    Report Section
+                  </div>
+                  {isReportOpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isReportOpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
+                      to="/documentReport"
+                      icon={DocumentTextIcon}
+                      text="Document Report"
+                      // count={counts.totalRejectedDocuments}
+                    />
+                  </div>
+                )}
+              </div>
             </>
+            
           )}
 
           {role === "ADMIN" && (
@@ -270,20 +299,6 @@ function Sidebar() {
                       text="Role"
                       count={counts.totalRoles}
                     />
-                    {/* <hr className="border-t border-pink-800" />
-                    <SidebarLink
-                      to="/create-type"
-                      icon={ClipboardDocumentListIcon}
-                      text="Type"
-                      count={counts.documentType}
-                    /> */}
-                    {/* <hr className="border-t border-pink-800" />
-                    <SidebarLink
-                      to="/create-year"
-                      icon={CalendarDaysIcon}
-                      text="Year"
-                      count={counts.annualYear}
-                    /> */}
                     <hr className="border-t border-blue-800" />
                     <SidebarLink
                       to="/create-category"
@@ -418,7 +433,7 @@ function Sidebar() {
                     <hr className="border-t border-blue-800 mt-1" />
                     <SidebarLink
                       to="/approve-documents"
-                      icon={LockClosedIcon}
+                      icon={IoDocumentLock}
                       text="Pending Approvals"
                       count={counts.totalPendingDocumentsById}
                     />
@@ -460,17 +475,17 @@ function Sidebar() {
                   <div className="ml-2 flex flex-col space-y-1">
                     <hr className="border-t border-blue-800 mt-1" />
                     <SidebarLink
-                      // to="/reject-by-admin"
+                      to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
-                      count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                     />
 
                     <SidebarLink
-                      // to="/reject-by-admin"
-                      icon={DocumentTextIcon}
+                      to="/userReport"
+                      icon={RiFileUserFill}
                       text="User Report"
-                      count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}
@@ -562,17 +577,17 @@ function Sidebar() {
                   <div className="ml-2 flex flex-col space-y-1">
                     <hr className="border-t border-blue-800 mt-1" />
                     <SidebarLink
-                      // to="/reject-by-admin"
+                      to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
-                      count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                     />
 
                     <SidebarLink
-                      // to="/reject-by-admin"
-                      icon={DocumentTextIcon}
+                      to="/userReport"
+                      icon={RiFileUserFill}
                       text="User Report"
-                      count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}

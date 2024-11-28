@@ -55,7 +55,7 @@ const protectedRoutes = [
   { path: "/approvedDocs", element: <ApprovedDocs />, allowedRoles: [USER, ] },
   { path: "/rejectedDocs", element: <RejectedDocs />, allowedRoles: [USER, ] }, 
   { path: "/userReport", element: <UserReports />, allowedRoles: [ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
-  { path: "/documentReport", element: <DocumentsReport />, allowedRoles: [ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+  { path: "/documentReport", element: <DocumentsReport />, allowedRoles: [USER, ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/change-password", element: <ChangePasswordPage />, allowedRoles: [USER, ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, // Allow BRANCH_ADMIN access
   { path: "/search", element: <SearchDoc />, allowedRoles: [USER, ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, // Add the search route
 ];

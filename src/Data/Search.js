@@ -8,7 +8,7 @@ import {
 } from "@heroicons/react/24/solid";
 import {
   DOCUMENTHEADER_API,
-  UPLOADFILE_API
+
 } from '../API/apiConfig';
 
 const Search = () => {
@@ -32,11 +32,14 @@ const Search = () => {
   let [userRole, setUserRole] = useState(null);
   const [noResultsFound, setNoResultsFound] = useState(false);
 
+
+
   useEffect(() => {
     fetchUserDetails();
     fetchCategories();
     fetchBranches();
   }, []);
+
   useEffect(() => {
     if (userBranch?.id) {
       setSearchCriteria((prevCriteria) => ({
@@ -197,16 +200,27 @@ const Search = () => {
   const handleSearch = async () => {
     try {
       const token = localStorage.getItem('tokenKey');
-      let searchPayload = { ...searchCriteria };
-      if (userRole === 'BRANCH ADMIN' && userBranch) {
-        searchPayload.branch = userBranch.id;
-      }
+
+      const searchPayload = {
+        fileNo: searchCriteria.fileNo || null,
+        title: searchCriteria.title || null,
+        subject: searchCriteria.subject || null,
+        version: searchCriteria.version || null,
+        categoryId: searchCriteria.category ? parseInt(searchCriteria.category) : null,
+        branchId: searchCriteria.branch ? parseInt(searchCriteria.branch) :
+          (userBranch?.id ? parseInt(userBranch.id) : null),
+        departmentId: searchCriteria.department ? parseInt(searchCriteria.department) :
+          (userDepartment?.id ? parseInt(userDepartment.id) : null)
+      };
 
       const response = await axios.post(
         `${API_HOST}/api/documents/search`,
         searchPayload,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
         }
       );
 
@@ -214,6 +228,12 @@ const Search = () => {
       setNoResultsFound(response.data.length === 0);
     } catch (error) {
       console.error('Error searching documents:', error);
+      if (error.response) {
+        console.error('Server error response:', error.response.data);
+        console.error('Status code:', error.response.status);
+
+        alert('Failed to search documents. Please try again.');
+      }
     }
   };
 
@@ -281,51 +301,6 @@ const Search = () => {
   const renderSearchFields = () => {
     return (
       <div className="grid grid-cols-3 gap-4 mb-4 bg-slate-100 p-4 rounded-lg">
-        <input
-          type="text"
-          name="fileNo"
-          placeholder="File No."
-          value={searchCriteria.fileNo}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        />
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          value={searchCriteria.title}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        />
-        <input
-          type="text"
-          name="subject"
-          placeholder="Subject"
-          value={searchCriteria.subject}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        />
-        <input
-          type="text"
-          name="version"
-          placeholder="Version"
-          value={searchCriteria.version}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        />
-        <select
-          name="category"
-          value={searchCriteria.category}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        >
-          <option value="">Select Category</option>
-          {categoryOptions.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
         {userRole === 'ADMIN' ? (
           <>
             <select
@@ -407,6 +382,146 @@ const Search = () => {
             </select>
           </>
         )}
+
+        <select
+          name="category"
+          value={searchCriteria.category}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md outline-none"
+        >
+          <option value="">Select Category</option>
+          {categoryOptions.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          name="fileNo"
+          placeholder="File No."
+          value={searchCriteria.fileNo}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md outline-none"
+        />
+        <input
+          type="text"
+          name="title"
+          placeholder="Title"
+          value={searchCriteria.title}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md outline-none"
+        />
+        <input
+          type="text"
+          name="subject"
+          placeholder="Subject"
+          value={searchCriteria.subject}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md outline-none"
+        />
+        <input
+          type="text"
+          name="version"
+          placeholder="Version"
+          value={searchCriteria.version}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md outline-none"
+        />
+        {/* <select
+          name="category"
+          value={searchCriteria.category}
+          onChange={handleInputChange}
+          className="p-2 border rounded-md outline-none"
+        >
+          <option value="">Select Category</option>
+          {categoryOptions.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select> */}
+        {/* {userRole === 'ADMIN' ? (
+          <>
+            <select
+              name="branch"
+              value={searchCriteria.branch}
+              onChange={handleInputChange}
+              className="p-2 border rounded-md outline-none"
+            >
+              <option value="">Select Branch</option>
+              {branchOptions.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+            <select
+              name="department"
+              value={searchCriteria.department}
+              onChange={handleInputChange}
+              className="p-2 border rounded-md outline-none"
+              disabled={!searchCriteria.branch}
+            >
+              <option value="">Select Department</option>
+              {departmentOptions.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : userRole === 'BRANCH ADMIN' ? (
+          <>
+            <select
+              name="branch"
+              value={searchCriteria.branch}
+              onChange={handleInputChange}
+              className="p-2 border rounded-md outline-none"
+              disabled={true}  // Branch is fixed, so no need to change
+            >
+              <option value={userBranch?.id}>{userBranch?.name}</option>
+            </select>
+
+          
+            <select
+              name="department"
+              value={searchCriteria.department}
+              onChange={handleInputChange}
+              className="p-2 border rounded-md outline-none"
+            >
+              <option value="">Select Department</option>
+              {departmentOptions.length > 0 ? (
+                departmentOptions.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))
+              ) : (
+                <option value="">No Departments Available</option>
+              )}
+            </select>
+          </>
+        ) : (
+          <>
+            <select
+              name="branch"
+              value={userBranch?.id || ''}
+              disabled
+              className="p-2 border rounded-md outline-none bg-gray-100"
+            >
+              <option value={userBranch?.id}>{userBranch?.name}</option>
+            </select>
+            <select
+              name="department"
+              value={userDepartment?.id || ''}
+              disabled
+              className="p-2 border rounded-md outline-none bg-gray-100"
+            >
+              <option value={userDepartment?.id}>{userDepartment?.name}</option>
+            </select>
+          </>
+        )} */}
       </div>
     );
   };
@@ -439,6 +554,8 @@ const Search = () => {
                   <th className="border p-2 text-left">Subject</th>
                   <th className="border p-2 text-left">Version</th>
                   <th className="border p-2 text-left">Category</th>
+                  <th className="border p-2 text-left">Branch</th>
+                  <th className="border p-2 text-left">Department</th>
                   <th className="border p-2 text-left">Approval Status</th>
                   <th className="border p-2 text-left">Uploaded Date</th>
                   <th className="border p-2 text-left">View</th>
@@ -453,6 +570,17 @@ const Search = () => {
                     <td className="border p-2">{document.version}</td>
                     <td className="border p-2">
                       {document.categoryMaster?.name || "No Category"}
+                    </td>
+                    <td className="border p-2">
+                      {document.employee && document.employee.branch
+                        ? document.employee.branch.name
+                        : "No Branch"}
+                    </td>
+                    <td className="border p-2">
+                      {document.employee &&
+                        document.employee.department
+                        ? document.employee.department.name
+                        : "No Department"}
                     </td>
                     <td className="border p-2">{document.approvalStatus}</td>
                     <td className="border p-2">{formatDate(document.createdOn)}</td>
