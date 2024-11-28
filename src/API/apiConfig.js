@@ -1,5 +1,5 @@
 
- export const API_HOST = 'https://103.133.215.182:8443/Dms/';
+ export const API_HOST = 'https://103.133.215.182:8443/Dms';
 
 
 
