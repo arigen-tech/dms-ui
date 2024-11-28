@@ -1,0 +1,5 @@
+# Ignore .idea/vcs.xml (IDE-specific file for version control settings)
+.idea/vcs.xml
+
+# Ignore node_modules/ directory (dependency folder for Node.js projects)
+node_modules/
