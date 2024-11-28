@@ -193,7 +193,7 @@ const LoginPage = () => {
 
           <div className="mb-4 text-center">
             <h2 className={`text-2xl font-bold ${isOtpRequested ? "text-gray-900" : "text-indigo-600"}`}>
-              {isOtpRequested ? "Enter OTP" : "Welcome Back"}
+              {isOtpRequested ? "Enter OTP" : "Welcome Back-1"}
             </h2>
             <p className="text-gray-600 mt-2">
               {isOtpRequested
