@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { API_HOST } from '../API/apiConfig';
 import axios from 'axios';
 import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
   EyeIcon,
   XMarkIcon,
   PrinterIcon,
 } from "@heroicons/react/24/solid";
-import {
-  DOCUMENTHEADER_API,
-
-} from '../API/apiConfig';
+import { DOCUMENTHEADER_API } from '../API/apiConfig';
 
 const Search = () => {
   const [searchCriteria, setSearchCriteria] = useState({
@@ -32,7 +31,9 @@ const Search = () => {
   let [userRole, setUserRole] = useState(null);
   const [noResultsFound, setNoResultsFound] = useState(false);
 
-
+  // Pagination state
+  const [itemsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchUserDetails();
@@ -46,9 +47,9 @@ const Search = () => {
         ...prevCriteria,
         branch: userBranch.id,
       }));
-      fetchDepartments(userBranch.id);  // Fetch departments for the fixed branch
+      fetchDepartments(userBranch.id);
     }
-  }, [userBranch]); // Fetch departments when userBranch changes
+  }, [userBranch]);
 
   useEffect(() => {
     if (searchCriteria.branch) {
@@ -126,7 +127,7 @@ const Search = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setDepartmentOptions(response.data);  // Populate department options
+      setDepartmentOptions(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
     }
@@ -139,16 +140,12 @@ const Search = () => {
         throw new Error("No authentication token found.");
       }
 
-      // Add a null check before accessing doc.id
       if (!doc || !doc.id) {
         console.error("Invalid document object");
         return;
       }
 
-      // Log the exact URL being called
       console.log(`Attempting to fetch paths for document ID: ${doc.id}`);
-      console.log(`Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${doc.id}`);
-
       const response = await axios.get(
         `${DOCUMENTHEADER_API}/byDocumentHeader/${doc.id}`,
         {
@@ -159,31 +156,12 @@ const Search = () => {
         }
       );
 
-      console.log("Paths response:", response.data);
-
       setSelectedDoc((prevDoc) => ({
         ...prevDoc,
-        paths: response.data || [], // Ensure paths is an array
+        paths: response.data || [],
       }));
     } catch (error) {
-      // More detailed error logging
       console.error("Error fetching documents:", error);
-
-      // Log specific axios error details
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-        console.error("Error response headers:", error.response.headers);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error("No response received:", error.request);
-      } else {
-        // Something happened in setting up the request
-        console.error("Error message:", error.message);
-      }
-
-      // Optionally, show a user-friendly error message
       alert(`Failed to fetch document paths: ${error.message}`);
     }
   };
@@ -195,6 +173,8 @@ const Search = () => {
       [name]: value,
       ...(name === 'branch' && { department: '' }),
     }));
+
+    setCurrentPage(1);
   };
 
   const handleSearch = async () => {
@@ -210,7 +190,9 @@ const Search = () => {
         branchId: searchCriteria.branch ? parseInt(searchCriteria.branch) :
           (userBranch?.id ? parseInt(userBranch.id) : null),
         departmentId: searchCriteria.department ? parseInt(searchCriteria.department) :
-          (userDepartment?.id ? parseInt(userDepartment.id) : null)
+          (userDepartment?.id ? parseInt(userDepartment.id) : null),
+        page: currentPage - 1,  // Backend uses 0-indexed pages
+        size: itemsPerPage
       };
 
       const response = await axios.post(
@@ -226,14 +208,10 @@ const Search = () => {
 
       setSearchResults(response.data);
       setNoResultsFound(response.data.length === 0);
+      setCurrentPage(1);
     } catch (error) {
       console.error('Error searching documents:', error);
-      if (error.response) {
-        console.error('Server error response:', error.response.data);
-        console.error('Status code:', error.response.status);
-
-        alert('Failed to search documents. Please try again.');
-      }
+      alert('Failed to search documents. Please try again.');
     }
   };
 
@@ -263,33 +241,24 @@ const Search = () => {
   };
 
   const openFile = async (file) => {
-    const token = localStorage.getItem("tokenKey"); // Get the token from localStorage
-    const createdOnDate = new Date(file.createdOn); // Convert timestamp to Date object
-    const year = createdOnDate.getFullYear(); // Extract year
-    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0"); // Extract month and pad with zero
-    const category = file.documentHeader.categoryMaster.name; // Get the category name
-    const fileName = file.docName; // The file name
+    const token = localStorage.getItem("tokenKey");
+    const createdOnDate = new Date(file.createdOn);
+    const year = createdOnDate.getFullYear();
+    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0");
+    const category = file.documentHeader.categoryMaster.name;
+    const fileName = file.docName;
 
-    // Construct the URL based on the Spring Boot @GetMapping pattern
     const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${category}/${fileName}`;
 
     try {
-      // Fetch the file using axios and pass the token in the headers
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob", // Fetch the file as a blob
+        responseType: "blob",
       });
 
-      // Get the MIME type of the file from the response headers
       const contentType = response.headers["content-type"];
-
-      // Create a blob from the response
       const blob = new Blob([response.data], { type: contentType });
-
-      // Generate a URL for the blob
       const blobUrl = window.URL.createObjectURL(blob);
-
-      // Open the blob in a new tab
       window.open(blobUrl, "_blank");
     } catch (error) {
       console.error("Error fetching file:", error);
@@ -297,234 +266,246 @@ const Search = () => {
     }
   };
 
-  userRole = localStorage.getItem('role');
-  const renderSearchFields = () => {
-    return (
-      <div className="grid grid-cols-3 gap-4 mb-4 bg-slate-100 p-4 rounded-lg">
-        {userRole === 'ADMIN' ? (
-          <>
-            <select
-              name="branch"
-              value={searchCriteria.branch}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            >
-              <option value="">Select Branch</option>
-              {branchOptions.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </select>
-            <select
-              name="department"
-              value={searchCriteria.department}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-              disabled={!searchCriteria.branch}
-            >
-              <option value="">Select Department</option>
-              {departmentOptions.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
-          </>
-        ) : userRole === 'BRANCH ADMIN' ? (
-          <>
-            <select
-              name="branch"
-              value={searchCriteria.branch}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-              disabled={true}  // Branch is fixed, so no need to change
-            >
-              <option value={userBranch?.id}>{userBranch?.name}</option>
-            </select>
-
-            {/* Department Dropdown */}
-            <select
-              name="department"
-              value={searchCriteria.department}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            >
-              <option value="">Select Department</option>
-              {departmentOptions.length > 0 ? (
-                departmentOptions.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))
-              ) : (
-                <option value="">No Departments Available</option>
-              )}
-            </select>
-          </>
-        ) : (
-          <>
-            <select
-              name="branch"
-              value={userBranch?.id || ''}
-              disabled
-              className="p-2 border rounded-md outline-none bg-gray-100"
-            >
-              <option value={userBranch?.id}>{userBranch?.name}</option>
-            </select>
-            <select
-              name="department"
-              value={userDepartment?.id || ''}
-              disabled
-              className="p-2 border rounded-md outline-none bg-gray-100"
-            >
-              <option value={userDepartment?.id}>{userDepartment?.name}</option>
-            </select>
-          </>
-        )}
-
-        <select
-          name="category"
-          value={searchCriteria.category}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        >
-          <option value="">Select Category</option>
-          {categoryOptions.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="text"
-          name="fileNo"
-          placeholder="File No."
-          value={searchCriteria.fileNo}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        />
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          value={searchCriteria.title}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        />
-        <input
-          type="text"
-          name="subject"
-          placeholder="Subject"
-          value={searchCriteria.subject}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        />
-        <input
-          type="text"
-          name="version"
-          placeholder="Version"
-          value={searchCriteria.version}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        />
-        {/* <select
-          name="category"
-          value={searchCriteria.category}
-          onChange={handleInputChange}
-          className="p-2 border rounded-md outline-none"
-        >
-          <option value="">Select Category</option>
-          {categoryOptions.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select> */}
-        {/* {userRole === 'ADMIN' ? (
-          <>
-            <select
-              name="branch"
-              value={searchCriteria.branch}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            >
-              <option value="">Select Branch</option>
-              {branchOptions.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </select>
-            <select
-              name="department"
-              value={searchCriteria.department}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-              disabled={!searchCriteria.branch}
-            >
-              <option value="">Select Department</option>
-              {departmentOptions.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
-          </>
-        ) : userRole === 'BRANCH ADMIN' ? (
-          <>
-            <select
-              name="branch"
-              value={searchCriteria.branch}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-              disabled={true}  // Branch is fixed, so no need to change
-            >
-              <option value={userBranch?.id}>{userBranch?.name}</option>
-            </select>
-
-          
-            <select
-              name="department"
-              value={searchCriteria.department}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            >
-              <option value="">Select Department</option>
-              {departmentOptions.length > 0 ? (
-                departmentOptions.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))
-              ) : (
-                <option value="">No Departments Available</option>
-              )}
-            </select>
-          </>
-        ) : (
-          <>
-            <select
-              name="branch"
-              value={userBranch?.id || ''}
-              disabled
-              className="p-2 border rounded-md outline-none bg-gray-100"
-            >
-              <option value={userBranch?.id}>{userBranch?.name}</option>
-            </select>
-            <select
-              name="department"
-              value={userDepartment?.id || ''}
-              disabled
-              className="p-2 border rounded-md outline-none bg-gray-100"
-            >
-              <option value={userDepartment?.id}>{userDepartment?.name}</option>
-            </select>
-          </>
-        )} */}
-      </div>
-    );
+  // Add a computed property to get paginated results
+  const getPaginatedResults = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return searchResults.slice(startIndex, endIndex);
   };
+
+  // Calculate total pages based on all search results
+  const calculateTotalPages = () => {
+    return Math.ceil(searchResults.length / itemsPerPage);
+  };
+
+  userRole = localStorage.getItem('role');
+const renderSearchFields = () => {
+  return (
+    <div className="grid grid-cols-3 gap-4 mb-4 bg-slate-100 p-4 rounded-lg">
+      {userRole === 'ADMIN' ? (
+        <>
+          <select
+            name="branch"
+            value={searchCriteria.branch}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md outline-none"
+          >
+            <option value="">Select Branch</option>
+            {branchOptions.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
+              </option>
+            ))}
+          </select>
+          <select
+            name="department"
+            value={searchCriteria.department}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md outline-none"
+            disabled={!searchCriteria.branch}
+          >
+            <option value="">Select Department</option>
+            {departmentOptions.map((department) => (
+              <option key={department.id} value={department.id}>
+                {department.name}
+              </option>
+            ))}
+          </select>
+        </>
+      ) : userRole === 'BRANCH ADMIN' ? (
+        <>
+          <select
+            name="branch"
+            value={searchCriteria.branch}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md outline-none"
+            disabled={true}  // Branch is fixed, so no need to change
+          >
+            <option value={userBranch?.id}>{userBranch?.name}</option>
+          </select>
+
+          {/* Department Dropdown */}
+          <select
+            name="department"
+            value={searchCriteria.department}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md outline-none"
+          >
+            <option value="">Select Department</option>
+            {departmentOptions.length > 0 ? (
+              departmentOptions.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))
+            ) : (
+              <option value="">No Departments Available</option>
+            )}
+          </select>
+        </>
+      ) : (
+        <>
+          <select
+            name="branch"
+            value={userBranch?.id || ''}
+            disabled
+            className="p-2 border rounded-md outline-none bg-gray-100"
+          >
+            <option value={userBranch?.id}>{userBranch?.name}</option>
+          </select>
+          <select
+            name="department"
+            value={userDepartment?.id || ''}
+            disabled
+            className="p-2 border rounded-md outline-none bg-gray-100"
+          >
+            <option value={userDepartment?.id}>{userDepartment?.name}</option>
+          </select>
+        </>
+      )}
+
+      <select
+        name="category"
+        value={searchCriteria.category}
+        onChange={handleInputChange}
+        className="p-2 border rounded-md outline-none"
+      >
+        <option value="">Select Category</option>
+        {categoryOptions.map((category) => (
+          <option key={category.id} value={category.id}>
+            {category.name}
+          </option>
+        ))}
+      </select>
+      <input
+        type="text"
+        name="fileNo"
+        placeholder="File No."
+        value={searchCriteria.fileNo}
+        onChange={handleInputChange}
+        className="p-2 border rounded-md outline-none"
+      />
+      <input
+        type="text"
+        name="title"
+        placeholder="Title"
+        value={searchCriteria.title}
+        onChange={handleInputChange}
+        className="p-2 border rounded-md outline-none"
+      />
+      <input
+        type="text"
+        name="subject"
+        placeholder="Subject"
+        value={searchCriteria.subject}
+        onChange={handleInputChange}
+        className="p-2 border rounded-md outline-none"
+      />
+      <input
+        type="text"
+        name="version"
+        placeholder="Version"
+        value={searchCriteria.version}
+        onChange={handleInputChange}
+        className="p-2 border rounded-md outline-none"
+      />
+      {/* <select
+        name="category"
+        value={searchCriteria.category}
+        onChange={handleInputChange}
+        className="p-2 border rounded-md outline-none"
+      >
+        <option value="">Select Category</option>
+        {categoryOptions.map((category) => (
+          <option key={category.id} value={category.id}>
+            {category.name}
+          </option>
+        ))}
+      </select> */}
+      {/* {userRole === 'ADMIN' ? (
+        <>
+          <select
+            name="branch"
+            value={searchCriteria.branch}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md outline-none"
+          >
+            <option value="">Select Branch</option>
+            {branchOptions.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
+              </option>
+            ))}
+          </select>
+          <select
+            name="department"
+            value={searchCriteria.department}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md outline-none"
+            disabled={!searchCriteria.branch}
+          >
+            <option value="">Select Department</option>
+            {departmentOptions.map((department) => (
+              <option key={department.id} value={department.id}>
+                {department.name}
+              </option>
+            ))}
+          </select>
+        </>
+      ) : userRole === 'BRANCH ADMIN' ? (
+        <>
+          <select
+            name="branch"
+            value={searchCriteria.branch}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md outline-none"
+            disabled={true}  // Branch is fixed, so no need to change
+          >
+            <option value={userBranch?.id}>{userBranch?.name}</option>
+          </select>
+
+        
+          <select
+            name="department"
+            value={searchCriteria.department}
+            onChange={handleInputChange}
+            className="p-2 border rounded-md outline-none"
+          >
+            <option value="">Select Department</option>
+            {departmentOptions.length > 0 ? (
+              departmentOptions.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))
+            ) : (
+              <option value="">No Departments Available</option>
+            )}
+          </select>
+        </>
+      ) : (
+        <>
+          <select
+            name="branch"
+            value={userBranch?.id || ''}
+            disabled
+            className="p-2 border rounded-md outline-none bg-gray-100"
+          >
+            <option value={userBranch?.id}>{userBranch?.name}</option>
+          </select>
+          <select
+            name="department"
+            value={userDepartment?.id || ''}
+            disabled
+            className="p-2 border rounded-md outline-none bg-gray-100"
+          >
+            <option value={userDepartment?.id}>{userDepartment?.name}</option>
+          </select>
+        </>
+      )} */}
+    </div>
+  );
+};
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
@@ -562,7 +543,7 @@ const Search = () => {
                 </tr>
               </thead>
               <tbody>
-                {searchResults.map((document) => (
+                {getPaginatedResults().map((document) => (
                   <tr key={document.id}>
                     <td className="border p-2">{document.fileNo}</td>
                     <td className="border p-2">{document.title}</td>
@@ -597,6 +578,29 @@ const Search = () => {
         )
       )}
 
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center mt-4">
+        <div className="text-sm text-gray-700">
+          Page <span className="font-bold">{currentPage}</span> of <span className="font-bold">{calculateTotalPages()}</span>
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="bg-blue-900 text-white rounded-md py-2 px-4 hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowLeftIcon className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, calculateTotalPages()))}
+            disabled={currentPage === calculateTotalPages()}
+            className="bg-blue-900 text-white rounded-md py-2 px-4 hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowRightIcon className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
       {/* Document View Modal */}
       {isOpen && selectedDoc && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900 bg-opacity-50">
@@ -618,12 +622,8 @@ const Search = () => {
             <div className="h-1/2 flex flex-col justify-between">
               <div className="flex justify-between items-center mb-4 mt-4">
                 <div className="flex items-start space-x-1">
-                  <p className="text-sm text-black font-bold border-b-4 border-black">
-                    D
-                  </p>
-                  <p className="text-sm text-black font-bold border-t-4 border-black">
-                    MS
-                  </p>
+                  <p className="text-sm text-black font-bold border-b-4 border-black">D</p>
+                  <p className="text-sm text-black font-bold border-t-4 border-black">MS</p>
                 </div>
 
                 <div className="text-right">
@@ -633,8 +633,6 @@ const Search = () => {
                   </p>
                 </div>
               </div>
-
-
 
               <div className="text-left">
                 <p className="text-sm text-gray-600">
