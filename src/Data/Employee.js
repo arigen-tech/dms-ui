@@ -27,7 +27,7 @@ const UserAddEmployee = () => {
     email: "",
     mobile: "",
     branch: { id: "", name: "" }, // Ensure initial structure
-    // department: { id: "", name: "" }, // Ensure initial structure
+     department: { id: "", name: "" }, // Ensure initial structure
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -559,20 +559,23 @@ const UserAddEmployee = () => {
               className="p-2 border rounded-md outline-none"
             />
 
-            {/* Branch Selection */}
-            <select
+              {/* Branch Selection */}
+              <select
               name="branch"
               value={formData.branch?.id || ""}
               onChange={(e) => handleSelectChange(e, "branch")}
               className="p-2 border rounded-md outline-none"
-              disabled // Make this field non-editable
+              disabled={role !== "ADMIN"} // Disable if not admin
             >
               <option value={userBranch?.id || ""}>
                 {userBranch?.name || "Select Branch"}
               </option>
+              {branchOptions.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
             </select>
-
-            
 
             {/* Department Selection */}
             <select
@@ -580,13 +583,19 @@ const UserAddEmployee = () => {
               value={formData.department?.id || ""}
               onChange={(e) => handleSelectChange(e, "department")}
               className="p-2 border rounded-md outline-none"
-              disabled // Make this field non-editable
+              disabled={role !== "ADMIN"} // Disable if not admin
             >
               <option value={userDepartment?.id || ""}>
                 {userDepartment?.name || "Select Department"}
               </option>
+              {departmentOptions.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
             </select>
           </div>
+          
           <div className="mt-3 flex justify-start">
             {editingIndex === null ? (
               <button
