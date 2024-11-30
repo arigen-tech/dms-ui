@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_HOST } from "../API/apiConfig";
 import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaFilePdf, FaFileExcel, FaFileWord } from "react-icons/fa";
+import { FaFilePdf, FaFileExcel } from "react-icons/fa";
+import agtlogo from "../Assets/agtlogo.png";
 
 const DocumentReport = () => {
   const [searchCriteria, setSearchCriteria] = useState({
@@ -19,15 +22,17 @@ const DocumentReport = () => {
   const [departmentOptions, setDepartmentOptions] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [noResultsFound, setNoResultsFound] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
   const [error, setError] = useState(""); // Error state for validation
-  const [selectedFormat, setSelectedFormat] = useState('excel');
+  const [selectedFormat, setSelectedFormat] = useState("PDF");
 
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     fetchCategories();
@@ -42,6 +47,17 @@ const DocumentReport = () => {
       setDepartmentOptions([]);
     }
   }, [searchCriteria.branch]);
+
+  useEffect(() => {
+    // Pre-fill searchCriteria with userBranch and userDepartment
+    setSearchCriteria((prev) => ({
+      ...prev,
+      branch: userBranch?.id || "",
+      branchName: userBranch?.name || "",
+      department: userDepartment?.id || "",
+      departmentName: userDepartment?.name || "",
+    }));
+  }, [userBranch, userDepartment]);
 
   useEffect(() => {
     if (role === "BRANCH ADMIN" && userBranch?.id) {
@@ -135,11 +151,35 @@ const DocumentReport = () => {
     }));
   };
 
+  //   const handleInputChange = (e) => {
+  //   const { name, value } = e.target;
+
+  //   const selectedOption = {
+  //     branch: branchOptions.find((branch) => branch.id === parseInt(value)),
+  //     department: departmentOptions.find((department) => department.id === parseInt(value)),
+  //     category: categoryOptions.find((category)=> category.id === parseInt(value)),
+  //   }[name];
+
+  //   setSearchCriteria({
+  //     ...searchCriteria,
+  //     [name]: value,
+  //     [`${name}Name`]: selectedOption?.name || "",
+  //   });
+  // };
+
   const formatDateTime = (date) => {
     if (!date) return null;
     const isoString = date.toISOString();
     const localDate = new Date(isoString);
     return localDate.toLocaleString("sv-SE").replace("T", " ");
+  };
+
+  const formatDates = (date) => {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0"); // Ensure 2 digits
+    const month = String(d.getMonth() + 1).padStart(2, "0"); // Ensure 2 digits
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const handleDownload = async () => {
@@ -150,71 +190,69 @@ const DocumentReport = () => {
 
     try {
       setError(""); // Clear any previous errors
+      setIsProcessing(true); // Start processing
       const token = localStorage.getItem("tokenKey");
 
-      const formattedFromDate = formatDateTime(fromDate);
-      const formattedToDate = formatDateTime(toDate);
+      // Adjust dates for local time zone (start and end time)
+      const formattedFromDate = new Date(fromDate);
+      formattedFromDate.setHours(0, 0, 0, 0); // Set to T00:00:00.000 (local)
 
-      const params = {
+      const formattedToDate = new Date(toDate);
+      formattedToDate.setHours(23, 59, 59, 999); // Set to T23:59:59.999 (local)
+
+      // Prepare the request body
+      const requestBody = {
         ...(searchCriteria.category && { categoryId: searchCriteria.category }),
         ...(searchCriteria.status && { approvalStatus: searchCriteria.status }),
         ...(searchCriteria.branch && { branchId: searchCriteria.branch }),
         ...(searchCriteria.department && {
           departmentId: searchCriteria.department,
         }),
-        ...(formattedFromDate && { startDate: formattedFromDate }),
-        ...(formattedToDate && { endDate: formattedToDate }),
+        startDate: formattedFromDate.toISOString(), // Converts to UTC from local time
+        endDate: formattedToDate.toISOString(),
+        docType: selectedFormat, // PDF or EXCEL based on user selection
       };
 
-      const response = await axios.get(`${API_HOST}/api/documents/filter`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params,
+      console.log("Request Body:", requestBody); // For debugging
+
+      const response = await axios.post(
+        "http://localhost:8080/api/documents/export",
+        requestBody,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          responseType: "blob", // For downloading files
+        }
+      );
+
+      // Handle file download
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
       });
-
-      const data = response.data;
-
-      if (data.length === 0) {
-        setNoResultsFound(true);
-        alert("No results found.");
-        return;
-      }
-
-      setSearchResults(data);
-
-      const mappedData = data.map((item, index) => ({
-        "S.N.": index + 1,
-        "File No.": item.fileNo,
-        Title: item.title,
-        Subject: item.subject,
-        Version: item.version,
-        Category: item.categoryMaster?.name || "N/A",
-        Branch: item.employee?.branch?.name || "N/A",
-        Department: item.employee?.department?.name || "N/A",
-        "Count of Attach File": item.documentDetails?.length || 0,
-        "Uploaded Date": new Date(item.createdOn).toLocaleDateString(),
-        "Approval Status": item.approvalStatus || "Pending",
-      }));
-
-      const worksheet = XLSX.utils.json_to_sheet(mappedData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Documents");
-
-      const excelFile = XLSX.write(workbook, {
-        bookType: "xlsx",
-        type: "array",
-      });
-      const blob = new Blob([excelFile], { type: "application/octet-stream" });
-
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "Document Reports.xlsx";
-      document.body.appendChild(link);
+      link.href = url;
+      link.download = `documents.${selectedFormat.toLowerCase()}`; // Set file extension dynamically
       link.click();
-      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url); // Clean up the object URL
+
+      // Reset fields
+      resetFields();
+      alert("Download successful!");
     } catch (error) {
-      console.error("Error fetching documents:", error);
-      alert("Failed to fetch documents. Please try again.");
+      console.error("Error exporting documents:", error);
+      alert("Failed to export documents. Please try again.");
+    } finally {
+      setIsProcessing(false); // End processing
     }
+  };
+  const resetFields = () => {
+    setFromDate("");
+    setToDate("");
+    setSearchCriteria({});
+    setSelectedFormat("PDF");
   };
 
   const handleFormatChange = (event) => {
@@ -337,7 +375,7 @@ const DocumentReport = () => {
           selectsStart
           startDate={fromDate}
           endDate={toDate}
-          dateFormat="yyyy-MM-dd"
+          dateFormat="dd-MM-yyyy"
           placeholderText="Start Date"
           maxDate={new Date()} // Prevents selecting dates later than today
           className="w-full px-3 py-2 border rounded-md"
@@ -349,7 +387,7 @@ const DocumentReport = () => {
           selectsEnd
           startDate={fromDate}
           endDate={toDate}
-          dateFormat="yyyy-MM-dd"
+          dateFormat="dd-MM-yyyy"
           placeholderText="End Date"
           maxDate={new Date()} // Prevents selecting dates later than today
           className="w-full px-3 py-2 border rounded-md"
@@ -357,50 +395,51 @@ const DocumentReport = () => {
       </div>
 
       <div className="format-selection space-y-4 grid grid-cols-12 mb-4">
-      <label className="flex items-center space-x-2 mt-4">
-        <input
-          type="radio"
-          value="pdf"
-          checked={selectedFormat === "pdf"}
-          onChange={handleFormatChange}
-          className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-        />
-        <FaFilePdf className="h-5 w-5 text-gray-700" />
-        <span className="text-gray-700">PDF</span>
-      </label>
+        <label className="flex items-center space-x-2 mt-4">
+          <input
+            type="radio"
+            value="PDF"
+            checked={selectedFormat === "PDF"}
+            onChange={handleFormatChange}
+            className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            disabled={isProcessing}
+          />
+          <FaFilePdf className="h-5 w-5 text-gray-700" />
+          <span className="text-gray-700">PDF</span>
+        </label>
 
-      <label className="flex items-center space-x-2">
-        <input
-          type="radio"
-          value="word"
-          checked={selectedFormat === "word"}
-          onChange={handleFormatChange}
-          className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-        />
-        <FaFileWord className="h-5 w-5 text-gray-700" />
-        <span className="text-gray-700">Word</span>
-      </label>
-
-      <label className="flex items-center space-x-2">
-        <input
-          type="radio"
-          value="excel"
-          checked={selectedFormat === "excel"}
-          onChange={handleFormatChange}
-          className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-        />
-        <FaFileExcel className="h-5 w-5 text-gray-700" />
-        <span className="text-gray-700">Excel</span>
-      </label>
-    </div>
+        <label className="flex items-center space-x-2">
+          <input
+            type="radio"
+            value="EXCEL"
+            checked={selectedFormat === "EXCEL"}
+            onChange={handleFormatChange}
+            className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            disabled={isProcessing}
+          />
+          <FaFileExcel className="h-5 w-5 text-gray-700" />
+          <span className="text-gray-700">Excel</span>
+        </label>
+      </div>
 
       {error && <p className="text-red-500">{error}</p>}
 
-      <button
+      {/* <button
         onClick={handleDownload}
         className="bg-blue-900 text-white py-2 px-6 rounded-md hover:bg-blue-800 transition duration-300"
       >
         Download Report
+      </button> */}
+      <button
+        onClick={handleDownload}
+        disabled={isProcessing}
+        className={`px-4 py-2 rounded ${
+          isProcessing
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-500 hover:bg-blue-600"
+        } text-white`}
+      >
+        {isProcessing ? "Processing..." : "Download"}
       </button>
     </div>
   );
