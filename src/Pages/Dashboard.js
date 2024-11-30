@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { API_HOST } from '../API/apiConfig';
+import { API_HOST } from "../API/apiConfig";
 import axios from "axios";
 import {
   BarChart,
@@ -12,6 +12,14 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  PieChart,
+  Cell,
+  Pie,
 } from "recharts";
 import { useNavigate } from "react-router-dom"; // For redirecting if unauthorized
 import Sidebar from "../Components/Sidebar";
@@ -58,7 +66,7 @@ function Dashboard() {
     totalApprovedStatusDocById: 0,
     totalRejectedStatusDocById: 0,
     departmentCountForBranch: 0,
-    nullRoleEmployeeCountForBranch: 0
+    nullRoleEmployeeCountForBranch: 0,
   });
 
   const navigate = useNavigate();
@@ -76,9 +84,10 @@ function Dashboard() {
 
         // Set Authorization header for requests
         const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-        const url=`${API_HOST}/Dashboard/GetAllCountsForDashBoard`;
+        const url = `${API_HOST}/Dashboard/GetAllCountsForDashBoard`;
         // Fetch dashboard stats
-        const statsResponse = await axios.get(url,
+        const statsResponse = await axios.get(
+          url,
           // "${BRANCH_API}/Dashboard/GetAllCountsForDashBoard",
           {
             ...authHeader,
@@ -91,9 +100,13 @@ function Dashboard() {
         const startDate = `${currentYear}-01-01 00:00:00`;
         const endDate = `${currentYear}-12-31 23:59:59`;
 
-        let summaryUrl = '';
+        let summaryUrl = "";
 
-        if (role === "ADMIN" || role === "BRANCH ADMIN"  ||  role === "DEPARTMENT ADMIN") {
+        if (
+          role === "ADMIN" ||
+          role === "BRANCH ADMIN" ||
+          role === "DEPARTMENT ADMIN"
+        ) {
           summaryUrl = `${API_HOST}/api/documents/document/summary/by/${employeeId}`;
         } else {
           summaryUrl = `${API_HOST}/api/documents/documents-summary/${employeeId}`;
@@ -104,19 +117,16 @@ function Dashboard() {
           params: { startDate, endDate },
         });
 
-
-
-
-
-        const { months, approvedDocuments, rejectedDocuments } = summaryResponse.data;
+        const { months, approvedDocuments, rejectedDocuments } =
+          summaryResponse.data;
         const mappedData = months.map((month, index) => ({
           name: month,
           ApprovedDocuments: approvedDocuments[index],
           RejectedDocuments: rejectedDocuments[index],
         }));
 
+        console.log(mappedData);
         setChartData(mappedData);
-
       } catch (error) {
         console.error("Error fetching data:", error);
 
@@ -133,6 +143,7 @@ function Dashboard() {
     fetchStatsAndData();
   }, [navigate, currentYear]);
 
+ 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -150,6 +161,25 @@ function Dashboard() {
   }
 
   const role = localStorage.getItem("role");
+  const totalApprovedDocuments = chartData.reduce(
+    (acc, curr) => acc + curr.ApprovedDocuments,
+    0
+  );
+  const totalRejectedDocuments = chartData.reduce(
+    (acc, curr) => acc + curr.RejectedDocuments,
+    0
+  );
+  const totalPendingDocuments = chartData.reduce(
+    (acc, curr) => acc + curr.PendingDocuments,
+    0
+  );
+  const COLORS = ["#82ca9d", "#FF0000", "#f0ad4e"];
+
+  const pieChartData = [
+    { name: "Approved", value: totalApprovedDocuments },
+    { name: "Rejected", value: totalRejectedDocuments },
+    { name: "Pending", value: totalPendingDocuments },
+  ];
 
   return (
     <div className="flex flex-row bg-gray-200 h-screen w-screen overflow-hidden">
@@ -331,7 +361,6 @@ function Dashboard() {
                 />
               </>
             )}
-
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -347,7 +376,6 @@ function Dashboard() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  {/* RejectedDocuments bar with red color */}
                   <Bar
                     dataKey="RejectedDocuments"
                     fill="#FF0000"
@@ -357,6 +385,11 @@ function Dashboard() {
                     dataKey="ApprovedDocuments"
                     fill="#82ca9d"
                     name="Approved Documents"
+                  />
+                  <Bar
+                    dataKey="PendingDocuments"
+                    fill="#f0ad4e"
+                    name="Pending Documents"
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -386,7 +419,81 @@ function Dashboard() {
                     stroke="#FF0000"
                     strokeWidth={2}
                   />
+                  <Line
+                    type="monotone"
+                    dataKey="PendingDocuments"
+                    stroke="#f0ad4e"
+                    strokeWidth={2}
+                  />
                 </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Polar Chart */}
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">
+                Polar Document Stats
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <RadarChart outerRadius="80%" data={chartData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="name" />
+                  <PolarRadiusAxis />
+                  {/* Radar components for each data set */}
+                  <Radar
+                    name="Approved Documents"
+                    dataKey="ApprovedDocuments"
+                    stroke="#82ca9d"
+                    fill="#82ca9d"
+                    fillOpacity={0.6}
+                  />
+                  <Radar
+                    name="Rejected Documents"
+                    dataKey="RejectedDocuments"
+                    stroke="#FF0000"
+                    fill="#FF0000"
+                    fillOpacity={0.6}
+                  />
+                  <Radar
+                    name="Pending Documents"
+                    dataKey="PendingDocuments"
+                    stroke="#f0ad4e"
+                    fill="#f0ad4e"
+                    fillOpacity={0.6}
+                  />
+                  {/* Tooltip to display data when mouse hovers */}
+                  <Tooltip />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Pie Chart */}
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">
+                Document Status Distribution
+              </h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie
+                    data={pieChartData} // Use the calculated totals here
+                    dataKey="value" // Value to use for Pie slices
+                    nameKey="name" // Name of each section (Approved, Rejected, Pending)
+                    cx="50%" // Centering the Pie chart
+                    cy="50%" // Centering the Pie chart
+                    outerRadius={80} // Outer radius of the Pie chart
+                    label // Adding labels inside Pie slices
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip /> {/* Tooltip to show data when hovered */}
+                  <Legend />{" "}
+                  {/* Legend to show which color corresponds to which name */}
+                </PieChart>
               </ResponsiveContainer>
             </div>
           </div>

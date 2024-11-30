@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { API_HOST } from '../API/apiConfig';
+import { API_HOST } from "../API/apiConfig";
+
 const EmployeeRole = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -9,7 +10,7 @@ const EmployeeRole = () => {
   const [selectedRole, setSelectedRole] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState(""); // Add state for success message
+  const [successMessage, setSuccessMessage] = useState(""); 
   const token = localStorage.getItem("tokenKey");
 
   useEffect(() => {
@@ -29,17 +30,14 @@ const EmployeeRole = () => {
       );
       setUsers(response.data);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      setErrorMessage("Error fetching users.");
     }
   };
-
-
-
 
   const fetchRoles = async () => {
     try {
       const response = await axios.get(
-        `${ API_HOST }/RoleMaster/findActiveRole`,
+        `${API_HOST}/RoleMaster/findActiveRole`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -48,18 +46,18 @@ const EmployeeRole = () => {
       );
       setRoles(response.data);
     } catch (error) {
-      console.error("Error fetching roles:", error);
+      setErrorMessage("Error fetching roles.");
     }
   };
 
   const handleRoleChange = (userId, newRole) => {
     setSelectedUser(userId);
     setSelectedRole(newRole);
-    setModalVisible(true); // Show the confirmation modal
+    setModalVisible(true);
   };
 
   const confirmRoleAssignment = async () => {
-    setIsSubmitting(true); // Disable the button when the request starts
+    setIsSubmitting(true);
     try {
       const response = await axios.put(
         `${API_HOST}/employee/${selectedUser}/role`,
@@ -71,18 +69,16 @@ const EmployeeRole = () => {
           },
         }
       );
-  
-      console.log("Role updated successfully:", response.data);
-      setSuccessMessage(response.data); // Set the success message
-      fetchUsers(); // Refresh the user list after role update
-      setModalVisible(false); // Close the modal
-      setSelectedUser(null); // Reset the selected user
-      setSelectedRole(""); // Reset the selected role
-      setTimeout(() => setSuccessMessage(""), 5000); // Clear success message after 5 seconds
+
+      setSuccessMessage("Role assigned successfully.");
+      fetchUsers();
+      setModalVisible(false);
+      setSelectedUser(null);
+      setSelectedRole("");
     } catch (error) {
       if (error.response && error.response.data) {
         const backendMessage = error.response.data;
-  
+
         if (backendMessage.includes("Employee with ID")) {
           setErrorMessage("Employee Not Found");
         } else if (backendMessage.includes("Role with ID")) {
@@ -96,11 +92,13 @@ const EmployeeRole = () => {
         setErrorMessage(
           "An unexpected error occurred while updating the role. Please try again."
         );
-        console.error("Error updating role:", error);
       }
-      setTimeout(() => setErrorMessage(""), 5000); // Clear error message after 5 seconds
     } finally {
-      setIsSubmitting(false); // Re-enable the button after the request completes
+      setIsSubmitting(false);
+      setTimeout(() => {
+        setErrorMessage("");
+        setSuccessMessage("");
+      }, 5000);
     }
   };
 
@@ -116,6 +114,16 @@ const EmployeeRole = () => {
 
   return (
     <div className="bg-white p-3 rounded-lg shadow-sm">
+      {successMessage && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {successMessage}
+        </div>
+      )}
+      {errorMessage && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {errorMessage}
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse border">
           <thead>
@@ -126,8 +134,8 @@ const EmployeeRole = () => {
               <th className="border p-2 text-left">Mobile No.</th>
               <th className="border p-2 text-left">Branch</th>
               <th className="border p-2 text-left">Department</th>
-              <th className="border p-2 text-left">Created Date</th>
               <th className="border p-2 text-left">Created By</th>
+              <th className="border p-2 text-left">Created Date</th>
               <th className="border p-2 text-left">Role</th>
               <th className="border p-2 text-left">Assign Role</th>
             </tr>
@@ -144,10 +152,9 @@ const EmployeeRole = () => {
                   <td className="border p-2">
                     {user.department?.name || "N/A"}
                   </td>
+                  <td className="border p-2">{user.createdBy.name}</td>
                   <td className="border p-2">{formatDate(user.createdOn)}</td>
-                  <td className="border p-2">
-                    {/* {user.createdBy.name || " "} */}
-                  </td>
+
                   <td className="border p-2">
                     {user.employeeType || "No Role"}
                   </td>
@@ -182,50 +189,42 @@ const EmployeeRole = () => {
       </div>
 
       {modalVisible && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-lg font-semibold mb-4">Confirm Role Assignment</h2>
-      {successMessage && ( // Conditionally render success message
-        <p className="text-green-600 mb-4">{successMessage}</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">
+              Confirm Role Assignment
+            </h2>
+            <p className="mb-4">
+              Are you sure you want to assign the role{" "}
+              <strong>{selectedRole}</strong> to{" "}
+              <strong>
+                {users.find((user) => user.id === selectedUser)?.name}
+              </strong>
+              ?
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setModalVisible(false)}
+                className="bg-gray-300 p-2 rounded-lg"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRoleAssignment}
+                className={`${
+                  isSubmitting
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-500"
+                } text-white p-2 rounded-lg`}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Processing..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-      {errorMessage && ( // Conditionally render error message
-        <p className="text-red-600 mb-4">{errorMessage}</p>
-      )}
-      <p className="mb-4">
-        Are you sure you want to assign the role{" "}
-        <strong>{selectedRole}</strong> to{" "}
-        <strong>
-          {users.find((user) => user.id === selectedUser)?.name}
-        </strong>
-        ?
-      </p>
-      <div className="flex justify-end gap-4">
-        <button
-          onClick={() => {
-            setModalVisible(false);
-            setErrorMessage(""); // Reset error message when closing the modal
-            setSuccessMessage(""); // Reset success message when closing the modal
-          }}
-          className="bg-gray-300 p-2 rounded-lg"
-          disabled={isSubmitting} // Disable Cancel button if submitting
-        >
-          Cancel
-        </button>
-        <button
-          onClick={confirmRoleAssignment}
-          className={`${
-            isSubmitting
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500"
-          } text-white p-2 rounded-lg`}
-          disabled={isSubmitting} // Disable Confirm button when submitting
-        >
-          {isSubmitting ? "Processing..." : "Confirm"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
     </div>
   );
 };
