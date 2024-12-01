@@ -7,6 +7,7 @@
     --count: #2563eb;
     --maincontainbg:#fff;
     --tablebg:#f1f5f9;
+    --pagebg:#f5f5f5;
 }
 .bg-blue-800{
     background-color:var(--primarycolor) !important;
@@ -23,3 +24,9 @@
 .bg-slate-100{
     background-color: var(--tablebg);
 }
+.bg-neutral-100{
+    background-color: var(--pagebg);
+
+}
+
+

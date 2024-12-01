@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { API_HOST } from "../API/apiConfig";
-import * as XLSX from "xlsx";
-import { jsPDF } from "jspdf";
+import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 import "jspdf-autotable";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaFilePdf, FaFileExcel } from "react-icons/fa";
-import agtlogo from "../Assets/agtlogo.png";
 
 const DocumentReport = () => {
   const [searchCriteria, setSearchCriteria] = useState({
@@ -215,8 +212,7 @@ const DocumentReport = () => {
 
       console.log("Request Body:", requestBody); // For debugging
 
-      const response = await axios.post(
-        "http://localhost:8080/api/documents/export",
+      const response = await axios.post(`${DOCUMENTHEADER_API}/export`,
         requestBody,
         {
           headers: {
