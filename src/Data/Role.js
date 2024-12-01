@@ -19,6 +19,8 @@ const Role = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [roleToToggle, setRoleToToggle] = useState(null);
   const [editingRoleId, setEditingRoleId] = useState(null); // Define the state for editing role ID
+  const [message, setMessage] = useState(null); // For the success message
+  const [messageType, setMessageType] = useState('');
 
 
   useEffect(() => {
@@ -55,85 +57,116 @@ const Role = () => {
     if (formData.role) {
       const newRole = {
         role: formData.role,
-        isActive: 1 // Use 1 to represent true
+        isActive: 1, // Use 1 to represent true
       };
-
+  
       try {
         const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
         const response = await axios.post(`${ROLE_API}/save`, newRole, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
+  
+        // Update roles list with new role
         setRoles([...roles, response.data]);
         setFormData({ role: '' });
-        alert('Role added successfully!');
+  
+        // Set success message
+        setMessage('Role added successfully!');
+        setMessageType('success');
       } catch (error) {
-        console.error('Error adding role:', error);
-        alert('Failed to adding the role. Please try again.');
+        console.error('Error adding role:', error.response ? error.response.data : error.message);
+  
+        // Set error message
+        setMessage('Failed to add the role. Please try again.');
+        setMessageType('error');
       }
+    } else {
+      // Set warning message if role is not provided
+      setMessage('Please fill in the role field.');
+      setMessageType('warning');
+    }
+  
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
+  };
+  
+
+  // Function to handle role editing
+  const handleEditRole = (roleId) => {
+    // Set the actual ID of the role being edited
+    setEditingRoleId(roleId);
+
+    // Find the role in the original list by its ID to populate the form
+    const roleToEdit = roles.find(role => role.id === roleId);
+
+    // Populate the form with the role data (if found)
+    if (roleToEdit) {
+      setFormData({
+        role: roleToEdit.role,
+        // Add other form fields as needed
+      });
+    } else {
+      console.error('Role not found for ID:', roleId); // Log if the role is not found
     }
   };
 
-// Function to handle role editing
-const handleEditRole = (roleId) => {
-  // Set the actual ID of the role being edited
-  setEditingRoleId(roleId);
-
-  // Find the role in the original list by its ID to populate the form
-  const roleToEdit = roles.find(role => role.id === roleId);
-
-  // Populate the form with the role data (if found)
-  if (roleToEdit) {
-    setFormData({
-      role: roleToEdit.role,
-      // Add other form fields as needed
-    });
-  } else {
-    console.error('Role not found for ID:', roleId); // Log if the role is not found
-  }
-};
-
-// Function to handle saving the edited role
-const handleSaveEdit = async () => {
-  if (formData.role.trim() && editingRoleId !== null) {
-    try {
-      // Find the role in the original list by its ID
-      const roleIndex = roles.findIndex(role => role.id === editingRoleId);
-
-      if (roleIndex === -1) {
-        alert('Role not found!');
-        return;
+  // Function to handle saving the edited role
+  const handleSaveEdit = async () => {
+    if (formData.role.trim() && editingRoleId !== null) {
+      try {
+        // Find the role in the original list by its ID
+        const roleIndex = roles.findIndex(role => role.id === editingRoleId);
+  
+        if (roleIndex === -1) {
+          setMessage('Role not found!');
+          setMessageType('error');
+          return;
+        }
+  
+        // Create the updated role object
+        const updatedRole = {
+          ...roles[roleIndex],
+          role: formData.role,
+          updatedOn: new Date().toISOString(),
+        };
+  
+        // Send the update request to the server
+        const response = await axios.put(`${ROLE_API}/update/${updatedRole.id}`, updatedRole, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
+          },
+        });
+  
+        // Update the original roles list with the updated role
+        const updatedRoles = roles.map(role =>
+          role.id === updatedRole.id ? response.data : role
+        );
+  
+        // Update the state with the modified roles array
+        setRoles(updatedRoles);
+        setFormData({ role: '' }); // Reset form data
+        setEditingRoleId(null); // Reset the editing state
+  
+        // Set success message
+        setMessage('Role updated successfully!');
+        setMessageType('success');
+      } catch (error) {
+        console.error('Error updating role:', error.response ? error.response.data : error.message);
+  
+        // Set error message
+        setMessage('Failed to update the role. Please try again.');
+        setMessageType('error');
       }
-
-      // Create the updated role object
-      const updatedRole = {
-        ...roles[roleIndex],
-        role: formData.role,
-        updatedOn: new Date().toISOString(),
-      };
-
-      // Send the update request to the server
-      const response = await axios.put(`${ROLE_API}/update/${updatedRole.id}`, updatedRole, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-        },
-      });
-
-      // Update the original roles list with the updated role
-      const updatedRoles = roles.map(role =>
-        role.id === updatedRole.id ? response.data : role
-      );
-
-      // Update the state with the modified roles array
-      setRoles(updatedRoles);
-      setFormData({ role: '' }); // Reset form data
-      setEditingRoleId(null); // Reset the editing state
-      alert('Role updated successfully!');
-    } catch (error) {
-      console.error('Error updating role:', error.response ? error.response.data : error.message);
-      alert('Failed to update the role. Please try again.');
+    } else {
+      // Set warning message if form data is incomplete
+      setMessage('Please provide a valid role.');
+      setMessageType('warning');
     }
-  }
-};
+  
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
+  };
+  
 
 
 
@@ -151,7 +184,7 @@ const handleSaveEdit = async () => {
           isActive: roleToToggle.isActive === true ? false : true, // Toggle between true and false
           updatedOn: new Date().toISOString(), // Ensure this field is formatted correctly for your backend
         };
-
+  
         const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
         const response = await axios.put(
           `${ROLE_API}/updatestatus/${updatedRole.id}`, // Update API endpoint
@@ -163,7 +196,7 @@ const handleSaveEdit = async () => {
             },
           }
         );
-
+  
         // Check the response status and data
         if (response.status === 200) {
           // Update the roles state with the updated role
@@ -173,18 +206,34 @@ const handleSaveEdit = async () => {
           setRoles(updatedRoles);
           setModalVisible(false); // Close the modal
           setRoleToToggle(null); // Reset the selected role
-          alert('Status changed successfully!');
+  
+          // Set success message
+          setMessage('Role status changed successfully!');
+          setMessageType('success');
         } else {
-          alert('Failed to change the status. Please try again.');
+          // Set error message if response status is not 200
+          setMessage('Failed to change the status. Please try again.');
+          setMessageType('error');
         }
       } catch (error) {
         console.error('Error toggling role status:', error.response ? error.response.data : error.message);
-        alert('Failed to change the status. Please try again.');
+  
+        // Set error message in case of an exception
+        setMessage('Failed to change the status. Please try again.');
+        setMessageType('error');
       }
     } else {
       console.error('No role selected for status toggle');
+  
+      // Set warning message if no role is selected
+      setMessage('Please select a role to change its status.');
+      setMessageType('warning');
     }
+  
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
   };
+  
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -228,18 +277,37 @@ const handleSaveEdit = async () => {
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">ROLES</h1>
+      {message && (
+          <div
+            className={`mt-4 p-3 rounded-md text-sm ${messageType === 'success'
+                ? 'bg-green-100 text-green-700'
+                : messageType === 'error'
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}
+          >
+            {message}
+          </div>
+          )}
       <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="Role"
-              name="role"
-              value={formData.role}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
+            <div className="flex flex-col">
+              <label htmlFor="role" className="mb-1 text-md font-medium text-gray-700">
+                Role
+              </label>
+              <input
+                type="text"
+                id="role"
+                name="role"
+                placeholder="Enter Role"
+                value={formData.role}
+                onChange={handleInputChange}
+                className="p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
+
           <div className="mt-3 flex justify-start">
             {editingRoleId === null ? (
               <button onClick={handleAddRole} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">

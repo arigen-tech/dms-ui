@@ -283,132 +283,182 @@ const renderSearchFields = () => {
   return (
     <div className="grid grid-cols-3 gap-4 mb-4 bg-slate-100 p-4 rounded-lg">
       {userRole === 'ADMIN' ? (
-        <>
-          <select
-            name="branch"
-            value={searchCriteria.branch}
-            onChange={handleInputChange}
-            className="p-2 border rounded-md outline-none"
-          >
-            <option value="">Select Branch</option>
-            {branchOptions.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name}
-              </option>
-            ))}
-          </select>
-          <select
-            name="department"
-            value={searchCriteria.department}
-            onChange={handleInputChange}
-            className="p-2 border rounded-md outline-none"
-            disabled={!searchCriteria.branch}
-          >
-            <option value="">Select Department</option>
-            {departmentOptions.map((department) => (
-              <option key={department.id} value={department.id}>
-                {department.name}
-              </option>
-            ))}
-          </select>
-        </>
-      ) : userRole === 'BRANCH ADMIN' ? (
-        <>
-          <select
-            name="branch"
-            value={searchCriteria.branch}
-            onChange={handleInputChange}
-            className="p-2 border rounded-md outline-none"
-            disabled={true}  // Branch is fixed, so no need to change
-          >
-            <option value={userBranch?.id}>{userBranch?.name}</option>
-          </select>
-
-          {/* Department Dropdown */}
-          <select
-            name="department"
-            value={searchCriteria.department}
-            onChange={handleInputChange}
-            className="p-2 border rounded-md outline-none"
-          >
-            <option value="">Select Department</option>
-            {departmentOptions.length > 0 ? (
-              departmentOptions.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))
-            ) : (
-              <option value="">No Departments Available</option>
-            )}
-          </select>
-        </>
-      ) : (
-        <>
-          <select
-            name="branch"
-            value={userBranch?.id || ''}
-            disabled
-            className="p-2 border rounded-md outline-none bg-gray-100"
-          >
-            <option value={userBranch?.id}>{userBranch?.name}</option>
-          </select>
-          <select
-            name="department"
-            value={userDepartment?.id || ''}
-            disabled
-            className="p-2 border rounded-md outline-none bg-gray-100"
-          >
-            <option value={userDepartment?.id}>{userDepartment?.name}</option>
-          </select>
-        </>
-      )}
-
+  <>
+    {/* Branch Select */}
+    <label className="block text-md font-medium text-gray-700">
+      Branch
       <select
-        name="category"
-        value={searchCriteria.category}
+        name="branch"
+        value={searchCriteria.branch}
         onChange={handleInputChange}
-        className="p-2 border rounded-md outline-none"
+        className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="">Select Category</option>
-        {categoryOptions.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.name}
+        <option value="">Select Branch</option>
+        {branchOptions.map((branch) => (
+          <option key={branch.id} value={branch.id}>
+            {branch.name}
           </option>
         ))}
       </select>
-      <input
-        type="text"
-        name="fileNo"
-        placeholder="File No."
-        value={searchCriteria.fileNo}
+    </label>
+
+    {/* Department Select */}
+    <label className="block text-md font-medium text-gray-700">
+      Department
+      <select
+        name="department"
+        value={searchCriteria.department}
         onChange={handleInputChange}
-        className="p-2 border rounded-md outline-none"
-      />
-      <input
-        type="text"
-        name="title"
-        placeholder="Title"
-        value={searchCriteria.title}
+        className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={!searchCriteria.branch}
+      >
+        <option value="">Select Department</option>
+        {departmentOptions.map((department) => (
+          <option key={department.id} value={department.id}>
+            {department.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  </>
+) : userRole === 'BRANCH ADMIN' ? (
+  <>
+    {/* Branch Input (Fixed) */}
+    <label className="block text-md font-medium text-gray-700">
+      Branch
+      <select
+        name="branch"
+        value={searchCriteria.branch}
         onChange={handleInputChange}
-        className="p-2 border rounded-md outline-none"
-      />
-      <input
-        type="text"
-        name="subject"
-        placeholder="Subject"
-        value={searchCriteria.subject}
+        className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={true}
+      >
+        <option value={userBranch?.id}>{userBranch?.name}</option>
+      </select>
+    </label>
+
+    {/* Department Select */}
+    <label className="block text-md font-medium text-gray-700">
+      Department
+      <select
+        name="department"
+        value={searchCriteria.department}
         onChange={handleInputChange}
-        className="p-2 border rounded-md outline-none"
-      />
-      <input
-        type="text"
-        name="version"
-        placeholder="Version"
-        value={searchCriteria.version}
-        onChange={handleInputChange}
-        className="p-2 border rounded-md outline-none"
-      />
+        className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">Select Department</option>
+        {departmentOptions.length > 0 ? (
+          departmentOptions.map((department) => (
+            <option key={department.id} value={department.id}>
+              {department.name}
+            </option>
+          ))
+        ) : (
+          <option value="">No Departments Available</option>
+        )}
+      </select>
+    </label>
+  </>
+) : (
+  <>
+    {/* Branch Input (Fixed) */}
+    <label className="block text-md font-medium text-gray-700">
+      Branch
+      <select
+        name="branch"
+        value={userBranch?.id || ''}
+        disabled
+        className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
+      >
+        <option value={userBranch?.id}>{userBranch?.name}</option>
+      </select>
+    </label>
+
+    {/* Department Input (Fixed) */}
+    <label className="block text-md font-medium text-gray-700">
+      Department
+      <select
+        name="department"
+        value={userDepartment?.id || ''}
+        disabled
+        className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
+      >
+        <option value={userDepartment?.id}>{userDepartment?.name}</option>
+      </select>
+    </label>
+  </>
+)}
+
+{/* Category Select */}
+<label className="block text-md font-medium text-gray-700">
+  Category
+  <select
+    name="category"
+    value={searchCriteria.category}
+    onChange={handleInputChange}
+    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+  >
+    <option value="">Select Category</option>
+    {categoryOptions.map((category) => (
+      <option key={category.id} value={category.id}>
+        {category.name}
+      </option>
+    ))}
+  </select>
+</label>
+
+{/* File No. Input */}
+<label className="block text-md font-medium text-gray-700">
+  File No.
+  <input
+    type="text"
+    name="fileNo"
+    placeholder="File No."
+    value={searchCriteria.fileNo}
+    onChange={handleInputChange}
+    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+  />
+</label>
+
+{/* Title Input */}
+<label className="block text-md font-medium text-gray-700">
+  Title
+  <input
+    type="text"
+    name="title"
+    placeholder="Title"
+    value={searchCriteria.title}
+    onChange={handleInputChange}
+    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+  />
+</label>
+
+{/* Subject Input */}
+<label className="block text-md font-medium text-gray-700">
+  Subject
+  <input
+    type="text"
+    name="subject"
+    placeholder="Subject"
+    value={searchCriteria.subject}
+    onChange={handleInputChange}
+    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+  />
+</label>
+
+{/* Version Input */}
+<label className="block text-md font-medium text-gray-700">
+  Version
+  <input
+    type="text"
+    name="version"
+    placeholder="Version"
+    value={searchCriteria.version}
+    onChange={handleInputChange}
+    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+  />
+</label>
+
       {/* <select
         name="category"
         value={searchCriteria.category}
@@ -508,8 +558,10 @@ const renderSearchFields = () => {
 };
 
   return (
+    <div className="p-1">
+      <h1 className="text-xl mb-4 font-semibold">Search Documents</h1>
     <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-      <h2 className="text-lg font-semibold mb-3">Search Documents</h2>
+      
       {renderSearchFields()}
       <button
         onClick={handleSearch}
@@ -677,6 +729,7 @@ const renderSearchFields = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

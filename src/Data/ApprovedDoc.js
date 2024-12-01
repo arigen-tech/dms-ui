@@ -93,6 +93,8 @@ const ApprovedDoc = () => {
   if (error) return <div>{error}</div>;
 
   return (
+    <div className="p-1">
+      <h1 className="text-xl mb-4 font-semibold">Approved Documents</h1>
     <div className="bg-white p-3 rounded-lg shadow-sm">
       {error && <div className="text-red-500 mb-4">{error}</div>}
       <div className="overflow-x-auto">
@@ -106,6 +108,7 @@ const ApprovedDoc = () => {
               <th className="border p-2 text-left">Version</th>
               <th className="border p-2 text-left">Category</th>
               <th className="border p-2 text-left">Approval Status</th>
+              {/* <th className="border p-2 text-left">Approval by</th> */}
               <th className="border p-2 text-left">Approved Date</th>
               <th className="border p-2 text-left">View</th>
             </tr>
@@ -124,6 +127,7 @@ const ApprovedDoc = () => {
                   {doc.categoryMaster ? doc.categoryMaster.name : "No Category"}
                 </td>
                 <td className="border p-2">{doc.approvalStatus}</td>
+                {/* <td className="border p-2">{doc.employeeBy}</td> */}
                 <td className="border px-4 py-2">{formatDate(doc.updatedOn)}</td>
                 <td className="border p-2">
                   <button>
@@ -151,6 +155,7 @@ const ApprovedDoc = () => {
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 };
