@@ -270,6 +270,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       const filePaths = await response.json();
       console.log("Files uploaded successfully:", filePaths);
+      console.log("Files response successfully:", response.data);
+
 
       if (
         Array.isArray(filePaths) &&

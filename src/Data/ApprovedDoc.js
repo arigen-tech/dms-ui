@@ -108,7 +108,7 @@ const ApprovedDoc = () => {
               <th className="border p-2 text-left">Version</th>
               <th className="border p-2 text-left">Category</th>
               <th className="border p-2 text-left">Approval Status</th>
-              {/* <th className="border p-2 text-left">Approval by</th> */}
+              <th className="border p-2 text-left">Approved by</th>
               <th className="border p-2 text-left">Approved Date</th>
               <th className="border p-2 text-left">View</th>
             </tr>
@@ -127,7 +127,7 @@ const ApprovedDoc = () => {
                   {doc.categoryMaster ? doc.categoryMaster.name : "No Category"}
                 </td>
                 <td className="border p-2">{doc.approvalStatus}</td>
-                {/* <td className="border p-2">{doc.employeeBy}</td> */}
+                <td className="border p-2">{doc.employeeBy.name}</td>
                 <td className="border px-4 py-2">{formatDate(doc.updatedOn)}</td>
                 <td className="border p-2">
                   <button>

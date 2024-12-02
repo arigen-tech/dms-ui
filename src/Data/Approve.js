@@ -9,7 +9,7 @@ import {
   XMarkIcon,
   EyeIcon,
 } from "@heroicons/react/24/solid";
-import {API_HOST, DOCUMENTHEADER_API} from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 
 const Approve = () => {
   const [documents, setDocuments] = useState([]);
@@ -17,7 +17,10 @@ const Approve = () => {
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
+  const [rejectReasonError, setRejectReasonError] = useState(false);
   // const [selectedDoc, setSelectedDoc] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -28,8 +31,8 @@ const Approve = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const tokenKey = "tokenKey"; // Key used to retrieve the token from local storage
 
@@ -47,17 +50,20 @@ const Approve = () => {
 
   const fetchUserBranch = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const userId = localStorage.getItem('userId');
-      const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setUserBranch(response.data.branch);
     } catch (error) {
-      console.error('Error fetching user branch:', error);
-      setError('Error fetching user branch.');
+      console.error("Error fetching user branch:", error);
+      setError("Error fetching user branch.");
     } finally {
       setLoading(false);
     }
@@ -65,38 +71,48 @@ const Approve = () => {
 
   const fetchDocuments = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-        const token = localStorage.getItem('tokenKey');
-        const userId = localStorage.getItem('userId');
-        
-        // Fetch user details to get department ID
-        const userResponse = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        const departmentId = userResponse.data.department ? userResponse.data.department.id : null;
-        const branchId = userResponse.data.branch ? userResponse.data.branch.id : null;
+      const token = localStorage.getItem("tokenKey");
+      const userId = localStorage.getItem("userId");
 
-        // Only send departmentId if it's not null
-        const url = departmentId 
-            ? `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}/${departmentId}`  // With departmentId
-            : `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`;  // Without departmentId
-        
-        const response = await axios.get(url, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        setDocuments(response.data);
+      if (!token || !userId) {
+        setError("Authentication details missing. Please log in again.");
+        return;
+      }
+
+      // Fetch user details to get department and branch IDs
+      const userResponse = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const departmentId = userResponse.data?.department?.id;
+      const branchId = userResponse.data?.branch?.id;
+
+      // Construct the URL based on the availability of departmentId
+      const url = departmentId
+        ? `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}/${departmentId}`
+        : `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`;
+
+      // Fetch documents
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setDocuments(response.data);
     } catch (error) {
-        setError('Error fetching documents.');
-        console.error('Fetch documents error:', error);
+      setError("Error fetching documents. Please try again later.");
+      console.error(
+        "Fetch documents error:",
+        error?.response?.data || error.message
+      );
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
-
-
-  
+  };
 
   const fetchPaths = async (doc) => {
     try {
@@ -106,7 +122,7 @@ const Approve = () => {
       }
 
       const response = await axios.get(
-        `${ API_HOST }/api/documents/byDocumentHeader/${doc.id}`,
+        `${API_HOST}/api/documents/byDocumentHeader/${doc.id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -132,17 +148,19 @@ const Approve = () => {
     const fileName = file.docName; // The file name
   
     // Construct the URL based on the Spring Boot @GetMapping pattern
-    const fileUrl = `${ API_HOST }/api/documents/${year}/${month}/${category}/${fileName}`;
+    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${encodeURIComponent(category)}/${encodeURIComponent(fileName)}`;
+  
+    console.log('File URL:', fileUrl);
   
     try {
       // Fetch the file using axios and pass the token in the headers
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob' // Important to get the response as a blob (binary large object)
+        responseType: "blob", // Important to get the response as a blob (binary large object)
       });
   
-      // Create a blob from the response and specify it as a PDF
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      // Create a blob from the response and specify it as a PDF or any other type
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
       const blobUrl = window.URL.createObjectURL(blob);
   
       // Open the blob in a new tab
@@ -151,7 +169,6 @@ const Approve = () => {
       console.error("Error fetching file:", error);
     }
   };
-  
   
 
   const handleStatusChange = (doc, status) => {
@@ -170,7 +187,7 @@ const Approve = () => {
       const token = localStorage.getItem(tokenKey);
 
       const response = await axios.patch(
-        `${ API_HOST }/api/documents/${documentToApprove.id}/approval-status`, // Change to PATCH
+        `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`, // Change to PATCH
         null, // No body needed for the PATCH request since we're using query parameters
         {
           headers: {
@@ -183,8 +200,12 @@ const Approve = () => {
         }
       );
 
-      console.log("Document approved:", response.data);
+      setSuccessMessage("Document Approved Successfully");
       setIsConfirmModalOpen(false);
+      fetchDocuments();
+
+      setIsConfirmModalOpen(false);
+      setIsSuccessModalOpen(true);
     } catch (error) {
       console.error("Error approving document:", error);
     }
@@ -196,7 +217,7 @@ const Approve = () => {
       const token = localStorage.getItem(tokenKey);
 
       const response = await axios.patch(
-        `${ API_HOST }/api/documents/${documentToApprove.id}/approval-status`, // Change to PATCH
+        `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`, // Change to PATCH
         null, // No body needed for the PATCH request since we're using query parameters
         {
           headers: {
@@ -209,10 +230,14 @@ const Approve = () => {
           },
         }
       );
+      setSuccessMessage("Document Rejected Successfully");
 
-      console.log("Document rejected:", response.data);
       setIsRejectReasonModalOpen(false);
       setRejectReason("");
+      fetchDocuments();
+
+      setIsConfirmModalOpen(false);
+      setIsSuccessModalOpen(true);
     } catch (error) {
       console.error("Error rejecting document:", error);
     }
@@ -333,8 +358,7 @@ const Approve = () => {
                     {doc.employee ? doc.employee.name : "N/A"}
                   </td>
                   <td className="border p-2">
-                    {doc.employee &&
-                    doc.employee.department 
+                    {doc.employee && doc.employee.department
                       ? doc.employee.department.name
                       : "No Department"}
                   </td>
@@ -434,11 +458,12 @@ const Approve = () => {
                       </p>
                       <p className="text-sm text-gray-600">
                         <strong>Branch:</strong>{" "}
-                        {selectedDoc?.branch?.name || "No branch"}
+                        {selectedDoc?.employee?.branch?.name || "No branch"}
                       </p>
                       <p className="text-sm text-gray-600">
                         <strong>Department:</strong>{" "}
-                        {selectedDoc?.department?.name || "No department"}
+                        {selectedDoc?.employee?.department?.name ||
+                          "No department"}
                       </p>
                     </div>
                   </div>
@@ -543,21 +568,53 @@ const Approve = () => {
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Enter rejection reason"
+              required
             ></textarea>
+            {/* Error message */}
+            {rejectReasonError && (
+              <p className="text-red-500 text-sm">
+                Please enter a rejection reason with at least 10 characters.
+              </p>
+            )}
             <div className="flex justify-end">
               <button
                 className="bg-red-500 text-white p-2 rounded-md mr-2"
-                onClick={handleRejectDocument}
+                onClick={() => {
+                  if (rejectReason.trim().length < 10) {
+                    setRejectReasonError(true); // Set error message
+                  } else {
+                    setRejectReasonError(false); // Clear error message
+                    handleRejectDocument(); // Submit rejection
+                  }
+                }}
               >
                 Submit
               </button>
               <button
                 className="bg-gray-500 text-white p-2 rounded-md"
-                onClick={() => setIsRejectReasonModalOpen(false)}
+                onClick={() => {
+                  setRejectReasonError(false); // Clear error message
+                  setIsRejectReasonModalOpen(false);
+                }}
               >
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isSuccessModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-md text-center w-1/3">
+            <div className="spinner-border animate-spin text-green-500 w-6 h-6 mb-4"></div>
+            <h3 className="text-lg font-bold mb-4">{successMessage}</h3>
+            <button
+              className="bg-green-500 text-white p-2 rounded-md"
+              onClick={() => setIsSuccessModalOpen(false)}
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
