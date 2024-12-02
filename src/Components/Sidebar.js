@@ -64,6 +64,12 @@ function Sidebar() {
         totalRejectedStatusDocById: 0,
         departmentCountForBranch: 0,
         nullRoleEmployeeCountForBranch: 0,
+        departmentUser: 0,
+  nullRoleEmployeeCountForDepartment: 0,
+  totalDocumentsByDepartmentId: 0,
+  totalPendingDocumentsByDepartmentId: 0,
+  totalApprovedStatusDocByDepartmentId: 0,
+  totalRejectedStatusDocByDepartmentId: 0,
       };
   });
 
@@ -186,7 +192,7 @@ function Sidebar() {
                 to="/users"
                 icon={UserGroupIcon}
                 text="Users"
-                count={counts.totalUser}
+                count={counts.departmentUser}
               />
               <SidebarLink
                 to="/all-documents"
@@ -398,13 +404,13 @@ function Sidebar() {
                 to="/Departmentusers"
                 icon={UserGroupIcon}
                 text="Users"
-                count={counts.branchUser}
+                count={counts.departmentUser}
               />
               <SidebarLink
                 to="/PendingRole"
                 icon={UserPlusIcon}
                 text="Pending Users"
-                count={counts.nullRoleEmployeeCountForBranch}
+                count={counts.nullRoleEmployeeCountForDepartment}
               />
               {/* <SidebarLink
                 to="/create-departments"
@@ -435,19 +441,20 @@ function Sidebar() {
                       to="/approve-documents"
                       icon={IoDocumentLock}
                       text="Pending Approvals"
-                      count={counts.totalPendingDocumentsById}
+                      count={counts.totalPendingDocumentsByDepartmentId}
                     />
                     <SidebarLink
                       to="/approve-by-admin"
                       icon={DocumentCheckIcon}
                       text="Approved Document"
-                      count={counts.totalApprovedStatusDocById}
+                      count={counts.totalApprovedStatusDocByDepartmentId }
                     />
                     <SidebarLink
                       to="/reject-by-admin"
                       icon={DocumentTextIcon}
                       text="Rejected Documents"
-                      count={counts.totalRejectedStatusDocById}
+                      count={counts.totalRejectedStatusDocByDepartmentId
+                      }
                     />
                     <SidebarLink
                       to="/search"

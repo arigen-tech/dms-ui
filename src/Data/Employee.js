@@ -330,12 +330,18 @@ const UserAddEmployee = () => {
         name: employeeToEdit.name,
         email: employeeToEdit.email,
         mobile: employeeToEdit.mobile,
-        branch: employeeToEdit.branch || { id: "", name: "", address: "" },
-        department: employeeToEdit.department || { id: "", name: "" },
+        // Ensure the branch and department have both id and name
+        branch: employeeToEdit.branch || { id: "", name: "" },
+        department: employeeToEdit.department || { id: "", name: "" }, // Ensure this is set correctly
         password: "", // Password field left empty for editing
         createdOn: employeeToEdit.createdOn,
-        enabled: employeeToEdit.enabled, // No need for fallback since it should always be a boolean
+        enabled: employeeToEdit.enabled,
       });
+
+      // Optionally fetch departments for the selected branch if needed
+      if (employeeToEdit.branch) {
+        fetchDepartments(employeeToEdit.branch.id);
+      }
     }
   };
 
@@ -576,43 +582,53 @@ const UserAddEmployee = () => {
             {/* Branch Selection */}
             <label className="block text-md font-medium text-gray-700">
               Branch
-              <select
-                name="branch"
-                value={formData.branch?.id || ""}
-                onChange={(e) => handleSelectChange(e, "branch")}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={role !== "ADMIN"}
-              >
-                <option value={userBranch?.id || ""}>
-                  {userBranch?.name || "Select Branch"}
-                </option>
-                {branchOptions.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
+              {role === "ADMIN" ? (
+                <select
+                  name="branch"
+                  value={formData.branch?.id || ""}
+                  onChange={(e) => handleSelectChange(e, "branch")}
+                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="" disabled>
+                    Select Branch
                   </option>
-                ))}
-              </select>
+                  {branchOptions.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="mt-1 block w-full p-3 border rounded-md bg-gray-100">
+                  {formData.branch?.name || "No Branch Selected"}
+                </div>
+              )}
             </label>
 
             {/* Department Selection */}
             <label className="block text-md font-medium text-gray-700">
               Department
-              <select
-                name="department"
-                value={formData.department?.id || ""}
-                onChange={(e) => handleSelectChange(e, "department")}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={role !== "ADMIN"}
-              >
-                <option value={userDepartment?.id || ""}>
-                  {userDepartment?.name || "Select Department"}
-                </option>
-                {departmentOptions.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
+              {role === "ADMIN" ? (
+                <select
+                  name="department"
+                  value={formData.department?.id || ""}
+                  onChange={(e) => handleSelectChange(e, "department")}
+                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="" disabled>
+                    Select Department
                   </option>
-                ))}
-              </select>
+                  {departmentOptions.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="mt-1 block w-full p-3 border rounded-md bg-gray-100">
+                  {formData.department?.name || "No Department Selected"}
+                </div>
+              )}
             </label>
           </div>
 

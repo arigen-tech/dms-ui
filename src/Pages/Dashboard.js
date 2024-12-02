@@ -67,6 +67,12 @@ function Dashboard() {
     totalRejectedStatusDocById: 0,
     departmentCountForBranch: 0,
     nullRoleEmployeeCountForBranch: 0,
+    departmentUser: 0,
+  nullRoleEmployeeCountForDepartment: 0,
+  totalDocumentsByDepartmentId: 0,
+  totalPendingDocumentsByDepartmentId: 0,
+  totalApprovedStatusDocByDepartmentId: 0,
+  totalRejectedStatusDocByDepartmentId: 0,
   });
 
   const navigate = useNavigate();
