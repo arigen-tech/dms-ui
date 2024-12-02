@@ -180,7 +180,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       }
 
       // Optional: more user-friendly error handling
-      alert(`Failed to fetch document paths: ${error.message || 'Unknown error'}`);
+      showPopup(`Failed to fetch document paths: ${error.message || 'Unknown error'}`);
 
       return null; // Explicitly return null on error
     }
@@ -217,7 +217,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       window.open(blobUrl, "_blank");
     } catch (error) {
       console.error("Error fetching file:", error);
-      alert("There was an error opening the file. Please try again.");
+      showPopup("There was an error opening the file. Please try again.");
     }
   };
 
@@ -246,7 +246,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   // Handle the file upload when the "Upload" button is clicked
   const handleUploadDocument = async () => {
     if (selectedFiles.length === 0) {
-      alert("Please select at least one file to upload.");
+      showPopup("Please select at least one file to upload.");
       return;
     }
 
@@ -294,7 +294,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-      showPopup(`File upload failed: ${error.message}`, 'error');
+      showPopup(`File upload failed `, 'error');
     }
   };
 
@@ -361,7 +361,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       fetchDocuments(); // Refresh the documents list
     } catch (error) {
       console.error("Error saving document:", error);
-      showPopup(`Document save failed: ${error.message}`, 'error');
+      showPopup(`Document save failed`, 'error');
     }
   };
 
@@ -418,7 +418,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       })
       .catch((error) => {
         console.error('Error:', error);
-        showPopup(`Document Update failed: ${error.message}`, 'error');
+        showPopup(`Document Update failed`, 'error');
       });
   };
 
