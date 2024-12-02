@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Search from "./Search"; // Import the Search component
+import Popup from '../Components/Popup';
 
 import {
   PencilIcon,
@@ -40,6 +41,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [editingDoc, setEditingDoc] = useState(null); // To hold the document being edited
   const [updatedDoc, setUpdatedDoc] = useState(null);
   const [searchResults, setSearchResults] = useState(null);
+  const [popupMessage, setPopupMessage] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -283,7 +285,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         }));
 
         setUploadedFileNames(selectedFiles.map((file) => file.name));
-        alert("Files uploaded successfully!");
+        showPopup('Files uploaded successfully!', 'success');
 
         setSelectedFiles([]);
         setIsUploadEnabled(false);
@@ -292,7 +294,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("There was an error uploading the file. Please try again.");
+      showPopup(`File upload failed: ${error.message}`, 'error');
     }
   };
 
@@ -308,7 +310,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       !formData.category ||
       formData.uploadedFilePaths.length === 0
     ) {
-      alert("Please fill in all the required fields and upload a file.");
+      showPopup('Please fill in all the required fields and upload a file.', 'error');
       return;
     }
 
@@ -343,7 +345,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       }
 
       // If successful, reset the form and reload documents
-      alert("Document saved successfully!");
+      showPopup('Document saved successfully!', 'success');
 
       // Reset the form data
       setFormData({
@@ -359,7 +361,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       fetchDocuments(); // Refresh the documents list
     } catch (error) {
       console.error("Error saving document:", error);
-      alert("There was an error saving the document. Please try again.");
+      showPopup(`Document save failed: ${error.message}`, 'error');
     }
   };
 
@@ -401,6 +403,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       })
       .then((data) => {
         console.log('Document updated successfully:', data);
+        showPopup('Document Update successfully!', 'success');
+
         // Reset the form and state
         setFormData({
           fileNo: '',
@@ -414,7 +418,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       })
       .catch((error) => {
         console.error('Error:', error);
-        alert('An error occurred while updating the document');
+        showPopup(`Document Update failed: ${error.message}`, 'error');
       });
   };
 
@@ -456,6 +460,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     window.print(); // Simple print functionality
   };
 
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({ message, type });
+  };
+  
   // const handleSearchResults = (results) => {
   //   setSearchResults(results);
   //   setCurrentPage(1); // Reset to first page when new search results come in
@@ -471,7 +479,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       <h1 className="text-xl mb-4 font-semibold">DOCUMENT MANAGEMENT</h1>
       {/* Add the Search component
        <Search onSearchResults={handleSearchResults} /> */}
+
       <div className="bg-white p-3 rounded-lg shadow-sm">
+
+      {popupMessage && (
+        <Popup
+          message={popupMessage.message}
+          type={popupMessage.type}
+          onClose={() => setPopupMessage(null)}
+        />
+      )}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4">
             {/* File No Input */}
