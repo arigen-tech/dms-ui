@@ -65,6 +65,10 @@ function Sidebar() {
         departmentCountForBranch: 0,
         nullRoleEmployeeCountForBranch: 0,
         departmentUser: 0,
+        rejectedDocsbyid: 0,
+        approvedDocsbyid: 0,
+        pendingDocsbyid: 0,
+        createdByCount: 0,
   nullRoleEmployeeCountForDepartment: 0,
   totalDocumentsByDepartmentId: 0,
   totalPendingDocumentsByDepartmentId: 0,
@@ -85,11 +89,8 @@ function Sidebar() {
         }
 
         const response = await axios.get(
-          `${API_HOST}/Dashboard/GetAllCountsForDashBoard`,
+          `${API_HOST}/api/dashboard/getAllCount/${employeeId}`,
           {
-            params: {
-              employeeId: employeeId, // Pass employeeId as a query parameter
-            },
             headers: { Authorization: `Bearer ${token}` }, // Attach token in headers
           }
         );
@@ -192,25 +193,25 @@ function Sidebar() {
                 to="/users"
                 icon={UserGroupIcon}
                 text="Users"
-                count={counts.departmentUser}
+                count={counts.createdByCount}
               />
               <SidebarLink
                 to="/all-documents"
                 icon={DocumentArrowUpIcon}
                 text="Upload Document"
-                count={counts.totalPendingDocumentsById}
+                count={counts.pendingDocsbyid}
               />
               <SidebarLink
                 to="/approvedDocs"
                 icon={DocumentCheckIcon}
                 text="Approved Document"
-                count={counts.totalApprovedDocumentsById}
+                count={counts.approvedDocsbyid}
               />
               <SidebarLink
                 to="/rejectedDocs"
                 icon={DocumentTextIcon}
                 text="Rejected Document"
-                count={counts.totalRejectedDocumentsById}
+                count={counts.rejectedDocsbyid}
               />
               {/* Added Search Documents Link */}
               <SidebarLink
