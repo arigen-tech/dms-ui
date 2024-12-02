@@ -105,23 +105,26 @@ function Dashboard() {
       if (employeeData.branch && employeeData.branch.id) {
         const branchId = employeeData.branch.id;
         setBranchsId(branchId);
-        console.log("Branch ID:", branchId); // Log branch ID
+        console.log("Branch ID:", branchId);
       } else {
         console.warn("Branch ID is not available in the response.");
         setBranchsId(null);
       }
   
-      // Set Department ID if available
-      if (employeeData.department && employeeData.department.id) {
+      // Set Department ID if available, handle null case
+      if (employeeData.department) {
         const departmentId = employeeData.department.id;
         setDepartmentId(departmentId);
-        console.log("Department ID:", departmentId); // Log department ID
+        console.log("Department ID:", departmentId);
       } else {
-        console.warn("Department ID is not available in the response.");
+        console.warn("Department is null.");
         setDepartmentId(null);
       }
     } catch (error) {
       console.error("Error fetching user details:", error.response?.data || error.message);
+      // Set default values or handle error
+      setBranchsId(null);
+      setDepartmentId(null);
     }
   };
   
@@ -142,7 +145,6 @@ function Dashboard() {
         const authHeader = { headers: { Authorization: `Bearer ${token}` } };
         const url = `${API_HOST}/api/dashboard/getAllCount/${employeeId}`;
   
-        // Fetch stats and summary concurrently
         const startDate = `${currentYear}-01-01 00:00:00`;
         const endDate = `${currentYear}-12-31 23:59:59`;
         let summaryUrl = `${API_HOST}/api/documents/document/summary/by/${employeeId}`;
@@ -150,11 +152,13 @@ function Dashboard() {
         if (role === "ADMIN") {
           summaryUrl = `${API_HOST}/api/documents/total`;
         } else if (role === "BRANCH ADMIN") {
+          // Always use branchesId for Branch Admin
           summaryUrl = `${API_HOST}/api/documents/branch/${branchesId}`;
-          // summaryUrl = "http://localhost:8080/api/documents/branch/1";
-
         } else if (role === "DEPARTMENT ADMIN") {
-          summaryUrl = `${API_HOST}/api/documents/department/${departmentId}`; // Example branch ID, adjust as necessary
+          // Use departmentId if available, otherwise fall back to branchesId
+          summaryUrl = departmentId 
+            ? `${API_HOST}/api/documents/department/${departmentId}`
+            : `${API_HOST}/api/documents/branch/${branchesId}`;
         } else if (role === "USER") {
           summaryUrl = `${API_HOST}/api/documents/document/summary/by/${employeeId}`;
         }
@@ -169,8 +173,7 @@ function Dashboard() {
   
         setStats(statsResponse.data);
   
-        const { months, approvedDocuments, rejectedDocuments } =
-          summaryResponse.data;
+        const { months, approvedDocuments, rejectedDocuments } = summaryResponse.data;
         const mappedData = months.map((month, index) => ({
           name: month,
           ApprovedDocuments: approvedDocuments[index],
@@ -192,7 +195,7 @@ function Dashboard() {
     };
   
     fetchStatsAndData();
-  }, [navigate, currentYear, branchId, departmentId]);
+  }, [navigate, currentYear, branchesId, departmentId]);
   
  
 
