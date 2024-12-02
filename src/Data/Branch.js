@@ -28,7 +28,8 @@ const Branch = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [branchToToggle, setBranchToToggle] = useState(null);
   const [editingBranchId, setEditingBranchId] = useState(null); // Define the state for editing role ID
-
+  const [message, setMessage] = useState(null); // For the success message
+  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -64,7 +65,6 @@ const Branch = () => {
           updatedOn: new Date().toISOString(),
           isActive: formData.isActive ? 1 : 0,
         };
-        console.log('Sending branch data:', newBranch); // Debugging
 
         const response = await axios.post(`${BRANCH_API}/save`, newBranch, {
           headers: {
@@ -73,28 +73,39 @@ const Branch = () => {
           },
         });
 
-        console.log('Branch added:', response.data); // Debugging
         setBranches([...branches, response.data]);
         setFormData({ name: '', address: '', isActive: true });
-        alert('Branch added successfully!');
+
+        // Set success message
+        setMessage('Branch added successfully!');
+        setMessageType('success');
       } catch (error) {
         console.error('Error adding branch:', error.response ? error.response.data : error.message);
-        alert('Failed to add the Branch. Please try again.');
+
+        // Set error message
+        setMessage('Failed to add the Branch. Please try again.');
+        setMessageType('error');
       }
     } else {
-      console.error('Form data is incomplete');
+      // Set warning message
+      setMessage('Please fill in all required fields.');
+      setMessageType('warning');
     }
+
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
   };
+
 
 
   // Function to handle role editing
   const handleEditBranch = (branchId) => {
     // Set the actual ID of the branch being edited
     setEditingBranchId(branchId);
-  
+
     // Find the branch in the original list by its ID to populate the form
     const branchToEdit = branches.find(branch => branch.id === branchId);
-  
+
     // Populate the form with the branch data (if found)
     if (branchToEdit) {
       setFormData({
@@ -107,7 +118,7 @@ const Branch = () => {
       console.error('Branch not found for ID:', branchId); // Log if the branch is not found
     }
   };
-  
+
   const handleSaveEdit = async () => {
     if (formData.name.trim() && editingBranchId !== null) {
       try {
@@ -115,7 +126,9 @@ const Branch = () => {
         const branchIndex = branches.findIndex(branch => branch.id === editingBranchId);
   
         if (branchIndex === -1) {
-          alert('Branch not found!');
+          setMessage('Branch not found!');
+          setMessageType('error');
+          setTimeout(() => setMessage(null), 3000);
           return;
         }
   
@@ -144,14 +157,24 @@ const Branch = () => {
         setBranches(updatedBranches);
         setFormData({ name: '', address: '', isActive: true }); // Reset form data
         setEditingBranchId(null); // Reset the editing state
-        alert('Branch updated successfully!');
+  
+        // Show success message
+        setMessage('Branch updated successfully!');
+        setMessageType('success');
       } catch (error) {
         console.error('Error updating branch:', error.response ? error.response.data : error.message);
-        alert('Failed to update the branch. Please try again.');
+  
+        // Show error message
+        setMessage('Failed to update the branch. Please try again.');
+        setMessageType('error');
       }
+  
+      // Clear the message after 3 seconds
+      setTimeout(() => setMessage(null), 3000);
     }
   };
   
+
 
   const handleToggleActiveStatus = (branch) => {
     setBranchToToggle(branch);
@@ -166,35 +189,51 @@ const Branch = () => {
           isActive: branchToToggle.isActive === 1 ? 0 : 1, // Toggle between 1 and 0
           updatedOn: new Date().toISOString(),
         };
-
+  
         const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
         const response = await axios.put(
           `${BRANCH_API}/updatestatus/${updatedBranch.id}`, // Update API endpoint
           updatedBranch,
           {
             headers: {
-              'Content-Branch': 'application/json',
+              'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
+  
         const updatedBranches = branches.map(branch =>
           branch.id === updatedBranch.id ? response.data : branch
         );
+  
         setBranches(updatedBranches);
         setModalVisible(false);
         setBranchToToggle(null);
-        alert('Status Changed successfully!');
+  
+        // Show success message
+        setMessage('Status changed successfully!');
+        setMessageType('success');
       } catch (error) {
-        console.error('Error toggling Category status:', error.response ? error.response.data : error.message);
-        alert('Failed to changing the status. Please try again.');
+        console.error('Error toggling branch status:', error.response ? error.response.data : error.message);
+  
+        // Show error message
+        setMessage('Failed to change the status. Please try again.');
+        setMessageType('error');
       }
+  
+      // Clear the message after 3 seconds
+      setTimeout(() => setMessage(null), 3000);
     } else {
       console.error('No Branch selected for status toggle');
+      setMessage('No branch selected for status toggle.');
+      setMessageType('error');
+  
+      // Clear the message after 3 seconds
+      setTimeout(() => setMessage(null), 3000);
     }
   };
- 
+  
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -210,19 +249,19 @@ const Branch = () => {
   };
 
   const filteredBranches = branches.filter(branch => {
-    const statusText = branch.isActive ? 'active' : 'inactive'; 
+    const statusText = branch.isActive ? 'active' : 'inactive';
     const createdOnText = formatDate(branch.createdOn);
     const updatedOnText = formatDate(branch.updatedOn);
-  
+
     return (
       (branch.name && branch.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (branch.address && branch.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      statusText.includes(searchTerm.toLowerCase()) || 
-      createdOnText.includes(searchTerm.toLowerCase()) || 
-      updatedOnText.includes(searchTerm.toLowerCase()) 
+      statusText.includes(searchTerm.toLowerCase()) ||
+      createdOnText.includes(searchTerm.toLowerCase()) ||
+      updatedOnText.includes(searchTerm.toLowerCase())
     );
   });
-  
+
   const sortedBranches = filteredBranches.sort((a, b) => b.isActive - a.isActive);
 
   const totalItems = sortedBranches.length;
@@ -232,27 +271,50 @@ const Branch = () => {
   return (
     <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">Branches</h1>
+
+      {message && (
+          <div
+            className={`mt-4 p-3 rounded-md text-sm ${messageType === 'success'
+                ? 'bg-green-100 text-green-700'
+                : messageType === 'error'
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}
+          >
+            {message}
+          </div>
+          )}
       <div className="bg-white p-4 rounded-lg shadow-sm">
         {/* Form Section */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
-            <input
-              type="text"
-              placeholder="Address"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Name Input */}
+            <label className="block text-md font-medium text-gray-700">
+              Name
+              <input
+                type="text"
+                placeholder="Enter name"
+                name="name"
+                value={formData.name || ""}
+                onChange={handleInputChange}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+
+            {/* Address Input */}
+            <label className="block text-md font-medium text-gray-700">
+              Address
+              <input
+                type="text"
+                placeholder="Enter address"
+                name="address"
+                value={formData.address || ""}
+                onChange={handleInputChange}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
           </div>
+
           <div className="mt-3 flex justify-start">
             {editingBranchId === null ? (
               <button onClick={handleAddBranch} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
@@ -339,6 +401,7 @@ const Branch = () => {
             </tbody>
           </table>
         </div>
+        
 
         {/* Pagination */}
         <div className="flex justify-between items-center mt-4">

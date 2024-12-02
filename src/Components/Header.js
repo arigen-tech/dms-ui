@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bars3Icon, KeyIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/solid';
+import { Bars3Icon, PencilIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/solid';
 import adminPhoto from '../Assets/profile.svg';
 
 function Header({ toggleSidebar, userName }) {
@@ -69,8 +69,8 @@ function Header({ toggleSidebar, userName }) {
                 onClick={handleChangePassword}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
               >
-                <KeyIcon className="h-5 w-5 mr-2 text-gray-500" />
-                Change Password
+                <PencilIcon className="h-5 w-5 mr-2 text-gray-500" />
+                Edit-Profile
               </button>
               <hr className='border-t border-gray-200'/>
               <button

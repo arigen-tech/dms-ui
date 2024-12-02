@@ -60,7 +60,7 @@ const BranchEmployee = () => {
             const userId = localStorage.getItem("userId");
             const token = localStorage.getItem("tokenKey");
             const response = await axios.get(
-                `${ API_HOST }/employee/findById/${userId}`,
+                `${API_HOST}/employee/findById/${userId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -86,7 +86,7 @@ const BranchEmployee = () => {
         try {
             const token = localStorage.getItem("tokenKey");
             const employeeResponse = await axios.get(
-                `${ API_HOST }/employee/branch/${userBranch.id}`,
+                `${API_HOST}/employee/branch/${userBranch.id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -185,7 +185,7 @@ const BranchEmployee = () => {
                 console.log("Employee Data to Send:", employeeData);
 
                 const response = await axios.post(
-                    `${ API_HOST }/register/create`,
+                    `${API_HOST}/register/create`,
                     employeeData,
                     {
                         headers: {
@@ -275,7 +275,7 @@ const BranchEmployee = () => {
                 };
 
                 const response = await axios.put(
-                    `${ API_HOST }/employee/update/${formData.id}`,
+                    `${API_HOST}/employee/update/${formData.id}`,
                     updatedEmployeeData,
                     {
                         headers: {
@@ -331,7 +331,7 @@ const BranchEmployee = () => {
             const newStatus = employeeToToggle.active ? false : true;
 
             await axios.put(
-                `${ API_HOST }/employee/updateStatus/${employeeToToggle.id}`,
+                `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`,
                 newStatus,
                 {
                     headers: {
@@ -432,56 +432,79 @@ const BranchEmployee = () => {
 
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
                     <div className="grid grid-cols-3 gap-4">
-                        <input
-                            type="text"
-                            placeholder="Name"
-                            name="name"
-                            value={formData.name || ""}
-                            onChange={handleInputChange}
-                            className="p-2 border rounded-md outline-none"
-                        />
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            name="email"
-                            value={formData.email || ""}
-                            onChange={handleInputChange}
-                            className="p-2 border rounded-md outline-none"
-                        />
-                        <input
-                            type="tel"
-                            placeholder="Phone"
-                            name="mobile"
-                            maxmaxLength={10}
-                            minLength={10}
-                            value={formData.mobile || ""}
-                            onChange={handleInputChange}
-                            className="p-2 border rounded-md outline-none"
-                        />
+                        {/* Name Input */}
+                        <label className="block text-md font-medium text-gray-700">
+                            Name
+                            <input
+                                type="text"
+                                placeholder="Enter name"
+                                name="name"
+                                value={formData.name || ""}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </label>
 
-                        {/* Branch Input (Fixed) */}
-                        <input
-                            type="text"
-                            name="branch"
-                            value={userBranch ? userBranch.name : "Loading..."}
-                            disabled
-                            className="p-2 border rounded-md outline-none bg-gray-100"
-                        />
+                        {/* Email Input */}
+                        <label className="block text-md font-medium text-gray-700">
+                            Email
+                            <input
+                                type="email"
+                                placeholder="Enter email"
+                                name="email"
+                                value={formData.email || ""}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </label>
+
+                        {/* Phone Input */}
+                        <label className="block text-md font-medium text-gray-700">
+                            Phone
+                            <input
+                                type="tel"
+                                placeholder="Enter phone number"
+                                name="mobile"
+                                maxLength={10}
+                                minLength={10}
+                                value={formData.mobile || ""}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </label>
+
+
+                        {/* Branch Input */}
+                        <label className="block text-md font-medium text-gray-700">
+                            Branch
+                            <input
+                                type="text"
+                                name="branch"
+                                value={userBranch ? userBranch.name : "Loading..."}
+                                disabled
+                                className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </label>
 
                         {/* Department Selection */}
-                        <select
-                            name="department"
-                            value={formData.department?.id || ""}
-                            onChange={handleSelectChange}
-                            className="p-2 border rounded-md outline-none"
-                        >
-                            <option value="">Select Department</option>
-                            {departmentOptions.map((department) => (
-                                <option key={department.id} value={department.id}>
-                                    {department.name}
-                                </option>
-                            ))}
-                        </select>
+                        <label className="block text-md font-medium text-gray-700">
+                            Department
+                            <select
+                                name="department"
+                                value={formData.department?.id || ""}
+                                onChange={handleSelectChange}
+                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select Department</option>
+                                {departmentOptions.map((department) => (
+                                    <option key={department.id} value={department.id}>
+                                        {department.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+
                     </div>
                     <div className="mt-3 flex justify-start">
                         {editingIndex === null ? (

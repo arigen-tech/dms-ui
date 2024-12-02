@@ -26,6 +26,8 @@ const Department = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [toggleDepartment, setToggleDepartment] = useState(null);
+  const [message, setMessage] = useState(null); // For the success message
+  const [messageType, setMessageType] = useState('');
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -33,7 +35,7 @@ const Department = () => {
   useEffect(() => {
     fetchBranches();
     fetchDepartments();
-  },[]);
+  }, []);
 
   const fetchBranches = async () => {
     try {
@@ -103,31 +105,45 @@ const Department = () => {
           updatedOn: new Date().toISOString(),
           isActive: formData.isActive ? 1 : 0,
         };
+  
         const response = await axios.post(`${DEPAETMENT_API}/save`, newDepartment, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
         });
+  
         setDepartments([...departments, response.data]);
         setFormData({ name: '', branch: null, isActive: true });
-        alert('Department added successfully!');
+  
+        // Set success message
+        setMessage('Department added successfully!');
+        setMessageType('success');
       } catch (error) {
-        console.error('Error adding department:', error);
-        alert('Failed to adding the Department. Please try again.');
+        console.error('Error adding department:', error.response ? error.response.data : error.message);
+  
+        // Set error message
+        setMessage('Failed to add the Department. Please try again.');
+        setMessageType('error');
       }
     } else {
-      console.error('Form data is incomplete');
+      // Set warning message
+      setMessage('Please fill in all required fields.');
+      setMessageType('warning');
     }
+  
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
   };
+  
 
   const handleEditDepartment = (departmentId) => {
     // Set the ID of the department being edited
     setEditingIndex(departmentId);
-    
+
     // Find the department in the original list by its ID to populate the form
     const departmentToEdit = departments.find(department => department.id === departmentId);
-    
+
     // Populate the form with the department data (if found)
     if (departmentToEdit) {
       setFormData({
@@ -140,7 +156,7 @@ const Department = () => {
       console.error('Department not found for ID:', departmentId); // Log if the department is not found
     }
   };
-  
+
   const handleSaveEdit = async () => {
     if (formData.name.trim() && formData.branch) {
       try {
@@ -148,7 +164,9 @@ const Department = () => {
         const departmentIndex = departments.findIndex(department => department.id === formData.id);
   
         if (departmentIndex === -1) {
-          alert('Department not found!');
+          setMessage('Department not found!');
+          setMessageType('error');
+          setTimeout(() => setMessage(null), 3000);
           return;
         }
   
@@ -178,16 +196,28 @@ const Department = () => {
         setDepartments(updatedDepartments);
         setFormData({ name: '', branch: null, isActive: true }); // Reset form data
         setEditingIndex(null); // Reset the editing state
-        alert('Department updated successfully!');
+  
+        // Set success message
+        setMessage('Department updated successfully!');
+        setMessageType('success');
       } catch (error) {
         console.error('Error updating department:', error.response ? error.response.data : error.message);
-        alert('Failed to update the department. Please try again.');
+  
+        // Set error message
+        setMessage('Failed to update the department. Please try again.');
+        setMessageType('error');
       }
     } else {
-      console.error('Form data is incomplete');
+      // Set warning message
+      setMessage('Please fill in all required fields.');
+      setMessageType('warning');
     }
+  
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
   };
   
+
 
 
   const handleToggleActive = (department) => {
@@ -197,37 +227,50 @@ const Department = () => {
 
   const confirmToggleActiveStatus = async () => {
     if (toggleDepartment) {
-        try {
-            const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
-            
-            const token = localStorage.getItem('tokenKey');
-            const response = await axios.put(
-                `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
-                isActive,  // Send only the isActive value
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                }
-            );
-            
-            const updatedDepartments = departments.map(dept =>
-                dept.id === toggleDepartment.id ? { ...dept, isActive: isActive } : dept
-            );
-            
-            setDepartments(updatedDepartments);
-            setModalVisible(false);
-            setToggleDepartment(null);
-            alert('Status changed successfully!');
-        } catch (error) {
-            console.error('Error toggling department status:', error.response ? error.response.data : error.message);
-            alert('Failed to change the status. Please try again.');
-        }
+      try {
+        const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
+  
+        const token = localStorage.getItem('tokenKey');
+        const response = await axios.put(
+          `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
+          isActive, // Send only the isActive value
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+  
+        // Update the department's status locally
+        const updatedDepartments = departments.map(dept =>
+          dept.id === toggleDepartment.id ? { ...dept, isActive: isActive } : dept
+        );
+  
+        setDepartments(updatedDepartments);
+        setModalVisible(false); // Close modal
+        setToggleDepartment(null); // Clear the toggle department state
+  
+        // Set success message
+        setMessage('Status changed successfully!');
+        setMessageType('success');
+      } catch (error) {
+        console.error('Error toggling department status:', error.response ? error.response.data : error.message);
+  
+        // Set error message
+        setMessage('Failed to change the status. Please try again.');
+        setMessageType('error');
+      }
     } else {
-        console.error('No department selected for status toggle');
+      // Set warning message
+      setMessage('No department selected for status toggle.');
+      setMessageType('warning');
     }
-};
+  
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
+  };
+  
 
   const filteredDepartments = departments.filter(department => {
     const statusText = department.isActive === 1 ? 'active' : 'inactive';
@@ -252,30 +295,60 @@ const Department = () => {
   return (
     <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">DEPARTMENTS</h1>
+      {message && (
+          <div
+            className={`mt-4 p-3 rounded-md text-sm ${messageType === 'success'
+                ? 'bg-green-100 text-green-700'
+                : messageType === 'error'
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}
+          >
+            {message}
+          </div>
+          )}
       <div className="bg-white p-4 rounded-lg shadow-sm">
         {/* Form Section */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
-            <select
-              name="branch"
-              value={formData.branch?.id || ''}
-              onChange={handleBranchChange}
-              className="p-2 border rounded-md outline-none"
-            >
-              <option value="">Select Branch</option>
-              {branches.map(branch => (
-                <option key={branch.id} value={branch.id}>{branch.name}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Name Field */}
+            <div>
+              <label htmlFor="name" className="block text-md font-medium text-gray-700 mb-1">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="Enter name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="p-2 border rounded-md outline-none w-full"
+              />
+            </div>
+
+            {/* Branch Selection */}
+            <div>
+              <label htmlFor="branch" className="block text-md font-medium text-gray-700 mb-1">
+                Branch
+              </label>
+              <select
+                id="branch"
+                name="branch"
+                value={formData.branch?.id || ''}
+                onChange={handleBranchChange}
+                className="p-2 border rounded-md outline-none w-full"
+              >
+                <option value="">Select Branch</option>
+                {branches.map(branch => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
           <div className="mt-3 flex justify-start">
             {editingIndex === null ? (
               <button onClick={handleAddDepartment} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">

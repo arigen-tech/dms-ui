@@ -111,6 +111,8 @@ const EmployeeRole = () => {
   };
 
   return (
+    <div className="p-1">
+      <h1 className="text-xl mb-4 font-semibold">Pending Users</h1>
     <div className="bg-white p-3 rounded-lg shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse border">
@@ -222,6 +224,7 @@ const EmployeeRole = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

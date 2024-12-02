@@ -27,7 +27,7 @@ const UserAddEmployee = () => {
     email: "",
     mobile: "",
     branch: { id: "", name: "" }, // Ensure initial structure
-     department: { id: "", name: "" }, // Ensure initial structure
+    department: { id: "", name: "" }, // Ensure initial structure
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -59,7 +59,7 @@ const UserAddEmployee = () => {
     try {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("tokenKey");
-  
+
       // Fetch user details
       const userResponse = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
@@ -69,33 +69,33 @@ const UserAddEmployee = () => {
           },
         }
       );
-  
+
       const userData = userResponse.data;
       console.log("Complete User Data:", userData);
-  
+
       // Explicitly set branch and department
-      const userBranch = userData.branch 
-        ? { id: userData.branch.id, name: userData.branch.name } 
+      const userBranch = userData.branch
+        ? { id: userData.branch.id, name: userData.branch.name }
         : { id: "", name: "" };
-  
-      const userDepartment = userData.department 
-        ? { id: userData.department.id, name: userData.department.name } 
+
+      const userDepartment = userData.department
+        ? { id: userData.department.id, name: userData.department.name }
         : { id: "", name: "" };
-  
+
       // Set branch and department states
       setUserBranch(userBranch);
       setUserDepartment(userDepartment);
-  
+
       // Update form data with user's branch and department
       setFormData((prevData) => ({
         ...prevData,
         branch: userBranch,
         department: userDepartment,
       }));
-  
+
       // Determine if user is admin
       const isAdmin = userData.role?.role?.toUpperCase() === "ADMIN";
-      
+
       if (isAdmin) {
         // Fetch all employees if user is an admin
         const allEmployeesResponse = await axios.get(
@@ -106,20 +106,20 @@ const UserAddEmployee = () => {
             },
           }
         );
-      
+
         console.log("All employees data:", allEmployeesResponse.data);
-      
+
         setEmployees(allEmployeesResponse.data);
       } else {
         setEmployees([userData]);
       }
-      
+
     } catch (error) {
       console.error("Error fetching user details or employees:", error);
       setError("Could not fetch user details or employees");
     }
   };
-  
+
 
   // const fetchEmployees = async () => {
   //   setLoading(true);
@@ -230,28 +230,28 @@ const UserAddEmployee = () => {
 
   const handleAddEmployee = async () => {
     console.log("Form Data before submit:", formData);
-  
+
     const isFormDataValid = formData.name && formData.email && formData.mobile;
     const isBranchSelected = formData.branch && formData.branch.id;
     const isDepartmentSelected = formData.department && formData.department.id;
-  
+
     if (isFormDataValid && isBranchSelected && isDepartmentSelected) {
       setIsSubmitting(true); // Disable button after click
       try {
         const token = localStorage.getItem("tokenKey");
         const userId = localStorage.getItem("userId");
-  
+
         console.log("Retrieved Token:", token);
-  
+
         if (!userId) {
           setError("User authentication error. Please log in again.");
           setIsSubmitting(false);
           return;
         }
-  
+
         const createdBy = { id: userId };
         const updatedBy = { id: userId };
-  
+
         const employeeData = {
           password: `${formData.name}${formData.mobile.slice(0, 4)}`,
           mobile: formData.mobile,
@@ -268,9 +268,9 @@ const UserAddEmployee = () => {
           },
           branch: { id: formData.branch.id, name: formData.branch.name },
         };
-  
+
         console.log("Employee Data to Send:", employeeData);
-  
+
         const response = await axios.post(
           `${API_HOST}/register/create`,
           employeeData,
@@ -281,16 +281,16 @@ const UserAddEmployee = () => {
             },
           }
         );
-  
+
         console.log("API Response:", response.data);
-  
+
         if (response.data) {
           setEmployees((prevEmployees) => [...prevEmployees, response.data]);
-  
+
           if (response.data.token) {
             localStorage.setItem("tokenKey", response.data.token);
           }
-  
+
           setFormData({
             name: "",
             email: "",
@@ -298,10 +298,10 @@ const UserAddEmployee = () => {
             branch: { id: "", name: "" },
             department: { id: "", name: "" },
           });
-  
+
           setError("");
           setMessage("Employee added successfully!");
-  
+
           // Clear success message after 2 seconds
           setTimeout(() => setMessage(""), 3000);
         }
@@ -320,7 +320,7 @@ const UserAddEmployee = () => {
       );
     }
   };
-  
+
   const handleEditEmployee = (employeeId) => {
     const employeeToEdit = employees.find((emp) => emp.id === employeeId);
     if (employeeToEdit) {
@@ -530,79 +530,100 @@ const UserAddEmployee = () => {
 
         {loading && <p className="text-blue-500">Loading...</p>}
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="Name"
-              name="name"
-              value={formData.name || ""}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              name="email"
-              value={formData.email || ""}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
-            <input
-              type="tel"
-              placeholder="Phone"
-              name="mobile"
-              maxLength={10}
-              minLength={10}
-              value={formData.mobile || ""}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
+        <div className="mb-4 bg-slate-100 p-6 rounded-lg shadow-md">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Name Input */}
+            <label className="block text-md font-medium text-gray-700">
+              Name
+              <input
+                type="text"
+                placeholder="Enter name"
+                name="name"
+                value={formData.name || ""}
+                onChange={handleInputChange}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
 
-              {/* Branch Selection */}
+            {/* Email Input */}
+            <label className="block text-md font-medium text-gray-700">
+              Email
+              <input
+                type="email"
+                placeholder="Enter email"
+                name="email"
+                value={formData.email || ""}
+                onChange={handleInputChange}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+
+            {/* Phone Input */}
+            <label className="block text-md font-medium text-gray-700">
+              Phone
+              <input
+                type="tel"
+                placeholder="Enter phone number"
+                name="mobile"
+                maxLength={10}
+                minLength={10}
+                value={formData.mobile || ""}
+                onChange={handleInputChange}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+
+            {/* Branch Selection */}
+            <label className="block text-md font-medium text-gray-700">
+              Branch
               <select
-              name="branch"
-              value={formData.branch?.id || ""}
-              onChange={(e) => handleSelectChange(e, "branch")}
-              className="p-2 border rounded-md outline-none"
-              disabled={role !== "ADMIN"} // Disable if not admin
-            >
-              <option value={userBranch?.id || ""}>
-                {userBranch?.name || "Select Branch"}
-              </option>
-              {branchOptions.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
+                name="branch"
+                value={formData.branch?.id || ""}
+                onChange={(e) => handleSelectChange(e, "branch")}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={role !== "ADMIN"}
+              >
+                <option value={userBranch?.id || ""}>
+                  {userBranch?.name || "Select Branch"}
                 </option>
-              ))}
-            </select>
+                {branchOptions.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             {/* Department Selection */}
-            <select
-              name="department"
-              value={formData.department?.id || ""}
-              onChange={(e) => handleSelectChange(e, "department")}
-              className="p-2 border rounded-md outline-none"
-              disabled={role !== "ADMIN"} // Disable if not admin
-            >
-              <option value={userDepartment?.id || ""}>
-                {userDepartment?.name || "Select Department"}
-              </option>
-              {departmentOptions.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
+            <label className="block text-md font-medium text-gray-700">
+              Department
+              <select
+                name="department"
+                value={formData.department?.id || ""}
+                onChange={(e) => handleSelectChange(e, "department")}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={role !== "ADMIN"}
+              >
+                <option value={userDepartment?.id || ""}>
+                  {userDepartment?.name || "Select Department"}
                 </option>
-              ))}
-            </select>
+                {departmentOptions.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-          
-          <div className="mt-3 flex justify-start">
+
+          {/* Buttons */}
+          <div className="mt-6 flex flex-wrap gap-4">
             {editingIndex === null ? (
               <button
                 onClick={handleAddEmployee}
                 className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
               >
-                <PlusCircleIcon className="h-5 w-5 mr-1" />
+                <PlusCircleIcon className="h-5 w-5 mr-2" />
                 {isSubmitting ? "Submitting..." : "Add User"}
               </button>
             ) : (
@@ -610,12 +631,15 @@ const UserAddEmployee = () => {
                 onClick={handleSaveEdit}
                 className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
               >
-                <CheckCircleIcon className="h-5 w-5 mr-1" />{" "}
+                <CheckCircleIcon className="h-5 w-5 mr-2" />
                 {isSubmitting ? "Submitting..." : "Update"}
               </button>
             )}
           </div>
         </div>
+
+
+
 
         {role === "ADMIN" && (
           <>

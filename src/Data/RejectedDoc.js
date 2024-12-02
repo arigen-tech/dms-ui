@@ -81,6 +81,8 @@ function RejectedDoc() {
   if (error) return <div>{error}</div>;
 
   return (
+    <div className="p-1">
+      <h1 className="text-xl mb-4 font-semibold">Rejected Documents</h1>
     <div className="bg-white p-3 rounded-lg shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse border">
@@ -164,6 +166,7 @@ function RejectedDoc() {
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

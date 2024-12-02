@@ -51,7 +51,7 @@ const BranchDepartments = () => {
             const userId = localStorage.getItem("userId");
             const token = localStorage.getItem("tokenKey");
             const response = await axios.get(
-                `${ API_HOST }/employee/findById/${userId}`,
+                `${API_HOST}/employee/findById/${userId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -174,12 +174,12 @@ const BranchDepartments = () => {
         setToggleDepartment(department);
         setModalVisible(true);
     };
-    
+
     const confirmToggleActiveStatus = async () => {
         if (toggleDepartment) {
             try {
                 const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
-                
+
                 const token = localStorage.getItem('tokenKey');
                 const response = await axios.put(
                     `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
@@ -191,11 +191,11 @@ const BranchDepartments = () => {
                         },
                     }
                 );
-                
+
                 const updatedDepartments = departments.map(dept =>
                     dept.id === toggleDepartment.id ? { ...dept, isActive: isActive } : dept
                 );
-                
+
                 setDepartments(updatedDepartments);
                 setModalVisible(false);
                 setToggleDepartment(null);
@@ -251,22 +251,32 @@ const BranchDepartments = () => {
 
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
                     <div className="grid grid-cols-2 gap-4">
-                        <input
-                            type="text"
-                            placeholder="Department Name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            className="p-2 border rounded-md outline-none"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Branch"
-                            value={userBranch ? userBranch.name : 'Loading...'}
-                            disabled
-                            className="p-2 border rounded-md outline-none bg-gray-100"
-                        />
+                        {/* Department Name Input */}
+                        <label className="block text-md font-medium text-gray-700">
+                            Department Name
+                            <input
+                                type="text"
+                                placeholder="Enter Department Name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </label>
+
+                        {/* Branch Input */}
+                        <label className="block text-md font-medium text-gray-700">
+                            Branch
+                            <input
+                                type="text"
+                                placeholder="Branch"
+                                value={userBranch ? userBranch.name : "Loading..."}
+                                disabled
+                                className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </label>
                     </div>
+
                     <div className="mt-3 flex justify-start">
                         {editingIndex === null ? (
                             <button onClick={handleAddDepartment} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">

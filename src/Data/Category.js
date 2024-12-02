@@ -15,6 +15,8 @@ const Category = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [categoryToToggle, setCategoryToToggle] = useState(null);
+  const [message, setMessage] = useState(null); // For the success message
+  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -56,72 +58,113 @@ const Category = () => {
             Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
           },
         });
+
+        // Update categories state with the new category
         setCategories([...categories, response.data]);
-        setFormData({ name: '' });
-        alert('Categories added successfully!');
+        setFormData({ name: '' }); // Reset form data
+
+        // Set success message
+        setMessage('Category added successfully!');
+        setMessageType('success');
       } catch (error) {
         console.error('Error adding category:', error.response ? error.response.data : error.message);
-        alert('Failed to adding the Categories. Please try again.');
+
+        // Set error message if request fails
+        setMessage('Failed to add the category. Please try again.');
+        setMessageType('error');
       }
+    } else {
+      // Set warning message if name is not provided
+      setMessage('Please enter a category name.');
+      setMessageType('warning');
     }
+
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
   };
+
 
   const handleEditCategory = (categoryId) => {
     // Set the actual ID of the category being edited
     setEditingCategoryId(categoryId);
-
+  
     // Find the category in the original list by its ID to populate the form
     const categoryToEdit = categories.find(category => category.id === categoryId);
-
+  
     // Populate the form with the category data (if found)
     if (categoryToEdit) {
       setFormData({
         name: categoryToEdit.name,
-        // Add other form fields as needed
+        isActive: true, // Set status to true by default
       });
+  
+      // Set success message
+      setMessage('Category loaded successfully for editing!');
+      setMessageType('success');
+    } else {
+      // Set error message if category not found
+      setMessage('Category not found. Please try again.');
+      setMessageType('error');
     }
+  
+    // Clear the message after 3 seconds
+    setTimeout(() => setMessage(null), 3000);
   };
+  
+  
   const handleSaveEdit = async () => {
     if (formData.name.trim() && editingCategoryId !== null) {
       try {
         // Find the category in the original list by its ID
         const categoryIndex = categories.findIndex(category => category.id === editingCategoryId);
-
+  
         if (categoryIndex === -1) {
-          alert('Category not found!');
+          // Set error message if category is not found
+          setMessage('Category not found! Please try again.');
+          setMessageType('error');
           return;
         }
-
+  
         // Create the updated category object
         const updatedCategory = {
           ...categories[categoryIndex],
           name: formData.name,
+          isActive: true, // Set status to true by default
           updatedOn: new Date().toISOString(),
         };
-
+  
         // Send the update request to the server
         const response = await axios.put(`${CATEGORI_API}/update/${updatedCategory.id}`, updatedCategory, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
           },
         });
-
+  
         // Update the original categories list with the updated category
         const updatedCategories = categories.map(category =>
           category.id === updatedCategory.id ? response.data : category
         );
-
+  
         // Update the state with the modified categories array
         setCategories(updatedCategories);
         setFormData({ name: '' });
         setEditingCategoryId(null); // Reset the editing state
-        alert('Category updated successfully!');
+  
+        // Set success message
+        setMessage('Category updated successfully!');
+        setMessageType('success');
       } catch (error) {
         console.error('Error updating category:', error.response ? error.response.data : error.message);
-        alert('Failed to update the category. Please try again.');
+        // Set error message if update fails
+        setMessage('Failed to update the category. Please try again.');
+        setMessageType('error');
       }
+  
+      // Clear the message after 3 seconds
+      setTimeout(() => setMessage(null), 3000);
     }
   };
+  
 
 
   const handleToggleActiveStatus = (category) => {
@@ -137,34 +180,60 @@ const Category = () => {
           active: categoryToToggle.active === true ? 0 : 1, // Toggle between 1 and 0
           updatedOn: new Date().toISOString(),
         };
-
+  
         const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
         const response = await axios.put(
           `${CATEGORI_API}/updatestatus/${updatedCategory.id}`, // Update API endpoint
           updatedCategory,
           {
             headers: {
-              'Content-Category': 'application/json',
+              'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
-        const updatedCategories = categories.map(category =>
-          category.id === updatedCategory.id ? response.data : category
-        );
-        setCategories(updatedCategories);
-        setModalVisible(false);
-        setCategoryToToggle(null);
-        alert('Status Changed successfully!');
+  
+        if (response.status === 200) {
+          const updatedCategories = categories.map(category =>
+            category.id === updatedCategory.id ? response.data : category
+          );
+  
+          setCategories(updatedCategories);
+          setModalVisible(false);
+          setCategoryToToggle(null);
+  
+          // Set success message
+          setMessage('Category status changed successfully!');
+          setMessageType('success');
+        } else {
+          // Set error message for unexpected response
+          setMessage('Failed to change the category status. Please try again.');
+          setMessageType('error');
+        }
       } catch (error) {
         console.error('Error toggling Category status:', error.response ? error.response.data : error.message);
-        alert('Failed to changing the status. Please try again.');
+  
+        // Set error message for failed API request
+        setMessage('Failed to change the category status. Please try again.');
+        setMessageType('error');
       }
+  
+      // Clear the message after 3 seconds
+      setTimeout(() => setMessage(null), 3000);
     } else {
       console.error('No Category selected for status toggle');
+  
+      // Set error message if no category is selected
+      setMessage('No category selected for status toggle.');
+      setMessageType('error');
+  
+      // Clear the message after 3 seconds
+      setTimeout(() => setMessage(null), 3000);
     }
   };
+  
+  
+  
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -208,18 +277,37 @@ const Category = () => {
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">CATEGORIES</h1>
+      {message && (
+        <div
+          className={`mt-4 p-3 rounded-md text-sm ${messageType === 'success'
+            ? 'bg-green-100 text-green-700'
+            : messageType === 'error'
+              ? 'bg-red-100 text-red-700'
+              : 'bg-yellow-100 text-yellow-700'
+            }`}
+        >
+          {message}
+        </div>
+      )}
       <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="Name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
+            <div className="flex flex-col">
+              <label htmlFor="name" className="mb-1 text-md font-medium text-gray-700">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="Enter Name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
+
           <div className="mt-3 flex justify-start">
             {editingCategoryId === null ? (
               // Button to add a new category

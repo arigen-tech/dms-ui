@@ -113,6 +113,8 @@ const EmployeeRole = () => {
   };
 
   return (
+    <div className="p-1">
+      <h1 className="text-xl mb-4 font-semibold"> Total Pending Users</h1>
     <div className="bg-white p-3 rounded-lg shadow-sm">
       {successMessage && (
         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
@@ -225,6 +227,7 @@ const EmployeeRole = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

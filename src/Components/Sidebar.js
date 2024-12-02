@@ -41,30 +41,30 @@ function Sidebar() {
     return savedCounts
       ? JSON.parse(savedCounts)
       : {
-          totalUser: 0,
-          branchUser: 0,
-          totalDocument: 0,
-          pendingDocument: 0,
-          storageUsed: 0,
-          totalBranches: 0,
-          totalDepartment: 0,
-          totalRoles: 0,
-          documentType: 0,
-          annualYear: 0,
-          totalNullEmployeeType: 0,
-          totalCategories: 0,
-          totalApprovedDocuments: 0,
-          totalRejectedDocuments: 0,
-          totalPendingDocuments: 0,
-          totalApprovedDocumentsById: 0,
-          totalRejectedDocumentsById: 0,
-          totalPendingDocumentsById: 0,
-          totalDocumentsById: 0,
-          totalApprovedStatusDocById: 0,
-          totalRejectedStatusDocById: 0,
-          departmentCountForBranch: 0,
-          nullRoleEmployeeCountForBranch: 0,
-        };
+        totalUser: 0,
+        branchUser: 0,
+        totalDocument: 0,
+        pendingDocument: 0,
+        storageUsed: 0,
+        totalBranches: 0,
+        totalDepartment: 0,
+        totalRoles: 0,
+        documentType: 0,
+        annualYear: 0,
+        totalNullEmployeeType: 0,
+        totalCategories: 0,
+        totalApprovedDocuments: 0,
+        totalRejectedDocuments: 0,
+        totalPendingDocuments: 0,
+        totalApprovedDocumentsById: 0,
+        totalRejectedDocumentsById: 0,
+        totalPendingDocumentsById: 0,
+        totalDocumentsById: 0,
+        totalApprovedStatusDocById: 0,
+        totalRejectedStatusDocById: 0,
+        departmentCountForBranch: 0,
+        nullRoleEmployeeCountForBranch: 0,
+      };
   });
 
   useEffect(() => {
@@ -213,7 +213,7 @@ function Sidebar() {
                 text="Search Documents"
               />
 
-<div>
+              <div>
                 <button
                   onClick={handleReportToggle}
                   className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
@@ -235,13 +235,13 @@ function Sidebar() {
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
-                      // count={counts.totalRejectedDocuments}
+                    // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}
               </div>
             </>
-            
+
           )}
 
           {role === "ADMIN" && (
@@ -376,14 +376,14 @@ function Sidebar() {
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
-                      // count={counts.totalRejectedDocuments}
+                    // count={counts.totalRejectedDocuments}
                     />
 
                     <SidebarLink
                       to="/userReport"
                       icon={RiFileUserFill}
                       text="User Report"
-                      // count={counts.totalRejectedDocuments}
+                    // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}
@@ -440,7 +440,7 @@ function Sidebar() {
                     <SidebarLink
                       to="/approve-by-admin"
                       icon={DocumentCheckIcon}
-                      text="Approved Documents"
+                      text="Approved Document"
                       count={counts.totalApprovedStatusDocById}
                     />
                     <SidebarLink
@@ -457,39 +457,39 @@ function Sidebar() {
                   </div>
                 )}
                 <div>
-                <button
-                  onClick={handleReportToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
-                >
-                  <div className="flex items-center">
-                    <DocumentChartBarIcon className="h-5 w-5 mr-3" />
-                    Report Section
-                  </div>
-                  {isReportOpen ? (
-                    <ChevronDownIcon className="h-4 w-4" />
-                  ) : (
-                    <ChevronRightIcon className="h-4 w-4" />
-                  )}
-                </button>
-                {isReportOpen && (
-                  <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
-                      to="/documentReport"
-                      icon={DocumentTextIcon}
-                      text="Document Report"
+                  <button
+                    onClick={handleReportToggle}
+                    className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  >
+                    <div className="flex items-center">
+                      <DocumentChartBarIcon className="h-5 w-5 mr-3" />
+                      Report Section
+                    </div>
+                    {isReportOpen ? (
+                      <ChevronDownIcon className="h-4 w-4" />
+                    ) : (
+                      <ChevronRightIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                  {isReportOpen && (
+                    <div className="ml-2 flex flex-col space-y-1">
+                      <hr className="border-t border-blue-800 mt-1" />
+                      <SidebarLink
+                        to="/documentReport"
+                        icon={DocumentTextIcon}
+                        text="Document Report"
                       // count={counts.totalRejectedDocuments}
-                    />
+                      />
 
-                    <SidebarLink
-                      to="/userReport"
-                      icon={RiFileUserFill}
-                      text="User Report"
+                      <SidebarLink
+                        to="/userReport"
+                        icon={RiFileUserFill}
+                        text="User Report"
                       // count={counts.totalRejectedDocuments}
-                    />
-                  </div>
-                )}
-              </div>
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -559,39 +559,39 @@ function Sidebar() {
                   </div>
                 )}
                 <div>
-                <button
-                  onClick={handleReportToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
-                >
-                  <div className="flex items-center">
-                    <DocumentChartBarIcon className="h-5 w-5 mr-3" />
-                    Report Section
-                  </div>
-                  {isReportOpen ? (
-                    <ChevronDownIcon className="h-4 w-4" />
-                  ) : (
-                    <ChevronRightIcon className="h-4 w-4" />
-                  )}
-                </button>
-                {isReportOpen && (
-                  <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
-                      to="/documentReport"
-                      icon={DocumentTextIcon}
-                      text="Document Report"
+                  <button
+                    onClick={handleReportToggle}
+                    className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  >
+                    <div className="flex items-center">
+                      <DocumentChartBarIcon className="h-5 w-5 mr-3" />
+                      Report Section
+                    </div>
+                    {isReportOpen ? (
+                      <ChevronDownIcon className="h-4 w-4" />
+                    ) : (
+                      <ChevronRightIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                  {isReportOpen && (
+                    <div className="ml-2 flex flex-col space-y-1">
+                      <hr className="border-t border-blue-800 mt-1" />
+                      <SidebarLink
+                        to="/documentReport"
+                        icon={DocumentTextIcon}
+                        text="Document Report"
                       // count={counts.totalRejectedDocuments}
-                    />
+                      />
 
-                    <SidebarLink
-                      to="/userReport"
-                      icon={RiFileUserFill}
-                      text="User Report"
+                      <SidebarLink
+                        to="/userReport"
+                        icon={RiFileUserFill}
+                        text="User Report"
                       // count={counts.totalRejectedDocuments}
-                    />
-                  </div>
-                )}
-              </div>
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
