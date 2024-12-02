@@ -74,87 +74,110 @@ const UserReport = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">User Reports</h2>
+    <div className="p-1">
+      <h1 className="text-xl mb-4 font-semibold">User Reports</h1>
+      <div className="bg-white p-6 rounded-lg shadow-md">
 
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
-          {/* Branch Dropdown */}
-          <select
-            name="branch"
-            value={searchCriteria.branch}
-            onChange={handleInputChange}
-            className="p-2 border rounded-md outline-none"
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
+            {/* Branch Dropdown */}
+            <div className="flex flex-col">
+              <label className="mb-1" htmlFor="branch">Branch</label>
+              <select
+                id="branch"
+                name="branch"
+                value={searchCriteria.branch}
+                onChange={handleInputChange}
+                className="p-2 border rounded-md outline-none"
+              >
+                <option value="">Select Branch</option>
+                {branchOptions.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Department Dropdown */}
+            <div className="flex flex-col">
+              <label className="mb-1" htmlFor="department">Department</label>
+              <select
+                id="department"
+                name="department"
+                value={searchCriteria.department}
+                onChange={handleInputChange}
+                className="p-2 border rounded-md outline-none"
+                disabled={!searchCriteria.branch}
+              >
+                <option value="">Select Department</option>
+                {departmentOptions.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Dropdown */}
+            <div className="flex flex-col">
+              <label className="mb-1" htmlFor="status">Status</label>
+              <select
+                id="status"
+                name="status"
+                onChange={handleInputChange}
+                className="p-2 border rounded-md outline-none"
+              >
+                <option value="">Select Status</option>
+                <option value="PENDING">ACTIVE</option>
+                <option value="APPROVED">INACTIVE</option>
+              </select>
+            </div>
+
+            {/* From Date Picker */}
+            <div className="flex flex-col">
+              <label className="mb-1" htmlFor="fromDate">From Date</label>
+              <DatePicker
+                id="fromDate"
+                selected={fromDate}
+                onChange={(date) => setFromDate(date)}
+                selectsStart
+                startDate={fromDate}
+                endDate={toDate}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Select a start date"
+                className="w-full px-3 py-2 border rounded-md focus:ring-2"
+              />
+            </div>
+
+            {/* To Date Picker */}
+            <div className="flex flex-col">
+              <label className="mb-1" htmlFor="toDate">To Date</label>
+              <DatePicker
+                id="toDate"
+                selected={toDate}
+                onChange={(date) => setToDate(date)}
+                selectsEnd
+                startDate={fromDate}
+                endDate={toDate}
+                minDate={fromDate}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Select an end date"
+                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="bg-blue-900 text-white py-2 px-6 rounded-md hover:bg-blue-800 transition duration-300"
           >
-            <option value="">Select Branch</option>
-            {branchOptions.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Department Dropdown */}
-          <select
-            name="department"
-            value={searchCriteria.department}
-            onChange={handleInputChange}
-            className="p-2 border rounded-md outline-none"
-            disabled={!searchCriteria.branch}
-          >
-            <option value="">Select Department</option>
-            {departmentOptions.map((department) => (
-              <option key={department.id} value={department.id}>
-                {department.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Status Dropdown */}
-          <select
-            name="status"
-            onChange={handleInputChange}
-            className="p-2 border rounded-md outline-none"
-          >
-            <option value="">Select Status</option>
-            <option value="PENDING">ACTIVE</option>
-            <option value="APPROVED">INACTIVE</option>
-          </select>
-
-          {/* From Date Picker */}
-          <DatePicker
-            selected={fromDate}
-            onChange={(date) => setFromDate(date)}
-            selectsStart
-            startDate={fromDate}
-            endDate={toDate}
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Select a start date"
-            className="w-full px-3 py-2 border rounded-md focus:ring-2"
-          />
-
-          {/* To Date Picker */}
-          <DatePicker
-            selected={toDate}
-            onChange={(date) => setToDate(date)}
-            selectsEnd
-            startDate={fromDate}
-            endDate={toDate}
-            minDate={fromDate}
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Select an end date"
-            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="bg-blue-900 text-white py-2 px-6 rounded-md hover:bg-blue-800 transition duration-300"
-        >
-          Download Report
-        </button>
-      </form>
+            Download Report
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
