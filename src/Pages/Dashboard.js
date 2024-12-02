@@ -40,6 +40,8 @@ import {
 function Dashboard() {
   const [chartData, setChartData] = useState([]);
   const [branchId, setBranchId] = useState(null);
+  const [branchesId, setBranchsId] = useState(null);
+  const [departmentId, setDepartmentId] = useState(null);
   const [branchUserCount, setBranchUserCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const currentYear = new Date().getFullYear();
@@ -67,70 +69,119 @@ function Dashboard() {
     totalRejectedStatusDocById: 0,
     departmentCountForBranch: 0,
     nullRoleEmployeeCountForBranch: 0,
+    departmentUser: 0,
+    nullRoleEmployeeCountForDepartment: 0,
+    totalDocumentsByDepartmentId: 0,
+    totalPendingDocumentsByDepartmentId: 0,
+    totalApprovedStatusDocByDepartmentId: 0,
+    totalRejectedStatusDocByDepartmentId: 0,
   });
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    fetchUserDetails();
+  }, []);
+  
+  const fetchUserDetails = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("tokenKey");
+  
+      if (!userId || !token) {
+        throw new Error("User ID or token is missing in localStorage");
+      }
+  
+      const response = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const employeeData = response.data;
+      console.log("Employee data:", employeeData);
+  
+      // Set Branch ID if available
+      if (employeeData.branch && employeeData.branch.id) {
+        const branchId = employeeData.branch.id;
+        setBranchsId(branchId);
+        console.log("Branch ID:", branchId); // Log branch ID
+      } else {
+        console.warn("Branch ID is not available in the response.");
+        setBranchsId(null);
+      }
+  
+      // Set Department ID if available
+      if (employeeData.department && employeeData.department.id) {
+        const departmentId = employeeData.department.id;
+        setDepartmentId(departmentId);
+        console.log("Department ID:", departmentId); // Log department ID
+      } else {
+        console.warn("Department ID is not available in the response.");
+        setDepartmentId(null);
+      }
+    } catch (error) {
+      console.error("Error fetching user details:", error.response?.data || error.message);
+    }
+  };
+  
+  
+  
+  
   useEffect(() => {
     const fetchStatsAndData = async () => {
       try {
         const employeeId = localStorage.getItem("userId");
         const token = localStorage.getItem("tokenKey");
         const role = localStorage.getItem("role");
-
+  
         if (!token || !employeeId) {
           throw new Error("Unauthorized: Token or Employee ID missing.");
         }
-
-        // Set Authorization header for requests
+  
         const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-        const url = `${API_HOST}/Dashboard/GetAllCountsForDashBoard`;
-        // Fetch dashboard stats
-        const statsResponse = await axios.get(
-          url,
-          // "${BRANCH_API}/Dashboard/GetAllCountsForDashBoard",
-          {
-            ...authHeader,
-            params: { employeeId },
-          }
-        );
-        setStats(statsResponse.data);
-
-        // Fetch documents summary
+        const url = `${API_HOST}/api/dashboard/getAllCount/${employeeId}`;
+  
+        // Fetch stats and summary concurrently
         const startDate = `${currentYear}-01-01 00:00:00`;
         const endDate = `${currentYear}-12-31 23:59:59`;
+        let summaryUrl = `${API_HOST}/api/documents/document/summary/by/${employeeId}`;
+  
+        if (role === "ADMIN") {
+          summaryUrl = `${API_HOST}/api/documents/total`;
+        } else if (role === "BRANCH ADMIN") {
+          summaryUrl = `${API_HOST}/api/documents/branch/${branchesId}`;
+          // summaryUrl = "http://localhost:8080/api/documents/branch/1";
 
-        let summaryUrl = "";
-
-        if (
-          role === "ADMIN" ||
-          role === "BRANCH ADMIN" ||
-          role === "DEPARTMENT ADMIN"
-        ) {
+        } else if (role === "DEPARTMENT ADMIN") {
+          summaryUrl = `${API_HOST}/api/documents/department/${departmentId}`; // Example branch ID, adjust as necessary
+        } else if (role === "USER") {
           summaryUrl = `${API_HOST}/api/documents/document/summary/by/${employeeId}`;
-        } else {
-          summaryUrl = `${API_HOST}/api/documents/documents-summary/${employeeId}`;
         }
-
-        const summaryResponse = await axios.get(summaryUrl, {
-          ...authHeader,
-          params: { startDate, endDate },
-        });
-
+  
+        const [statsResponse, summaryResponse] = await Promise.all([
+          axios.get(url, { ...authHeader, params: { employeeId } }),
+          axios.get(summaryUrl, {
+            ...authHeader,
+            params: { startDate, endDate },
+          }),
+        ]);
+  
+        setStats(statsResponse.data);
+  
         const { months, approvedDocuments, rejectedDocuments } =
           summaryResponse.data;
         const mappedData = months.map((month, index) => ({
           name: month,
           ApprovedDocuments: approvedDocuments[index],
           RejectedDocuments: rejectedDocuments[index],
+          PendingDocuments: rejectedDocuments[index],
         }));
-
-        console.log(mappedData);
+  
         setChartData(mappedData);
       } catch (error) {
         console.error("Error fetching data:", error);
-
-        // Redirect to login if unauthorized
+  
         if (
           error.response?.status === 401 ||
           error.message === "Unauthorized: Token or Employee ID missing."
@@ -139,11 +190,12 @@ function Dashboard() {
         }
       }
     };
-
+  
     fetchStatsAndData();
-  }, [navigate, currentYear]);
-
+  }, [navigate, currentYear, branchId, departmentId]);
+  
  
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
