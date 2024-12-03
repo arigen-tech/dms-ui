@@ -257,7 +257,7 @@ const UserAddEmployee = () => {
           mobile: formData.mobile,
           email: formData.email,
           name: formData.name,
-          isActive: 1,
+          isActive: 0,
           createdOn: new Date().toISOString(),
           updatedOn: new Date().toISOString(),
           createdBy,

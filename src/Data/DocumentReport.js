@@ -7,25 +7,25 @@ import "react-datepicker/dist/react-datepicker.css";
 import { FaFilePdf, FaFileExcel } from "react-icons/fa";
 
 const DocumentReport = () => {
-  const [searchCriteria, setSearchCriteria] = useState({
-    category: "",
-    status: "",
+  const initialFormData = {
     branch: "",
     department: "",
-  });
-
+    status: "",
+    category: "",
+    startDate: null,
+    endDate: null,
+  };
+  const [searchCriteria, setSearchCriteria] = React.useState(initialFormData);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [branchOptions, setBranchOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-  const [noResultsFound, setNoResultsFound] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
-  const [error, setError] = useState(""); // Error state for validation
+  const [error, setError] = useState(""); 
   const [selectedFormat, setSelectedFormat] = useState("PDF");
   const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
   const [modalType, setModalType] = useState("");
@@ -152,45 +152,15 @@ const DocumentReport = () => {
     }));
   };
 
-  //   const handleInputChange = (e) => {
-  //   const { name, value } = e.target;
-
-  //   const selectedOption = {
-  //     branch: branchOptions.find((branch) => branch.id === parseInt(value)),
-  //     department: departmentOptions.find((department) => department.id === parseInt(value)),
-  //     category: categoryOptions.find((category)=> category.id === parseInt(value)),
-  //   }[name];
-
-  //   setSearchCriteria({
-  //     ...searchCriteria,
-  //     [name]: value,
-  //     [`${name}Name`]: selectedOption?.name || "",
-  //   });
-  // };
-
-  const formatDateTime = (date) => {
-    if (!date) return null;
-    const isoString = date.toISOString();
-    const localDate = new Date(isoString);
-    return localDate.toLocaleString("sv-SE").replace("T", " ");
-  };
-
-  const formatDates = (date) => {
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, "0"); // Ensure 2 digits
-    const month = String(d.getMonth() + 1).padStart(2, "0"); // Ensure 2 digits
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const handleDownload = async () => {
-    if (!fromDate || !toDate) {
-      setError("Both From Date and To Date are required.");
+  const handleDownload = async (e) => {
+    e.preventDefault();
+    const validationError = validateForm();
+    if (validationError) {
+      showModalAlert(validationError, "error");
       return;
     }
 
     try {
-      setError(""); // Clear previous errors
       setIsProcessing(true);
       const token = localStorage.getItem("tokenKey");
 
@@ -228,10 +198,12 @@ const DocumentReport = () => {
       link.click();
       window.URL.revokeObjectURL(url);
 
-      resetFields();
+
       showModalAlert("Download successful!", "success"); // Show success message
+      resetFields();
     } catch (error) {
       console.error("Error exporting documents:", error);
+      resetFields();
       showModalAlert("Failed to export documents. Please try again.", "error"); // Show error message
     } finally {
       setIsProcessing(false);
@@ -248,12 +220,20 @@ const DocumentReport = () => {
     setShowModal(false);
   };
 
+  const validateForm = () => {
+    if (!searchCriteria.branch) return "Branch is required.";
+    if (!searchCriteria.department) return "Department is required.";
+    if (!searchCriteria.status) return "Status is required.";
+    if (!fromDate) return "Start date is required.";
+    if (!toDate) return "End date is required.";
+    if (!selectedFormat) return "Document format is required.";
+    return null;
+  };
 
   const resetFields = () => {
-    setFromDate("");
-    setToDate("");
-    setSearchCriteria({});
-    setSelectedFormat("PDF");
+    setFromDate(null);
+    setToDate(null);
+    setSearchCriteria(initialFormData);
   };
 
   const handleFormatChange = (event) => {
@@ -467,12 +447,6 @@ const DocumentReport = () => {
 
         {error && <p className="text-red-500">{error}</p>}
 
-        {/* <button
-        onClick={handleDownload}
-        className="bg-blue-900 text-white py-2 px-6 rounded-md hover:bg-blue-800 transition duration-300"
-      >
-        Download Report
-      </button> */}
         <button
           onClick={handleDownload}
           disabled={isProcessing}
