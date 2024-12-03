@@ -173,13 +173,14 @@ function Dashboard() {
   
         setStats(statsResponse.data);
   
-        const { months, approvedDocuments, rejectedDocuments } = summaryResponse.data;
+        const { months, approvedDocuments, rejectedDocuments, pendingDocuments } = summaryResponse.data;
         const mappedData = months.map((month, index) => ({
           name: month,
           ApprovedDocuments: approvedDocuments[index],
           RejectedDocuments: rejectedDocuments[index],
-          PendingDocuments: rejectedDocuments[index],
+          PendingDocuments: pendingDocuments[index],
         }));
+  
   
         setChartData(mappedData);
       } catch (error) {
