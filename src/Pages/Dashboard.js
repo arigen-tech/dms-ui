@@ -275,12 +275,12 @@ function Dashboard() {
                 />
                 <StatBlock
                   title="Rejected Documents"
-                  value={stats.totalRejectedDocumentsById}
+                  value={stats.rejectedDocsbyid}
                   Icon={DocumentMagnifyingGlassIcon}
                 />
                 <StatBlock
                   title="Approved Documents"
-                  value={stats.totalApprovedDocumentsById}
+                  value={stats.approvedDocsbyid}
                   Icon={DocumentMagnifyingGlassIcon}
                 />
               </>

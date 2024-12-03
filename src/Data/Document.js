@@ -379,48 +379,69 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
+    const UserId = localStorage.getItem("userId");
+    const token = localStorage.getItem("tokenKey");
+  
+    if (!UserId || !token) {
+      showPopup("User not logged in. Please login again.", "error");
+      return;
+    }
+  
+    const documentId = editingDoc.id;
     const payload = {
-      documentHeader: formData, // formData contains fields like fileNo, title, subject, etc.
-      filePaths: uploadedFileNames, // List of uploaded file names
-    };
-
-    // Make an API call to update the document
-    fetch(`${API_HOST}/api/documents/update`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+      documentHeader: {
+        id: documentId,
+        fileNo: formData.fileNo,
+        title: formData.title,
+        subject: formData.subject,
+        version: formData.version,
+        categoryMaster: { id: formData.category.id },
+        employee: { id: parseInt(UserId, 10) },
       },
-      body: JSON.stringify(payload),
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json(); // Or handle the response message
-        } else {
-          throw new Error('Error updating document');
-        }
-      })
-      .then((data) => {
-        console.log('Document updated successfully:', data);
-        showPopup('Document Update successfully!', 'success');
-
-        // Reset the form and state
-        setFormData({
-          fileNo: '',
-          title: '',
-          subject: '',
-          version: '',
-          category: { id: '' },
-        });
-        setUploadedFileNames([]);
-        setEditingDoc(null); // Reset editing state
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        showPopup(`Document Update failed`, 'error');
+    };
+  
+    try {
+      console.log("Payload being sent:", JSON.stringify(payload));
+  
+      const response = await fetch(`${API_HOST}/api/documents/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       });
+  
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        const errorMessage = contentType?.includes("application/json")
+          ? (await response.json()).message
+          : await response.text();
+        throw new Error(errorMessage || `HTTP error! status: ${response.status}`);
+      }
+  
+      const updatedDocument = await response.json();
+      console.log("Document updated successfully:", updatedDocument);
+      showPopup("Document updated successfully!", "success");
+  
+      // Reset the form and update the document list
+      setFormData({
+        fileNo: "",
+        title: "",
+        subject: "",
+        version: "",
+        category: { id: "" },
+      });
+      setUploadedFileNames([]);
+      setEditingDoc(null);
+      fetchDocuments(); // Refresh documents to include updated data
+    } catch (error) {
+      console.error("Error updating document:", error);
+      showPopup(`Document update failed: ${error.message}`, "error");
+    }
   };
+  
 
 
 
