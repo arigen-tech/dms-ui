@@ -69,11 +69,11 @@ function Sidebar() {
         approvedDocsbyid: 0,
         pendingDocsbyid: 0,
         createdByCount: 0,
-  nullRoleEmployeeCountForDepartment: 0,
-  totalDocumentsByDepartmentId: 0,
-  totalPendingDocumentsByDepartmentId: 0,
-  totalApprovedStatusDocByDepartmentId: 0,
-  totalRejectedStatusDocByDepartmentId: 0,
+        nullRoleEmployeeCountForDepartment: 0,
+        totalDocumentsByDepartmentId: 0,
+        totalPendingDocumentsByDepartmentId: 0,
+        totalApprovedStatusDocByDepartmentId: 0,
+        totalRejectedStatusDocByDepartmentId: 0,
       };
   });
 
@@ -448,7 +448,7 @@ function Sidebar() {
                       to="/approve-by-admin"
                       icon={DocumentCheckIcon}
                       text="Approved Document"
-                      count={counts.totalApprovedStatusDocByDepartmentId }
+                      count={counts.totalApprovedStatusDocByDepartmentId}
                     />
                     <SidebarLink
                       to="/reject-by-admin"
