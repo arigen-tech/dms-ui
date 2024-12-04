@@ -117,74 +117,74 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-  const fetchPaths = async (doc) => {
-    try {
-      const token = localStorage.getItem("tokenKey");
-      if (!token) {
-        throw new Error("No authentication token found.");
-      }
+  // const fetchPaths = async (doc) => {
+  //   try {
+  //     const token = localStorage.getItem("tokenKey");
+  //     if (!token) {
+  //       throw new Error("No authentication token found.");
+  //     }
 
-      // More comprehensive document validation
-      if (!doc) {
-        console.error("Document is null or undefined");
-        return null;
-      }
+  //     // More comprehensive document validation
+  //     if (!doc) {
+  //       console.error("Document is null or undefined");
+  //       return null;
+  //     }
 
-      if (!doc.id) {
-        console.error("Invalid document: No ID found", doc);
-        return null;
-      }
+  //     if (!doc.id) {
+  //       console.error("Invalid document: No ID found", doc);
+  //       return null;
+  //     }
 
-      // Validate doc.id is not just a falsy value
-      const documentId = doc.id.toString().trim();
-      if (!documentId) {
-        console.error("Document ID is empty or invalid", doc);
-        return null;
-      }
+  //     // Validate doc.id is not just a falsy value
+  //     const documentId = doc.id.toString().trim();
+  //     if (!documentId) {
+  //       console.error("Document ID is empty or invalid", doc);
+  //       return null;
+  //     }
 
-      console.log(`Attempting to fetch paths for document ID: ${documentId}`);
-      console.log(`Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`);
+  //     console.log(`Attempting to fetch paths for document ID: ${documentId}`);
+  //     console.log(`Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`);
 
-      const response = await axios.get(
-        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        }
-      );
+  //     const response = await axios.get(
+  //       `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           'Content-Type': 'application/json'
+  //         },
+  //       }
+  //     );
 
-      console.log("Paths response:", response.data);
+  //     console.log("Paths response:", response.data);
 
-      setSelectedDoc((prevDoc) => ({
-        ...prevDoc,
-        paths: Array.isArray(response.data) ? response.data : [],
-      }));
+  //     setSelectedDoc((prevDoc) => ({
+  //       ...prevDoc,
+  //       paths: Array.isArray(response.data) ? response.data : [],
+  //     }));
 
-      return response.data; // Optional: return the data
-    } catch (error) {
-      // More detailed error logging
-      console.error("Error in fetchPaths:", error);
+  //     return response.data; // Optional: return the data
+  //   } catch (error) {
+  //     // More detailed error logging
+  //     console.error("Error in fetchPaths:", error);
 
-      // More comprehensive error handling
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          console.error("Server responded with error:", {
-            status: error.response.status,
-            data: error.response.data
-          });
-        } else if (error.request) {
-          console.error("No response received:", error.request);
-        }
-      }
+  //     // More comprehensive error handling
+  //     if (axios.isAxiosError(error)) {
+  //       if (error.response) {
+  //         console.error("Server responded with error:", {
+  //           status: error.response.status,
+  //           data: error.response.data
+  //         });
+  //       } else if (error.request) {
+  //         console.error("No response received:", error.request);
+  //       }
+  //     }
 
-      // Optional: more user-friendly error handling
-      showPopup(`Failed to fetch document paths: ${error.message || 'Unknown error'}`);
+  //     // Optional: more user-friendly error handling
+  //     showPopup(`Failed to fetch document paths: ${error.message || 'Unknown error'}`);
 
-      return null; // Explicitly return null on error
-    }
-  };
+  //     return null; // Explicitly return null on error
+  //   }
+  // };
 
   const openFile = async (file) => {
     const token = localStorage.getItem("tokenKey"); // Get the token from localStorage
@@ -367,16 +367,82 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
 
   const handleEditDocument = (doc) => {
-    console.log("Editing document:", doc);
-    setEditingDoc(doc);
+  console.log("Editing document:", doc);
+  setEditingDoc(doc);
+
+  // Fetch document details including file paths when editing
+  fetchPaths(doc).then((paths) => {
+    // Combine existing document files with their full paths
+    const existingFiles = (doc.documentDetails || []).map(detail => ({
+      name: detail.path.substring(detail.path.lastIndexOf('/') + 1) + " (Existing)",
+      path: detail.path,
+      isExisting: true
+    }));
+
     setFormData({
       fileNo: doc.fileNo,
       title: doc.title,
       subject: doc.subject,
       version: doc.version,
       category: doc.categoryMaster || null,
-      uploadedFilePaths: doc.filePaths || [],
+      uploadedFilePaths: paths || doc.documentDetails.map(detail => detail.path) || [],
     });
+
+    // Set uploaded file names to show existing and new files
+    setUploadedFileNames(
+      existingFiles.map(file => file.name)
+    );
+  });
+};
+
+
+ 
+
+  const fetchPaths = async (doc) => {
+    try {
+      const token = localStorage.getItem("tokenKey");
+      if (!token) {
+        throw new Error("No authentication token found.");
+      }
+
+      if (!doc || !doc.id) {
+        console.error("Invalid document or missing ID");
+        return null;
+      }
+
+      const documentId = doc.id.toString().trim();
+      if (!documentId) {
+        console.error("Document ID is empty or invalid", doc);
+        return null;
+      }
+
+      const response = await axios.get(
+        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        }
+      );
+
+      // Handle both response.data being an array or potentially being documentDetails
+      const paths = Array.isArray(response.data)
+        ? response.data
+        : doc.documentDetails || [];
+
+      // Update the selected document state with full path information
+      setSelectedDoc((prevDoc) => ({
+        ...prevDoc,
+        paths: paths,
+      }));
+
+      return paths;
+    } catch (error) {
+      console.error("Error in fetchPaths:", error);
+      showPopup(`Failed to fetch document paths: ${error.message || 'Unknown error'}`, 'error');
+      return null;
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -388,10 +454,21 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return;
     }
   
-    const documentId = editingDoc.id;
+    // Get existing file paths from the original document
+    const existingFilePaths = editingDoc.documentDetails.map(detail => detail.path);
+  
+    // Determine which existing files should be kept
+    const remainingExistingPaths = existingFilePaths.filter((path, index) => 
+      uploadedFileNames.some(fileName => 
+        fileName.includes(path.substring(path.lastIndexOf('/') + 1)) && 
+        fileName.includes('(Existing)')
+      )
+    );
+  
+    // Prepare payload for update
     const payload = {
       documentHeader: {
-        id: documentId,
+        id: editingDoc.id,
         fileNo: formData.fileNo,
         title: formData.title,
         subject: formData.subject,
@@ -399,11 +476,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         categoryMaster: { id: formData.category.id },
         employee: { id: parseInt(UserId, 10) },
       },
+      // Combine remaining existing paths with newly uploaded paths
+      filePaths: [
+        ...remainingExistingPaths, 
+        ...formData.uploadedFilePaths
+      ],
     };
   
     try {
-      console.log("Payload being sent:", JSON.stringify(payload));
-  
       const response = await fetch(`${API_HOST}/api/documents/update`, {
         method: "POST",
         headers: {
@@ -425,23 +505,24 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       console.log("Document updated successfully:", updatedDocument);
       showPopup("Document updated successfully!", "success");
   
-      // Reset the form and update the document list
+      // Reset form and update document list
       setFormData({
         fileNo: "",
         title: "",
         subject: "",
         version: "",
         category: { id: "" },
+        uploadedFilePaths: [],
       });
       setUploadedFileNames([]);
       setEditingDoc(null);
-      fetchDocuments(); // Refresh documents to include updated data
+      fetchDocuments();
     } catch (error) {
       console.error("Error updating document:", error);
       showPopup(`Document update failed: ${error.message}`, "error");
     }
   };
-  
+
 
 
 
@@ -450,15 +531,44 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       console.error("Invalid index:", index);
       return;
     }
-
-    const updatedFiles = uploadedFileNames.filter((_, i) => i !== index);
-    const updatedPaths = formData.uploadedFilePaths.filter(
-      (_, i) => i !== index
-    );
-
-    setUploadedFileNames(updatedFiles);
-    setFormData({ ...formData, uploadedFilePaths: updatedPaths });
+  
+    // For editing an existing document
+    if (editingDoc) {
+      // First, check if it's an existing document file or a new upload
+      const isExistingFile = index < editingDoc.documentDetails.length;
+  
+      if (isExistingFile) {
+        // Remove the existing file from the display
+        const updatedFileNames = uploadedFileNames.filter((_, i) => i !== index);
+        setUploadedFileNames(updatedFileNames);
+  
+        // Optional: You might want to track which existing files are to be removed
+        // This could be done by adding a flag or separate state
+      } else {
+        // If it's a newly uploaded file during edit
+        const newUploadIndex = index - editingDoc.documentDetails.length;
+        const updatedFileNames = uploadedFileNames.filter((_, i) => i !== index);
+        const updatedPaths = formData.uploadedFilePaths.filter(
+          (_, i) => i !== newUploadIndex
+        );
+  
+        setUploadedFileNames(updatedFileNames);
+        setFormData({ ...formData, uploadedFilePaths: updatedPaths });
+      }
+    } 
+    // For new document upload (same as before)
+    else {
+      const updatedFiles = uploadedFileNames.filter((_, i) => i !== index);
+      const updatedPaths = formData.uploadedFilePaths.filter(
+        (_, i) => i !== index
+      );
+  
+      setUploadedFileNames(updatedFiles);
+      setFormData({ ...formData, uploadedFilePaths: updatedPaths });
+    }
   };
+  
+  
 
   // Handle discard all files
   const handleDiscardAll = () => {
@@ -484,7 +594,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const showPopup = (message, type = 'info') => {
     setPopupMessage({ message, type });
   };
-  
+
   // const handleSearchResults = (results) => {
   //   setSearchResults(results);
   //   setCurrentPage(1); // Reset to first page when new search results come in
@@ -503,13 +613,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       <div className="bg-white p-3 rounded-lg shadow-sm">
 
-      {popupMessage && (
-        <Popup
-          message={popupMessage.message}
-          type={popupMessage.type}
-          onClose={() => setPopupMessage(null)}
-        />
-      )}
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={() => setPopupMessage(null)}
+          />
+        )}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4">
             {/* File No Input */}
@@ -638,28 +748,34 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
           {/* Display Uploaded File Names */}
           {uploadedFileNames.length > 0 && (
-            <div className="p-4 bg-slate-100 rounded-lg">
-              <div className="flex flex-wrap gap-4">
-                {uploadedFileNames.map((fileName, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 border rounded-md"
-                  >
-                    <span>{fileName}</span>
-                    <button
-                      onClick={() => handleDiscardFile(index)}
-                      className="text-red-500"
-                    >
-                      <XMarkIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <button className="mt-4 text-red-500" onClick={handleDiscardAll}>
-                Discard All
-              </button>
-            </div>
-          )}
+  <div className="p-4 bg-slate-100 rounded-lg">
+    <div className="flex flex-wrap gap-4">
+      {uploadedFileNames.map((fileName, index) => {
+        // Extract the part after the first underscore
+        const displayName = fileName.substring(fileName.indexOf('_') + 1);
+
+        return (
+          <div
+            key={index}
+            className="flex items-center justify-between p-2 border rounded-md"
+          >
+            <span>{displayName}</span>
+            <button
+              onClick={() => handleDiscardFile(index)}
+              className="text-red-500"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+    <button className="mt-4 text-red-500" onClick={handleDiscardAll}>
+      Discard All
+    </button>
+  </div>
+)}
+
         </div>
 
         <div className="overflow-x-auto bg-white">
