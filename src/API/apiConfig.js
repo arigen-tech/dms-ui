@@ -1,8 +1,10 @@
 
-//  export const API_HOST = 'https://103.133.215.182:8443/Dms';
+ export const API_HOST = 'https://103.133.215.182:8443/Dms';
 
-//  export const API_HOST = 'https://103.133.215.182:8443/Dms/';
-export const API_HOST = 'http://localhost:8080';
+
+// export const API_HOST = 'http://localhost:8080';
+
+
 
 
 
@@ -16,7 +18,7 @@ export const DASHBORD_API = `${API_HOST}/Dashboard`;
 export const DOCUMENTDTAILS_API = `${API_HOST}/DocumentDetail`;
 export const DOCUMENTHEADER_API = `${API_HOST}/api/documents`;
 export const DOCUMENTSAVED_API = `${API_HOST}/documents`;
-export const EMPLOYEE_API = `${API_HOST}/Employee`;
+export const EMPLOYEE_API = `${API_HOST}/employee`;
 export const FILEUPLOAD_API = `${API_HOST}/uploadFile`;
 export const HOME_API = `${API_HOST}/home`;
 export const LOGIN_API = `${API_HOST}/auth/login`;
