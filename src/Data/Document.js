@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 import Search from "./Search"; // Import the Search component
 import Popup from '../Components/Popup';
 
@@ -18,6 +19,8 @@ import {
 } from '../API/apiConfig';
 
 const DocumentManagement = ({ fieldsDisabled }) => {
+    const location = useLocation();
+    const data = location.state;
   const [formData, setFormData] = useState({
     fileNo: "",
     title: "",
@@ -49,6 +52,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   // Run this effect only when component mounts
   useEffect(() => {
+      if (data) {
+          debugger;
+          handleEditDocument(data);
+      }
     fetchCategory();
     fetchDocuments();
     fetchPaths();
@@ -423,7 +430,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
 
-  const handleEditDocument = (doc) => {
+   const handleEditDocument = (doc) => {
       debugger;
     console.log("Editing document:", doc);
     setEditingDoc(doc);

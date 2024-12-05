@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+// import handleEditDocument from './Document';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
   PencilIcon,
 } from "@heroicons/react/24/solid";
 import {API_HOST} from "../API/apiConfig";
-
+import { useNavigate } from "react-router-dom";
 function RejectedDoc() {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -51,6 +53,7 @@ function RejectedDoc() {
       }
 
       setDocuments(response.data);
+      debugger;
     } catch (error) {
       console.error("Error fetching documents:", error);
       setError("Failed to fetch documents. Please try again.");
@@ -61,8 +64,13 @@ function RejectedDoc() {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handleEdit = (docId) => {
+    console.log(documents.find(item => item.id === docId));
+    // handleEditDocument(documents.find(item => item.id === docId));
+    const data = documents.find(item => item.id === docId); // Replace with actual data
+    navigate("/all-documents", { state: data });
     // Implement your edit logic here, e.g., navigate to an edit page
     console.log("Editing document with ID:", docId);
+    const doc="";
   };
   const formatDate = (dateString) => {
     const date = new Date(dateString);
