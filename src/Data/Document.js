@@ -246,57 +246,64 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   // Handle the file upload when the "Upload" button is clicked
   const handleUploadDocument = async () => {
     if (selectedFiles.length === 0) {
-      showPopup("Please select at least one file to upload.");
-      return;
+        showPopup("Please select at least one file to upload.");
+        return;
     }
 
     const uploadData = new FormData();
     uploadData.append("category", formData.category.name || "default-category");
     selectedFiles.forEach((file) => {
-      uploadData.append("files", file);
+        uploadData.append("files", file);
     });
 
     try {
-      const response = await fetch(`${API_HOST}/api/documents/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: uploadData,
-      });
+        const response = await fetch(`${API_HOST}/api/documents/upload`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: uploadData,
+        });
 
-      if (!response.ok) {
-        const errorDetails = await response.json();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorDetails}`);
-      }
+        if (!response.ok) {
+            const errorDetails = await response.json();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorDetails}`);
+        }
 
-      const filePaths = await response.json();
-      console.log("Files uploaded successfully:", filePaths);
-      console.log("Files response successfully:", response.data);
+        const filePaths = await response.json();
+        console.log("Files uploaded successfully:", filePaths);
 
+        if (
+            Array.isArray(filePaths) &&
+            filePaths.every((path) => typeof path === "string")
+        ) {
+            // Update formData with the new uploaded file paths
+            setFormData((prevData) => ({
+                ...prevData,
+                uploadedFilePaths: [
+                    ...(prevData.uploadedFilePaths || []), // Keep existing paths
+                    ...filePaths, // Add newly uploaded file paths
+                ],
+            }));
 
-      if (
-        Array.isArray(filePaths) &&
-        filePaths.every((path) => typeof path === "string")
-      ) {
-        setFormData((prevData) => ({
-          ...prevData,
-          uploadedFilePaths: filePaths,
-        }));
+            // Update the state for uploaded file names
+            setUploadedFileNames((prevNames) => [
+                ...prevNames,
+                ...selectedFiles.map((file) => file.name), // Append new file names
+            ]);
 
-        setUploadedFileNames(selectedFiles.map((file) => file.name));
-        showPopup('Files uploaded successfully!', 'success');
+            showPopup('Files uploaded successfully!', 'success');
 
-        setSelectedFiles([]);
-        setIsUploadEnabled(false);
-      } else {
-        throw new Error("Invalid file paths returned from upload.");
-      }
+            setSelectedFiles([]); // Clear selected files after upload
+            setIsUploadEnabled(false);
+        } else {
+            throw new Error("Invalid file paths returned from upload.");
+        }
     } catch (error) {
-      console.error("Error uploading file:", error);
-      showPopup(`File upload failed `, 'error');
+        console.error("Error uploading file:", error);
+        showPopup(`File upload failed: ${error.message}`, 'error');
     }
-  };
+};
 
 
   // Handle adding the document
@@ -365,39 +372,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-
-  const handleEditDocument = (doc) => {
-  console.log("Editing document:", doc);
-  setEditingDoc(doc);
-
-  // Fetch document details including file paths when editing
-  fetchPaths(doc).then((paths) => {
-    // Combine existing document files with their full paths
-    const existingFiles = (doc.documentDetails || []).map(detail => ({
-      name: detail.path.substring(detail.path.lastIndexOf('/') + 1) + " (Existing)",
-      path: detail.path,
-      isExisting: true
-    }));
-
-    setFormData({
-      fileNo: doc.fileNo,
-      title: doc.title,
-      subject: doc.subject,
-      version: doc.version,
-      category: doc.categoryMaster || null,
-      uploadedFilePaths: paths || doc.documentDetails.map(detail => detail.path) || [],
-    });
-
-    // Set uploaded file names to show existing and new files
-    setUploadedFileNames(
-      existingFiles.map(file => file.name)
-    );
-  });
-};
-
-
- 
-
   const fetchPaths = async (doc) => {
     try {
       const token = localStorage.getItem("tokenKey");
@@ -445,83 +419,99 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-  const handleSaveEdit = async () => {
+
+  const handleEditDocument = (doc) => {
+    console.log("Editing document:", doc);
+    setEditingDoc(doc);
+
+    // Fetch document details including file paths when editing
+    const existingFiles = (doc.documentDetails || []).map(detail => ({
+        name: detail.path.substring(detail.path.lastIndexOf('/') + 1) + " (Existing)",
+        path: detail.path,
+        isExisting: true
+    }));
+
+    setFormData({
+        fileNo: doc.fileNo,
+        title: doc.title,
+        subject: doc.subject,
+        version: doc.version,
+        category: doc.categoryMaster || null,
+    });
+
+    // Set uploaded file names to show existing files and initialize uploadedFilePaths
+    setUploadedFileNames(existingFiles.map(file => file.name));
+};
+
+const handleSaveEdit = async () => {
     const UserId = localStorage.getItem("userId");
     const token = localStorage.getItem("tokenKey");
-  
+
     if (!UserId || !token) {
-      showPopup("User not logged in. Please login again.", "error");
-      return;
+        showPopup("User not logged in. Please login again.", "error");
+        return;
     }
-  
+
     // Get existing file paths from the original document
     const existingFilePaths = editingDoc.documentDetails.map(detail => detail.path);
-  
-    // Determine which existing files should be kept
-    const remainingExistingPaths = existingFilePaths.filter((path, index) => 
-      uploadedFileNames.some(fileName => 
-        fileName.includes(path.substring(path.lastIndexOf('/') + 1)) && 
-        fileName.includes('(Existing)')
-      )
-    );
-  
+
     // Prepare payload for update
     const payload = {
-      documentHeader: {
-        id: editingDoc.id,
-        fileNo: formData.fileNo,
-        title: formData.title,
-        subject: formData.subject,
-        version: formData.version,
-        categoryMaster: { id: formData.category.id },
-        employee: { id: parseInt(UserId, 10) },
-      },
-      // Combine remaining existing paths with newly uploaded paths
-      filePaths: [
-        ...remainingExistingPaths, 
-        ...formData.uploadedFilePaths
-      ],
-    };
-  
-    try {
-      const response = await fetch(`${API_HOST}/api/documents/update`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+        documentHeader: {
+            id: editingDoc.id,
+            fileNo: formData.fileNo,
+            title: formData.title,
+            subject: formData.subject,
+            version: formData.version,
+            categoryMaster: { id: formData.category.id },
+            employee: { id: parseInt(UserId, 10) },
         },
-        body: JSON.stringify(payload),
-      });
-  
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        const errorMessage = contentType?.includes("application/json")
-          ? (await response.json()).message
-          : await response.text();
-        throw new Error(errorMessage || `HTTP error! status: ${response.status}`);
-      }
-  
-      const updatedDocument = await response.json();
-      console.log("Document updated successfully:", updatedDocument);
-      showPopup("Document updated successfully!", "success");
-  
-      // Reset form and update document list
-      setFormData({
-        fileNo: "",
-        title: "",
-        subject: "",
-        version: "",
-        category: { id: "" },
-        uploadedFilePaths: [],
-      });
-      setUploadedFileNames([]);
-      setEditingDoc(null);
-      fetchDocuments();
+        // Combine existing paths with newly uploaded paths
+        filePaths: [
+            ...existingFilePaths,
+            ...uploadedFileNames // Correctly use uploadedFileNames for newly uploaded files
+        ],
+    };
+
+    try {
+        const response = await fetch(`${API_HOST}/api/documents/update`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const contentType = response.headers.get("content-type");
+            const errorMessage = contentType?.includes("application/json")
+                ? (await response.json()).message
+                : await response.text();
+            throw new Error(errorMessage || `HTTP error! status: ${response.status}`);
+        }
+
+        const updatedDocument = await response.json();
+        console.log("Document updated successfully:", updatedDocument);
+        showPopup("Document updated successfully!", "success");
+
+        // Reset form and update document list
+        setFormData({
+            fileNo: "",
+            title: "",
+            subject: "",
+            version: "",
+            category: { id: "" },
+        });
+        setUploadedFileNames([]); // Clear uploaded file names
+        setEditingDoc(null);
+        fetchDocuments();
     } catch (error) {
-      console.error("Error updating document:", error);
-      showPopup(`Document update failed: ${error.message}`, "error");
+        console.error("Error updating document:", error);
+        showPopup(`Document update failed: ${error.message}`, "error");
     }
-  };
+};
+  
 
 
 
