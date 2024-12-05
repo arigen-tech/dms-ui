@@ -27,6 +27,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     uploadedFilePaths: [], // To store paths of uploaded files
   });
   const [uploadedFileNames, setUploadedFileNames] = useState([]);
+  const [uploadedFilePath, setUploadedFilePath] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -291,6 +292,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 ...prevNames,
                 ...selectedFiles.map((file) => file.name), // Append new file names
             ]);
+            debugger;
+            setUploadedFilePath((prevPath)=>[...prevPath,...filePaths]);
 
             showPopup('Files uploaded successfully!', 'success');
 
@@ -363,7 +366,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         category: null,
         uploadedFilePaths: [],
       });
-
+        setUploadedFilePath([]);
       setUploadedFileNames([]); // Clear file names
       fetchDocuments(); // Refresh the documents list
     } catch (error) {
@@ -421,12 +424,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
 
   const handleEditDocument = (doc) => {
+      debugger;
     console.log("Editing document:", doc);
     setEditingDoc(doc);
 
     // Fetch document details including file paths when editing
     const existingFiles = (doc.documentDetails || []).map(detail => ({
-        name: detail.path.substring(detail.path.lastIndexOf('/') + 1) + " (Existing)",
+        name: detail.path.substring(detail.path.lastIndexOf('/') + 1),
         path: detail.path,
         isExisting: true
     }));
@@ -441,6 +445,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     // Set uploaded file names to show existing files and initialize uploadedFilePaths
     setUploadedFileNames(existingFiles.map(file => file.name));
+    setUploadedFilePath(existingFiles.map(file => file.path));
+
 };
 
 const handleSaveEdit = async () => {
@@ -468,8 +474,8 @@ const handleSaveEdit = async () => {
         },
         // Combine existing paths with newly uploaded paths
         filePaths: [
-            ...existingFilePaths,
-            ...uploadedFileNames // Correctly use uploadedFileNames for newly uploaded files
+            ...uploadedFilePath
+            // ...uploadedFileNames // Correctly use uploadedFileNames for newly uploaded files
         ],
     };
 
@@ -517,6 +523,7 @@ const handleSaveEdit = async () => {
 
 
   const handleDiscardFile = (index) => {
+      debugger;
     if (index < 0 || index >= uploadedFileNames.length) {
       console.error("Invalid index:", index);
       return;
@@ -530,7 +537,10 @@ const handleSaveEdit = async () => {
       if (isExistingFile) {
         // Remove the existing file from the display
         const updatedFileNames = uploadedFileNames.filter((_, i) => i !== index);
+        const updatedFilePath = uploadedFilePath.filter((_, i) => i !== index);
+        setUploadedFilePath(updatedFilePath);
         setUploadedFileNames(updatedFileNames);
+
   
         // Optional: You might want to track which existing files are to be removed
         // This could be done by adding a flag or separate state
@@ -563,6 +573,7 @@ const handleSaveEdit = async () => {
   // Handle discard all files
   const handleDiscardAll = () => {
     setUploadedFileNames([]);
+    setUploadedFilePath([]);
     setFormData({ ...formData, uploadedFilePaths: [] });
   };
 
