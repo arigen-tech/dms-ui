@@ -21,6 +21,9 @@ const UserReport = () => {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [branchOptions, setBranchOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
+  const [resData, setResData] =useState([]);
+  const [fileContent, setFileContent] =useState([]);
+  const [fileName, setFileName] =useState([]);
   const [error, setError] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState("");
@@ -76,21 +79,24 @@ const UserReport = () => {
 
   const handleDownload = async (e) => {
     e.preventDefault();
+  
     const validationError = validateForm();
     if (validationError) {
       showModalAlert(validationError, "error");
       return;
     }
-
+  
     try {
       setIsProcessing(true);
-
+  
+      // Format the date range
       const formattedFromDate = new Date(fromDate);
       formattedFromDate.setHours(0, 0, 0, 0);
-
+  
       const formattedToDate = new Date(toDate);
       formattedToDate.setHours(23, 59, 59, 999);
-
+  
+      // Prepare the request payload
       const requestPayload = {
         departmentMasterBranchId: parseInt(formData.branch, 10),
         departmentMasterId: parseInt(formData.department, 10),
@@ -99,8 +105,9 @@ const UserReport = () => {
         endDate: formattedToDate,
         docType: selectedFormat,
       };
-
+  
       const token = localStorage.getItem("tokenKey");
+  
       const response = await axios.post(
         `${EMPLOYEE_API}/report/filter`,
         requestPayload,
@@ -109,31 +116,60 @@ const UserReport = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          responseType: "blob", // For file download
+          responseType: "json",
         }
       );
-
-      // Create a blob and initiate file download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+  
+      const { fileName, fileContent } = response.data.response;
+  
+      if (!fileContent || !fileName) {
+        throw new Error("File content or filename is missing in the response.");
+      }
+  
+      // Determine MIME type based on file extension in fileName
+      let mimeType = '';
+      if (fileName.endsWith(".csv")) {
+        mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      } else if (fileName.endsWith(".pdf")) {
+        mimeType = "application/pdf";
+      } else {
+        throw new Error("Unsupported file type.");
+      }
+  
+      // Decode the base64 file content
+      const byteCharacters = atob(fileContent); // Decode base64 content
+      const byteArrays = [];
+  
+      for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+        const slice = byteCharacters.slice(offset, offset + 1024);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+        byteArrays.push(new Uint8Array(byteNumbers));
+      }
+  
+      // Create a Blob from the byte array
+      const blob = new Blob(byteArrays, { type: mimeType });
+  
+      // Create an anchor tag to trigger the download
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `report.${selectedFormat.toLowerCase()}`);
+      link.setAttribute("download", fileName); // Use the fileName from the response
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
-
-      showModalAlert("Download successful!", "success");
-
-      // Reset the form after successful download
-      resetForm();
+      link.remove();
+  
     } catch (error) {
-      showModalAlert("Failed to export documents. Please try again.", "error");
-      resetForm();
-      console.error("Error downloading file:", error);
+      showModalAlert("Failed to download file. Please try again.", "error");
+      console.error("Error during file download:", error);
     } finally {
       setIsProcessing(false);
     }
   };
+  
+  
 
   const resetForm = () => {
     setFormData(initialFormData);
@@ -285,8 +321,8 @@ const UserReport = () => {
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
-                value="EXCEL"
-                checked={selectedFormat === "EXCEL"}
+                value="Excel"
+                checked={selectedFormat === "Excel"}
                 onChange={handleFormatChange}
                 className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 disabled={isProcessing}

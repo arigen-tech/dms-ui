@@ -607,17 +607,6 @@ function Sidebar() {
           <hr className="border-t border-blue-800" />
         </nav>
       </div>
-      <div>
-        <hr className="border-t border-blue-800 mb-1" />
-        <button
-          onClick={handleLogout}
-          className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center text-white hover:bg-blue-950 hover:text-white"
-        >
-          <ArrowLeftIcon className="h-5 w-5 mr-3" />
-          Logout
-        </button>
-        <hr className="border-t border-blue-800 mb-0.5 my-1" />
-      </div>
     </div>
   );
 }
