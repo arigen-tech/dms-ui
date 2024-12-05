@@ -87,7 +87,7 @@ const BranchEmployee = () => {
                     },
                 }
             );
-            setEmployees(employeeResponse.data);
+            setEmployees(employeeResponse.data.response);
         } catch (error) {
             setError("Error fetching department employees.");
         } finally {

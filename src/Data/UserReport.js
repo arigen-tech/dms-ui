@@ -4,6 +4,7 @@ import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaFilePdf, FaFileExcel } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 
 const UserReport = () => {
   const initialFormData = {
@@ -14,6 +15,7 @@ const UserReport = () => {
     endDate: null,
   };
 
+  const navigate = useNavigate();
   const [formData, setFormData] = React.useState(initialFormData);
   const [fromDate, setFromDate] = React.useState(null);
   const [toDate, setToDate] = React.useState(null);
@@ -21,9 +23,11 @@ const UserReport = () => {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [branchOptions, setBranchOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
-  const [resData, setResData] =useState([]);
-  const [fileContent, setFileContent] =useState([]);
-  const [fileName, setFileName] =useState([]);
+  const [resData, setResData] = useState([]);
+  const [fileContent, setFileContent] = useState([]);
+  const [fileName, setFileName] = useState([]);
+  const [userBranch, setUserBranch] = useState(null);
+  const [userDepartment, setUserDepartment] = useState(null);
   const [error, setError] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState("");
@@ -40,9 +44,76 @@ const UserReport = () => {
     setFormData({ ...formData, docType: value });
   };
 
+  const role = localStorage.getItem("role");
+
+  
+
   useEffect(() => {
     fetchBranches();
+    fetchUserDetails();
   }, []);
+
+  const fetchUserDetails = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setUserBranch(response.data.branch);
+      setUserDepartment(response.data.department);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (formData.branch) {
+      fetchDepartments(formData.branch);
+    } else {
+      setDepartmentOptions([]);
+    }
+  }, [formData.branch]);
+
+  useEffect(() => {
+    // Pre-fill searchCriteria with userBranch and userDepartment
+    setFormData((prev) => ({
+      ...prev,
+      branch: userBranch?.id || "",
+      branchName: userBranch?.name || "",
+      department: userDepartment?.id || "",
+      departmentName: userDepartment?.name || "",
+    }));
+  }, [userBranch, userDepartment]);
+
+  useEffect(() => {
+    if (role === "BRANCH ADMIN" && userBranch?.id) {
+      setFormData((prev) => ({
+        ...prev,
+        branch: userBranch.id,
+      }));
+      fetchDepartments(userBranch.id);
+    }
+  }, [role, userBranch]);
+
+  useEffect(() => {
+    if (role === "DEPARTMENT ADMIN" || role === "USER") {
+      if (userBranch?.id) {
+        setFormData((prev) => ({
+          ...prev,
+          branch: userBranch.id,
+          department: userDepartment?.id || "",
+        }));
+        fetchDepartments(userBranch.id);
+      }
+    }
+  }, [role, userBranch, userDepartment]);
 
   useEffect(() => {
     if (formData.branch) {
@@ -79,23 +150,23 @@ const UserReport = () => {
 
   const handleDownload = async (e) => {
     e.preventDefault();
-  
+
     const validationError = validateForm();
     if (validationError) {
       showModalAlert(validationError, "error");
       return;
     }
-  
+
     try {
       setIsProcessing(true);
-  
+
       // Format the date range
       const formattedFromDate = new Date(fromDate);
       formattedFromDate.setHours(0, 0, 0, 0);
-  
+
       const formattedToDate = new Date(toDate);
       formattedToDate.setHours(23, 59, 59, 999);
-  
+
       // Prepare the request payload
       const requestPayload = {
         departmentMasterBranchId: parseInt(formData.branch, 10),
@@ -105,9 +176,9 @@ const UserReport = () => {
         endDate: formattedToDate,
         docType: selectedFormat,
       };
-  
+
       const token = localStorage.getItem("tokenKey");
-  
+
       const response = await axios.post(
         `${EMPLOYEE_API}/report/filter`,
         requestPayload,
@@ -119,27 +190,28 @@ const UserReport = () => {
           responseType: "json",
         }
       );
-  
+
       const { fileName, fileContent } = response.data.response;
-  
+
       if (!fileContent || !fileName) {
         throw new Error("File content or filename is missing in the response.");
       }
-  
+
       // Determine MIME type based on file extension in fileName
-      let mimeType = '';
+      let mimeType = "";
       if (fileName.endsWith(".csv")) {
-        mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        mimeType =
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
       } else if (fileName.endsWith(".pdf")) {
         mimeType = "application/pdf";
       } else {
         throw new Error("Unsupported file type.");
       }
-  
+
       // Decode the base64 file content
       const byteCharacters = atob(fileContent); // Decode base64 content
       const byteArrays = [];
-  
+
       for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
         const slice = byteCharacters.slice(offset, offset + 1024);
         const byteNumbers = new Array(slice.length);
@@ -148,10 +220,10 @@ const UserReport = () => {
         }
         byteArrays.push(new Uint8Array(byteNumbers));
       }
-  
+
       // Create a Blob from the byte array
       const blob = new Blob(byteArrays, { type: mimeType });
-  
+
       // Create an anchor tag to trigger the download
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -160,7 +232,9 @@ const UserReport = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-  
+
+      showModalAlert("Download successful!", "success"); 
+      resetForm();
     } catch (error) {
       showModalAlert("Failed to download file. Please try again.", "error");
       console.error("Error during file download:", error);
@@ -168,8 +242,6 @@ const UserReport = () => {
       setIsProcessing(false);
     }
   };
-  
-  
 
   const resetForm = () => {
     setFormData(initialFormData);
@@ -195,6 +267,7 @@ const UserReport = () => {
 
   const closeModal = () => {
     setShowModal(false);
+    navigate(0);
   };
 
   return (
@@ -203,48 +276,123 @@ const UserReport = () => {
       <div className="bg-white p-6 rounded-lg shadow-md">
         <form onSubmit={handleDownload}>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
-            {/* Branch Dropdown */}
-            <div className="flex flex-col">
-              <label className="mb-1" htmlFor="branch">
-                Branch
-              </label>
-              <select
-                id="branch"
-                name="branch"
-                value={formData.branch}
-                onChange={handleInputChange}
-                className="p-2 border rounded-md outline-none"
-              >
-                <option value="">Select Branch</option>
-                {branchOptions.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {role === "BRANCH ADMIN" ? (
+              <>
+                <div className="flex flex-col">
+                  <label className="mb-1" htmlFor="branch">
+                    Branch
+                  </label>
+                  <select
+                    id="branch"
+                    name="branch"
+                    value={formData.branch}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded-md outline-none"
+                    disabled={true}
+                  >
+                    <option value={userBranch?.id}>{userBranch?.name}</option>
+                  </select>
+                </div>
 
-            {/* Department Dropdown */}
-            <div className="flex flex-col">
-              <label className="mb-1" htmlFor="department">
-                Department
-              </label>
-              <select
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-                className="p-2 border rounded-md outline-none"
-                disabled={!formData.branch}
-              >
-                <option value="">Select Department</option>
-                {departmentOptions.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div className="flex flex-col">
+                  <label className="mb-1" htmlFor="department">
+                    Department
+                  </label>
+                  <select
+                    id="department"
+                    name="department"
+                    onChange={handleInputChange}
+                    className="p-2 border rounded-md outline-none"
+                  >
+                    <option value="">Select Department</option>
+                    {departmentOptions.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            ) : role === "DEPARTMENT ADMIN" || role === "USER" ? (
+              <>
+                <div className="flex flex-col">
+                  <label className="mb-1" htmlFor="branch">
+                    Branch
+                  </label>
+                  <select
+                    id="branch"
+                    name="branch"
+                    value={formData.branch}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded-md outline-none"
+                    disabled={true}
+                  >
+                    <option value={userBranch?.id}>{userBranch?.name}</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="mb-1" htmlFor="department">
+                    Department
+                  </label>
+                  <select
+                    id="department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded-md outline-none"
+                    disabled={true}
+                  >
+                    <option value={userDepartment?.id}>
+                      {userDepartment?.name}
+                    </option>
+                  </select>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col">
+                  <label className="mb-1" htmlFor="branch">
+                    Branch
+                  </label>
+                  <select
+                    id="branch"
+                    name="branch"
+                    value={formData.branch}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded-md outline-none"
+                  >
+                    <option value="">Select Branch</option>
+                    {branchOptions.map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="mb-1" htmlFor="department">
+                    Department
+                  </label>
+                  <select
+                    id="department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded-md outline-none"
+                    disabled={!formData.branch}
+                  >
+                    <option value="">Select Department</option>
+                    {departmentOptions.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
 
             {/* Status Dropdown */}
             <div className="flex flex-col">
