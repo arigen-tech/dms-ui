@@ -220,7 +220,8 @@ const BranchEmployee = () => {
                 console.error("Error adding employee:", error);
                 setError(
                     error.response?.data?.message ||
-                    "Error adding employee. Please try again."
+                    "Email address is already Registered.please use different one."
+
                 );
             } finally {
                 setIsSubmitting(false);
@@ -574,6 +575,8 @@ const BranchEmployee = () => {
                                     <th className="border p-2 text-left">Role</th>
                                     <th className="border p-2 text-left">Created Date</th>
                                     <th className="border p-2 text-left">Updated Date</th>
+                                    <th className="border p-2 text-left">Created By</th>
+                                    <th className="border p-2 text-left">Updated By</th>
                                     <th className="border p-2 text-left">Status</th>
                                     <th className="border p-2 text-left">Edit</th>
                                     <th className="border p-2 text-left">Access</th>
@@ -593,6 +596,13 @@ const BranchEmployee = () => {
                                         <td className="border p-2">{employee.role?.role || "No Role"}</td>
                                         <td className="border p-2">{formatDate(employee.createdOn)}</td>
                                         <td className="border p-2">{formatDate(employee.updatedOn)}</td>
+                                        <td className="border p-2">
+                                            {employee.createdBy?.name || "Unknown"}
+                                        </td>
+
+                                        <td className="border p-2">
+                                            {employee.updatedBy?.name || "Unknown"}
+                                        </td>
                                         <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
                                         <td className="border p-2">
                                             <button

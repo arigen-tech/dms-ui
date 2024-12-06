@@ -42,6 +42,7 @@ const UserAddEmployee = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [selectedBranch, setSelectedBranch] = useState(null);
+  const [userName, setUserName] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [Message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +73,7 @@ const UserAddEmployee = () => {
 
       const userData = userResponse.data;
       console.log("Complete User Data:", userData);
+      setUserName(userResponse.data.name);
 
       // Explicitly set branch and department
       const userBranch = userData.branch
@@ -97,9 +99,19 @@ const UserAddEmployee = () => {
       const isAdmin = userData.role?.role?.toUpperCase() === "ADMIN";
 
       if (isAdmin) {
-        // Fetch all employees if user is an admin
-        const allEmployeesResponse = await axios.get(
-          `${API_HOST}/employee/findAll`,
+        // Fetch all employees if the user is an admin
+        const allEmployeesResponse = await axios.get(`${API_HOST}/employee/findAll`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("All employees data:", allEmployeesResponse.data);
+        setEmployees(allEmployeesResponse.data);
+      } else {
+        // Fetch employees created by the logged-in user
+        const createdByResponse = await axios.get(
+          `${API_HOST}/employee/employeeCreateby/${userData.id}`, // Ensure userData.id holds the empId
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -107,12 +119,12 @@ const UserAddEmployee = () => {
           }
         );
 
-        console.log("All employees data:", allEmployeesResponse.data);
-
-        setEmployees(allEmployeesResponse.data);
-      } else {
-        setEmployees([userData]);
+        console.log("Employees created by user:", createdByResponse.data);
+        // setEmployees(createdByResponse.data.payload || []); 
+        setEmployees(createdByResponse.data.response);
+        // Adjust based on your API response structure
       }
+
 
     } catch (error) {
       console.error("Error fetching user details or employees:", error);
@@ -309,7 +321,8 @@ const UserAddEmployee = () => {
         console.error("Error adding employee:", error);
         setError(
           error.response?.data?.message ||
-          "Error adding employee. Please try again."
+          "Email address is already Registered.please use different one."
+
         );
       } finally {
         setIsSubmitting(false); // Enable button after submission is done
@@ -657,7 +670,7 @@ const UserAddEmployee = () => {
 
 
 
-        {role === "ADMIN" && (
+        {(role === "ADMIN" || role === "USER") && (
           <>
             <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
               <div className="flex items-center bg-blue-500 rounded-lg">
@@ -705,10 +718,16 @@ const UserAddEmployee = () => {
                   <th className="border p-2 text-left">Created Date</th>
                   <th className="border p-2 text-left">Updated Date</th>
                   <th className="border p-2 text-left">Created By</th>
-                  <th className="border p-2 text-left">Updated By</th>
-                  <th className="border p-2 text-left">Status</th>
+                  {(role === "ADMIN") && (
+                    <>
+                      <th className="border p-2 text-left">Updated By</th>
+                      <th className="border p-2 text-left">Status</th></>
+                  )}
                   <th className="border p-2 text-left">Edit</th>
-                  <th className="border p-2 text-left">Access</th>
+                  {(role === "ADMIN") && (
+                    <th className="border p-2 text-left">Access</th>
+                  )}
+
                 </tr>
               </thead>
               <tbody>
@@ -733,15 +752,28 @@ const UserAddEmployee = () => {
                     <td className="border p-2">
                       {formatDate(employee.updatedOn)}
                     </td>
-                    <td className="border p-2">
-                      {employee.createdBy?.name || "Unknown"}
-                    </td>
-                    <td className="border p-2">
-                      {employee.updatedBy?.name || "Unknown"}
-                    </td>
-                    <td className="border p-2">
-                      {employee.active ? "Active" : "Inactive"}
-                    </td>
+
+                    {(role === "USER") && (
+                      <td className="border p-2">
+                        {userName || "Unknown"}
+                      </td>
+                    )}
+                    {(role === "ADMIN") && (
+                      <>
+                        <td className="border p-2">
+                          {employee.createdBy?.name || "Unknown"}
+                        </td>
+
+                        <td className="border p-2">
+                          {employee.updatedBy?.name || "Unknown"}
+                        </td>
+                        <td className="border p-2">
+                          {employee.active ? "Active" : "Inactive"}
+                        </td>
+                      </>
+                    )}
+
+
                     <td className="border p-2">
                       <button
                         onClick={() => handleEditEmployee(employee.id)}
@@ -750,19 +782,22 @@ const UserAddEmployee = () => {
                         <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                       </button>
                     </td>
-                    <td className="border p-2">
-                      <button
-                        onClick={() => handleToggleActive(employee)}
-                        className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"
-                          }`}
-                      >
-                        {employee.active ? (
-                          <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
-                        ) : (
-                          <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
-                        )}
-                      </button>
-                    </td>
+                    {(role === "ADMIN") && (
+                      <td className="border p-2">
+                        <button
+                          onClick={() => handleToggleActive(employee)}
+                          className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"
+                            }`}
+                        >
+                          {employee.active ? (
+                            <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
+                          ) : (
+                            <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
+                          )}
+                        </button>
+                      </td>
+                    )}
+
                   </tr>
                 ))}
               </tbody>

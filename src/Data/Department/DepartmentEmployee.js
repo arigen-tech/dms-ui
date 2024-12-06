@@ -12,7 +12,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_HOST } from "../../API/apiConfig";
 
-const BranchEmployee = () => {
+const DepartmentEmployee = () => {
     const [employees, setEmployees] = useState([]);
     const [formData, setFormData] = useState({
         name: "",
@@ -51,6 +51,9 @@ const BranchEmployee = () => {
         try {
             const userId = localStorage.getItem("userId");
             const token = localStorage.getItem("tokenKey");
+            console.log("UserId:", userId);
+            console.log("Token:", token);
+    
             const response = await axios.get(
                 `${API_HOST}/employee/findById/${userId}`,
                 {
@@ -59,6 +62,8 @@ const BranchEmployee = () => {
                     },
                 }
             );
+            console.log("User details response:", response.data);
+    
             setUserBranch(response.data.branch);
             setUserDepartment(response.data.department);
             setFormData(prevData => ({
@@ -67,27 +72,29 @@ const BranchEmployee = () => {
                 department: response.data.department
             }));
         } catch (error) {
-            console.error("Error fetching user details:", error);
+            console.error("Error fetching user details:", error.response || error);
             setError("Error fetching user details.");
         } finally {
             setLoading(false);
         }
     };
+    
 
     const fetchDepartmentEmployees = async () => {
         setLoading(true);
         setError("");
         try {
             const token = localStorage.getItem("tokenKey");
-            const employeeResponse = await axios.get(
-                `${API_HOST}/employee/department/${userDepartment.id}`,
+            const response = await axios.get(
+                `${API_HOST}/employee/department/${userDepartment.id}`
+,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 }
             );
-            setEmployees(employeeResponse.data.response);
+            setEmployees(response.data.response);
         } catch (error) {
             setError("Error fetching department employees.");
         } finally {
@@ -164,7 +171,7 @@ const BranchEmployee = () => {
                 console.error("Error adding employee:", error);
                 setError(
                     error.response?.data?.message ||
-                    "Error adding employee. Please try again."
+                    "Email address is already Registered.please use different one."
                 );
             } finally {
                 setIsSubmitting(false);
@@ -487,6 +494,8 @@ const BranchEmployee = () => {
                             <th className="border p-2 text-left">Role</th>
                             <th className="border p-2 text-left">Created Date</th>
                             <th className="border p-2 text-left">Updated Date</th>
+                            <th className="border p-2 text-left">Created By</th>
+                            <th className="border p-2 text-left">Updated By</th>
                             <th className="border p-2 text-left">Status</th>
                             <th className="border p-2 text-left">Edit</th>
                             <th className="border p-2 text-left">Access</th>
@@ -506,6 +515,13 @@ const BranchEmployee = () => {
                                 <td className="border p-2">{employee.role?.role || "No Role"}</td>
                                 <td className="border p-2">{formatDate(employee.createdOn)}</td>
                                 <td className="border p-2">{formatDate(employee.updatedOn)}</td>
+                                <td className="border p-2">
+                                    {employee.createdBy?.name || "Unknown"}
+                                </td>
+
+                                <td className="border p-2">
+                                    {employee.updatedBy?.name || "Unknown"}
+                                </td>
                                 <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
                                 <td className="border p-2">
                                     <button
@@ -595,4 +611,4 @@ const BranchEmployee = () => {
     );
 };
 
-export default BranchEmployee;
+export default DepartmentEmployee;
