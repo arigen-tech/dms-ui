@@ -5,6 +5,7 @@ import {
 } from '@heroicons/react/24/solid';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Popup from '../Components/Popup';
 
 const tokenKey = 'tokenKey';
 
@@ -17,6 +18,7 @@ const Year = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [yearToToggle, setYearToToggle] = useState(null);
+  const [popupMessage, setPopupMessage] = useState(null);
 
   useEffect(() => {
     // Fetch years from the server
@@ -63,10 +65,10 @@ const Year = () => {
         });
         setYears([...years, response.data]); 
         setFormData({ year: '' }); // Reset the form field
-        alert('Year added successfully!');
+        showPopup("YEAR Added successfully!", "success");
       } catch (error) {
         console.error('Error adding year:', error.response ? error.response.data : error.message);
-        alert('Failed to adding the year. Please try again.'); 
+        showPopup("Failed to adding the year. Please try again.");
       }
     }
   };
@@ -93,10 +95,10 @@ const Year = () => {
         ));
         setFormData({ year: '' });
         setEditingIndex(null);
-        alert('Year updated successfully!');
+        showPopup('Year updated successfully!');
       } catch (error) {
         console.error('Error updating year:', error.response ? error.response.data : error.message);
-        alert('Failed to update the year. Please try again.'); 
+        showPopup('Failed to update the year. Please try again.'); 
       }
     }
   };
@@ -133,10 +135,10 @@ const Year = () => {
         setYears(updatedYears);
         setModalVisible(false);
         setYearToToggle(null);
-        alert('Status Changed successfully!');
+        showPopup('Status Changed successfully!');
       } catch (error) {
         console.error('Error toggling Year status:', error.response ? error.response.data : error.message);
-        alert('Failed to changing the status. Please try again.');
+        showPopup('Failed to changing the status. Please try again.');
       }
     } else {
       console.error('No Year selected for status toggle');
@@ -154,6 +156,10 @@ const Year = () => {
       // hour12: true 
     };
     return date.toLocaleString('en-GB', options).replace(',', '');
+  };
+
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({ message, type });
   };
 
   const filteredYears = years.filter(year => {
@@ -180,6 +186,13 @@ const Year = () => {
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">YEARS</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
+      {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={() => setPopupMessage(null)}
+          />
+        )}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4">
             <input

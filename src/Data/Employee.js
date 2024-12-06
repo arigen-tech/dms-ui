@@ -684,7 +684,10 @@ const UserAddEmployee = () => {
                   id="itemsPerPage"
                   className="border rounded-r-lg p-1.5 outline-none"
                   value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value)); // Update items per page
+                    setCurrentPage(1); // Reset to the first page
+                  }}
                 >
                   {[5, 10, 15, 20].map((num) => (
                     <option key={num} value={num}>
@@ -704,6 +707,7 @@ const UserAddEmployee = () => {
                 <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
               </div>
             </div>
+
 
             <table className="w-full border-collapse border">
               <thead className="bg-gray-100">
