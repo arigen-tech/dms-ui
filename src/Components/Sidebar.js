@@ -26,7 +26,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { RiFileUserFill } from "react-icons/ri";
 import { IoDocumentLock } from "react-icons/io5";
-import { FaRegFile, FaTimesCircle } from 'react-icons/fa';
+import { FaRegFile, FaTimesCircle } from "react-icons/fa";
 import logo3 from "../Assets/logo3.png";
 import { API_HOST } from "../API/apiConfig";
 
@@ -41,40 +41,40 @@ function Sidebar() {
     return savedCounts
       ? JSON.parse(savedCounts)
       : {
-        totalUser: 0,
-        branchUser: 0,
-        totalDocument: 0,
-        pendingDocument: 0,
-        storageUsed: 0,
-        totalBranches: 0,
-        totalDepartment: 0,
-        totalRoles: 0,
-        documentType: 0,
-        annualYear: 0,
-        totalNullEmployeeType: 0,
-        totalCategories: 0,
-        totalApprovedDocuments: 0,
-        totalRejectedDocuments: 0,
-        totalPendingDocuments: 0,
-        totalApprovedDocumentsById: 0,
-        totalRejectedDocumentsById: 0,
-        totalPendingDocumentsById: 0,
-        totalDocumentsById: 0,
-        totalApprovedStatusDocById: 0,
-        totalRejectedStatusDocById: 0,
-        departmentCountForBranch: 0,
-        nullRoleEmployeeCountForBranch: 0,
-        departmentUser: 0,
-        rejectedDocsbyid: 0,
-        approvedDocsbyid: 0,
-        pendingDocsbyid: 0,
-        createdByCount: 0,
-        nullRoleEmployeeCountForDepartment: 0,
-        totalDocumentsByDepartmentId: 0,
-        totalPendingDocumentsByDepartmentId: 0,
-        totalApprovedStatusDocByDepartmentId: 0,
-        totalRejectedStatusDocByDepartmentId: 0,
-      };
+          totalUser: 0,
+          branchUser: 0,
+          totalDocument: 0,
+          pendingDocument: 0,
+          storageUsed: 0,
+          totalBranches: 0,
+          totalDepartment: 0,
+          totalRoles: 0,
+          documentType: 0,
+          annualYear: 0,
+          totalNullEmployeeType: 0,
+          totalCategories: 0,
+          totalApprovedDocuments: 0,
+          totalRejectedDocuments: 0,
+          totalPendingDocuments: 0,
+          totalApprovedDocumentsById: 0,
+          totalRejectedDocumentsById: 0,
+          totalPendingDocumentsById: 0,
+          totalDocumentsById: 0,
+          totalApprovedStatusDocById: 0,
+          totalRejectedStatusDocById: 0,
+          departmentCountForBranch: 0,
+          nullRoleEmployeeCountForBranch: 0,
+          departmentUser: 0,
+          rejectedDocsbyid: 0,
+          approvedDocsbyid: 0,
+          pendingDocsbyid: 0,
+          createdByCount: 0,
+          nullRoleEmployeeCountForDepartment: 0,
+          totalDocumentsByDepartmentId: 0,
+          totalPendingDocumentsByDepartmentId: 0,
+          totalApprovedStatusDocByDepartmentId: 0,
+          totalRejectedStatusDocByDepartmentId: 0,
+        };
   });
 
   useEffect(() => {
@@ -176,6 +176,7 @@ function Sidebar() {
 
   const role = localStorage.getItem("role");
 
+  
   return (
     <div className="h-screen flex flex-col justify-between bg-blue-800 text-white w-52 p-1 transition-all duration-300">
       <div>
@@ -184,72 +185,6 @@ function Sidebar() {
         </div>
         <nav className="flex flex-col space-y-1">
           <hr className="border-t border-blue-800" />
-
-          {role === "USER" && (
-            <>
-              <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
-
-              <SidebarLink
-                to="/users"
-                icon={UserGroupIcon}
-                text="Users"
-                count={counts.createdByCount}
-              />
-              <SidebarLink
-                to="/all-documents"
-                icon={DocumentArrowUpIcon}
-                text="Upload Document"
-                count={counts.pendingDocsbyid}
-              />
-              <SidebarLink
-                to="/approvedDocs"
-                icon={DocumentCheckIcon}
-                text="Approved Document"
-                count={counts.approvedDocsbyid}
-              />
-              <SidebarLink
-                to="/rejectedDocs"
-                icon={DocumentTextIcon}
-                text="Rejected Document"
-                count={counts.rejectedDocsbyid}
-              />
-              {/* Added Search Documents Link */}
-              <SidebarLink
-                to="/search"
-                icon={DocumentTextIcon}
-                text="Search Documents"
-              />
-
-              <div>
-                <button
-                  onClick={handleReportToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
-                >
-                  <div className="flex items-center">
-                    <DocumentChartBarIcon className="h-5 w-5 mr-3" />
-                    Report Section
-                  </div>
-                  {isReportOpen ? (
-                    <ChevronDownIcon className="h-4 w-4" />
-                  ) : (
-                    <ChevronRightIcon className="h-4 w-4" />
-                  )}
-                </button>
-                {isReportOpen && (
-                  <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
-                      to="/documentReport"
-                      icon={DocumentTextIcon}
-                      text="Document Report"
-                    // count={counts.totalRejectedDocuments}
-                    />
-                  </div>
-                )}
-              </div>
-            </>
-
-          )}
 
           {role === "ADMIN" && (
             <>
@@ -313,6 +248,13 @@ function Sidebar() {
                       text="Category"
                       count={counts.totalCategories}
                     />
+                    <hr className="border-t border-blue-800" />
+                    <SidebarLink
+                      to="/create-year"
+                      icon={ShoppingCartIcon}
+                      text="Years"
+                      count={counts.annualYear}
+                    />
                   </div>
                 )}
               </div>
@@ -341,13 +283,13 @@ function Sidebar() {
                       count={counts.totalPendingDocuments}
                     />
                     <SidebarLink
-                      to="/approve-by-admin"
+                      to="/total-approved"
                       icon={DocumentCheckIcon}
                       text="Approved Document"
                       count={counts.totalApprovedDocuments}
                     />
                     <SidebarLink
-                      to="/reject-by-admin"
+                      to="/total-rejected"
                       icon={DocumentMinusIcon}
                       text="Rejected Document"
                       count={counts.totalRejectedDocuments}
@@ -383,17 +325,119 @@ function Sidebar() {
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
-                    // count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                     />
 
                     <SidebarLink
                       to="/userReport"
                       icon={RiFileUserFill}
                       text="User Report"
-                    // count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}
+              </div>
+            </>
+          )}
+          {role === "BRANCH ADMIN" && (
+            <>
+              <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
+              <SidebarLink
+                to="/branchusers"
+                icon={UserGroupIcon}
+                text="Branch Users"
+                count={counts.branchUser}
+              />
+              <SidebarLink
+                to="/userRoleAssing"
+                icon={UserPlusIcon}
+                text="Pending Users"
+                count={counts.nullRoleEmployeeCountForBranch}
+              />
+              <SidebarLink
+                to="/create-departments"
+                icon={ComputerDesktopIcon}
+                text="Departments"
+                count={counts.departmentCountForBranch}
+              />
+              <div>
+                {/* Document section */}
+                <button
+                  onClick={handleDocumentToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <DocumentTextIcon className="h-5 w-5 mr-3" />
+                    Document
+                  </div>
+                  {isDocumentOpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isDocumentOpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
+                      to="/approve-documents"
+                      icon={LockClosedIcon}
+                      text="Pending Approvals"
+                      count={counts.totalPendingDocumentsById}
+                    />
+                    <SidebarLink
+                      to="/total-approved"
+                      icon={DocumentCheckIcon}
+                      text="Approved Documents"
+                      count={counts.totalApprovedStatusDocById}
+                    />
+                    <SidebarLink
+                      to="/total-rejected"
+                      icon={DocumentTextIcon}
+                      text="Rejected Documents"
+                      count={counts.totalRejectedStatusDocById}
+                    />
+                    <SidebarLink
+                      to="/search"
+                      icon={DocumentTextIcon}
+                      text="Search Documents"
+                    />
+                  </div>
+                )}
+                <div>
+                  <button
+                    onClick={handleReportToggle}
+                    className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  >
+                    <div className="flex items-center">
+                      <DocumentChartBarIcon className="h-5 w-5 mr-3" />
+                      Report Section
+                    </div>
+                    {isReportOpen ? (
+                      <ChevronDownIcon className="h-4 w-4" />
+                    ) : (
+                      <ChevronRightIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                  {isReportOpen && (
+                    <div className="ml-2 flex flex-col space-y-1">
+                      <hr className="border-t border-blue-800 mt-1" />
+                      <SidebarLink
+                        to="/documentReport"
+                        icon={DocumentTextIcon}
+                        text="Document Report"
+                        // count={counts.totalRejectedDocuments}
+                      />
+
+                      <SidebarLink
+                        to="/userReport"
+                        icon={RiFileUserFill}
+                        text="User Report"
+                        // count={counts.totalRejectedDocuments}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -445,17 +489,16 @@ function Sidebar() {
                       count={counts.totalPendingDocumentsByDepartmentId}
                     />
                     <SidebarLink
-                      to="/approve-by-admin"
+                      to="/total-approved"
                       icon={DocumentCheckIcon}
                       text="Approved Document"
                       count={counts.totalApprovedStatusDocByDepartmentId}
                     />
                     <SidebarLink
-                      to="/reject-by-admin"
+                      to="/total-rejected"
                       icon={DocumentTextIcon}
                       text="Rejected Documents"
-                      count={counts.totalRejectedStatusDocByDepartmentId
-                      }
+                      count={counts.totalRejectedStatusDocByDepartmentId}
                     />
                     <SidebarLink
                       to="/search"
@@ -486,14 +529,14 @@ function Sidebar() {
                         to="/documentReport"
                         icon={DocumentTextIcon}
                         text="Document Report"
-                      // count={counts.totalRejectedDocuments}
+                        // count={counts.totalRejectedDocuments}
                       />
 
                       <SidebarLink
                         to="/userReport"
                         icon={RiFileUserFill}
                         text="User Report"
-                      // count={counts.totalRejectedDocuments}
+                        // count={counts.totalRejectedDocuments}
                       />
                     </div>
                   )}
@@ -501,105 +544,68 @@ function Sidebar() {
               </div>
             </>
           )}
-          {role === "BRANCH ADMIN" && (
+
+          {role === "USER" && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
+
               <SidebarLink
-                to="/branchusers"
+                to="/users"
                 icon={UserGroupIcon}
-                text="Branch Users"
-                count={counts.branchUser}
+                text="Users"
+                count={counts.createdByCount}
               />
               <SidebarLink
-                to="/userRoleAssing"
-                icon={UserPlusIcon}
-                text="Pending Users"
-                count={counts.nullRoleEmployeeCountForBranch}
+                to="/all-documents"
+                icon={DocumentArrowUpIcon}
+                text="Upload Document"
+                count={counts.pendingDocsbyid}
               />
               <SidebarLink
-                to="/create-departments"
-                icon={ComputerDesktopIcon}
-                text="Departments"
-                count={counts.departmentCountForBranch}
+                to="/approvedDocs"
+                icon={DocumentCheckIcon}
+                text="Approved Document"
+                count={counts.approvedDocsbyid}
               />
+              <SidebarLink
+                to="/rejectedDocs"
+                icon={DocumentTextIcon}
+                text="Rejected Document"
+                count={counts.rejectedDocsbyid}
+              />
+              {/* Added Search Documents Link */}
+              <SidebarLink
+                to="/search"
+                icon={DocumentTextIcon}
+                text="Search Documents"
+              />
+
               <div>
-                {/* Document section */}
                 <button
-                  onClick={handleDocumentToggle}
+                  onClick={handleReportToggle}
                   className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
-                    <DocumentTextIcon className="h-5 w-5 mr-3" />
-                    Document
+                    <DocumentChartBarIcon className="h-5 w-5 mr-3" />
+                    Report Section
                   </div>
-                  {isDocumentOpen ? (
+                  {isReportOpen ? (
                     <ChevronDownIcon className="h-4 w-4" />
                   ) : (
                     <ChevronRightIcon className="h-4 w-4" />
                   )}
                 </button>
-                {isDocumentOpen && (
+                {isReportOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
                     <hr className="border-t border-blue-800 mt-1" />
                     <SidebarLink
-                      to="/approve-documents"
-                      icon={LockClosedIcon}
-                      text="Pending Approvals"
-                      count={counts.totalPendingDocumentsById}
-                    />
-                    <SidebarLink
-                      to="/approve-by-admin"
-                      icon={DocumentCheckIcon}
-                      text="Approved Documents"
-                      count={counts.totalApprovedStatusDocById}
-                    />
-                    <SidebarLink
-                      to="/reject-by-admin"
+                      to="/documentReport"
                       icon={DocumentTextIcon}
-                      text="Rejected Documents"
-                      count={counts.totalRejectedStatusDocById}
-                    />
-                    <SidebarLink
-                      to="/search"
-                      icon={DocumentTextIcon}
-                      text="Search Documents"
+                      text="Document Report"
+                      // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}
-                <div>
-                  <button
-                    onClick={handleReportToggle}
-                    className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
-                  >
-                    <div className="flex items-center">
-                      <DocumentChartBarIcon className="h-5 w-5 mr-3" />
-                      Report Section
-                    </div>
-                    {isReportOpen ? (
-                      <ChevronDownIcon className="h-4 w-4" />
-                    ) : (
-                      <ChevronRightIcon className="h-4 w-4" />
-                    )}
-                  </button>
-                  {isReportOpen && (
-                    <div className="ml-2 flex flex-col space-y-1">
-                      <hr className="border-t border-blue-800 mt-1" />
-                      <SidebarLink
-                        to="/documentReport"
-                        icon={DocumentTextIcon}
-                        text="Document Report"
-                      // count={counts.totalRejectedDocuments}
-                      />
-
-                      <SidebarLink
-                        to="/userReport"
-                        icon={RiFileUserFill}
-                        text="User Report"
-                      // count={counts.totalRejectedDocuments}
-                      />
-                    </div>
-                  )}
-                </div>
               </div>
             </>
           )}

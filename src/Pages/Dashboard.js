@@ -21,7 +21,7 @@ import {
   Cell,
   Pie,
 } from "recharts";
-import { useNavigate } from "react-router-dom"; // For redirecting if unauthorized
+import { useNavigate, Link } from "react-router-dom";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import {
@@ -82,25 +82,30 @@ function Dashboard() {
   useEffect(() => {
     fetchUserDetails();
   }, []);
+
   
+
   const fetchUserDetails = async () => {
     try {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("tokenKey");
-  
+
       if (!userId || !token) {
         throw new Error("User ID or token is missing in localStorage");
       }
-  
-      const response = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
+
+      const response = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       const employeeData = response.data;
       console.log("Employee data:", employeeData);
-  
+
       // Set Branch ID if available
       if (employeeData.branch && employeeData.branch.id) {
         const branchId = employeeData.branch.id;
@@ -110,7 +115,7 @@ function Dashboard() {
         console.warn("Branch ID is not available in the response.");
         setBranchsId(null);
       }
-  
+
       // Set Department ID if available, handle null case
       if (employeeData.department) {
         const departmentId = employeeData.department.id;
@@ -121,19 +126,21 @@ function Dashboard() {
         setDepartmentId(null);
       }
     } catch (error) {
-      console.error("Error fetching user details:", error.response?.data || error.message);
+      console.error(
+        "Error fetching user details:",
+        error.response?.data || error.message
+      );
       // Set default values or handle error
       setBranchsId(null);
       setDepartmentId(null);
     }
   };
-  
-  
-  
-  
+
   useEffect(() => {
     const fetchStatsAndData = async () => {
       try {
+
+        debugger;
         const employeeId = localStorage.getItem("userId");
         const token = localStorage.getItem("tokenKey");
         const role = localStorage.getItem("role");
@@ -143,28 +150,34 @@ function Dashboard() {
         }
   
         const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-        const url = `${API_HOST}/api/dashboard/getAllCount/${employeeId}`;
-  
+        const baseUrl = `${API_HOST}/api/documents`;
+        const dashboardUrl = `${API_HOST}/api/dashboard/getAllCount/${employeeId}`;
         const startDate = `${currentYear}-01-01 00:00:00`;
         const endDate = `${currentYear}-12-31 23:59:59`;
-        let summaryUrl = `${API_HOST}/api/documents/document/summary/by/${employeeId}`;
   
-        if (role === "ADMIN") {
-          summaryUrl = `${API_HOST}/api/documents/total`;
-        } else if (role === "BRANCH ADMIN") {
-          // Always use branchesId for Branch Admin
-          summaryUrl = `${API_HOST}/api/documents/branch/${branchesId}`;
-        } else if (role === "DEPARTMENT ADMIN") {
-          // Use departmentId if available, otherwise fall back to branchesId
-          summaryUrl = departmentId 
-            ? `${API_HOST}/api/documents/department/${departmentId}`
-            : `${API_HOST}/api/documents/branch/${branchesId}`;
-        } else if (role === "USER") {
-          summaryUrl = `${API_HOST}/api/documents/document/summary/by/${employeeId}`;
+        let summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
+  
+        switch (role) {
+          case "ADMIN":
+            summaryUrl = `${baseUrl}/monthly-total`;
+            break;
+          case "BRANCH ADMIN":
+            summaryUrl = `${baseUrl}/branch/${branchesId}`;
+            break;
+          case "DEPARTMENT ADMIN":
+            summaryUrl = departmentId
+              ? `${baseUrl}/department/${departmentId}`
+              : `${baseUrl}/branch/${branchesId}`;
+            break;
+          case "USER":
+            summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
+            break;
+          default:
+            throw new Error("Invalid role.");
         }
   
         const [statsResponse, summaryResponse] = await Promise.all([
-          axios.get(url, { ...authHeader, params: { employeeId } }),
+          axios.get(dashboardUrl, { ...authHeader, params: { employeeId } }),
           axios.get(summaryUrl, {
             ...authHeader,
             params: { startDate, endDate },
@@ -173,7 +186,13 @@ function Dashboard() {
   
         setStats(statsResponse.data);
   
-        const { months, approvedDocuments, rejectedDocuments, pendingDocuments } = summaryResponse.data;
+        const {
+          months,
+          approvedDocuments,
+          rejectedDocuments,
+          pendingDocuments,
+        } = summaryResponse.data;
+  
         const mappedData = months.map((month, index) => ({
           name: month,
           ApprovedDocuments: approvedDocuments[index],
@@ -181,15 +200,15 @@ function Dashboard() {
           PendingDocuments: pendingDocuments[index],
         }));
   
-  
         setChartData(mappedData);
       } catch (error) {
         console.error("Error fetching data:", error);
   
-        if (
+        const isUnauthorized =
           error.response?.status === 401 ||
-          error.message === "Unauthorized: Token or Employee ID missing."
-        ) {
+          error.message === "Unauthorized: Token or Employee ID missing.";
+  
+        if (isUnauthorized) {
           navigate("/login");
         }
       }
@@ -198,7 +217,6 @@ function Dashboard() {
     fetchStatsAndData();
   }, [navigate, currentYear, branchesId, departmentId]);
   
- 
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -237,6 +255,9 @@ function Dashboard() {
     { name: "Pending", value: totalPendingDocuments },
   ];
 
+  const totalDocsbyUser = (stats.rejectedDocsbyid + stats.approvedDocsbyid + stats.pendingDocsbyid);
+
+
   return (
     <div className="flex flex-row bg-gray-200 h-screen w-screen overflow-hidden">
       {sidebarOpen && <Sidebar />}
@@ -246,175 +267,241 @@ function Dashboard() {
           <h2 className="text-xl mb-4 font-semibold">DASHBOARD</h2>
 
           <div className="grid grid-cols-4 gap-4 mb-6">
-            <StatBlock
-              title="Total Users"
-              value={stats.totalUser}
-              Icon={UsersIcon}
-            />
-            <StatBlock
-              title="Storage Used"
-              value={`150 GB`}
-              Icon={ServerStackIcon}
-            />
-            {/* <StatBlock
-              title="Annual Years"
-              value={stats.annualYear}
-              Icon={CalendarDaysIcon}
-            /> */}
-
-            {role === "USER" && (
-              <>
-                <StatBlock
-                  title="Total Documents"
-                  value={stats.totalDocumentsById}
-                  Icon={DocumentArrowDownIcon}
-                />
-                <StatBlock
-                  title="Pending Documents"
-                  value={stats.totalPendingDocumentsById}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Rejected Documents"
-                  value={stats.rejectedDocsbyid}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Approved Documents"
-                  value={stats.approvedDocsbyid}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-              </>
-            )}
-
             {role === "ADMIN" && (
               <>
+                <Link to="/users" className="block">
+                  <StatBlock
+                    title="Total Users"
+                    value={stats.totalUser}
+                    Icon={UsersIcon}
+                  />
+                </Link>
+                
+                <Link to="/userRoleAssing" className="block">
+                  <StatBlock
+                    title="Total Pending Users"
+                    value={stats.totalNullEmployeeType}
+                    Icon={UsersIcon}
+                  />
+                </Link>
+
+                <Link to="/create-branch" className="block">
+                  <StatBlock
+                    title="Total Branches"
+                    value={stats.totalBranches}
+                    Icon={KeyIcon}
+                  />
+                </Link>
+
+                <Link to="/create-department" className="block">
+                  <StatBlock
+                    title="Total Departments"
+                    value={stats.totalDepartment}
+                    Icon={ComputerDesktopIcon}
+                  />
+                </Link>
+
+                <Link to="/create-role" className="block">
+                  <StatBlock
+                    title="Total Roles"
+                    value={stats.totalRoles}
+                    Icon={UserCircleIcon}
+                  />
+                </Link>
+
+                <Link to="/create-category" className="block">
+                  <StatBlock
+                    title="Total Categories"
+                    value={stats.totalCategories}
+                    Icon={ShoppingCartIcon}
+                  />
+                </Link>
+
+                <Link to="/create-year" className="block">
+                  <StatBlock
+                    title="Total Year"
+                    value={stats.annualYear}
+                    Icon={CalendarDaysIcon}
+                  />
+                </Link>
+
                 <StatBlock
                   title="Total Documents"
                   value={stats.totalDocument}
                   Icon={DocumentArrowDownIcon}
                 />
-                <StatBlock
-                  title="Pending Documents"
-                  value={stats.totalPendingDocuments}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Total Branches"
-                  value={stats.totalBranches}
-                  Icon={KeyIcon}
-                />
-                <StatBlock
-                  title="Total Departments"
-                  value={stats.totalDepartment}
-                  Icon={ComputerDesktopIcon}
-                />
-                <StatBlock
-                  title="Total Roles"
-                  value={stats.totalRoles}
-                  Icon={UserCircleIcon}
-                />
-                <StatBlock
-                  title="Document Types"
-                  value={stats.documentType}
-                  Icon={DocumentChartBarIcon}
-                />
-                <StatBlock
-                  title="Total Categories"
-                  value={stats.totalCategories}
-                  Icon={ShoppingCartIcon}
-                />
-                <StatBlock
-                  title="Rejected Documents"
-                  value={stats.totalRejectedDocuments}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Approved Documents"
-                  value={stats.totalApprovedDocuments}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
+
+                <Link to="/approve-documents" className="block">
+                  <StatBlock
+                    title="Pending Documents"
+                    value={stats.totalPendingDocuments}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+
+                <Link to="/total-approved" className="block">
+                  <StatBlock
+                    title="Approved Documents"
+                    value={stats.totalApprovedDocuments}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+
+                <Link to="/total-rejected" className="block">
+                  <StatBlock
+                    title="Rejected Documents"
+                    value={stats.totalRejectedDocuments}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
               </>
             )}
 
-            {/* Branch Admin Stats */}
             {role === "BRANCH ADMIN" && (
               <>
-                <StatBlock
-                  title="Branch Users"
-                  value={stats.branchUser}
-                  Icon={UsersIcon}
-                />
-                <StatBlock
-                  title="Pending Users"
-                  value={stats.nullRoleEmployeeCountForBranch}
-                  Icon={UsersIcon}
-                />
+                <Link to="/branchusers" className="block">
+                  <StatBlock
+                    title="Branch Users"
+                    value={stats.branchUser}
+                    Icon={UsersIcon}
+                  />
+                </Link>
+
+                <Link to="/userRoleAssing" className="block">
+                  <StatBlock
+                    title="Pending Users"
+                    value={stats.nullRoleEmployeeCountForBranch}
+                    Icon={UsersIcon}
+                  />
+                </Link>
+
+                <Link to="/create-departments" className="block">
+                  <StatBlock
+                    title="Total Departments"
+                    value={stats.departmentCountForBranch}
+                    Icon={ComputerDesktopIcon}
+                  />
+                </Link>
+
                 <StatBlock
                   title="Total Documents"
                   value={stats.totalDocumentsById}
                   Icon={DocumentArrowDownIcon}
                 />
-                <StatBlock
-                  title="Pending Documents"
-                  value={stats.totalPendingDocumentsById}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Approved Documents"
-                  value={stats.totalApprovedStatusDocById}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Rejected Documents"
-                  value={stats.totalRejectedStatusDocById}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Total Departments"
-                  value={stats.departmentCountForBranch}
-                  Icon={ComputerDesktopIcon}
-                />
+
+                <Link to="/approve-documents" className="block">
+                  <StatBlock
+                    title="Pending Documents"
+                    value={stats.totalPendingDocumentsById}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+
+                <Link to="/total-approved" className="block">
+                  <StatBlock
+                    title="Approved Documents"
+                    value={stats.totalApprovedStatusDocById}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+
+                <Link to="/total-rejected" className="block">
+                  <StatBlock
+                    title="Rejected Documents"
+                    value={stats.totalRejectedStatusDocById}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
               </>
             )}
 
             {role === "DEPARTMENT ADMIN" && (
               <>
-                <StatBlock
-                  title="Branch Users"
-                  value={stats.branchUser}
-                  Icon={UsersIcon}
-                />
-                <StatBlock
-                  title="Pending Users"
-                  value={stats.nullRoleEmployeeCountForBranch}
-                  Icon={UsersIcon}
-                />
+                <Link to="/Departmentusers" className="block">
+                  <StatBlock
+                    title="Department Users"
+                    value={stats.departmentUser}
+                    Icon={UsersIcon}
+                  />
+                </Link>
+
+                <Link to="/PendingRole" className="block">
+                  <StatBlock
+                    title="Pending Users"
+                    value={stats.nullRoleEmployeeCountForDepartment}
+                    Icon={UsersIcon}
+                  />
+                </Link>
+
                 <StatBlock
                   title="Total Documents"
                   value={stats.totalDocumentsById}
                   Icon={DocumentArrowDownIcon}
                 />
+                <Link to="/approve-documents" className="block">
+                  <StatBlock
+                    title="Pending Documents"
+                    value={stats.totalPendingDocumentsByDepartmentId}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+
+                <Link to="/total-approved" className="block">
+                  <StatBlock
+                    title="Approved Documents"
+                    value={stats.totalApprovedStatusDocByDepartmentId}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+
+                <Link to="/total-rejected" className="block">
+                  <StatBlock
+                    title="Rejected Documents"
+                    value={stats.totalRejectedStatusDocByDepartmentId}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+              </>
+            )}
+
+            {role === "USER" && (
+              <>
                 <StatBlock
-                  title="Pending Documents"
-                  value={stats.totalPendingDocumentsById}
-                  Icon={DocumentMagnifyingGlassIcon}
+                  title="Total Documents"
+                  value={totalDocsbyUser}
+                  Icon={DocumentArrowDownIcon}
                 />
-                <StatBlock
-                  title="Approved Documents"
-                  value={stats.totalApprovedStatusDocById}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Rejected Documents"
-                  value={stats.totalRejectedStatusDocById}
-                  Icon={DocumentMagnifyingGlassIcon}
-                />
-                <StatBlock
-                  title="Total Departments"
-                  value={stats.departmentCountForBranch}
-                  Icon={ComputerDesktopIcon}
-                />
+                <Link to="/users" className="block">
+                  <StatBlock
+                    title="Create User"
+                    value={stats.createdByCount}
+                    Icon={UsersIcon}
+                  />
+                </Link>
+
+                <Link to="/all-documents" className="block">
+                  <StatBlock
+                    title="Pending Documents"
+                    value={stats.pendingDocsbyid}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+
+                <Link to="/approvedDocs" className="block">
+                  <StatBlock
+                    title="Approved Documents"
+                    value={stats.approvedDocsbyid}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
+
+                <Link to="/rejectedDocs" className="block">
+                  <StatBlock
+                    title="Rejected Documents"
+                    value={stats.rejectedDocsbyid}
+                    Icon={DocumentMagnifyingGlassIcon}
+                  />
+                </Link>
               </>
             )}
           </div>
