@@ -255,6 +255,8 @@ function Dashboard() {
     { name: "Pending", value: totalPendingDocuments },
   ];
 
+  const totalDocsbyBranch = (stats.totalRejectedStatusDocById + stats.totalApprovedStatusDocById + stats.totalPendingDocumentsById);
+  const totalDocsbyDep = (stats.totalRejectedStatusDocByDepartmentId + stats.totalApprovedStatusDocByDepartmentId + stats.totalPendingDocumentsByDepartmentId);
   const totalDocsbyUser = (stats.rejectedDocsbyid + stats.approvedDocsbyid + stats.pendingDocsbyid);
 
 
@@ -385,7 +387,7 @@ function Dashboard() {
 
                 <StatBlock
                   title="Total Documents"
-                  value={stats.totalDocumentsById}
+                  value={totalDocsbyBranch}
                   Icon={DocumentArrowDownIcon}
                 />
 
@@ -435,7 +437,7 @@ function Dashboard() {
 
                 <StatBlock
                   title="Total Documents"
-                  value={stats.totalDocumentsById}
+                  value={totalDocsbyDep}
                   Icon={DocumentArrowDownIcon}
                 />
                 <Link to="/approve-documents" className="block">
