@@ -5,6 +5,7 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   PencilIcon,
+  MagnifyingGlassIcon
 } from "@heroicons/react/24/solid";
 import {API_HOST} from "../API/apiConfig";
 import { useNavigate } from "react-router-dom";
@@ -12,10 +13,13 @@ function RejectedDoc() {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState("");
+
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -61,7 +65,19 @@ function RejectedDoc() {
       setLoading(false);
     }
   };
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedDocuments = documents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(documents.length / itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
 
   const handleEdit = (docId) => {
     console.log(documents.find(item => item.id === docId));
@@ -92,6 +108,42 @@ function RejectedDoc() {
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">Rejected Documents</h1>
     <div className="bg-white p-3 rounded-lg shadow-sm">
+    <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
+          <div className="flex items-center bg-blue-500 rounded-lg">
+            <label
+              htmlFor="itemsPerPage"
+              className="mr-2 ml-2 text-white text-sm"
+            >
+              Show:
+            </label>
+            <select
+              id="itemsPerPage"
+              className="border rounded-r-lg p-1.5 outline-none"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value)); // Update items per page
+                setCurrentPage(1); // Reset to the first page
+              }}
+            >
+              {[5, 10, 15, 20].map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="border rounded-l-md p-1 outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+          </div>
+        </div>
+
       <div className="overflow-x-auto">
         <table className="w-full border-collapse border">
           <thead>
@@ -112,7 +164,7 @@ function RejectedDoc() {
             </tr>
           </thead>
           <tbody>
-            {documents.map((doc, index) => (
+            {paginatedDocuments.map((doc, index) => (
               <tr key={doc.id}>
                 <td className="border p-2">
                   {(currentPage - 1) * itemsPerPage + index + 1}
@@ -147,9 +199,9 @@ function RejectedDoc() {
       <div className="flex justify-between items-center mt-4">
         <div>
           <span className="text-sm text-gray-700">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
-            entries
+          Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} entries
           </span>
         </div>
         <div className="flex items-center">

@@ -10,6 +10,9 @@ import {
   CheckCircleIcon,
   EyeIcon,
   XMarkIcon,
+  MagnifyingGlassIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
   PrinterIcon,
 } from "@heroicons/react/24/solid";
 import { API_HOST } from "../API/apiConfig";
@@ -42,11 +45,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [userDep, setUserDep] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  
   const [editingDoc, setEditingDoc] = useState(null); // To hold the document being edited
   const [updatedDoc, setUpdatedDoc] = useState(null);
   const [searchResults, setSearchResults] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -667,6 +672,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   //   setCurrentPage(1); // Reset to first page when new search results come in
   // };
 
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedDocuments = documents.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -862,6 +868,41 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             </div>
           )}
         </div>
+        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
+              <div className="flex items-center bg-blue-500 rounded-lg">
+                <label
+                  htmlFor="itemsPerPage"
+                  className="mr-2 ml-2 text-white text-sm"
+                >
+                  Show:
+                </label>
+                <select
+                  id="itemsPerPage"
+                  className="border rounded-r-lg p-1.5 outline-none"
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value)); // Update items per page
+                    setCurrentPage(1); // Reset to the first page
+                  }}
+                >
+                  {[5, 10, 15, 20].map((num) => (
+                    <option key={num} value={num}>
+                      {num}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="border rounded-l-md p-1 outline-none"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+              </div>
+            </div>
 
         <div className="overflow-x-auto bg-white">
           <table className="w-full border-collapse border">
@@ -916,6 +957,40 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               ))}
             </tbody>
           </table>
+          <div className="flex justify-between items-center mt-4">
+          <div>
+            <span className="text-sm text-gray-700">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} entries
+            </span>
+          </div>
+          <div className="flex items-center">
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.max(prev - 1, 1))
+              }
+              disabled={currentPage === 1}
+              className="bg-slate-200 px-3 py-1 rounded mr-3"
+            >
+              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+              Previous
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="bg-slate-200 px-3 py-1 rounded ml-3"
+            >
+              Next
+              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+            </button>
+          </div>
+        </div>
 
           <>
             {isOpen && selectedDoc && (
