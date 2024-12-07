@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import Search from "./Search"; // Import the Search component
@@ -40,6 +40,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [documents, setDocuments] = useState([]);
   const [userBranch, setUserBranch] = useState([]);
   const [userDep, setUserDep] = useState([]);
+  const fileInputRef = useRef(null);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -132,14 +133,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         }
       );
       setUserBranch(response.data.branch.name);
-      setUserDep(response.data.department.name)
+      setUserDep(response.data.department.name);
     } catch (error) {
       console.error("Error fetching user branch:", error);
-    } 
+    }
   };
 
-  // Function to fetch documents
-  // Function to fetch documents
   const fetchDocuments = async () => {
     try {
       const response = await axios.get(
@@ -166,6 +165,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       }
     }
   };
+
+  console.log("all doc by user", documents);
 
   // const fetchPaths = async (doc) => {
   //   try {
@@ -295,8 +296,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   // Handle the file upload when the "Upload" button is clicked
   const handleUploadDocument = async () => {
     if (selectedFiles.length === 0) {
-        showPopup("Please select at least one file to upload.");
-        return;
+      showPopup("Please select at least one file to upload.");
+      return;
     }
 
     const uploadData = new FormData();
@@ -310,57 +311,64 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     // Append files
     selectedFiles.forEach((file) => {
-        uploadData.append("files", file);
+      uploadData.append("files", file);
     });
 
     try {
-        const response = await fetch(`${API_HOST}/api/documents/upload`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-            body: uploadData,
-        });
+      const response = await fetch(`${API_HOST}/api/documents/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: uploadData,
+      });
 
-        if (!response.ok) {
-            const errorDetails = await response.text(); // Read error as plain text
-            throw new Error(
-                `HTTP error! Status: ${response.status}. Details: ${errorDetails}`
-            );
+      if (!response.ok) {
+        const errorDetails = await response.text(); // Read error as plain text
+        throw new Error(
+          `HTTP error! Status: ${response.status}. Details: ${errorDetails}`
+        );
+      }
+
+      const filePaths = await response.json();
+      console.log("Files uploaded successfully:", filePaths);
+
+      if (Array.isArray(filePaths)) {
+        setFormData((prevData) => ({
+          ...prevData,
+          uploadedFilePaths: [
+            ...(prevData.uploadedFilePaths || []),
+            ...filePaths,
+          ],
+        }));
+
+        setUploadedFileNames((prevNames) => [
+          ...prevNames,
+          ...selectedFiles.map((file) => file.name),
+        ]);
+
+        setUploadedFilePath((prevPath) => [...prevPath, ...filePaths]);
+
+        showPopup("Files uploaded successfully!", "success");
+
+        setSelectedFiles([]);
+        setIsUploadEnabled(false);
+        // Reset states
+        setSelectedFiles([]);
+        setIsUploadEnabled(false);
+
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
         }
-
-        const filePaths = await response.json();
-        console.log("Files uploaded successfully:", filePaths);
-
-        if (Array.isArray(filePaths)) {
-            setFormData((prevData) => ({
-                ...prevData,
-                uploadedFilePaths: [
-                    ...(prevData.uploadedFilePaths || []),
-                    ...filePaths,
-                ],
-            }));
-
-            setUploadedFileNames((prevNames) => [
-                ...prevNames,
-                ...selectedFiles.map((file) => file.name),
-            ]);
-
-            setUploadedFilePath((prevPath) => [...prevPath, ...filePaths]);
-
-            showPopup("Files uploaded successfully!", "success");
-
-            setSelectedFiles([]);
-            setIsUploadEnabled(false);
-        } else {
-            throw new Error("Invalid file paths returned from the server.");
-        }
+      } else {
+        throw new Error("Invalid file paths returned from the server.");
+      }
     } catch (error) {
-        console.error("Error uploading files:", error);
-        showPopup(`File upload failed: ${error.message}`, "error");
+      console.error("Error uploading files:", error);
+      showPopup(`File upload failed: ${error.message}`, "error");
     }
-};
-
+  };
 
   // Handle adding the document
   const handleAddDocument = async () => {
@@ -489,14 +497,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const handleEditDocument = (doc) => {
     console.log("Editing document:", doc);
     setEditingDoc(doc);
-  
+
     // Prepare the existing file details for editing
     const existingFiles = (doc.documentDetails || []).map((detail) => ({
       name: detail.path.substring(detail.path.lastIndexOf("/") + 1),
       path: detail.path,
       isExisting: true, // Mark these as pre-existing files
     }));
-  
+
     setFormData({
       fileNo: doc.fileNo,
       title: doc.title,
@@ -505,27 +513,27 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       category: doc.categoryMaster || null,
       year: doc.yearMaster || null,
     });
-  
+
     // Set uploaded file names and paths to show existing files
     setUploadedFileNames(existingFiles.map((file) => file.name));
     setUploadedFilePath(existingFiles.map((file) => file.path));
   };
-  
+
   const handleSaveEdit = async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("tokenKey");
-  
+
     if (!userId || !token) {
       showPopup("User not logged in. Please log in again.", "error");
       return;
     }
-  
+
     // Combine uploaded files with existing file paths
     const combinedFilePaths = [
-      // ...uploadedFilePath, // Paths for newly uploaded files
-      ...editingDoc.documentDetails.map((detail) => detail.path), // Existing file paths
+      ...uploadedFilePath,
+      //...editingDoc.documentDetails.map((detail) => detail.path), // Existing file paths
     ];
-  debugger;
+    // debugger;
     // Prepare the payload for the API
     const payload = {
       documentHeader: {
@@ -540,9 +548,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       },
       filePaths: combinedFilePaths, // All file paths (new + existing)
     };
-  
+
     console.log("Payload for update:", payload);
-  
+
     try {
       const response = await fetch(`${API_HOST}/api/documents/update`, {
         method: "POST",
@@ -552,7 +560,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         },
         body: JSON.stringify(payload),
       });
-  
+
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
         const errorMessage = contentType?.includes("application/json")
@@ -562,11 +570,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           errorMessage || `HTTP error! Status: ${response.status}`
         );
       }
-  
+
       const updatedDocument = await response.json();
       console.log("Document updated successfully:", updatedDocument);
       showPopup("Document updated successfully!", "success");
-  
+
       // Reset form and refresh the document list
       setFormData({
         fileNo: "",
@@ -585,10 +593,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       showPopup(`Document update failed: ${error.message}`, "error");
     }
   };
-  
 
   const handleDiscardFile = (index) => {
-    debugger;
+    // debugger;
     if (index < 0 || index >= uploadedFileNames.length) {
       console.error("Invalid index:", index);
       return;
@@ -655,7 +662,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   const printPage = () => {
-    window.print(); // Simple print functionality
+    window.print();
   };
 
   const showPopup = (message, type = "info") => {
@@ -793,6 +800,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               <div className="flex items-center gap-2">
                 <input
                   type="file"
+                  ref={fileInputRef}
                   accept=""
                   multiple
                   onChange={handleFileChange}
@@ -896,9 +904,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       : "No Category"}
                   </td>
                   <td className="border p-2">
-                    {doc.yearMaster
-                      ? doc.yearMaster.name
-                      : "No year"}
+                    {doc.yearMaster ? doc.yearMaster.name : "No year"}
                   </td>
                   <td className="border p-2">{doc.approvalStatus}</td>
                   <td className="border p-2">{formatDate(doc.createdOn)}</td>
@@ -919,11 +925,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
           <>
             {isOpen && selectedDoc && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900 bg-opacity-50">
-                <div className="relative bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal">
+                <div className="relative bg-white rounded-lg shadow-2xl max-w-lg w-full p-6">
                   {/* Print Button */}
                   <button
-                    className="absolute top-2 right-10 text-gray-500 hover:text-gray-700 no-print"
+                    className="absolute top-4 right-16 text-gray-500 mb-4 hover:text-gray-700 no-print"
                     onClick={printPage}
                   >
                     <PrinterIcon className="h-6 w-6" />
@@ -931,83 +937,109 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
                   {/* Close Button */}
                   <button
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 no-print"
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
                     onClick={closeModal}
                   >
-                    <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-800" />
+                    <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
                   </button>
 
-                  {/* Modal Content Divided into Two Halves */}
-                  <div className="h-1/2 flex flex-col justify-between">
-                    {/* Top Half */}
-                    <div className="flex justify-between items-center mb-4 mt-4">
-                      <div className="flex items-start space-x-1">
-                        <p className="text-sm text-black font-bold border-b-4 border-black">
+                  {/* Modal Content */}
+                  <div className="flex flex-col h-full mt-8">
+                    {/* Header */}
+                    <div className="flex justify-between items-center border-b-2 border-gray-300 pb-4">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
                           D
                         </p>
-                        <p className="text-sm text-black font-bold border-t-4 border-black">
+                        <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
                           MS
                         </p>
                       </div>
-
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">
-                          <strong>Uploaded Date:</strong>{" "}
-                          {formatDate(selectedDoc?.createdOn)}
-                        </p>
-                      </div>
+                      <p className="text-sm text-gray-600">
+                        <strong>Uploaded Date:</strong>{" "}
+                        {formatDate(selectedDoc?.createdOn)}
+                      </p>
                     </div>
 
-                    {/* Bottom Half */}
-                    <div className="text-left">
-                      <p className="text-sm text-gray-600">
-                        <strong>File No.:</strong>{" "}
+                    {/* Document Details */}
+                    <div className="mt-4 text-left">
+                      <p className="text-md text-gray-700">
+                        <strong>Branch :-</strong>{" "}
+                        {selectedDoc?.employee?.branch?.name || "N/A"}
+                      </p>
+                      <p className="text-md text-gray-700">
+                        <strong>Department :-</strong>{" "}
+                        {selectedDoc?.employee?.department?.name || "N/A"}
+                      </p>
+                      <p className="text-md text-gray-700">
+                        <strong>File No. :-</strong>{" "}
                         {selectedDoc?.fileNo || "N/A"}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Title:</strong> {selectedDoc?.title || "N/A"}
+                      <p className="text-md text-gray-700">
+                        <strong>Title :-</strong> {selectedDoc?.title || "N/A"}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Subject:</strong>{" "}
+                      <p className="text-md text-gray-700">
+                        <strong>Subject :-</strong>{" "}
                         {selectedDoc?.subject || "N/A"}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Version:</strong>{" "}
+                      <p className="text-md text-gray-700">
+                        <strong>Version :-</strong>{" "}
                         {selectedDoc?.version || "N/A"}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Category:</strong>{" "}
+                      <p className="text-md text-gray-700">
+                        <strong>Category :-</strong>{" "}
                         {selectedDoc?.categoryMaster?.name || "No Category"}
                       </p>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="h-1/2 flex flex-col items-center justify-center mt-4">
-                    <h1 className="text-sm text-center font-bold mb-2">
-                      Attached Files
-                    </h1>
-
-                    {Array.isArray(selectedDoc.paths) &&
-                    selectedDoc.paths.length > 0 ? (
-                      <ul className="list-disc list-inside">
-                        {selectedDoc.paths.map((file, index) => (
-                          <li key={index} className="mb-2">
-                            <span className="mr-4">{file.docName}</span>
-                            <button
-                              onClick={() => openFile(file)} // Pass the file object to openFile function
-                              className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                            >
-                              Open
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        No attached files available.
+                      <p className="text-md text-gray-700">
+                        <strong>File Year :-</strong>{" "}
+                        {selectedDoc?.yearMaster?.name || "N/A"}
                       </p>
-                    )}
+                      <p className="text-md text-gray-700">
+                        <strong>Status :-</strong>{" "}
+                        {selectedDoc?.approvalStatus || "N/A"}
+                      </p>
+                      <p className="text-md text-gray-700">
+                        <strong>Upload By :-</strong>{" "}
+                        {selectedDoc?.employee?.name || "N/A"}
+                      </p>
+                    </div>
+
+                    {/* Attached Files */}
+                    <div className="mt-6 text-center">
+                      <h2 className="text-lg font-semibold text-indigo-700">
+                        Attached Files
+                      </h2>
+                      {Array.isArray(selectedDoc.paths) &&
+                      selectedDoc.paths.length > 0 ? (
+                        <ul className="list-disc list-inside text-left mt-2">
+                          {selectedDoc.paths.map((file, index) => {
+                            const displayName = file.docName
+                              .split("_")
+                              .slice(1)
+                              .join("_");
+
+                            return (
+                              <li key={index} className="mb-2">
+                                <span className="mr-4 text-gray-600">
+                                  <strong>{index + 1}. </strong>
+                                  {displayName}{" "}
+                                </span>
+                                <button
+                                  onClick={() => openFile(file)}
+                                  className="bg-indigo-500 text-white px-3 py-1 rounded shadow-md hover:bg-indigo-600 transition no-print"
+                                >
+                                  Open
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500 mt-2">
+                          No attached files available.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

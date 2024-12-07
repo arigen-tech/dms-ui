@@ -15,8 +15,23 @@
 }
 
 @media print {
+
+  .printable-content {
+    display: block; /* Ensure modal content is displayed */
+    position: relative; /* Adjust positioning */
+    background: white; /* Add a background for clarity */
+    margin: 0 auto; /* Center content */
+    padding: 20px; /* Add padding */
+  }
+
+  @page {
+    size: A4; /* A4 page size */
+    margin: 20mm; /* Margins for content */
+  }
+
+
   .no-print {
-    display: none;
+    display: none !important;
   }
 }
 
