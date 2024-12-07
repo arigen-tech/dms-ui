@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import Search from "./Search"; // Import the Search component
-import Popup from '../Components/Popup';
+import Popup from "../Components/Popup";
 
 import {
   PencilIcon,
@@ -13,20 +13,18 @@ import {
   PrinterIcon,
 } from "@heroicons/react/24/solid";
 import { API_HOST } from "../API/apiConfig";
-import {
-  DOCUMENTHEADER_API,
-  UPLOADFILE_API
-} from '../API/apiConfig';
+import { DOCUMENTHEADER_API, UPLOADFILE_API } from "../API/apiConfig";
 
 const DocumentManagement = ({ fieldsDisabled }) => {
-    const location = useLocation();
-    const data = location.state;
+  const location = useLocation();
+  const data = location.state;
   const [formData, setFormData] = useState({
     fileNo: "",
     title: "",
     subject: "",
     version: "",
     category: null,
+    year: null,
     uploadedFilePaths: [], // To store paths of uploaded files
   });
   const [uploadedFileNames, setUploadedFileNames] = useState([]);
@@ -38,7 +36,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
   const [isUploadEnabled, setIsUploadEnabled] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const [yearOptions, setYearOptions] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [userBranch, setUserBranch] = useState([]);
+  const [userDep, setUserDep] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -52,13 +53,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   // Run this effect only when component mounts
   useEffect(() => {
-      if (data) {
-          debugger;
-          handleEditDocument(data);
-      }
+    if (data) {
+      debugger;
+      handleEditDocument(data);
+    }
     fetchCategory();
+    fetchYear();
     fetchDocuments();
     fetchPaths();
+    fetchUser();
   }, []); // Add an empty dependency array to avoid infinite re-renders
 
   const handleCategoryChange = (e) => {
@@ -68,15 +71,23 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setFormData({ ...formData, category: selectedCategory });
   };
 
+  const handleYearChange = (e) => {
+    const selectedYear = yearOptions.find(
+      (year) => year.id === parseInt(e.target.value)
+    );
+    setFormData({ ...formData, year: selectedYear });
+  };
+
   // Update upload button enable status based on form data
   useEffect(() => {
-    const { fileNo, title, subject, version, category } = formData;
+    const { fileNo, title, subject, version, category, year } = formData;
     const isFormFilled =
       fileNo &&
       title &&
       subject &&
       version &&
       category &&
+      year &&
       selectedFiles.length > 0;
     setIsUploadEnabled(isFormFilled);
   }, [formData, selectedFiles]);
@@ -94,6 +105,37 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
+  };
+
+  const fetchYear = async () => {
+    try {
+      const response = await axios.get(
+        `${API_HOST}/YearMaster/findActiveYear`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setYearOptions(response.data);
+    } catch (error) {
+      console.error("Error fetching Year:", error);
+    }
+  };
+
+  const fetchUser = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setUserBranch(response.data.branch.name);
+      setUserDep(response.data.department.name)
+    } catch (error) {
+      console.error("Error fetching user branch:", error);
+    } 
   };
 
   // Function to fetch documents
@@ -229,7 +271,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {
@@ -259,7 +300,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
 
     const uploadData = new FormData();
-    uploadData.append("category", formData.category.name || "default-category");
+
+    // Append form data to FormData object
+    uploadData.append("category", formData.category.name);
+    uploadData.append("year", formData.year.name);
+    uploadData.append("version", formData.version);
+    uploadData.append("branch", userBranch);
+    uploadData.append("department", userDep);
+
+    // Append files
     selectedFiles.forEach((file) => {
         uploadData.append("files", file);
     });
@@ -274,44 +323,41 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         });
 
         if (!response.ok) {
-            const errorDetails = await response.json();
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorDetails}`);
+            const errorDetails = await response.text(); // Read error as plain text
+            throw new Error(
+                `HTTP error! Status: ${response.status}. Details: ${errorDetails}`
+            );
         }
 
         const filePaths = await response.json();
         console.log("Files uploaded successfully:", filePaths);
 
-        if (
-            Array.isArray(filePaths) &&
-            filePaths.every((path) => typeof path === "string")
-        ) {
-            // Update formData with the new uploaded file paths
+        if (Array.isArray(filePaths)) {
             setFormData((prevData) => ({
                 ...prevData,
                 uploadedFilePaths: [
-                    ...(prevData.uploadedFilePaths || []), // Keep existing paths
-                    ...filePaths, // Add newly uploaded file paths
+                    ...(prevData.uploadedFilePaths || []),
+                    ...filePaths,
                 ],
             }));
 
-            // Update the state for uploaded file names
             setUploadedFileNames((prevNames) => [
                 ...prevNames,
-                ...selectedFiles.map((file) => file.name), // Append new file names
+                ...selectedFiles.map((file) => file.name),
             ]);
-            debugger;
-            setUploadedFilePath((prevPath)=>[...prevPath,...filePaths]);
 
-            showPopup('Files uploaded successfully!', 'success');
+            setUploadedFilePath((prevPath) => [...prevPath, ...filePaths]);
 
-            setSelectedFiles([]); // Clear selected files after upload
+            showPopup("Files uploaded successfully!", "success");
+
+            setSelectedFiles([]);
             setIsUploadEnabled(false);
         } else {
-            throw new Error("Invalid file paths returned from upload.");
+            throw new Error("Invalid file paths returned from the server.");
         }
     } catch (error) {
-        console.error("Error uploading file:", error);
-        showPopup(`File upload failed: ${error.message}`, 'error');
+        console.error("Error uploading files:", error);
+        showPopup(`File upload failed: ${error.message}`, "error");
     }
 };
 
@@ -325,9 +371,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       !formData.subject ||
       !formData.version ||
       !formData.category ||
+      !formData.category ||
       formData.uploadedFilePaths.length === 0
     ) {
-      showPopup('Please fill in all the required fields and upload a file.', 'error');
+      showPopup(
+        "Please fill in all the required fields and upload a file.",
+        "error"
+      );
       return;
     }
 
@@ -339,6 +389,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         subject: formData.subject,
         version: formData.version,
         categoryMaster: { id: formData.category.id }, // Category ID from formData
+        yearMaster: { id: formData.year.id },
         employee: { id: parseInt(UserId, 10) }, // Employee ID from user session
       },
       filePaths: formData.uploadedFilePaths, // Paths of uploaded files
@@ -358,11 +409,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       // Check if the response is successful
       if (!response.ok) {
         const errorDetails = await response.text(); // Get error details from the response
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorDetails}`);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorDetails}`
+        );
       }
 
       // If successful, reset the form and reload documents
-      showPopup('Document saved successfully!', 'success');
+      showPopup("Document saved successfully!", "success");
 
       // Reset the form data
       setFormData({
@@ -371,14 +424,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         subject: "",
         version: "",
         category: null,
+        year: null,
         uploadedFilePaths: [],
       });
-        setUploadedFilePath([]);
+      setUploadedFilePath([]);
       setUploadedFileNames([]); // Clear file names
       fetchDocuments(); // Refresh the documents list
     } catch (error) {
       console.error("Error saving document:", error);
-      showPopup(`Document save failed`, 'error');
+      showPopup(`Document save failed`, "error");
     }
   };
 
@@ -405,7 +459,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
         }
       );
@@ -424,158 +478,163 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return paths;
     } catch (error) {
       console.error("Error in fetchPaths:", error);
-      showPopup(`Failed to fetch document paths: ${error.message || 'Unknown error'}`, 'error');
+      showPopup(
+        `Failed to fetch document paths: ${error.message || "Unknown error"}`,
+        "error"
+      );
       return null;
     }
   };
 
-
-   const handleEditDocument = (doc) => {
-      debugger;
+  const handleEditDocument = (doc) => {
     console.log("Editing document:", doc);
     setEditingDoc(doc);
-
-    // Fetch document details including file paths when editing
-    const existingFiles = (doc.documentDetails || []).map(detail => ({
-        name: detail.path.substring(detail.path.lastIndexOf('/') + 1),
-        path: detail.path,
-        isExisting: true
+  
+    // Prepare the existing file details for editing
+    const existingFiles = (doc.documentDetails || []).map((detail) => ({
+      name: detail.path.substring(detail.path.lastIndexOf("/") + 1),
+      path: detail.path,
+      isExisting: true, // Mark these as pre-existing files
     }));
-
+  
     setFormData({
-        fileNo: doc.fileNo,
-        title: doc.title,
-        subject: doc.subject,
-        version: doc.version,
-        category: doc.categoryMaster || null,
+      fileNo: doc.fileNo,
+      title: doc.title,
+      subject: doc.subject,
+      version: doc.version,
+      category: doc.categoryMaster || null,
+      year: doc.yearMaster || null,
     });
-
-    // Set uploaded file names to show existing files and initialize uploadedFilePaths
-    setUploadedFileNames(existingFiles.map(file => file.name));
-    setUploadedFilePath(existingFiles.map(file => file.path));
-
-};
-
-const handleSaveEdit = async () => {
-    const UserId = localStorage.getItem("userId");
+  
+    // Set uploaded file names and paths to show existing files
+    setUploadedFileNames(existingFiles.map((file) => file.name));
+    setUploadedFilePath(existingFiles.map((file) => file.path));
+  };
+  
+  const handleSaveEdit = async () => {
+    const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("tokenKey");
-
-    if (!UserId || !token) {
-        showPopup("User not logged in. Please login again.", "error");
-        return;
+  
+    if (!userId || !token) {
+      showPopup("User not logged in. Please log in again.", "error");
+      return;
     }
-
-    // Get existing file paths from the original document
-    const existingFilePaths = editingDoc.documentDetails.map(detail => detail.path);
-
-    // Prepare payload for update
+  
+    // Combine uploaded files with existing file paths
+    const combinedFilePaths = [
+      ...uploadedFilePath, // Paths for newly uploaded files
+      ...editingDoc.documentDetails.map((detail) => detail.path), // Existing file paths
+    ];
+  
+    // Prepare the payload for the API
     const payload = {
-        documentHeader: {
-            id: editingDoc.id,
-            fileNo: formData.fileNo,
-            title: formData.title,
-            subject: formData.subject,
-            version: formData.version,
-            categoryMaster: { id: formData.category.id },
-            employee: { id: parseInt(UserId, 10) },
-        },
-        // Combine existing paths with newly uploaded paths
-        filePaths: [
-            ...uploadedFilePath
-            // ...uploadedFileNames // Correctly use uploadedFileNames for newly uploaded files
-        ],
+      documentHeader: {
+        id: editingDoc.id,
+        fileNo: formData.fileNo,
+        title: formData.title,
+        subject: formData.subject,
+        version: formData.version,
+        categoryMaster: { id: formData.category?.id },
+        yearMaster: { id: formData.year?.id },
+        employee: { id: parseInt(userId, 10) },
+      },
+      filePaths: combinedFilePaths, // All file paths (new + existing)
     };
-
+  
+    console.log("Payload for update:", payload);
+  
     try {
-        const response = await fetch(`${API_HOST}/api/documents/update`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-            const contentType = response.headers.get("content-type");
-            const errorMessage = contentType?.includes("application/json")
-                ? (await response.json()).message
-                : await response.text();
-            throw new Error(errorMessage || `HTTP error! status: ${response.status}`);
-        }
-
-        const updatedDocument = await response.json();
-        console.log("Document updated successfully:", updatedDocument);
-        showPopup("Document updated successfully!", "success");
-
-        // Reset form and update document list
-        setFormData({
-            fileNo: "",
-            title: "",
-            subject: "",
-            version: "",
-            category: { id: "" },
-        });
-        setUploadedFileNames([]); // Clear uploaded file names
-        setEditingDoc(null);
-        fetchDocuments();
+      const response = await fetch(`${API_HOST}/api/documents/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        const errorMessage = contentType?.includes("application/json")
+          ? (await response.json()).message
+          : await response.text();
+        throw new Error(
+          errorMessage || `HTTP error! Status: ${response.status}`
+        );
+      }
+  
+      const updatedDocument = await response.json();
+      console.log("Document updated successfully:", updatedDocument);
+      showPopup("Document updated successfully!", "success");
+  
+      // Reset form and refresh the document list
+      setFormData({
+        fileNo: "",
+        title: "",
+        subject: "",
+        version: "",
+        category: null,
+        year: null,
+      });
+      setUploadedFileNames([]);
+      setUploadedFilePath([]);
+      setEditingDoc(null);
+      fetchDocuments(); // Refresh the document list after update
     } catch (error) {
-        console.error("Error updating document:", error);
-        showPopup(`Document update failed: ${error.message}`, "error");
+      console.error("Error updating document:", error);
+      showPopup(`Document update failed: ${error.message}`, "error");
     }
-};
+  };
   
 
-
-
-
   const handleDiscardFile = (index) => {
-      debugger;
+    debugger;
     if (index < 0 || index >= uploadedFileNames.length) {
       console.error("Invalid index:", index);
       return;
     }
-  
+
     // For editing an existing document
     if (editingDoc) {
       // First, check if it's an existing document file or a new upload
       const isExistingFile = index < editingDoc.documentDetails.length;
-  
+
       if (isExistingFile) {
         // Remove the existing file from the display
-        const updatedFileNames = uploadedFileNames.filter((_, i) => i !== index);
+        const updatedFileNames = uploadedFileNames.filter(
+          (_, i) => i !== index
+        );
         const updatedFilePath = uploadedFilePath.filter((_, i) => i !== index);
         setUploadedFilePath(updatedFilePath);
         setUploadedFileNames(updatedFileNames);
 
-  
         // Optional: You might want to track which existing files are to be removed
         // This could be done by adding a flag or separate state
       } else {
         // If it's a newly uploaded file during edit
         const newUploadIndex = index - editingDoc.documentDetails.length;
-        const updatedFileNames = uploadedFileNames.filter((_, i) => i !== index);
+        const updatedFileNames = uploadedFileNames.filter(
+          (_, i) => i !== index
+        );
         const updatedPaths = formData.uploadedFilePaths.filter(
           (_, i) => i !== newUploadIndex
         );
-  
+
         setUploadedFileNames(updatedFileNames);
         setFormData({ ...formData, uploadedFilePaths: updatedPaths });
       }
-    } 
+    }
     // For new document upload (same as before)
     else {
       const updatedFiles = uploadedFileNames.filter((_, i) => i !== index);
       const updatedPaths = formData.uploadedFilePaths.filter(
         (_, i) => i !== index
       );
-  
+
       setUploadedFileNames(updatedFiles);
       setFormData({ ...formData, uploadedFilePaths: updatedPaths });
     }
   };
-  
-  
 
   // Handle discard all files
   const handleDiscardAll = () => {
@@ -599,7 +658,7 @@ const handleSaveEdit = async () => {
     window.print(); // Simple print functionality
   };
 
-  const showPopup = (message, type = 'info') => {
+  const showPopup = (message, type = "info") => {
     setPopupMessage({ message, type });
   };
 
@@ -620,7 +679,6 @@ const handleSaveEdit = async () => {
        <Search onSearchResults={handleSearchResults} /> */}
 
       <div className="bg-white p-3 rounded-lg shadow-sm">
-
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -712,6 +770,23 @@ const handleSaveEdit = async () => {
               </select>
             </label>
 
+            <label className="block text-md font-medium text-gray-700">
+              Year
+              <select
+                name="year"
+                value={formData.year?.id || ""}
+                onChange={handleYearChange}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Year</option>
+                {yearOptions.map((year) => (
+                  <option key={year.id} value={year.id}>
+                    {year.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             {/* File Upload Section */}
             <label className="block text-md font-medium text-gray-700">
               Upload Files
@@ -726,14 +801,15 @@ const handleSaveEdit = async () => {
                 <button
                   onClick={handleUploadDocument} // Upload files when clicked
                   disabled={!isUploadEnabled} // Disable button if no files are selected
-                  className={`ml-2 text-white rounded-xl p-2 ${isUploadEnabled ? "bg-blue-900" : "bg-gray-400"}`}
+                  className={`ml-2 text-white rounded-xl p-2 ${
+                    isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
+                  }`}
                 >
                   Upload
                 </button>
               </div>
             </label>
           </div>
-
 
           {/* Add Document Button */}
           <div className="mt-3 flex justify-start">
@@ -756,34 +832,35 @@ const handleSaveEdit = async () => {
 
           {/* Display Uploaded File Names */}
           {uploadedFileNames.length > 0 && (
-  <div className="p-4 bg-slate-100 rounded-lg">
-    <div className="flex flex-wrap gap-4">
-      {uploadedFileNames.map((fileName, index) => {
-        // Extract the part after the first underscore
-        const displayName = fileName.substring(fileName.indexOf('_') + 1);
+            <div className="p-4 bg-slate-100 rounded-lg">
+              <div className="flex flex-wrap gap-4">
+                {uploadedFileNames.map((fileName, index) => {
+                  // Extract the part after the first underscore
+                  const displayName = fileName.substring(
+                    fileName.indexOf("_") + 1
+                  );
 
-        return (
-          <div
-            key={index}
-            className="flex items-center justify-between p-2 border rounded-md"
-          >
-            <span>{displayName}</span>
-            <button
-              onClick={() => handleDiscardFile(index)}
-              className="text-red-500"
-            >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
-          </div>
-        );
-      })}
-    </div>
-    <button className="mt-4 text-red-500" onClick={handleDiscardAll}>
-      Discard All
-    </button>
-  </div>
-)}
-
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 border rounded-md"
+                    >
+                      <span>{displayName}</span>
+                      <button
+                        onClick={() => handleDiscardFile(index)}
+                        className="text-red-500"
+                      >
+                        <XMarkIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <button className="mt-4 text-red-500" onClick={handleDiscardAll}>
+                Discard All
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto bg-white">
@@ -796,6 +873,7 @@ const handleSaveEdit = async () => {
                 <th className="border p-2 text-left">Subject</th>
                 <th className="border p-2 text-left">Version</th>
                 <th className="border p-2 text-left">Category</th>
+                <th className="border p-2 text-left">File Year</th>
                 <th className="border p-2 text-left">Approval Status</th>
                 <th className="border p-2 text-left">Uploaded Date</th>
                 <th className="border p-2 text-left">Edit</th>
@@ -816,6 +894,11 @@ const handleSaveEdit = async () => {
                     {doc.categoryMaster
                       ? doc.categoryMaster.name
                       : "No Category"}
+                  </td>
+                  <td className="border p-2">
+                    {doc.yearMaster
+                      ? doc.yearMaster.name
+                      : "No year"}
                   </td>
                   <td className="border p-2">{doc.approvalStatus}</td>
                   <td className="border p-2">{formatDate(doc.createdOn)}</td>
@@ -853,7 +936,6 @@ const handleSaveEdit = async () => {
                   >
                     <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-800" />
                   </button>
-
 
                   {/* Modal Content Divided into Two Halves */}
                   <div className="h-1/2 flex flex-col justify-between">
@@ -907,7 +989,7 @@ const handleSaveEdit = async () => {
                     </h1>
 
                     {Array.isArray(selectedDoc.paths) &&
-                      selectedDoc.paths.length > 0 ? (
+                    selectedDoc.paths.length > 0 ? (
                       <ul className="list-disc list-inside">
                         {selectedDoc.paths.map((file, index) => (
                           <li key={index} className="mb-2">

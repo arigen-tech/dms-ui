@@ -6,12 +6,17 @@ import {
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/solid";
 import adminPhoto from "../Assets/profile.svg";
+import axios from "axios";
+import { API_HOST } from "../API/apiConfig";
 
 function Header({ toggleSidebar, userName }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [imageSrc, setImageSrc] = useState(null);
   const UserName = localStorage.getItem("UserName");
+
+  const token = localStorage.getItem("tokenKey");
 
   const handleLogout = () => {
     localStorage.removeItem("Token");
@@ -33,6 +38,11 @@ function Header({ toggleSidebar, userName }) {
   };
 
   useEffect(() => {
+    fetchImageSrc();
+  }, []);
+
+
+  useEffect(() => {
     if (dropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
@@ -45,6 +55,28 @@ function Header({ toggleSidebar, userName }) {
   }, [dropdownOpen]);
 
   const role = localStorage.getItem("role");
+
+  const fetchImageSrc = async () => {
+    try {
+      const employeeId = localStorage.getItem("userId");
+
+      const response = await axios.get(
+        `${API_HOST}/employee/getImageSrc/${employeeId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "arraybuffer", // Fetch the image as a byte array
+        }
+      );
+
+      const imageBlob = new Blob([response.data], { type: "image/jpeg" }); // Adjust type if necessary
+      const imageUrl = URL.createObjectURL(imageBlob);
+      setImageSrc(imageUrl); // Set image source to the object URL
+    } catch (error) {
+      console.error("Error fetching image source", error);
+    }
+  };
 
   return (
     <header className="bg-blue-800 text-white p-0.5 flex justify-between items-center shadow-inner relative">
@@ -70,7 +102,7 @@ function Header({ toggleSidebar, userName }) {
               <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
               <span className="font-light text-sm mr-1">{UserName}</span>
               <img
-                src={adminPhoto}
+                src={imageSrc}
                 alt="Admin"
                 className="h-8 w-8 rounded-full"
               />
