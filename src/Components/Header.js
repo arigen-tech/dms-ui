@@ -102,7 +102,7 @@ function Header({ toggleSidebar, userName }) {
               <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
               <span className="font-light text-sm mr-1">{UserName}</span>
               <img
-                src={imageSrc}
+                src={imageSrc || adminPhoto}
                 alt="Admin"
                 className="h-8 w-8 rounded-full"
               />

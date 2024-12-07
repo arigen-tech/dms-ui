@@ -9,6 +9,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_HOST } from "../API/apiConfig";
+import Popup from "../Components/Popup";
 
 const ChangePasswordPage = () => {
   const [formData, setFormData] = useState({
@@ -42,7 +43,7 @@ const ChangePasswordPage = () => {
   const fileInputRef = useRef(null);
   const [imageSrc, setImageSrc] = useState(null);
   const navigate = useNavigate();
-  // State to manage which form is active
+  const [popupMessage, setPopupMessage] = useState(null);
 
   useEffect(() => {
     fetchEmployeeData();
@@ -120,9 +121,10 @@ const ChangePasswordPage = () => {
 
     try {
       await axios.post(`${API_HOST}/api/change-password`, changePasswordData);
-      setSuccess("Password changed successfully.");
+      showPopup("Password Changed successfully!", "success");
     } catch (error) {
       if (error.response && error.response.data) {
+        showPopup(`Failed to Changed Password`, "error");
         setError(error.response.data);
       } else {
         setError("An unexpected error occurred.");
@@ -167,11 +169,11 @@ const ChangePasswordPage = () => {
       const updatedEmployee = response.data; // Get the updated employee from the response
       localStorage.setItem("UserName", updatedEmployee.name);
 
-      setSuccess("Profile updated successfully.");
+      showPopup("Profile Updated successfully!", "success");
       console.log("Profile updated:", response.data);
     } catch (error) {
       console.error("Error updating profile:", error.response || error);
-
+      showPopup(`Failed to Updating Profile`, "error");
       // Set a user-friendly error message
       setError(
         error.response?.data?.message ||
@@ -181,14 +183,14 @@ const ChangePasswordPage = () => {
   };
 
   const handlePencilClick = () => {
-    fileInputRef.current.click(); // Trigger hidden file input when pencil icon is clicked
+    fileInputRef.current.click(); 
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedFile(file); // Set the selected file for preview and upload
-      setPhoto(URL.createObjectURL(file)); // Set the photo for immediate preview
+      setSelectedFile(file); 
+      setPhoto(URL.createObjectURL(file)); 
     }
   };
 
@@ -204,31 +206,26 @@ const ChangePasswordPage = () => {
     const employeeId = localStorage.getItem("userId");
   
     try {
-      // Display a message or disable the upload button during the upload
-      setUploadMessage("Uploading...");
   
       const response = await axios.post(
         `${API_HOST}/employee/upload/${employeeId}`,
         formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Add Bearer token
+            Authorization: `Bearer ${token}`, 
             "Content-Type": "multipart/form-data",
           },
         }
       );
-  
-      // Set success message and optionally refresh the displayed image
-      setUploadMessage("Image uploaded successfully.");
+      showPopup("Photo Update successfully!", "success");
       console.log("Upload response:", response.data);
   
       if (typeof fetchImageSrc === "function") {
-        fetchImageSrc(); // Fetch updated image source if the function exists
+        fetchImageSrc(); 
       }
     } catch (error) {
       console.error("Error uploading image:", error.response || error);
-  
-      // Handle error message more gracefully
+      showPopup(`Image Uploading failed`, "error");
       setUploadMessage(
         error.response?.data?.message ||
         "An error occurred while uploading the image. Please try again."
@@ -267,9 +264,20 @@ const ChangePasswordPage = () => {
     setShowConfirmPassword((prev) => !prev);
   };
 
+  const showPopup = (message, type = "info") => {
+    setPopupMessage({ message, type });
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg">
+      {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={() => setPopupMessage(null)}
+          />
+        )}
         {activeForm === null && (
           <>
             <div className="">
@@ -279,7 +287,7 @@ const ChangePasswordPage = () => {
               <div className="flex items-center justify-center mb-4">
                 {imageSrc || photo ? (
                   <img
-                    src={photo || imageSrc} // Display the uploaded or fetched image
+                    src={photo || imageSrc} 
                     alt="Profile"
                     className="h-28 w-28 border-2 border-gray-400 rounded-full mb-2 object-cover"
                   />
@@ -321,7 +329,7 @@ const ChangePasswordPage = () => {
                 </button>
                 <button
                   onClick={() => setActiveForm("changePassword")}
-                  className="bg-rose-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-rose-700 transition duration-300"
+                  className="bg-rose-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-rose-700 transition duration-300"
                 >
                   Change Password
                 </button>
@@ -357,7 +365,8 @@ const ChangePasswordPage = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type={showCurrentPassword ? "text" : "password"} // Use a specific state for current password visibility
+                    type={showCurrentPassword ? "text" : "password"}  
+                    visibility
                     id="currentPassword"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
@@ -368,7 +377,7 @@ const ChangePasswordPage = () => {
                   <button
                     type="button"
                     className="absolute right-3 top-4"
-                    onClick={toggleCurrentPasswordVisibility} // Create a separate toggle function
+                    onClick={toggleCurrentPasswordVisibility} 
                   >
                     {showCurrentPassword ? (
                       <EyeSlashIcon className="text-rose-900 h-5 w-5" />
@@ -387,7 +396,7 @@ const ChangePasswordPage = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type={showNewPassword ? "text" : "password"} // Use a specific state for new password visibility
+                    type={showNewPassword ? "text" : "password"} 
                     id="newPassword"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -398,7 +407,7 @@ const ChangePasswordPage = () => {
                   <button
                     type="button"
                     className="absolute right-3 top-4"
-                    onClick={toggleNewPasswordVisibility} // Create a separate toggle function
+                    onClick={toggleNewPasswordVisibility} 
                   >
                     {showNewPassword ? (
                       <EyeSlashIcon className="text-rose-900 h-5 w-5" />
@@ -417,7 +426,8 @@ const ChangePasswordPage = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type={showConfirmPassword ? "text" : "password"} // Use a specific state for confirm password visibility
+                    type={showConfirmPassword ? "text" : "password"}
+                    visibility
                     id="confirmPassword"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -428,7 +438,7 @@ const ChangePasswordPage = () => {
                   <button
                     type="button"
                     className="absolute right-3 top-4"
-                    onClick={toggleConfirmPasswordVisibility} // Create a separate toggle function
+                    onClick={toggleConfirmPasswordVisibility}
                   >
                     {showConfirmPassword ? (
                       <EyeSlashIcon className="text-rose-900 h-5 w-5" />
@@ -466,7 +476,7 @@ const ChangePasswordPage = () => {
               {imageSrc || photo ? (
                 <div className="relative">
                   <img
-                    src={photo || imageSrc} // Display the uploaded or fetched image
+                    src={photo || imageSrc} 
                     alt="Profile"
                     className="h-28 w-28 border-2 border-gray-400 rounded-full mb-2 object-cover"
                   />
@@ -507,7 +517,6 @@ const ChangePasswordPage = () => {
               )}
             </div>
 
-            {/* Include edit profile form elements here */}
             <form className="mb-6 w-full" onSubmit={handleUpdateProfile}>
               <div className="mb-4">
                 <label
@@ -518,7 +527,7 @@ const ChangePasswordPage = () => {
                 </label>
                 <input
                   type="text"
-                  name="name" // Set the name attribute for FormData to capture
+                  name="name" 
                   defaultValue={employee?.name}
                   className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
                   required
@@ -534,16 +543,12 @@ const ChangePasswordPage = () => {
                 </label>
                 <input
                   type="text"
-                  name="mobile" // Set the name attribute for FormData to capture
+                  name="mobile" 
                   defaultValue={employee?.mobile}
                   className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
                   required
                 />
               </div>
-
-              {/* Error and Success Messages */}
-              {error && <p className="text-red-500">{error}</p>}
-              {success && <p className="text-green-500">{success}</p>}
 
               <div className="space-x-4">
                 <button
