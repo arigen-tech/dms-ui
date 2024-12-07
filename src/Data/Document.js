@@ -522,10 +522,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   
     // Combine uploaded files with existing file paths
     const combinedFilePaths = [
-      ...uploadedFilePath, // Paths for newly uploaded files
+      // ...uploadedFilePath, // Paths for newly uploaded files
       ...editingDoc.documentDetails.map((detail) => detail.path), // Existing file paths
     ];
-  
+  debugger;
     // Prepare the payload for the API
     const payload = {
       documentHeader: {
