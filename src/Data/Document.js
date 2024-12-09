@@ -46,7 +46,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const fileInputRef = useRef(null);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   const [editingDoc, setEditingDoc] = useState(null); // To hold the document being edited
   const [updatedDoc, setUpdatedDoc] = useState(null);
   const [searchResults, setSearchResults] = useState(null);
@@ -243,37 +243,49 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   // };
 
   const openFile = async (file) => {
-    const token = localStorage.getItem("tokenKey"); // Get the token from localStorage
-    const createdOnDate = new Date(file.createdOn); // Convert timestamp to Date object
-    const year = createdOnDate.getFullYear(); // Extract year
-    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0"); // Extract month and pad with zero
-    const category = file.documentHeader.categoryMaster.name; // Get the category name
-    const fileName = file.docName; // The file name
+    console.log("file: ", file);
 
-    // Construct the URL based on the Spring Boot @GetMapping pattern
-    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${category}/${fileName}`;
+    const token = localStorage.getItem("tokenKey");
+
+    // Replace spaces with underscores in the fields
+    const branch = file.documentHeader.employee.branch.name.replace(/ /g, "_");
+    const department = file.documentHeader.employee.department.name.replace(
+      / /g,
+      "_"
+    );
+    const year = file.documentHeader.yearMaster.name.replace(/ /g, "_");
+    const category = file.documentHeader.categoryMaster.name.replace(/ /g, "_");
+    const version = file.documentHeader.version.replace(/ /g, "_");
+    const fileName = file.docName.replace(/ /g, "_");
+
+    const fileUrl = `${API_HOST}/api/documents/download/${branch}/${department}/${year}/${category}/${version}/${fileName}`;
 
     try {
-      // Fetch the file using axios and pass the token in the headers
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob", // Fetch the file as a blob
+        responseType: "blob",
       });
 
-      // Get the MIME type of the file from the response headers
       const contentType = response.headers["content-type"];
-
-      // Create a blob from the response
       const blob = new Blob([response.data], { type: contentType });
-
-      // Generate a URL for the blob
       const blobUrl = window.URL.createObjectURL(blob);
 
-      // Open the blob in a new tab
+      // Open the file in a new tab
       window.open(blobUrl, "_blank");
+
+      // Revoke the blob URL after use
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
-      console.error("Error fetching file:", error);
-      showPopup("There was an error opening the file. Please try again.");
+      if (error.response) {
+        console.error("Error response:", error.response);
+        showPopup(`Error ${error.response.status}: Unable to fetch the file.`);
+      } else if (error.request) {
+        console.error("Error request:", error.request);
+        showPopup("No response from server. Please check your connection.");
+      } else {
+        console.error("Error message:", error.message);
+        showPopup("An unexpected error occurred.");
+      }
     }
   };
 
@@ -877,40 +889,40 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           )}
         </div>
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-              <div className="flex items-center bg-blue-500 rounded-lg">
-                <label
-                  htmlFor="itemsPerPage"
-                  className="mr-2 ml-2 text-white text-sm"
-                >
-                  Show:
-                </label>
-                <select
-                  id="itemsPerPage"
-                  className="border rounded-r-lg p-1.5 outline-none"
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value)); // Update items per page
-                    setCurrentPage(1); // Reset to the first page
-                  }}
-                >
-                  {[5, 10, 15, 20].map((num) => (
-                    <option key={num} value={num}>
-                      {num}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="border rounded-l-md p-1 outline-none"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
-              </div>
-            </div>
+          <div className="flex items-center bg-blue-500 rounded-lg">
+            <label
+              htmlFor="itemsPerPage"
+              className="mr-2 ml-2 text-white text-sm"
+            >
+              Show:
+            </label>
+            <select
+              id="itemsPerPage"
+              className="border rounded-r-lg p-1.5 outline-none"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value)); // Update items per page
+                setCurrentPage(1); // Reset to the first page
+              }}
+            >
+              {[5, 10, 15, 20].map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="border rounded-l-md p-1 outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+          </div>
+        </div>
 
         <div className="overflow-x-auto bg-white">
           <table className="w-full border-collapse border">
@@ -964,39 +976,37 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             </tbody>
           </table>
           <div className="flex justify-between items-center mt-4">
-          <div>
-            <span className="text-sm text-gray-700">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-              {totalItems} entries
-            </span>
+            <div>
+              <span className="text-sm text-gray-700">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                {totalItems} entries
+              </span>
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="bg-slate-200 px-3 py-1 rounded mr-3"
+              >
+                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+                Previous
+              </button>
+              <span className="text-sm text-gray-700">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="bg-slate-200 px-3 py-1 rounded ml-3"
+              >
+                Next
+                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center">
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.max(prev - 1, 1))
-              }
-              disabled={currentPage === 1}
-              className="bg-slate-200 px-3 py-1 rounded mr-3"
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              Previous
-            </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-              className="bg-slate-200 px-3 py-1 rounded ml-3"
-            >
-              Next
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
-          </div>
-        </div>
 
           <>
             {isOpen && selectedDoc && (
@@ -1088,16 +1098,17 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       selectedDoc.paths.length > 0 ? (
                         <ul className="list-disc list-inside text-left mt-2">
                           {selectedDoc.paths.map((file, index) => {
-                            const displayName = file.docName
-                              .split("_")
-                              .slice(1)
-                              .join("_");
+                            // Extract the display name by removing the timestamp and retaining the rest
+                            const displayName = file.docName.includes("_")
+                              ? file.docName.split("_").slice(1).join("_")
+                              : file.docName;
 
                             return (
                               <li key={index} className="mb-2">
                                 <span className="mr-4 text-gray-600">
-                                  <strong>{index + 1}. </strong>
-                                  {displayName}{" "}
+                                  <strong>{index + 1}</strong>{" "}
+                                  {/* Removed the dot after the index */}{" "}
+                                  {displayName}
                                 </span>
                                 <button
                                   onClick={() => openFile(file)}
