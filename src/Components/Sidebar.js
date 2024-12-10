@@ -77,6 +77,8 @@ function Sidebar() {
         };
   });
 
+  const manageUserRoleCont = (counts.totalUser-counts.totalNullEmployeeType);
+
   useEffect(() => {
     const fetchCounts = async () => {
       try {
@@ -203,6 +205,13 @@ function Sidebar() {
                   icon={UserPlusIcon}
                   text="Total Pending Users"
                   count={counts.totalNullEmployeeType}
+                />
+                <hr className="border-t border-blue-800 mt-1" />
+                <SidebarLink
+                  to="/manageUserRole"
+                  icon={UserPlusIcon}
+                  text="Manage Users Roles"
+                  count={manageUserRoleCont}
                 />
                 <button
                   onClick={handleCreateToggle}
