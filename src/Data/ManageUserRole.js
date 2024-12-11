@@ -37,24 +37,39 @@ const ManageUserRole = () => {
     }
   };
 
-  const handleEditDocument = async (user) => {
+  const HandleEditRole = async (user) => {
     try {
-      const response = await axios.get(`${API_HOST}/findRoleById/${user.id}`, {
+      // Indicate loading
+      setErrorMessage(""); // Clear previous errors
+      // setIsLoading(true); // Optional: Add a loading state
+  
+      // Fetch user details
+      const response = await axios.get(`${API_HOST}/api/employee/${user.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+  
+      // Update state with fetched data
       setSelectedUser(response.data);
-      setRole(response.data.role?.role || ""); // Set initial role value
+      setRole(response.data.role?.role || ""); // Set initial role value if applicable
+  
+      console.log(response.data);
     } catch (error) {
-      setErrorMessage("Error fetching role details.");
+      // Handle error and set message
+      setErrorMessage(error.response?.data?.message || "Error fetching role details.");
+    } finally {
+      // setIsLoading(false); // Stop loading
     }
   };
+  
 
   const handleRoleUpdate = async () => {
     try {
       const response = await axios.put(
         `${API_HOST}/employee/${selectedUser.id}/role`,
+        // `${API_HOST}/employee/employee/${selectedUser.id}`,
+
         { role },
         {
           headers: {
@@ -191,7 +206,7 @@ const ManageUserRole = () => {
                       {user.role.role || "No Role"}
                     </td>
                     <td className="border p-2">
-                      <button onClick={() => handleEditDocument(user)}>
+                      <button onClick={() => HandleEditRole(user)}>
                         <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                       </button>
                     </td>
