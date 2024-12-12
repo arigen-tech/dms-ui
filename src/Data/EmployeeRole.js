@@ -86,28 +86,24 @@ const EmployeeRole = () => {
         }
       );
 
-      setSuccessMessage("Role assigned successfully.");
+      setSuccessMessage(response.data.message || "Role assigned successfully.");
       fetchUsers();
       setModalVisible(false);
       setSelectedUser(null);
       setSelectedRole("");
     } catch (error) {
-      if (error.response && error.response.data) {
-        const backendMessage = error.response.data;
-
-        if (backendMessage.includes("Employee with ID")) {
-          setErrorMessage("Employee Not Found");
-        } else if (backendMessage.includes("Role with ID")) {
-          setErrorMessage("Role Not Found");
-        } else if (backendMessage.includes("already an admin")) {
-          setErrorMessage("There is already an admin assigned to this branch.");
-        } else {
-          setErrorMessage(`Error: ${backendMessage}`);
-        }
+      const errorMessage = error.response?.data?.error || 
+                           "An unexpected error occurred while updating the role";
+      
+      // More specific error handling
+      if (errorMessage.includes("Employee with ID")) {
+        setErrorMessage("Employee Not Found");
+      } else if (errorMessage.includes("Role with ID")) {
+        setErrorMessage("Role Not Found");
+      } else if (errorMessage.includes("already an admin")) {
+        setErrorMessage("There is already an admin assigned to this branch.");
       } else {
-        setErrorMessage(
-          "An unexpected error occurred while updating the role. Please try again."
-        );
+        setErrorMessage(`Error: ${errorMessage}`);
       }
     } finally {
       setIsSubmitting(false);
@@ -116,8 +112,7 @@ const EmployeeRole = () => {
         setSuccessMessage("");
       }, 5000);
     }
-  };
-
+};
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {

@@ -96,7 +96,7 @@ function Header({ toggleSidebar, userName }) {
     try {
       const employeeId = localStorage.getItem("userId");
       const response = await axios.get(
-        `${API_HOST}/api/${employeeId}/roles/active`,
+        `${API_HOST}/api/EmpRole/${employeeId}/roles/active`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
