@@ -29,3 +29,12 @@ export const ROLE_API = `${API_HOST}/RoleMaster`;
 export const TYPE_API = `${API_HOST}/TypeMaster`;
 export const UPLOADFILE_API = `${API_HOST}/api/upload`;
 export const YEAR_API = `${API_HOST}/YearMaster`;
+
+
+
+// for roles
+
+export const SYSTEM_ADMIN = "ADMIN";
+export const BRANCH_ADMIN = "BRANCH ADMIN";
+export const DEPARTMENT_ADMIN = "DEPARTMENT ADMIN";
+export const USER = "USER";

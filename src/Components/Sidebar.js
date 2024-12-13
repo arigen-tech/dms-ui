@@ -28,7 +28,7 @@ import { RiFileUserFill } from "react-icons/ri";
 import { IoDocumentLock } from "react-icons/io5";
 import { FaRegFile, FaTimesCircle } from "react-icons/fa";
 import logo3 from "../Assets/logo3.png";
-import { API_HOST } from "../API/apiConfig";
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "../API/apiConfig";
 
 const tokenKey = "tokenKey";
 
@@ -77,7 +77,14 @@ function Sidebar() {
         };
   });
 
+  //System Admin
   const manageUserRoleCont = (counts.totalUser-counts.totalNullEmployeeType);
+
+  //Branch Admin
+  const manageUserRoleContbranch = (counts.branchUser-counts.nullRoleEmployeeCountForBranch);
+
+  //Department Admin
+  const manageUserRoleContdepartment = (counts.departmentUser-counts.nullRoleEmployeeCountForDepartment);
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -188,7 +195,7 @@ function Sidebar() {
         <nav className="flex flex-col space-y-1">
           <hr className="border-t border-blue-800" />
 
-          {role === "ADMIN" && (
+          {role === SYSTEM_ADMIN && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
               <hr className="border-t border-blue-800 mt-1" />
@@ -348,7 +355,7 @@ function Sidebar() {
               </div>
             </>
           )}
-          {role === "BRANCH ADMIN" && (
+          {role === BRANCH_ADMIN && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
               <SidebarLink
@@ -363,6 +370,12 @@ function Sidebar() {
                 text="Pending Users"
                 count={counts.nullRoleEmployeeCountForBranch}
               />
+              <SidebarLink
+                  to="/manageUserRole"
+                  icon={UserPlusIcon}
+                  text="Manage Users Roles"
+                  count={manageUserRoleContbranch}
+                />
               <SidebarLink
                 to="/create-departments"
                 icon={ComputerDesktopIcon}
@@ -451,7 +464,7 @@ function Sidebar() {
             </>
           )}
 
-          {role === "DEPARTMENT ADMIN" && (
+          {role === DEPARTMENT_ADMIN && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
               <SidebarLink
@@ -464,14 +477,14 @@ function Sidebar() {
                 to="/PendingRole"
                 icon={UserPlusIcon}
                 text="Pending Users"
-                count={counts.nullRoleEmployeeCountForDepartment}
+                count={counts.manageUserRoleContdepartment}
               />
-              {/* <SidebarLink
-                to="/create-departments"
-                icon={ComputerDesktopIcon}
-                text="Departments"
-                count={counts.departmentCountForBranch}
-              /> */}
+              <SidebarLink
+                  to="/manageUserRole"
+                  icon={UserPlusIcon}
+                  text="Manage Users Roles"
+                  count={manageUserRoleCont}
+                />
               <div>
                 {/* Document section */}
                 <button
@@ -554,7 +567,7 @@ function Sidebar() {
             </>
           )}
 
-          {role === "USER" && (
+          {role === USER && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
 

@@ -20,6 +20,8 @@ const EmployeeRole = () => {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [currRoleCode, setCurrRoleCode] = useState("");
+
 
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,7 +33,6 @@ const EmployeeRole = () => {
 
   useEffect(() => {
     fetchUsers();
-    fetchRoles();
   }, []);
 
   const fetchUsers = async () => {
@@ -50,21 +51,51 @@ const EmployeeRole = () => {
     }
   };
 
-  const fetchRoles = async () => {
-    try {
-      const response = await axios.get(
-        `${API_HOST}/RoleMaster/findActiveRole`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setRoles(response.data);
-    } catch (error) {
-      setErrorMessage("Error fetching roles.");
-    }
-  };
+const fetchEmployees = async () => {
+  try {
+    const userId = localStorage.getItem("userId");
+    const userResponse = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log("User response:", userResponse.data);
+    setCurrRoleCode(userResponse.data.role.roleCode);
+  } catch (error) {
+    console.error("Error fetching user details:", error.response || error.message);
+  }
+};
+
+useEffect(() => {
+  if (currRoleCode) {
+    fetchRoles();
+  }
+}, [currRoleCode]);
+
+const fetchRoles = async () => {
+  try {
+    const response = await axios.get(`${API_HOST}/RoleMaster/findActiveRole`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+
+    console.log("currRoleCode:", currRoleCode);
+    console.log("Before filter role:", response.data);
+
+    const filteredRoles = response.data.filter((role) => role.roleCode < currRoleCode);
+    setRoles(filteredRoles);
+
+    console.log("Filtered roles:", filteredRoles);
+  } catch (error) {
+    console.error("Error fetching roles:", error.response || error.message);
+    setErrorMessage("Error fetching roles.");
+  }
+};
+
+// Initial fetch
+useEffect(() => {
+  fetchEmployees();
+}, []);
+
+  
 
   const handleRoleChange = (userId, newRole) => {
     setSelectedUser(userId);

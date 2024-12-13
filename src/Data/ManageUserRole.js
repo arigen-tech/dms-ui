@@ -20,18 +20,39 @@ const ManageUserRole = () => {
 
   const token = localStorage.getItem("tokenKey");
 
+  const employeId = localStorage.getItem("userId");
+
+
   useEffect(() => {
     fetchUsers();
+    fetchUsersRole();
   }, []);
 
   const fetchUsers = async () => {
     try {
       const response = await axios.get(`${API_HOST}/employee/role-not-null`, {
+        // const response = await axios.get(`${API_HOST}/api/EmpRole/employee/${employeId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       setUsers(response.data);
+      console.log(response.data);
+    } catch (error) {
+      setErrorMessage("Error fetching users.");
+    }
+  };
+
+  const fetchUsersRole = async () => {
+    try {
+      const response = await axios.get(`${API_HOST}/api/EmpRole/getAll`, {
+        // const response = await axios.get(`${API_HOST}/api/EmpRole/employee/${employeId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      console.log("roles get all",response.data);
     } catch (error) {
       setErrorMessage("Error fetching users.");
     }

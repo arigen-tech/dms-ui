@@ -19,7 +19,8 @@ const DropdownMenu = ({ items, onSelect, emptyMessage }) => (
           className="px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
           onClick={() => onSelect && onSelect(item)} // Handle item selection
         >
-          {typeof item === "string" ? item : item.label} {/* Handle item type */}
+          {typeof item === "string" ? item : item.label}{" "}
+          {/* Handle item type */}
         </div>
       ))
     ) : (
@@ -27,7 +28,6 @@ const DropdownMenu = ({ items, onSelect, emptyMessage }) => (
     )}
   </div>
 );
-
 
 function Header({ toggleSidebar, userName }) {
   const navigate = useNavigate();
@@ -41,6 +41,8 @@ function Header({ toggleSidebar, userName }) {
   const UserName = localStorage.getItem("UserName") || userName;
   const token = localStorage.getItem("tokenKey");
   const role = localStorage.getItem("role");
+  const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+  const [targetRoleName, setTargetRoleName] = useState("");
 
   // Handle logout functionality
   const handleLogout = () => {
@@ -51,6 +53,11 @@ function Header({ toggleSidebar, userName }) {
   // Handle password change navigation
   const handleChangePassword = () => {
     navigate("/change-password");
+  };
+
+  const handleClose = () => {
+    setPopupMessage(null);
+    navigate("/dashboard");
   };
 
   // Toggle dropdown menus
@@ -108,14 +115,43 @@ function Header({ toggleSidebar, userName }) {
     }
   };
 
+  // const handleRoleSwitch = async (targetRoleName) => {
+  //   console.log("Received targetRoleName:", targetRoleName); // Log received value
+  //   try {
+  //     // debugger;
+  //     const employeeId = localStorage.getItem("userId");
+  //     const response = await axios.put(
+  //       `${API_HOST}/employee/${employeeId}/role/switch`,
+  //       { "targetRoleName" : targetRoleName },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("API Response:", response.data);
+  //     console.log("targete Response:", targetRoleName);
+
+  //     localStorage.setItem("role", targetRoleName);
+  //     setRole(targetRoleName);
+  //     showPopup("Role switched successfully!", "success");
+  //   } catch (error) {
+  //     showPopup("Error to switching role!", "success");
+  //   }
+  // };
+
   const handleRoleSwitch = async (targetRoleName) => {
-    console.log("Received targetRoleName:", targetRoleName); // Log received value
+    console.log("Received targetRoleName:", targetRoleName);
+    setTargetRoleName(targetRoleName); // Set the target role
+    setShowConfirmationPopup(true); // Show confirmation popup
+  };
+
+  const confirmRoleSwitch = async () => {
     try {
-      // debugger;
       const employeeId = localStorage.getItem("userId");
       const response = await axios.put(
         `${API_HOST}/employee/${employeeId}/role/switch`,
-        { "targetRoleName" : targetRoleName },
+        { targetRoleName },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -123,14 +159,22 @@ function Header({ toggleSidebar, userName }) {
         }
       );
       console.log("API Response:", response.data);
-      console.log("targete Response:", targetRoleName);
 
-      localStorage.setItem("role", targetRoleName); 
-      setRole(targetRoleName); 
+      // Update local storage and role state
+      localStorage.setItem("role", targetRoleName);
+      setRole(targetRoleName);
       showPopup("Role switched successfully!", "success");
+
+      // Close popup
+      setShowConfirmationPopup(false);
     } catch (error) {
-      showPopup("Error to switching role!", "success");
+      showPopup("Error switching role!", "error");
+      setShowConfirmationPopup(false); // Close popup on error
     }
+  };
+
+  const cancelRoleSwitch = () => {
+    setShowConfirmationPopup(false); // Close the popup
   };
 
   const showPopup = (message, type = "info") => {
@@ -167,12 +211,12 @@ function Header({ toggleSidebar, userName }) {
   return (
     <header className="bg-blue-800 text-white p-2 flex justify-between items-center shadow-inner relative">
       {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={() => setPopupMessage(null)}
-          />
-        )}
+        <Popup
+          message={popupMessage.message}
+          type={popupMessage.type}
+          onClose={handleClose}
+        />
+      )}
       <div className="flex items-center">
         <button
           onClick={toggleSidebar}
@@ -231,6 +275,34 @@ function Header({ toggleSidebar, userName }) {
             />
           )}
         </div>
+
+        {showConfirmationPopup && (
+          <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-96 relative z-60">
+              <h2 className="text-lg font-semibold mb-4">
+                Confirm Role Switch
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to switch to the role:{" "}
+                <strong>{targetRoleName}</strong>?
+              </p>
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={cancelRoleSwitch}
+                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRoleSwitch}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

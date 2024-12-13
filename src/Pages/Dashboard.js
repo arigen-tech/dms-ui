@@ -140,7 +140,7 @@ function Dashboard() {
     const fetchStatsAndData = async () => {
       try {
 
-        debugger;
+        // debugger;
         const employeeId = localStorage.getItem("userId");
         const token = localStorage.getItem("tokenKey");
         const role = localStorage.getItem("role");
