@@ -25,38 +25,32 @@ const ManageUserRole = () => {
 
   useEffect(() => {
     fetchUsers();
-    fetchUsersRole();
   }, []);
 
+  // /role-not-null
+  // /role-not-null/branch/{branchId}
+  // /role-not-null/dep/{depId}
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API_HOST}/employee/role-not-null`, {
-        // const response = await axios.get(`${API_HOST}/api/EmpRole/employee/${employeId}`, {
+      debugger;
+      const response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setUsers(response.data);
-      console.log(response.data);
+      if (response.status === 200) {
+        setUsers(response.data); // Update users state with data
+        console.log("Fetched users:", response.data);
+      } else {
+        console.error("Unexpected response status:", response.status);
+        setErrorMessage("Failed to fetch users. Please try again later.");
+      }
     } catch (error) {
-      setErrorMessage("Error fetching users.");
+      console.error("Error fetching users:", error);
+      setErrorMessage("Error fetching users. Check your connection or contact support.");
     }
   };
-
-  const fetchUsersRole = async () => {
-    try {
-      const response = await axios.get(`${API_HOST}/api/EmpRole/getAll`, {
-        // const response = await axios.get(`${API_HOST}/api/EmpRole/employee/${employeId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
-      console.log("roles get all",response.data);
-    } catch (error) {
-      setErrorMessage("Error fetching users.");
-    }
-  };
+  
 
   const HandleEditRole = async (user) => {
     try {

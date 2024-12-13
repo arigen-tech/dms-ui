@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, USER } from "../API/apiConfig";
 import "jspdf-autotable";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -161,29 +161,38 @@ const DocumentReport = () => {
     try {
       const token = localStorage.getItem("tokenKey");
 
+      const formattedFromDate = new Date(fromDate);
+      formattedFromDate.setHours(0, 0, 0, 0);
+
+      const formattedToDate = new Date(toDate);
+      formattedToDate.setHours(23, 59, 59, 999);
+
       const requestBody = {
         ...(searchCriteria.category && { categoryId: searchCriteria.category }),
         ...(searchCriteria.status && { approvalStatus: searchCriteria.status }),
         ...(searchCriteria.branch && { branchId: searchCriteria.branch }),
         ...(searchCriteria.department && {
           departmentId: searchCriteria.department,
+          ...(role === "USER" && { employeeId: userId }),
         }),
-        startDate: new Date(fromDate).toISOString(),
-        endDate: new Date(toDate).toISOString(),
+        startDate: formattedFromDate,
+        endDate: formattedToDate,
         docType: selectedFormat,
       };
-
-      const response = await axios.post(
-        `${DOCUMENTHEADER_API}/export`,
-        requestBody,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          responseType: "blob", // Handle binary file
-        }
-      );
+  
+      // Choose API endpoint based on role
+      const apiUrl =
+        role === "USER"
+          ? `${DOCUMENTHEADER_API}/export/ById`
+          : `${DOCUMENTHEADER_API}/export`;
+  
+      const response = await axios.post(apiUrl, requestBody, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        responseType: "blob", // Handle binary file
+      });
 
       // Extract the Content-Disposition header
 
