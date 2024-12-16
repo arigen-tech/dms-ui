@@ -123,9 +123,6 @@ useEffect(() => {
       setSelectedUser(null);
       setSelectedRole("");
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 
-                           "An unexpected error occurred while updating the role";
-      
       // More specific error handling
       if (errorMessage.includes("Employee with ID")) {
         setErrorMessage("Employee Not Found");
