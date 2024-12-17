@@ -31,6 +31,7 @@ const ManageUserRole = () => {
   const [roles, setRoles] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(false);
   const [currBranchId, setCurrBranchId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const token = localStorage.getItem("tokenKey");
   const [loading, setLoading] = useState(false);
@@ -58,11 +59,9 @@ const ManageUserRole = () => {
     const remainingRoles = allRoles.filter(
       (role) => !matchedRoleIds.has(role.id)
     );
-  
+
     setAvailableRoles(remainingRoles);
   }, [allRoles, roleByEmp, refreshTrigger]);
-  
-
 
   const fetchLoginEmployees = async () => {
     try {
@@ -73,10 +72,10 @@ const ManageUserRole = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       // Log the fetched data
       console.log("User response:", userResponse.data);
-  
+
       // Set current branch ID if available
       if (userResponse.data?.branch?.id) {
         setCurrBranchId(userResponse.data.branch.id);
@@ -90,26 +89,29 @@ const ManageUserRole = () => {
       );
     }
   };
-  
+
   const fetchUsers = async () => {
     console.log("currBranchId:", currBranchId);
-  
+
     setLoading(true);
     try {
       let response; // Declare response variable here
-  
+
       if (loginEmpRole === BRANCH_ADMIN && currBranchId) {
         // Fetch branch-specific users
-        response = await axios.get(`${API_HOST}/api/EmpRole/branch/${currBranchId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        response = await axios.get(
+          `${API_HOST}/api/EmpRole/branch/${currBranchId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
       } else {
         // Fetch all employees
         response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
-  
+
       // Check the response status
       if (response?.status === 200) {
         setUsers(response.data); // Store the users in the state
@@ -125,7 +127,7 @@ const ManageUserRole = () => {
       setLoading(false);
     }
   };
-  
+
   // Use useEffect to ensure fetchUsers is triggered after currBranchId is set
   useEffect(() => {
     if (loginEmpRole === BRANCH_ADMIN) {
@@ -136,8 +138,6 @@ const ManageUserRole = () => {
       fetchUsers(); // For non-branch admin roles
     }
   }, [loginEmpRole, currBranchId]); // Dependency array ensures it reacts to changes
-  
-  
 
   const fetchAvailableRolesForUser = async (id) => {
     try {
@@ -183,6 +183,8 @@ const ManageUserRole = () => {
         return;
       }
 
+      setIsLoading(true); // Disable button when action starts
+
       // Send API request to add the selected role
       const response = await axios.put(
         `${API_HOST}/employee/${selectedUser.employeeId}/role`, // API endpoint
@@ -206,6 +208,7 @@ const ManageUserRole = () => {
         setSelectedRole("");
         setShowAvailableRoles(false);
         showPopup("Role added successfully!");
+        fetchUsers();
       } else {
         showPopup("Failed to add the role. Please try again.");
       }
@@ -224,6 +227,8 @@ const ManageUserRole = () => {
       } else {
         showPopup("An error occurred while adding the role. Please try again.");
       }
+    } finally {
+      setIsLoading(false); // Re-enable button when action completes
     }
   };
 
@@ -237,7 +242,7 @@ const ManageUserRole = () => {
       showPopup("No role selected for status change.");
       return;
     }
-  
+
     try {
       // Prepare the payload
       const updatedRoleRequest = {
@@ -245,7 +250,7 @@ const ManageUserRole = () => {
         roleId: roleToToggle.roleId, // Role ID
         empId: empId, // Employee ID
       };
-  
+
       // Make the PUT request
       const response = await axios.put(
         `${API_HOST}/api/EmpRole/changeRoleStatus`,
@@ -257,7 +262,7 @@ const ManageUserRole = () => {
           },
         }
       );
-  
+
       // Handle success
       if (response.status === 200) {
         // Update roles state
@@ -284,7 +289,7 @@ const ManageUserRole = () => {
       );
     }
   };
-  
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {
@@ -531,9 +536,14 @@ const ManageUserRole = () => {
                       </select>
                       <button
                         onClick={addSelectedRole}
-                        className="bg-green-500 text-white px-4 py-2 rounded"
+                        className={`${
+                          isLoading
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-green-500"
+                        } text-white px-4 py-2 rounded`}
+                        disabled={isLoading} // Disable button when loading
                       >
-                        Add Role
+                        {isLoading ? "Adding..." : "Add Role"}
                       </button>
                     </div>
                   ) : (
