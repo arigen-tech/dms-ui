@@ -158,18 +158,18 @@ function Dashboard() {
         let summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
   
         switch (role) {
-          case "ADMIN":
+          case SYSTEM_ADMIN:
             summaryUrl = `${baseUrl}/monthly-total`;
             break;
-          case "BRANCH ADMIN":
+          case BRANCH_ADMIN:
             summaryUrl = `${baseUrl}/branch/${branchesId}`;
             break;
-          case "DEPARTMENT ADMIN":
+          case DEPARTMENT_ADMIN:
             summaryUrl = departmentId
               ? `${baseUrl}/department/${departmentId}`
               : `${baseUrl}/branch/${branchesId}`;
             break;
-          case "USER":
+          case USER:
             summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
             break;
           default:
