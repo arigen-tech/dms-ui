@@ -374,19 +374,30 @@ const BranchEmployee = () => {
     };
 
     const filteredEmployees = employees.filter((employee) => {
+        // Safeguard for undefined values
+        const name = employee.name || ""; // Fallback to empty string if undefined
+        const email = employee.email || ""; // Fallback to empty string if undefined
+        const mobile = employee.mobile || ""; // Fallback to empty string if undefined
+      
+        // Derive status text
         const statusText = employee.active === true ? "active" : "inactive";
-        const createdOnText = formatDate(employee.createdOn);
-        const updatedOnText = formatDate(employee.updatedOn);
-
+      
+        // Safeguard for dates
+        const createdOnText = employee.createdOn ? formatDate(employee.createdOn) : "";
+        const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn) : "";
+      
+        // Ensure searchTerm is valid
+        const lowerSearchTerm = searchTerm?.toLowerCase() || "";
+      
         return (
-            employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.mobile.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            statusText.includes(searchTerm.toLowerCase()) ||
-            createdOnText.includes(searchTerm.toLowerCase()) ||
-            updatedOnText.includes(searchTerm.toLowerCase())
+          name.toLowerCase().includes(lowerSearchTerm) ||
+          email.toLowerCase().includes(lowerSearchTerm) ||
+          mobile.toLowerCase().includes(lowerSearchTerm) ||
+          statusText.includes(lowerSearchTerm) ||
+          createdOnText.includes(lowerSearchTerm) ||
+          updatedOnText.includes(lowerSearchTerm)
         );
-    });
+      });
 
     const sortedEmployees = filteredEmployees.sort((a, b) => b.active - a.active);
 
