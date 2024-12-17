@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 
 const Popup = ({
   message,
@@ -50,7 +51,7 @@ const Popup = ({
 
   const styles = getStyleByType();
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 p-6 text-center relative">
         <div className={`
@@ -95,7 +96,8 @@ const Popup = ({
           OK
         </button>
       </div>
-    </div>
+    </div>,
+    document.body // Render in the <body> element
   );
 };
 

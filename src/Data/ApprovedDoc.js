@@ -4,6 +4,7 @@ import {
   PencilIcon,
   PlusCircleIcon,
   CheckCircleIcon,
+  MagnifyingGlassIcon,
   EyeIcon,
   XMarkIcon,
   PrinterIcon,
@@ -22,12 +23,13 @@ const ApprovedDoc = () => {
     category: null,
   });
   const [documents, setDocuments] = useState([]);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
+  const [searchTerm, setSearchTerm] = useState("");
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -228,6 +230,43 @@ const ApprovedDoc = () => {
       <h1 className="text-xl mb-4 font-semibold">Approved Documents</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
         {error && <div className="text-red-500 mb-4">{error}</div>}
+
+        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
+          <div className="flex items-center bg-blue-500 rounded-lg">
+            <label
+              htmlFor="itemsPerPage"
+              className="mr-2 ml-2 text-white text-sm"
+            >
+              Show:
+            </label>
+            <select
+              id="itemsPerPage"
+              className="border rounded-r-lg p-1.5 outline-none"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value)); // Update items per page
+                setCurrentPage(1); // Reset to the first page
+              }}
+            >
+              {[5, 10, 15, 20].map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="border rounded-l-md p-1 outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border">
             <thead>

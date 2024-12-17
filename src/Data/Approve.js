@@ -43,10 +43,10 @@ const Approve = () => {
   }, []);
 
   useEffect(() => {
-    if (userBranch) {
+    
       fetchDocuments();
-    }
-  }, [userBranch]);
+
+  }, []);
 
   const fetchUserBranch = async () => {
     setLoading(true);
@@ -75,12 +75,13 @@ const Approve = () => {
     try {
       const token = localStorage.getItem("tokenKey");
       const userId = localStorage.getItem("userId");
-
+  
       if (!token || !userId) {
         setError("Authentication details missing. Please log in again.");
+        setLoading(false); // Stop loading if authentication fails
         return;
       }
-
+  
       // Fetch user details to get department and branch IDs
       const userResponse = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
@@ -88,31 +89,38 @@ const Approve = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
+  
       const departmentId = userResponse.data?.department?.id;
       const branchId = userResponse.data?.branch?.id;
-
-      // Construct the URL based on the availability of departmentId
-      const url = departmentId
-        ? `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}/${departmentId}`
-        : `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`;
-
+  
+      // Construct the URL based on the availability of departmentId and branchId
+      let url;
+      if (!branchId && !departmentId) {
+        url = `${DOCUMENTHEADER_API}/pending`; // If both are null, call this endpoint
+      } else if (departmentId) {
+        url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}/${departmentId}`; // If departmentId exists
+      } else {
+        url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`; // If only branchId exists
+      }
+  
       // Fetch documents
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      setDocuments(response.data);
+  
+      setDocuments(response.data); // Update state with the fetched documents
     } catch (error) {
-      setError("Error fetching documents. Please try again later.");
-      console.error(
-        "Fetch documents error:",
-        error?.response?.data || error.message
-      );
+      if (error?.response?.status === 401) {
+        setError("Unauthorized access. Please log in again.");
+      } else {
+        setError("Error fetching documents. Please try again later.");
+      }
+      console.error("Fetch documents error:", error?.response?.data || error.message);
     } finally {
-      setLoading(false);
+      setLoading(false); // Ensure loading is stopped regardless of success or failure
     }
   };
+  
 
   const fetchPaths = async (doc) => {
     try {

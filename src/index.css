@@ -8,6 +8,11 @@
     --maincontainbg:#fff;
     --tablebg:#f1f5f9;
     --pagebg:#f5f5f5;
+
+    /* dashbord */
+    --dcolor:#EF4444;
+    --icon:#28e731;
+    --bgdashColor:#f4f5f7;
 }
 .bg-blue-800{
     background-color:var(--primarycolor) !important;
@@ -29,4 +34,20 @@
 
 }
 
+
+/* For DashBord */
+.border-blue-50{
+   /* olor: var(--Dcolor); */
+   border-color : var(--dcolor) ;
+}
+.text-blue-100{
+    text : var(--icon);
+}
+.bg-gray-50{
+    background-color: var(--bgdashColor);
+}
+
+
+
+/* for profile */
 

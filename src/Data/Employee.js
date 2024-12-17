@@ -42,6 +42,7 @@ const UserAddEmployee = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [selectedBranch, setSelectedBranch] = useState(null);
+  const [userName, setUserName] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [Message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +73,7 @@ const UserAddEmployee = () => {
 
       const userData = userResponse.data;
       console.log("Complete User Data:", userData);
+      setUserName(userResponse.data.name);
 
       // Explicitly set branch and department
       const userBranch = userData.branch
@@ -97,9 +99,19 @@ const UserAddEmployee = () => {
       const isAdmin = userData.role?.role?.toUpperCase() === "ADMIN";
 
       if (isAdmin) {
-        // Fetch all employees if user is an admin
-        const allEmployeesResponse = await axios.get(
-          `${API_HOST}/employee/findAll`,
+        // Fetch all employees if the user is an admin
+        const allEmployeesResponse = await axios.get(`${API_HOST}/employee/findAll`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("All employees data:", allEmployeesResponse.data);
+        setEmployees(allEmployeesResponse.data);
+      } else {
+        // Fetch employees created by the logged-in user
+        const createdByResponse = await axios.get(
+          `${API_HOST}/employee/employeeCreateby/${userData.id}`, // Ensure userData.id holds the empId
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -107,12 +119,12 @@ const UserAddEmployee = () => {
           }
         );
 
-        console.log("All employees data:", allEmployeesResponse.data);
-
-        setEmployees(allEmployeesResponse.data);
-      } else {
-        setEmployees([userData]);
+        console.log("Employees created by user:", createdByResponse.data);
+        // setEmployees(createdByResponse.data.payload || []); 
+        setEmployees(createdByResponse.data.response);
+        // Adjust based on your API response structure
       }
+
 
     } catch (error) {
       console.error("Error fetching user details or employees:", error);
@@ -230,47 +242,42 @@ const UserAddEmployee = () => {
 
   const handleAddEmployee = async () => {
     console.log("Form Data before submit:", formData);
-
-    const isFormDataValid = formData.name && formData.email && formData.mobile;
-    const isBranchSelected = formData.branch && formData.branch.id;
-    const isDepartmentSelected = formData.department && formData.department.id;
-
+  
+    const isFormDataValid =
+      formData.name?.trim() &&
+      formData.email?.trim() &&
+      formData.mobile?.trim();
+    const isBranchSelected = formData.branch?.id;
+    const isDepartmentSelected = formData.department?.id;
+  
     if (isFormDataValid && isBranchSelected && isDepartmentSelected) {
-      setIsSubmitting(true); // Disable button after click
+      setIsSubmitting(true);
       try {
         const token = localStorage.getItem("tokenKey");
-        const userId = localStorage.getItem("userId");
-
-        console.log("Retrieved Token:", token);
-
-        if (!userId) {
+        const userId = parseInt(localStorage.getItem("userId"), 10);
+  
+        if (isNaN(userId)) {
           setError("User authentication error. Please log in again.");
           setIsSubmitting(false);
           return;
         }
-
-        const createdBy = { id: userId };
-        const updatedBy = { id: userId };
-
+  
         const employeeData = {
-          password: `${formData.name}${formData.mobile.slice(0, 4)}`,
-          mobile: formData.mobile,
-          email: formData.email,
           name: formData.name,
-          isActive: 1,
+          email: formData.email,
+          mobile: formData.mobile,
+          password: `${formData.name}${formData.mobile.slice(0, 4)}`,
+          isActive: 0, // Use 0 instead of false if the backend expects a number
+          createdBy: { id: userId },
+          updatedBy: { id: userId },
+          department: { id: parseInt(formData.department.id, 10) },
+          branch: { id: parseInt(formData.branch.id, 10) },
           createdOn: new Date().toISOString(),
           updatedOn: new Date().toISOString(),
-          createdBy,
-          updatedBy,
-          department: {
-            id: formData.department.id,
-            name: formData.department.name,
-          },
-          branch: { id: formData.branch.id, name: formData.branch.name },
         };
-
-        console.log("Employee Data to Send:", employeeData);
-
+  
+        console.log("Formatted Employee Data:", employeeData);
+  
         const response = await axios.post(
           `${API_HOST}/register/create`,
           employeeData,
@@ -281,45 +288,36 @@ const UserAddEmployee = () => {
             },
           }
         );
-
+  
         console.log("API Response:", response.data);
-
-        if (response.data) {
-          setEmployees((prevEmployees) => [...prevEmployees, response.data]);
-
-          if (response.data.token) {
-            localStorage.setItem("tokenKey", response.data.token);
-          }
-
-          setFormData({
-            name: "",
-            email: "",
-            mobile: "",
-            branch: { id: "", name: "" },
-            department: { id: "", name: "" },
-          });
-
-          setError("");
-          setMessage("Employee added successfully!");
-
-          // Clear success message after 2 seconds
-          setTimeout(() => setMessage(""), 3000);
-        }
+  
+        // Handle successful response
+        setEmployees((prevEmployees) => [...prevEmployees, response.data]);
+        setFormData({
+          name: "",
+          email: "",
+          mobile: "",
+          branch: { id: "", name: "" },
+          department: { id: "", name: "" },
+        });
+        setError("");
+        setMessage("Employee added successfully!");
+        setTimeout(() => setMessage(""), 3000);
       } catch (error) {
-        console.error("Error adding employee:", error);
+        console.error("Detailed Error:", error.response?.data);
         setError(
           error.response?.data?.message ||
-          "Error adding employee. Please try again."
+          error.response?.data?.msg ||
+          "Failed to add employee. Please try again."
         );
       } finally {
-        setIsSubmitting(false); // Enable button after submission is done
+        setIsSubmitting(false);
       }
     } else {
-      setError(
-        "Please fill out all fields and select a branch and department."
-      );
+      setError("Please fill out all fields and select a branch and department.");
     }
   };
+  
 
   const handleEditEmployee = (employeeId) => {
     const employeeToEdit = employees.find((emp) => emp.id === employeeId);
@@ -478,19 +476,31 @@ const UserAddEmployee = () => {
   };
 
   const filteredEmployees = employees.filter((employee) => {
+    // Safeguard for undefined values
+    const name = employee.name || ""; // Fallback to empty string if undefined
+    const email = employee.email || ""; // Fallback to empty string if undefined
+    const mobile = employee.mobile || ""; // Fallback to empty string if undefined
+  
+    // Derive status text
     const statusText = employee.active === true ? "active" : "inactive";
-    const createdOnText = formatDate(employee.createdOn);
-    const updatedOnText = formatDate(employee.updatedOn);
-
+  
+    // Safeguard for dates
+    const createdOnText = employee.createdOn ? formatDate(employee.createdOn) : "";
+    const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn) : "";
+  
+    // Ensure searchTerm is valid
+    const lowerSearchTerm = searchTerm?.toLowerCase() || "";
+  
     return (
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.mobile.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      statusText.includes(searchTerm.toLowerCase()) ||
-      createdOnText.includes(searchTerm.toLowerCase()) ||
-      updatedOnText.includes(searchTerm.toLowerCase())
+      name.toLowerCase().includes(lowerSearchTerm) ||
+      email.toLowerCase().includes(lowerSearchTerm) ||
+      mobile.toLowerCase().includes(lowerSearchTerm) ||
+      statusText.includes(lowerSearchTerm) ||
+      createdOnText.includes(lowerSearchTerm) ||
+      updatedOnText.includes(lowerSearchTerm)
     );
   });
+  
 
   const sortedEmployees = filteredEmployees.sort((a, b) => b.active - a.active);
 
@@ -657,7 +667,7 @@ const UserAddEmployee = () => {
 
 
 
-        {role === "ADMIN" && (
+        {(role === "ADMIN" || role === "USER") && (
           <>
             <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
               <div className="flex items-center bg-blue-500 rounded-lg">
@@ -671,7 +681,10 @@ const UserAddEmployee = () => {
                   id="itemsPerPage"
                   className="border rounded-r-lg p-1.5 outline-none"
                   value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value)); // Update items per page
+                    setCurrentPage(1); // Reset to the first page
+                  }}
                 >
                   {[5, 10, 15, 20].map((num) => (
                     <option key={num} value={num}>
@@ -692,6 +705,7 @@ const UserAddEmployee = () => {
               </div>
             </div>
 
+
             <table className="w-full border-collapse border">
               <thead className="bg-gray-100">
                 <tr>
@@ -705,10 +719,16 @@ const UserAddEmployee = () => {
                   <th className="border p-2 text-left">Created Date</th>
                   <th className="border p-2 text-left">Updated Date</th>
                   <th className="border p-2 text-left">Created By</th>
-                  <th className="border p-2 text-left">Updated By</th>
-                  <th className="border p-2 text-left">Status</th>
+                  {(role === "ADMIN") && (
+                    <>
+                      <th className="border p-2 text-left">Updated By</th>
+                      <th className="border p-2 text-left">Status</th></>
+                  )}
                   <th className="border p-2 text-left">Edit</th>
-                  <th className="border p-2 text-left">Access</th>
+                  {(role === "ADMIN") && (
+                    <th className="border p-2 text-left">Access</th>
+                  )}
+
                 </tr>
               </thead>
               <tbody>
@@ -733,15 +753,28 @@ const UserAddEmployee = () => {
                     <td className="border p-2">
                       {formatDate(employee.updatedOn)}
                     </td>
-                    <td className="border p-2">
-                      {employee.createdBy?.name || "Unknown"}
-                    </td>
-                    <td className="border p-2">
-                      {employee.updatedBy?.name || "Unknown"}
-                    </td>
-                    <td className="border p-2">
-                      {employee.active ? "Active" : "Inactive"}
-                    </td>
+
+                    {(role === "USER") && (
+                      <td className="border p-2">
+                        {userName || "Unknown"}
+                      </td>
+                    )}
+                    {(role === "ADMIN") && (
+                      <>
+                        <td className="border p-2">
+                          {employee.createdBy?.name || "Unknown"}
+                        </td>
+
+                        <td className="border p-2">
+                          {employee.updatedBy?.name || "Unknown"}
+                        </td>
+                        <td className="border p-2">
+                          {employee.active ? "Active" : "Inactive"}
+                        </td>
+                      </>
+                    )}
+
+
                     <td className="border p-2">
                       <button
                         onClick={() => handleEditEmployee(employee.id)}
@@ -750,19 +783,22 @@ const UserAddEmployee = () => {
                         <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                       </button>
                     </td>
-                    <td className="border p-2">
-                      <button
-                        onClick={() => handleToggleActive(employee)}
-                        className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"
-                          }`}
-                      >
-                        {employee.active ? (
-                          <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
-                        ) : (
-                          <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
-                        )}
-                      </button>
-                    </td>
+                    {(role === "ADMIN") && (
+                      <td className="border p-2">
+                        <button
+                          onClick={() => handleToggleActive(employee)}
+                          className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"
+                            }`}
+                        >
+                          {employee.active ? (
+                            <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
+                          ) : (
+                            <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
+                          )}
+                        </button>
+                      </td>
+                    )}
+
                   </tr>
                 ))}
               </tbody>

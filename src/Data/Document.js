@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 import Search from "./Search"; // Import the Search component
-import Popup from '../Components/Popup';
+import Popup from "../Components/Popup";
 
 import {
   PencilIcon,
@@ -9,24 +10,28 @@ import {
   CheckCircleIcon,
   EyeIcon,
   XMarkIcon,
+  MagnifyingGlassIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
   PrinterIcon,
 } from "@heroicons/react/24/solid";
 import { API_HOST } from "../API/apiConfig";
-import {
-  DOCUMENTHEADER_API,
-  UPLOADFILE_API
-} from '../API/apiConfig';
+import { DOCUMENTHEADER_API, UPLOADFILE_API } from "../API/apiConfig";
 
 const DocumentManagement = ({ fieldsDisabled }) => {
+  const location = useLocation();
+  const data = location.state;
   const [formData, setFormData] = useState({
     fileNo: "",
     title: "",
     subject: "",
     version: "",
     category: null,
+    year: null,
     uploadedFilePaths: [], // To store paths of uploaded files
   });
   const [uploadedFileNames, setUploadedFileNames] = useState([]);
+  const [uploadedFilePath, setUploadedFilePath] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -34,23 +39,35 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
   const [isUploadEnabled, setIsUploadEnabled] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const [yearOptions, setYearOptions] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [userBranch, setUserBranch] = useState([]);
+  const [userDep, setUserDep] = useState([]);
+  const fileInputRef = useRef(null);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+
   const [editingDoc, setEditingDoc] = useState(null); // To hold the document being edited
   const [updatedDoc, setUpdatedDoc] = useState(null);
   const [searchResults, setSearchResults] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
 
   // Run this effect only when component mounts
   useEffect(() => {
+    if (data) {
+      debugger;
+      handleEditDocument(data);
+    }
     fetchCategory();
+    fetchYear();
     fetchDocuments();
     fetchPaths();
+    fetchUser();
   }, []); // Add an empty dependency array to avoid infinite re-renders
 
   const handleCategoryChange = (e) => {
@@ -60,15 +77,23 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setFormData({ ...formData, category: selectedCategory });
   };
 
+  const handleYearChange = (e) => {
+    const selectedYear = yearOptions.find(
+      (year) => year.id === parseInt(e.target.value)
+    );
+    setFormData({ ...formData, year: selectedYear });
+  };
+
   // Update upload button enable status based on form data
   useEffect(() => {
-    const { fileNo, title, subject, version, category } = formData;
+    const { fileNo, title, subject, version, category, year } = formData;
     const isFormFilled =
       fileNo &&
       title &&
       subject &&
       version &&
       category &&
+      year &&
       selectedFiles.length > 0;
     setIsUploadEnabled(isFormFilled);
   }, [formData, selectedFiles]);
@@ -88,8 +113,37 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-  // Function to fetch documents
-  // Function to fetch documents
+  const fetchYear = async () => {
+    try {
+      const response = await axios.get(
+        `${API_HOST}/YearMaster/findActiveYear`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setYearOptions(response.data);
+    } catch (error) {
+      console.error("Error fetching Year:", error);
+    }
+  };
+
+  const fetchUser = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setUserBranch(response.data.branch.name);
+      setUserDep(response.data.department.name);
+    } catch (error) {
+      console.error("Error fetching user branch:", error);
+    }
+  };
+
   const fetchDocuments = async () => {
     try {
       const response = await axios.get(
@@ -117,110 +171,123 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-  const fetchPaths = async (doc) => {
-    try {
-      const token = localStorage.getItem("tokenKey");
-      if (!token) {
-        throw new Error("No authentication token found.");
-      }
+  console.log("all doc by user", documents);
 
-      // More comprehensive document validation
-      if (!doc) {
-        console.error("Document is null or undefined");
-        return null;
-      }
+  // const fetchPaths = async (doc) => {
+  //   try {
+  //     const token = localStorage.getItem("tokenKey");
+  //     if (!token) {
+  //       throw new Error("No authentication token found.");
+  //     }
 
-      if (!doc.id) {
-        console.error("Invalid document: No ID found", doc);
-        return null;
-      }
+  //     // More comprehensive document validation
+  //     if (!doc) {
+  //       console.error("Document is null or undefined");
+  //       return null;
+  //     }
 
-      // Validate doc.id is not just a falsy value
-      const documentId = doc.id.toString().trim();
-      if (!documentId) {
-        console.error("Document ID is empty or invalid", doc);
-        return null;
-      }
+  //     if (!doc.id) {
+  //       console.error("Invalid document: No ID found", doc);
+  //       return null;
+  //     }
 
-      console.log(`Attempting to fetch paths for document ID: ${documentId}`);
-      console.log(`Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`);
+  //     // Validate doc.id is not just a falsy value
+  //     const documentId = doc.id.toString().trim();
+  //     if (!documentId) {
+  //       console.error("Document ID is empty or invalid", doc);
+  //       return null;
+  //     }
 
-      const response = await axios.get(
-        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        }
-      );
+  //     console.log(`Attempting to fetch paths for document ID: ${documentId}`);
+  //     console.log(`Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`);
 
-      console.log("Paths response:", response.data);
+  //     const response = await axios.get(
+  //       `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           'Content-Type': 'application/json'
+  //         },
+  //       }
+  //     );
 
-      setSelectedDoc((prevDoc) => ({
-        ...prevDoc,
-        paths: Array.isArray(response.data) ? response.data : [],
-      }));
+  //     console.log("Paths response:", response.data);
 
-      return response.data; // Optional: return the data
-    } catch (error) {
-      // More detailed error logging
-      console.error("Error in fetchPaths:", error);
+  //     setSelectedDoc((prevDoc) => ({
+  //       ...prevDoc,
+  //       paths: Array.isArray(response.data) ? response.data : [],
+  //     }));
 
-      // More comprehensive error handling
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          console.error("Server responded with error:", {
-            status: error.response.status,
-            data: error.response.data
-          });
-        } else if (error.request) {
-          console.error("No response received:", error.request);
-        }
-      }
+  //     return response.data; // Optional: return the data
+  //   } catch (error) {
+  //     // More detailed error logging
+  //     console.error("Error in fetchPaths:", error);
 
-      // Optional: more user-friendly error handling
-      showPopup(`Failed to fetch document paths: ${error.message || 'Unknown error'}`);
+  //     // More comprehensive error handling
+  //     if (axios.isAxiosError(error)) {
+  //       if (error.response) {
+  //         console.error("Server responded with error:", {
+  //           status: error.response.status,
+  //           data: error.response.data
+  //         });
+  //       } else if (error.request) {
+  //         console.error("No response received:", error.request);
+  //       }
+  //     }
 
-      return null; // Explicitly return null on error
-    }
-  };
+  //     // Optional: more user-friendly error handling
+  //     showPopup(`Failed to fetch document paths: ${error.message || 'Unknown error'}`);
+
+  //     return null; // Explicitly return null on error
+  //   }
+  // };
 
   const openFile = async (file) => {
-    const token = localStorage.getItem("tokenKey"); // Get the token from localStorage
-    const createdOnDate = new Date(file.createdOn); // Convert timestamp to Date object
-    const year = createdOnDate.getFullYear(); // Extract year
-    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0"); // Extract month and pad with zero
-    const category = file.documentHeader.categoryMaster.name; // Get the category name
-    const fileName = file.docName; // The file name
+    console.log("file: ", file);
 
-    // Construct the URL based on the Spring Boot @GetMapping pattern
-    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${category}/${fileName}`;
+    const token = localStorage.getItem("tokenKey");
+
+    // Replace spaces with underscores in the fields
+    const branch = file.documentHeader.employee.branch.name.replace(/ /g, "_");
+    const department = file.documentHeader.employee.department.name.replace(
+      / /g,
+      "_"
+    );
+    const year = file.documentHeader.yearMaster.name.replace(/ /g, "_");
+    const category = file.documentHeader.categoryMaster.name.replace(/ /g, "_");
+    const version = file.documentHeader.version.replace(/ /g, "_");
+    const fileName = file.docName.replace(/ /g, "_");
+
+    const fileUrl = `${API_HOST}/api/documents/download/${branch}/${department}/${year}/${category}/${version}/${fileName}`;
 
     try {
-      // Fetch the file using axios and pass the token in the headers
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob", // Fetch the file as a blob
+        responseType: "blob",
       });
 
-      // Get the MIME type of the file from the response headers
       const contentType = response.headers["content-type"];
-
-      // Create a blob from the response
       const blob = new Blob([response.data], { type: contentType });
-
-      // Generate a URL for the blob
       const blobUrl = window.URL.createObjectURL(blob);
 
-      // Open the blob in a new tab
+      // Open the file in a new tab
       window.open(blobUrl, "_blank");
+
+      // Revoke the blob URL after use
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
-      console.error("Error fetching file:", error);
-      showPopup("There was an error opening the file. Please try again.");
+      if (error.response) {
+        console.error("Error response:", error.response);
+        showPopup(`Error ${error.response.status}: Unable to fetch the file.`);
+      } else if (error.request) {
+        console.error("Error request:", error.request);
+        showPopup("No response from server. Please check your connection.");
+      } else {
+        console.error("Error message:", error.message);
+        showPopup("An unexpected error occurred.");
+      }
     }
   };
-
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -251,7 +318,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
 
     const uploadData = new FormData();
-    uploadData.append("category", formData.category.name || "default-category");
+
+    // Append form data to FormData object
+    uploadData.append("category", formData.category.name);
+    uploadData.append("year", formData.year.name);
+    uploadData.append("version", formData.version);
+    uploadData.append("branch", userBranch);
+    uploadData.append("department", userDep);
+
+    // Append files
     selectedFiles.forEach((file) => {
       uploadData.append("files", file);
     });
@@ -266,38 +341,51 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       });
 
       if (!response.ok) {
-        const errorDetails = await response.json();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorDetails}`);
+        const errorDetails = await response.text(); // Read error as plain text
+        throw new Error(
+          `HTTP error! Status: ${response.status}. Details: ${errorDetails}`
+        );
       }
 
       const filePaths = await response.json();
       console.log("Files uploaded successfully:", filePaths);
-      console.log("Files response successfully:", response.data);
 
-
-      if (
-        Array.isArray(filePaths) &&
-        filePaths.every((path) => typeof path === "string")
-      ) {
+      if (Array.isArray(filePaths)) {
         setFormData((prevData) => ({
           ...prevData,
-          uploadedFilePaths: filePaths,
+          uploadedFilePaths: [
+            ...(prevData.uploadedFilePaths || []),
+            ...filePaths,
+          ],
         }));
 
-        setUploadedFileNames(selectedFiles.map((file) => file.name));
-        showPopup('Files uploaded successfully!', 'success');
+        setUploadedFileNames((prevNames) => [
+          ...prevNames,
+          ...selectedFiles.map((file) => file.name),
+        ]);
+
+        setUploadedFilePath((prevPath) => [...prevPath, ...filePaths]);
+
+        showPopup("Files uploaded successfully!", "success");
 
         setSelectedFiles([]);
         setIsUploadEnabled(false);
+        // Reset states
+        setSelectedFiles([]);
+        setIsUploadEnabled(false);
+
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       } else {
-        throw new Error("Invalid file paths returned from upload.");
+        throw new Error("Invalid file paths returned from the server.");
       }
     } catch (error) {
-      console.error("Error uploading file:", error);
-      showPopup(`File upload failed `, 'error');
+      console.error("Error uploading files:", error);
+      showPopup(`File upload failed: ${error.message}`, "error");
     }
   };
-
 
   // Handle adding the document
   const handleAddDocument = async () => {
@@ -308,9 +396,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       !formData.subject ||
       !formData.version ||
       !formData.category ||
+      !formData.category ||
       formData.uploadedFilePaths.length === 0
     ) {
-      showPopup('Please fill in all the required fields and upload a file.', 'error');
+      showPopup(
+        "Please fill in all the required fields and upload a file.",
+        "error"
+      );
       return;
     }
 
@@ -322,6 +414,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         subject: formData.subject,
         version: formData.version,
         categoryMaster: { id: formData.category.id }, // Category ID from formData
+        yearMaster: { id: formData.year.id },
         employee: { id: parseInt(UserId, 10) }, // Employee ID from user session
       },
       filePaths: formData.uploadedFilePaths, // Paths of uploaded files
@@ -341,11 +434,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       // Check if the response is successful
       if (!response.ok) {
         const errorDetails = await response.text(); // Get error details from the response
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorDetails}`);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorDetails}`
+        );
       }
 
       // If successful, reset the form and reload documents
-      showPopup('Document saved successfully!', 'success');
+      showPopup("Document saved successfully!", "success");
 
       // Reset the form data
       setFormData({
@@ -354,94 +449,221 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         subject: "",
         version: "",
         category: null,
+        year: null,
         uploadedFilePaths: [],
       });
-
+      setUploadedFilePath([]);
       setUploadedFileNames([]); // Clear file names
       fetchDocuments(); // Refresh the documents list
     } catch (error) {
       console.error("Error saving document:", error);
-      showPopup(`Document save failed`, 'error');
+      showPopup(`Document save failed`, "error");
     }
   };
 
+  const fetchPaths = async (doc) => {
+    try {
+      const token = localStorage.getItem("tokenKey");
+      if (!token) {
+        throw new Error("No authentication token found.");
+      }
+
+      if (!doc || !doc.id) {
+        console.error("Invalid document or missing ID");
+        return null;
+      }
+
+      const documentId = doc.id.toString().trim();
+      if (!documentId) {
+        console.error("Document ID is empty or invalid", doc);
+        return null;
+      }
+
+      const response = await axios.get(
+        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Handle both response.data being an array or potentially being documentDetails
+      const paths = Array.isArray(response.data)
+        ? response.data
+        : doc.documentDetails || [];
+
+      // Update the selected document state with full path information
+      setSelectedDoc((prevDoc) => ({
+        ...prevDoc,
+        paths: paths,
+      }));
+
+      return paths;
+    } catch (error) {
+      console.error("Error in fetchPaths:", error);
+      showPopup(
+        `Failed to fetch document paths: ${error.message || "Unknown error"}`,
+        "error"
+      );
+      return null;
+    }
+  };
 
   const handleEditDocument = (doc) => {
     console.log("Editing document:", doc);
     setEditingDoc(doc);
+
+    // Prepare the existing file details for editing
+    const existingFiles = (doc.documentDetails || []).map((detail) => ({
+      name: detail.path.substring(detail.path.lastIndexOf("/") + 1),
+      path: detail.path,
+      isExisting: true, // Mark these as pre-existing files
+    }));
+
     setFormData({
       fileNo: doc.fileNo,
       title: doc.title,
       subject: doc.subject,
       version: doc.version,
       category: doc.categoryMaster || null,
-      uploadedFilePaths: doc.filePaths || [],
+      year: doc.yearMaster || null,
     });
+
+    // Set uploaded file names and paths to show existing files
+    setUploadedFileNames(existingFiles.map((file) => file.name));
+    setUploadedFilePath(existingFiles.map((file) => file.path));
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("tokenKey");
+
+    if (!userId || !token) {
+      showPopup("User not logged in. Please log in again.", "error");
+      return;
+    }
+
+    // Combine uploaded files with existing file paths
+    const combinedFilePaths = [
+      ...uploadedFilePath,
+      //...editingDoc.documentDetails.map((detail) => detail.path), // Existing file paths
+    ];
+    // debugger;
+    // Prepare the payload for the API
     const payload = {
-      documentHeader: formData, // formData contains fields like fileNo, title, subject, etc.
-      filePaths: uploadedFileNames, // List of uploaded file names
+      documentHeader: {
+        id: editingDoc.id,
+        fileNo: formData.fileNo,
+        title: formData.title,
+        subject: formData.subject,
+        version: formData.version,
+        categoryMaster: { id: formData.category?.id },
+        yearMaster: { id: formData.year?.id },
+        employee: { id: parseInt(userId, 10) },
+      },
+      filePaths: combinedFilePaths, // All file paths (new + existing)
     };
 
-    // Make an API call to update the document
-    fetch(`${API_HOST}/api/documents/update`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json(); // Or handle the response message
-        } else {
-          throw new Error('Error updating document');
-        }
-      })
-      .then((data) => {
-        console.log('Document updated successfully:', data);
-        showPopup('Document Update successfully!', 'success');
+    console.log("Payload for update:", payload);
 
-        // Reset the form and state
-        setFormData({
-          fileNo: '',
-          title: '',
-          subject: '',
-          version: '',
-          category: { id: '' },
-        });
-        setUploadedFileNames([]);
-        setEditingDoc(null); // Reset editing state
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        showPopup(`Document Update failed`, 'error');
+    try {
+      const response = await fetch(`${API_HOST}/api/documents/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        const errorMessage = contentType?.includes("application/json")
+          ? (await response.json()).message
+          : await response.text();
+        throw new Error(
+          errorMessage || `HTTP error! Status: ${response.status}`
+        );
+      }
+
+      const updatedDocument = await response.json();
+      console.log("Document updated successfully:", updatedDocument);
+      showPopup("Document updated successfully!", "success");
+
+      // Reset form and refresh the document list
+      setFormData({
+        fileNo: "",
+        title: "",
+        subject: "",
+        version: "",
+        category: null,
+        year: null,
+      });
+      setUploadedFileNames([]);
+      setUploadedFilePath([]);
+      setEditingDoc(null);
+      fetchDocuments(); // Refresh the document list after update
+    } catch (error) {
+      console.error("Error updating document:", error);
+      showPopup(`Document update failed: ${error.message}`, "error");
+    }
   };
 
-
-
   const handleDiscardFile = (index) => {
+    // debugger;
     if (index < 0 || index >= uploadedFileNames.length) {
       console.error("Invalid index:", index);
       return;
     }
 
-    const updatedFiles = uploadedFileNames.filter((_, i) => i !== index);
-    const updatedPaths = formData.uploadedFilePaths.filter(
-      (_, i) => i !== index
-    );
+    // For editing an existing document
+    if (editingDoc) {
+      // First, check if it's an existing document file or a new upload
+      const isExistingFile = index < editingDoc.documentDetails.length;
 
-    setUploadedFileNames(updatedFiles);
-    setFormData({ ...formData, uploadedFilePaths: updatedPaths });
+      if (isExistingFile) {
+        // Remove the existing file from the display
+        const updatedFileNames = uploadedFileNames.filter(
+          (_, i) => i !== index
+        );
+        const updatedFilePath = uploadedFilePath.filter((_, i) => i !== index);
+        setUploadedFilePath(updatedFilePath);
+        setUploadedFileNames(updatedFileNames);
+
+        // Optional: You might want to track which existing files are to be removed
+        // This could be done by adding a flag or separate state
+      } else {
+        // If it's a newly uploaded file during edit
+        const newUploadIndex = index - editingDoc.documentDetails.length;
+        const updatedFileNames = uploadedFileNames.filter(
+          (_, i) => i !== index
+        );
+        const updatedPaths = formData.uploadedFilePaths.filter(
+          (_, i) => i !== newUploadIndex
+        );
+
+        setUploadedFileNames(updatedFileNames);
+        setFormData({ ...formData, uploadedFilePaths: updatedPaths });
+      }
+    }
+    // For new document upload (same as before)
+    else {
+      const updatedFiles = uploadedFileNames.filter((_, i) => i !== index);
+      const updatedPaths = formData.uploadedFilePaths.filter(
+        (_, i) => i !== index
+      );
+
+      setUploadedFileNames(updatedFiles);
+      setFormData({ ...formData, uploadedFilePaths: updatedPaths });
+    }
   };
 
   // Handle discard all files
   const handleDiscardAll = () => {
     setUploadedFileNames([]);
+    setUploadedFilePath([]);
     setFormData({ ...formData, uploadedFilePaths: [] });
   };
 
@@ -457,18 +679,19 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   const printPage = () => {
-    window.print(); // Simple print functionality
+    window.print();
   };
 
-  const showPopup = (message, type = 'info') => {
+  const showPopup = (message, type = "info") => {
     setPopupMessage({ message, type });
   };
-  
+
   // const handleSearchResults = (results) => {
   //   setSearchResults(results);
   //   setCurrentPage(1); // Reset to first page when new search results come in
   // };
 
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedDocuments = documents.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -481,14 +704,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
        <Search onSearchResults={handleSearchResults} /> */}
 
       <div className="bg-white p-3 rounded-lg shadow-sm">
-
-      {popupMessage && (
-        <Popup
-          message={popupMessage.message}
-          type={popupMessage.type}
-          onClose={() => setPopupMessage(null)}
-        />
-      )}
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={() => setPopupMessage(null)}
+          />
+        )}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4">
             {/* File No Input */}
@@ -573,12 +795,30 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               </select>
             </label>
 
+            <label className="block text-md font-medium text-gray-700">
+              Year
+              <select
+                name="year"
+                value={formData.year?.id || ""}
+                onChange={handleYearChange}
+                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Year</option>
+                {yearOptions.map((year) => (
+                  <option key={year.id} value={year.id}>
+                    {year.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             {/* File Upload Section */}
             <label className="block text-md font-medium text-gray-700">
               Upload Files
               <div className="flex items-center gap-2">
                 <input
                   type="file"
+                  ref={fileInputRef}
                   accept=""
                   multiple
                   onChange={handleFileChange}
@@ -587,14 +827,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 <button
                   onClick={handleUploadDocument} // Upload files when clicked
                   disabled={!isUploadEnabled} // Disable button if no files are selected
-                  className={`ml-2 text-white rounded-xl p-2 ${isUploadEnabled ? "bg-blue-900" : "bg-gray-400"}`}
+                  className={`ml-2 text-white rounded-xl p-2 ${
+                    isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
+                  }`}
                 >
                   Upload
                 </button>
               </div>
             </label>
           </div>
-
 
           {/* Add Document Button */}
           <div className="mt-3 flex justify-start">
@@ -619,26 +860,68 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           {uploadedFileNames.length > 0 && (
             <div className="p-4 bg-slate-100 rounded-lg">
               <div className="flex flex-wrap gap-4">
-                {uploadedFileNames.map((fileName, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 border rounded-md"
-                  >
-                    <span>{fileName}</span>
-                    <button
-                      onClick={() => handleDiscardFile(index)}
-                      className="text-red-500"
+                {uploadedFileNames.map((fileName, index) => {
+                  // Extract the part after the first underscore
+                  const displayName = fileName.substring(
+                    fileName.indexOf("_") + 1
+                  );
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 border rounded-md"
                     >
-                      <XMarkIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                ))}
+                      <span>{displayName}</span>
+                      <button
+                        onClick={() => handleDiscardFile(index)}
+                        className="text-red-500"
+                      >
+                        <XMarkIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
               <button className="mt-4 text-red-500" onClick={handleDiscardAll}>
                 Discard All
               </button>
             </div>
           )}
+        </div>
+        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
+          <div className="flex items-center bg-blue-500 rounded-lg">
+            <label
+              htmlFor="itemsPerPage"
+              className="mr-2 ml-2 text-white text-sm"
+            >
+              Show:
+            </label>
+            <select
+              id="itemsPerPage"
+              className="border rounded-r-lg p-1.5 outline-none"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value)); // Update items per page
+                setCurrentPage(1); // Reset to the first page
+              }}
+            >
+              {[5, 10, 15, 20].map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="border rounded-l-md p-1 outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+          </div>
         </div>
 
         <div className="overflow-x-auto bg-white">
@@ -651,6 +934,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 <th className="border p-2 text-left">Subject</th>
                 <th className="border p-2 text-left">Version</th>
                 <th className="border p-2 text-left">Category</th>
+                <th className="border p-2 text-left">File Year</th>
                 <th className="border p-2 text-left">Approval Status</th>
                 <th className="border p-2 text-left">Uploaded Date</th>
                 <th className="border p-2 text-left">Edit</th>
@@ -672,6 +956,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       ? doc.categoryMaster.name
                       : "No Category"}
                   </td>
+                  <td className="border p-2">
+                    {doc.yearMaster ? doc.yearMaster.name : "No year"}
+                  </td>
                   <td className="border p-2">{doc.approvalStatus}</td>
                   <td className="border p-2">{formatDate(doc.createdOn)}</td>
                   <td className="border p-2">
@@ -688,14 +975,46 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               ))}
             </tbody>
           </table>
+          <div className="flex justify-between items-center mt-4">
+            <div>
+              <span className="text-sm text-gray-700">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                {totalItems} entries
+              </span>
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="bg-slate-200 px-3 py-1 rounded mr-3"
+              >
+                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+                Previous
+              </button>
+              <span className="text-sm text-gray-700">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="bg-slate-200 px-3 py-1 rounded ml-3"
+              >
+                Next
+                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+              </button>
+            </div>
+          </div>
 
           <>
             {isOpen && selectedDoc && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900 bg-opacity-50">
-                <div className="relative bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal">
+                <div className="relative bg-white rounded-lg shadow-2xl max-w-lg w-full p-6">
                   {/* Print Button */}
                   <button
-                    className="absolute top-2 right-10 text-gray-500 hover:text-gray-700 no-print"
+                    className="absolute top-4 right-16 text-gray-500 mb-4 hover:text-gray-700 no-print"
                     onClick={printPage}
                   >
                     <PrinterIcon className="h-6 w-6" />
@@ -703,84 +1022,110 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
                   {/* Close Button */}
                   <button
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 no-print"
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
                     onClick={closeModal}
                   >
-                    <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-800" />
+                    <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
                   </button>
 
-
-                  {/* Modal Content Divided into Two Halves */}
-                  <div className="h-1/2 flex flex-col justify-between">
-                    {/* Top Half */}
-                    <div className="flex justify-between items-center mb-4 mt-4">
-                      <div className="flex items-start space-x-1">
-                        <p className="text-sm text-black font-bold border-b-4 border-black">
+                  {/* Modal Content */}
+                  <div className="flex flex-col h-full mt-8">
+                    {/* Header */}
+                    <div className="flex justify-between items-center border-b-2 border-gray-300 pb-4">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
                           D
                         </p>
-                        <p className="text-sm text-black font-bold border-t-4 border-black">
+                        <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
                           MS
                         </p>
                       </div>
-
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">
-                          <strong>Uploaded Date:</strong>{" "}
-                          {formatDate(selectedDoc?.createdOn)}
-                        </p>
-                      </div>
+                      <p className="text-sm text-gray-600">
+                        <strong>Uploaded Date:</strong>{" "}
+                        {formatDate(selectedDoc?.createdOn)}
+                      </p>
                     </div>
 
-                    {/* Bottom Half */}
-                    <div className="text-left">
-                      <p className="text-sm text-gray-600">
-                        <strong>File No.:</strong>{" "}
+                    {/* Document Details */}
+                    <div className="mt-4 text-left">
+                      <p className="text-md text-gray-700">
+                        <strong>Branch :-</strong>{" "}
+                        {selectedDoc?.employee?.branch?.name || "N/A"}
+                      </p>
+                      <p className="text-md text-gray-700">
+                        <strong>Department :-</strong>{" "}
+                        {selectedDoc?.employee?.department?.name || "N/A"}
+                      </p>
+                      <p className="text-md text-gray-700">
+                        <strong>File No. :-</strong>{" "}
                         {selectedDoc?.fileNo || "N/A"}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Title:</strong> {selectedDoc?.title || "N/A"}
+                      <p className="text-md text-gray-700">
+                        <strong>Title :-</strong> {selectedDoc?.title || "N/A"}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Subject:</strong>{" "}
+                      <p className="text-md text-gray-700">
+                        <strong>Subject :-</strong>{" "}
                         {selectedDoc?.subject || "N/A"}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Version:</strong>{" "}
+                      <p className="text-md text-gray-700">
+                        <strong>Version :-</strong>{" "}
                         {selectedDoc?.version || "N/A"}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Category:</strong>{" "}
+                      <p className="text-md text-gray-700">
+                        <strong>Category :-</strong>{" "}
                         {selectedDoc?.categoryMaster?.name || "No Category"}
                       </p>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="h-1/2 flex flex-col items-center justify-center mt-4">
-                    <h1 className="text-sm text-center font-bold mb-2">
-                      Attached Files
-                    </h1>
-
-                    {Array.isArray(selectedDoc.paths) &&
-                      selectedDoc.paths.length > 0 ? (
-                      <ul className="list-disc list-inside">
-                        {selectedDoc.paths.map((file, index) => (
-                          <li key={index} className="mb-2">
-                            <span className="mr-4">{file.docName}</span>
-                            <button
-                              onClick={() => openFile(file)} // Pass the file object to openFile function
-                              className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                            >
-                              Open
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        No attached files available.
+                      <p className="text-md text-gray-700">
+                        <strong>File Year :-</strong>{" "}
+                        {selectedDoc?.yearMaster?.name || "N/A"}
                       </p>
-                    )}
+                      <p className="text-md text-gray-700">
+                        <strong>Status :-</strong>{" "}
+                        {selectedDoc?.approvalStatus || "N/A"}
+                      </p>
+                      <p className="text-md text-gray-700">
+                        <strong>Upload By :-</strong>{" "}
+                        {selectedDoc?.employee?.name || "N/A"}
+                      </p>
+                    </div>
+
+                    {/* Attached Files */}
+                    <div className="mt-6 text-center">
+                      <h2 className="text-lg font-semibold text-indigo-700">
+                        Attached Files
+                      </h2>
+                      {Array.isArray(selectedDoc.paths) &&
+                      selectedDoc.paths.length > 0 ? (
+                        <ul className="list-disc list-inside text-left mt-2">
+                          {selectedDoc.paths.map((file, index) => {
+                            // Extract the display name by removing the timestamp and retaining the rest
+                            const displayName = file.docName.includes("_")
+                              ? file.docName.split("_").slice(1).join("_")
+                              : file.docName;
+
+                            return (
+                              <li key={index} className="mb-2">
+                                <span className="mr-4 text-gray-600">
+                                  <strong>{index + 1}</strong>{" "}
+                                  {/* Removed the dot after the index */}{" "}
+                                  {displayName}
+                                </span>
+                                <button
+                                  onClick={() => openFile(file)}
+                                  className="bg-indigo-500 text-white px-3 py-1 rounded shadow-md hover:bg-indigo-600 transition no-print"
+                                >
+                                  Open
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500 mt-2">
+                          No attached files available.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

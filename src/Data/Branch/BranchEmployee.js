@@ -220,7 +220,8 @@ const BranchEmployee = () => {
                 console.error("Error adding employee:", error);
                 setError(
                     error.response?.data?.message ||
-                    "Error adding employee. Please try again."
+                    "Email address is already Registered.please use different one."
+
                 );
             } finally {
                 setIsSubmitting(false);
@@ -373,19 +374,30 @@ const BranchEmployee = () => {
     };
 
     const filteredEmployees = employees.filter((employee) => {
+        // Safeguard for undefined values
+        const name = employee.name || ""; // Fallback to empty string if undefined
+        const email = employee.email || ""; // Fallback to empty string if undefined
+        const mobile = employee.mobile || ""; // Fallback to empty string if undefined
+      
+        // Derive status text
         const statusText = employee.active === true ? "active" : "inactive";
-        const createdOnText = formatDate(employee.createdOn);
-        const updatedOnText = formatDate(employee.updatedOn);
-
+      
+        // Safeguard for dates
+        const createdOnText = employee.createdOn ? formatDate(employee.createdOn) : "";
+        const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn) : "";
+      
+        // Ensure searchTerm is valid
+        const lowerSearchTerm = searchTerm?.toLowerCase() || "";
+      
         return (
-            employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.mobile.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            statusText.includes(searchTerm.toLowerCase()) ||
-            createdOnText.includes(searchTerm.toLowerCase()) ||
-            updatedOnText.includes(searchTerm.toLowerCase())
+          name.toLowerCase().includes(lowerSearchTerm) ||
+          email.toLowerCase().includes(lowerSearchTerm) ||
+          mobile.toLowerCase().includes(lowerSearchTerm) ||
+          statusText.includes(lowerSearchTerm) ||
+          createdOnText.includes(lowerSearchTerm) ||
+          updatedOnText.includes(lowerSearchTerm)
         );
-    });
+      });
 
     const sortedEmployees = filteredEmployees.sort((a, b) => b.active - a.active);
 
@@ -574,6 +586,8 @@ const BranchEmployee = () => {
                                     <th className="border p-2 text-left">Role</th>
                                     <th className="border p-2 text-left">Created Date</th>
                                     <th className="border p-2 text-left">Updated Date</th>
+                                    <th className="border p-2 text-left">Created By</th>
+                                    <th className="border p-2 text-left">Updated By</th>
                                     <th className="border p-2 text-left">Status</th>
                                     <th className="border p-2 text-left">Edit</th>
                                     <th className="border p-2 text-left">Access</th>
@@ -593,6 +607,13 @@ const BranchEmployee = () => {
                                         <td className="border p-2">{employee.role?.role || "No Role"}</td>
                                         <td className="border p-2">{formatDate(employee.createdOn)}</td>
                                         <td className="border p-2">{formatDate(employee.updatedOn)}</td>
+                                        <td className="border p-2">
+                                            {employee.createdBy?.name || "Unknown"}
+                                        </td>
+
+                                        <td className="border p-2">
+                                            {employee.updatedBy?.name || "Unknown"}
+                                        </td>
                                         <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
                                         <td className="border p-2">
                                             <button

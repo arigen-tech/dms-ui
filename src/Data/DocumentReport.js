@@ -1,36 +1,40 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, USER } from "../API/apiConfig";
 import "jspdf-autotable";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaFilePdf, FaFileExcel } from "react-icons/fa";
 
 const DocumentReport = () => {
-  const [searchCriteria, setSearchCriteria] = useState({
-    category: "",
-    status: "",
+  const initialFormData = {
     branch: "",
     department: "",
-  });
-
+    status: "",
+    category: "",
+    startDate: null,
+    endDate: null,
+  };
+  const [searchCriteria, setSearchCriteria] = React.useState(initialFormData);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [branchOptions, setBranchOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-  const [noResultsFound, setNoResultsFound] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
-  const [error, setError] = useState(""); // Error state for validation
+  const [error, setError] = useState("");
   const [selectedFormat, setSelectedFormat] = useState("PDF");
   const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
   const [modalType, setModalType] = useState("");
   const [showModal, setShowModal] = useState(false);
-  
+
+  // const match = contentDisposition.match(/filename="(.+)"/);
+  // if (match && match[1]) {
+  //   filename = match[1];
+  // }
 
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
@@ -152,46 +156,9 @@ const DocumentReport = () => {
     }));
   };
 
-  //   const handleInputChange = (e) => {
-  //   const { name, value } = e.target;
-
-  //   const selectedOption = {
-  //     branch: branchOptions.find((branch) => branch.id === parseInt(value)),
-  //     department: departmentOptions.find((department) => department.id === parseInt(value)),
-  //     category: categoryOptions.find((category)=> category.id === parseInt(value)),
-  //   }[name];
-
-  //   setSearchCriteria({
-  //     ...searchCriteria,
-  //     [name]: value,
-  //     [`${name}Name`]: selectedOption?.name || "",
-  //   });
-  // };
-
-  const formatDateTime = (date) => {
-    if (!date) return null;
-    const isoString = date.toISOString();
-    const localDate = new Date(isoString);
-    return localDate.toLocaleString("sv-SE").replace("T", " ");
-  };
-
-  const formatDates = (date) => {
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, "0"); // Ensure 2 digits
-    const month = String(d.getMonth() + 1).padStart(2, "0"); // Ensure 2 digits
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const handleDownload = async () => {
-    if (!fromDate || !toDate) {
-      setError("Both From Date and To Date are required.");
-      return;
-    }
-
+  const handleDownload = async (e) => {
+    e.preventDefault();
     try {
-      setError(""); // Clear previous errors
-      setIsProcessing(true);
       const token = localStorage.getItem("tokenKey");
 
       const formattedFromDate = new Date(fromDate);
@@ -204,37 +171,60 @@ const DocumentReport = () => {
         ...(searchCriteria.category && { categoryId: searchCriteria.category }),
         ...(searchCriteria.status && { approvalStatus: searchCriteria.status }),
         ...(searchCriteria.branch && { branchId: searchCriteria.branch }),
-        ...(searchCriteria.department && { departmentId: searchCriteria.department }),
-        startDate: formattedFromDate.toISOString(),
-        endDate: formattedToDate.toISOString(),
+        ...(searchCriteria.department && {
+          departmentId: searchCriteria.department,
+          ...(role === "USER" && { employeeId: userId }),
+        }),
+        startDate: formattedFromDate,
+        endDate: formattedToDate,
         docType: selectedFormat,
       };
-
-      const response = await axios.post(`${DOCUMENTHEADER_API}/export`, requestBody, {
+  
+      // Choose API endpoint based on role
+      const apiUrl =
+        role === "USER"
+          ? `${DOCUMENTHEADER_API}/export/ById`
+          : `${DOCUMENTHEADER_API}/export`;
+  
+      const response = await axios.post(apiUrl, requestBody, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        responseType: "blob",
+        responseType: "blob", // Handle binary file
       });
 
+      // Extract the Content-Disposition header
+
+      let filename = "downloaded-file"; // Default fallback name
+
+      const contentDisposition = response.headers["content-disposition"]; // Now it won't be undefined
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match && match[1]) {
+          filename = match[1];
+        }
+      }
+
+      // Create a blob and downloadable link
       const blob = new Blob([response.data], {
         type: response.headers["content-type"],
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `documents.${selectedFormat.toLowerCase()}`;
+      link.download = filename; // Use extracted filename
+      document.body.appendChild(link);
       link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      resetFields();
-      showModalAlert("Download successful!", "success"); // Show success message
+      showModalAlert("Download successful!", "success");
     } catch (error) {
       console.error("Error exporting documents:", error);
-      showModalAlert("Failed to export documents. Please try again.", "error"); // Show error message
-    } finally {
-      setIsProcessing(false);
+      showModalAlert("Failed to export documents. Please try again.", "error");
     }
   };
 
@@ -248,12 +238,20 @@ const DocumentReport = () => {
     setShowModal(false);
   };
 
+  const validateForm = () => {
+    if (!searchCriteria.branch) return "Branch is required.";
+    if (!searchCriteria.department) return "Department is required.";
+    if (!searchCriteria.status) return "Status is required.";
+    if (!fromDate) return "Start date is required.";
+    if (!toDate) return "End date is required.";
+    if (!selectedFormat) return "Document format is required.";
+    return null;
+  };
 
   const resetFields = () => {
-    setFromDate("");
-    setToDate("");
-    setSearchCriteria({});
-    setSelectedFormat("PDF");
+    setFromDate(null);
+    setToDate(null);
+    setSearchCriteria(initialFormData);
   };
 
   const handleFormatChange = (event) => {
@@ -264,12 +262,13 @@ const DocumentReport = () => {
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">Document Reports</h1>
       <div className="bg-white p-6 rounded-lg shadow-md">
-
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
           {role === "BRANCH ADMIN" ? (
             <>
               <div className="flex flex-col">
-                <label className="mb-1" htmlFor="branch">Branch</label>
+                <label className="mb-1" htmlFor="branch">
+                  Branch
+                </label>
                 <select
                   id="branch"
                   name="branch"
@@ -283,7 +282,9 @@ const DocumentReport = () => {
               </div>
 
               <div className="flex flex-col">
-                <label className="mb-1" htmlFor="department">Department</label>
+                <label className="mb-1" htmlFor="department">
+                  Department
+                </label>
                 <select
                   id="department"
                   name="department"
@@ -302,7 +303,9 @@ const DocumentReport = () => {
           ) : role === "DEPARTMENT ADMIN" || role === "USER" ? (
             <>
               <div className="flex flex-col">
-                <label className="mb-1" htmlFor="branch">Branch</label>
+                <label className="mb-1" htmlFor="branch">
+                  Branch
+                </label>
                 <select
                   id="branch"
                   name="branch"
@@ -316,7 +319,9 @@ const DocumentReport = () => {
               </div>
 
               <div className="flex flex-col">
-                <label className="mb-1" htmlFor="department">Department</label>
+                <label className="mb-1" htmlFor="department">
+                  Department
+                </label>
                 <select
                   id="department"
                   name="department"
@@ -325,14 +330,18 @@ const DocumentReport = () => {
                   className="p-2 border rounded-md outline-none"
                   disabled={true}
                 >
-                  <option value={userDepartment?.id}>{userDepartment?.name}</option>
+                  <option value={userDepartment?.id}>
+                    {userDepartment?.name}
+                  </option>
                 </select>
               </div>
             </>
           ) : (
             <>
               <div className="flex flex-col">
-                <label className="mb-1" htmlFor="branch">Branch</label>
+                <label className="mb-1" htmlFor="branch">
+                  Branch
+                </label>
                 <select
                   id="branch"
                   name="branch"
@@ -350,7 +359,9 @@ const DocumentReport = () => {
               </div>
 
               <div className="flex flex-col">
-                <label className="mb-1" htmlFor="department">Department</label>
+                <label className="mb-1" htmlFor="department">
+                  Department
+                </label>
                 <select
                   id="department"
                   name="department"
@@ -371,7 +382,9 @@ const DocumentReport = () => {
           )}
 
           <div className="flex flex-col">
-            <label className="mb-1" htmlFor="category">Category</label>
+            <label className="mb-1" htmlFor="category">
+              Category
+            </label>
             <select
               id="category"
               name="category"
@@ -389,7 +402,9 @@ const DocumentReport = () => {
           </div>
 
           <div className="flex flex-col">
-            <label className="mb-1" htmlFor="status">Status</label>
+            <label className="mb-1" htmlFor="status">
+              Status
+            </label>
             <select
               id="status"
               name="status"
@@ -405,7 +420,9 @@ const DocumentReport = () => {
           </div>
 
           <div className="flex flex-col">
-            <label className="mb-1" htmlFor="startDate">Start Date</label>
+            <label className="mb-1" htmlFor="startDate">
+              Start Date
+            </label>
             <DatePicker
               id="startDate"
               selected={fromDate}
@@ -421,7 +438,9 @@ const DocumentReport = () => {
           </div>
 
           <div className="flex flex-col">
-            <label className="mb-1" htmlFor="endDate">End Date</label>
+            <label className="mb-1" htmlFor="endDate">
+              End Date
+            </label>
             <DatePicker
               id="endDate"
               selected={toDate}
@@ -467,19 +486,14 @@ const DocumentReport = () => {
 
         {error && <p className="text-red-500">{error}</p>}
 
-        {/* <button
-        onClick={handleDownload}
-        className="bg-blue-900 text-white py-2 px-6 rounded-md hover:bg-blue-800 transition duration-300"
-      >
-        Download Report
-      </button> */}
         <button
           onClick={handleDownload}
           disabled={isProcessing}
-          className={`px-4 py-2 rounded ${isProcessing
+          className={`px-4 py-2 rounded ${
+            isProcessing
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-blue-500 hover:bg-blue-600"
-            } text-white`}
+          } text-white`}
         >
           {isProcessing ? "Processing..." : "Download"}
         </button>
@@ -492,7 +506,9 @@ const DocumentReport = () => {
               modalType === "success" ? "bg-white" : "bg-white"
             } text-gray-900 shadow-lg`}
           >
-            <h2 className="text-xl font-semibold mb-4">{modalType === "success" ? "Success!" : "Error"}</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {modalType === "success" ? "Success!" : "Error"}
+            </h2>
             <p>{modalMessage}</p>
             <div className="mt-4 flex justify-end">
               <button

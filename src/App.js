@@ -27,37 +27,38 @@ import BranchDepartments from "./Pages/Branch/BranchDepartments"
 import PendingUsers from "./Pages/Department/PendingUsers";
 import UserReports from "./Pages/UserReports";
 import DocumentsReport from "./Pages/DocumentsReport";  
-// Define the roles
-const ADMIN = "ADMIN";
-const USER = "USER";
-const BRANCH_ADMIN = "BRANCH ADMIN"; // New role
-const DEPARTMENT_ADMIN = "DEPARTMENT ADMIN";
+import ManageUserRoles from "./Pages/ManageUserRoles";  
+import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
+
+
 
 const protectedRoutes = [
-  { path: "/dashboard", element: <Dashboard />, allowedRoles: [ADMIN, USER, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
-  { path: "/inbox", element: <Inbox />, allowedRoles: [ADMIN, USER, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
-  { path: "/users", element: <Users />, allowedRoles: [ADMIN,USER] },
+  { path: "/dashboard", element: <Dashboard />, allowedRoles: [SYSTEM_ADMIN, USER, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
+  { path: "/inbox", element: <Inbox />, allowedRoles: [SYSTEM_ADMIN, USER, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
+  { path: "/users", element: <Users />, allowedRoles: [SYSTEM_ADMIN,USER] },
   { path: "/branchusers", element: <BranchUsers/>, allowedRoles: [BRANCH_ADMIN] },
   { path: "/Departmentusers", element: <DepartmentUsers/>, allowedRoles: [DEPARTMENT_ADMIN] },
-  { path: "/create-branch", element: <Branches />, allowedRoles: [ADMIN] },
-  { path: "/create-department", element: <Departments />, allowedRoles: [ADMIN] },
+  { path: "/create-branch", element: <Branches />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/create-year", element: <Years />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/create-department", element: <Departments />, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/create-departments", element: <BranchDepartments />, allowedRoles: [BRANCH_ADMIN] },
-  { path: "/create-role", element: <Roles />, allowedRoles: [ADMIN] },
-  { path: "/create-type", element: <Types />, allowedRoles: [ADMIN] },
-  { path: "/create-year", element: <Years />, allowedRoles: [ADMIN] },
-  { path: "/create-category", element: <Categories />, allowedRoles: [ADMIN] },
-  { path: "/approve-documents", element: <Approves />, allowedRoles: [ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] },
-  { path: "/approve-by-admin", element: <ApproveByAdmin />, allowedRoles: [ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] },
-  { path: "/reject-by-admin", element: <RejectByAdmin />, allowedRoles: [ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] },
-  { path: "/userRoleAssing", element: <UserRoleAssing />, allowedRoles: [ADMIN,BRANCH_ADMIN] },
+  { path: "/create-role", element: <Roles />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/create-type", element: <Types />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/create-year", element: <Years />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/create-category", element: <Categories />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/approve-documents", element: <Approves />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] },
+  { path: "/total-approved", element: <ApproveByAdmin />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] },
+  { path: "/total-rejected", element: <RejectByAdmin />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] },
+  { path: "/userRoleAssing", element: <UserRoleAssing />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN] },
   { path: "/pendingRole", element: <PendingUsers />, allowedRoles: [DEPARTMENT_ADMIN] },
   { path: "/all-documents", element: <Documents />, allowedRoles: [USER, ] }, 
   { path: "/approvedDocs", element: <ApprovedDocs />, allowedRoles: [USER, ] },
   { path: "/rejectedDocs", element: <RejectedDocs />, allowedRoles: [USER, ] }, 
-  { path: "/userReport", element: <UserReports />, allowedRoles: [ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
-  { path: "/documentReport", element: <DocumentsReport />, allowedRoles: [USER, ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
-  { path: "/change-password", element: <ChangePasswordPage />, allowedRoles: [USER, ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, // Allow BRANCH_ADMIN access
-  { path: "/search", element: <SearchDoc />, allowedRoles: [USER, ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, // Add the search route
+  { path: "/userReport", element: <UserReports />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+  { path: "/manageUserRole", element: <ManageUserRoles />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+  { path: "/documentReport", element: <DocumentsReport />, allowedRoles: [USER, SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+  { path: "/change-password", element: <ChangePasswordPage />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, // Allow BRANCH_ADMIN access
+  { path: "/search", element: <SearchDoc />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, // Add the search route
 ];
 
 function App() {
