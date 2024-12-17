@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/solid";
 import adminPhoto from "../Assets/profile.svg";
 import axios from "axios";
-import { API_HOST } from "../API/apiConfig";
+import { API_HOST} from "../API/apiConfig";
 import Popup from "../Components/Popup";
 
 const DropdownMenu = ({ items, onSelect, emptyMessage }) => (

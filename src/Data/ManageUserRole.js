@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { API_HOST, ROLE_API } from "../API/apiConfig";
+import { API_HOST, ROLE_API, BRANCH_ADMIN } from "../API/apiConfig";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -29,11 +29,13 @@ const ManageUserRole = () => {
   const [roleToToggle, setRoleToToggle] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [roles, setRoles] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(false);
+  const [currBranchId, setCurrBranchId] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
   const [loading, setLoading] = useState(false);
-
   const employeId = localStorage.getItem("userId");
+  const loginEmpRole = localStorage.getItem("role");
 
   const showPopup = (message, type = "info") => {
     setPopupMessage({ message, type });
@@ -41,6 +43,7 @@ const ManageUserRole = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchLoginEmployees();
     fetchAvailableRolesForUser();
   }, []);
 
@@ -51,22 +54,64 @@ const ManageUserRole = () => {
   }, [selectedUser]);
 
   useEffect(() => {
-    // Compute available roles
-    const matchedRoleIds = new Set(roleByEmp.map((role) => role.roleId)); // Extract roleIds from roleByEmp
+    const matchedRoleIds = new Set(roleByEmp.map((role) => role.roleId));
     const remainingRoles = allRoles.filter(
       (role) => !matchedRoleIds.has(role.id)
-    ); // Filter roles not in matchedRoleIds
+    );
+  
+    setAvailableRoles(remainingRoles);
+  }, [allRoles, roleByEmp, refreshTrigger]);
+  
 
-    setAvailableRoles(remainingRoles); // Update state with available roles
-  }, [allRoles, roleByEmp]);
 
+  const fetchLoginEmployees = async () => {
+    try {
+      // Fetch user details by employee ID
+      const userResponse = await axios.get(
+        `${API_HOST}/employee/findById/${employeId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      // Log the fetched data
+      console.log("User response:", userResponse.data);
+  
+      // Set current branch ID if available
+      if (userResponse.data?.branch?.id) {
+        setCurrBranchId(userResponse.data.branch.id);
+      } else {
+        console.error("Branch ID not found in user data.");
+      }
+    } catch (error) {
+      console.error(
+        "Error fetching user details:",
+        error.response?.data || error.message
+      );
+    }
+  };
+  
   const fetchUsers = async () => {
+    console.log("currBranchId:", currBranchId);
+  
     setLoading(true);
     try {
-      const response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.status === 200) {
+      let response; // Declare response variable here
+  
+      if (loginEmpRole === BRANCH_ADMIN && currBranchId) {
+        // Fetch branch-specific users
+        response = await axios.get(`${API_HOST}/api/EmpRole/branch/${currBranchId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        // Fetch all employees
+        response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+  
+      // Check the response status
+      if (response?.status === 200) {
         setUsers(response.data); // Store the users in the state
         console.log("Fetched users:", response.data);
       } else {
@@ -80,6 +125,19 @@ const ManageUserRole = () => {
       setLoading(false);
     }
   };
+  
+  // Use useEffect to ensure fetchUsers is triggered after currBranchId is set
+  useEffect(() => {
+    if (loginEmpRole === BRANCH_ADMIN) {
+      fetchLoginEmployees().then(() => {
+        if (currBranchId) fetchUsers(); // Call fetchUsers after branch ID is set
+      });
+    } else {
+      fetchUsers(); // For non-branch admin roles
+    }
+  }, [loginEmpRole, currBranchId]); // Dependency array ensures it reacts to changes
+  
+  
 
   const fetchAvailableRolesForUser = async (id) => {
     try {
@@ -101,14 +159,10 @@ const ManageUserRole = () => {
     setEmpId(user.employeeId);
   };
 
-  console.log("USer22 Name being sent:", selectedUser);
-
   const handleAddButtonClick = () => {
     fetchAvailableRolesForUser();
     setShowAvailableRoles(true);
   };
-
-  console.log("Role Name being sent1:", selectedRole);
 
   const addSelectedRole = async () => {
     if (!selectedRole) {
@@ -116,23 +170,19 @@ const ManageUserRole = () => {
       return;
     }
 
-    if (!selectedUser){
+    if (!selectedUser) {
       showPopup("Please select a user before adding.");
       return;
     }
-  
+
     console.log("Selected Role:", selectedRole);
-  
+
     try {
       if (!token) {
         showPopup("User is not authenticated. Please log in again.");
         return;
       }
-  
-      // Debugging log to check payload and endpoint
-      console.log("API Endpoint:", `${API_HOST}/employee/${selectedUser.employeeId}/role`);
-      console.log("Payload:", { roleName: selectedRole });
-  
+
       // Send API request to add the selected role
       const response = await axios.put(
         `${API_HOST}/employee/${selectedUser.employeeId}/role`, // API endpoint
@@ -144,15 +194,15 @@ const ManageUserRole = () => {
           },
         }
       );
-  
+
       if (response.status === 200) {
         const updatedEmployeeRoles = response.data.employeeRoles;
-  
+
         setSelectedUser((prevUser) => ({
           ...prevUser,
           employeeRoles: updatedEmployeeRoles,
         }));
-  
+
         setSelectedRole("");
         setShowAvailableRoles(false);
         showPopup("Role added successfully!");
@@ -164,7 +214,7 @@ const ManageUserRole = () => {
         "Error adding selected role:",
         error.response ? error.response.data : error.message
       );
-  
+
       // Check if backend error contains more details
       if (error.response && error.response.data) {
         console.error("Backend Error:", error.response.data);
@@ -176,7 +226,6 @@ const ManageUserRole = () => {
       }
     }
   };
-  
 
   const handleToggleActiveStatus = (role) => {
     setRoleToToggle(role); // Set the role to be toggled
@@ -184,64 +233,58 @@ const ManageUserRole = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
-    if (roleToToggle) {
-      try {
-       
-        const updatedRole = {
-          status :roleToToggle.isActive === true ? false : true,
-          roleId: roleToToggle.id,
-          empId: empId,
-        };
-        const response = await axios.put(
-          `${API_HOST}/api/EmpRole/changeRoleStatus`, 
-          updatedRole,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`, 
-            },
-          }
-        );
-
-        if (response.status === 200) {
-          
-          const updatedRoles = roles.map((role) =>
-            role.id === updatedRole.id
-              ? { ...role, isActive: updatedRole.isActive }
-              : role
-          );
-          setRoles(updatedRoles); // Update the state
-          setModalVisible(false); // Close the modal
-          setRoleToToggle(null); // Reset the selected role
-          showPopup("Role status changed successfully!");
-        } else {
-          showPopup("Failed to change the status. Please try again.");
-        }
-      } catch (error) {
-        console.error(
-          "Error toggling role status:",
-          error.response ? error.response.data : error.message
-        );
-        showPopup("An error occurred. Please try again.");
-      }
-    } else {
+    if (!roleToToggle) {
       showPopup("No role selected for status change.");
-    }
-  };
-
-  const handleRoleUpdate = async () => {
-    if (!role.trim()) {
-      alert("Role cannot be empty");
       return;
     }
-    const updatedUser = { ...selectedUser, roleName: role };
-    console.log("Updating role:", updatedUser);
-
-    // Close modal
-    setSelectedUser(null);
-    setRole("");
+  
+    try {
+      // Prepare the payload
+      const updatedRoleRequest = {
+        status: !roleToToggle.active, // Toggle status directly
+        roleId: roleToToggle.roleId, // Role ID
+        empId: empId, // Employee ID
+      };
+  
+      // Make the PUT request
+      const response = await axios.put(
+        `${API_HOST}/api/EmpRole/changeRoleStatus`,
+        updatedRoleRequest,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      // Handle success
+      if (response.status === 200) {
+        // Update roles state
+        const updatedRoles = roles.map((role) =>
+          role.id === roleToToggle.id
+            ? { ...role, active: updatedRoleRequest.status }
+            : role
+        );
+        setRoles(updatedRoles); // Update state
+        setModalVisible(false); // Close modal
+        setRoleToToggle(null); // Reset the selected role
+        showPopup("Role status updated successfully.");
+        fetchUsers();
+      } else {
+        showPopup("Failed to update the role status. Please try again.");
+      }
+    } catch (error) {
+      console.error(
+        "Error toggling role status:",
+        error.response ? error.response.data : error.message
+      );
+      showPopup(
+        error.response?.data?.message || "An error occurred. Please try again."
+      );
+    }
   };
-
+  
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {
@@ -268,12 +311,12 @@ const ManageUserRole = () => {
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">Manage Employee Roles</h1>
       {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={() => setPopupMessage(null)}
-          />
-        )}
+        <Popup
+          message={popupMessage.message}
+          type={popupMessage.type}
+          onClose={() => setPopupMessage(null)}
+        />
+      )}
       <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
           <div className="flex items-center bg-blue-500 rounded-lg">
@@ -448,10 +491,10 @@ const ManageUserRole = () => {
                   <button
                     onClick={() => handleToggleActiveStatus(role)}
                     className={`p-1 rounded-full ${
-                      role.active ? "bg-green-500" : "bg-red-500"
+                      role.active === true ? "bg-green-500" : "bg-red-500"
                     }`}
                   >
-                    {role.active ? (
+                    {role.active === true ? (
                       <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
                     ) : (
                       <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
@@ -514,28 +557,36 @@ const ManageUserRole = () => {
       )}
 
       {modalVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4">
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50"
+          role="dialog"
+          aria-labelledby="modal-title"
+          aria-describedby="modal-description"
+        >
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2
+              id="modal-title"
+              className="text-xl font-semibold mb-4 text-gray-800"
+            >
               Confirm Status Change
             </h2>
-            <p>
+            <p id="modal-description" className="text-gray-600 mb-6">
               Are you sure you want to{" "}
-              {/* {roleToToggle?.isActive ? "Active" : "Inactive"} the role{" "} */}
-              {roleToToggle?.isActive === true ? "Inactive" : "Active"} the role{" "}
-
-              <strong>{roleToToggle?.roleName}</strong>?
+              <span className="font-medium">
+                {roleToToggle?.isActive === true ? "deactivate" : "activate"}
+              </span>{" "}
+              the role <strong>{roleToToggle?.roleName}</strong>?
             </p>
-            <div className="mt-6 flex justify-end">
+            <div className="flex justify-end gap-4">
               <button
                 onClick={() => setModalVisible(false)}
-                className="bg-gray-300 text-gray-800 rounded-lg px-4 py-2 mr-2"
+                className="bg-gray-300 text-gray-800 hover:bg-gray-400 rounded-lg px-4 py-2 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmToggleActiveStatus}
-                className="bg-blue-500 text-white rounded-lg px-4 py-2"
+                className="bg-blue-500 text-white hover:bg-blue-600 rounded-lg px-4 py-2 transition"
               >
                 Confirm
               </button>
