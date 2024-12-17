@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { API_HOST } from "../API/apiConfig";
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER  } from "../API/apiConfig";
 import axios from "axios";
 import {
   BarChart,
@@ -269,7 +269,7 @@ function Dashboard() {
           <h2 className="text-xl mb-4 font-semibold">DASHBOARD</h2>
 
           <div className="grid grid-cols-4 gap-4 mb-6">
-            {role === "ADMIN" && (
+            {role === SYSTEM_ADMIN && (
               <>
                 <Link to="/users" className="block">
                   <StatBlock
@@ -359,7 +359,7 @@ function Dashboard() {
               </>
             )}
 
-            {role === "BRANCH ADMIN" && (
+            {role === BRANCH_ADMIN && (
               <>
                 <Link to="/branchusers" className="block">
                   <StatBlock
@@ -417,7 +417,7 @@ function Dashboard() {
               </>
             )}
 
-            {role === "DEPARTMENT ADMIN" && (
+            {role === DEPARTMENT_ADMIN && (
               <>
                 <Link to="/Departmentusers" className="block">
                   <StatBlock
@@ -466,7 +466,7 @@ function Dashboard() {
               </>
             )}
 
-            {role === "USER" && (
+            {role === USER && (
               <>
                 <StatBlock
                   title="Total Documents"

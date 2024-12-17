@@ -479,12 +479,6 @@ function Sidebar() {
                 text="Pending Users"
                 count={counts.manageUserRoleContdepartment}
               />
-              <SidebarLink
-                  to="/manageUserRole"
-                  icon={UserPlusIcon}
-                  text="Manage Users Roles"
-                  count={manageUserRoleCont}
-                />
               <div>
                 {/* Document section */}
                 <button
