@@ -100,14 +100,14 @@ const ManageUserRole = () => {
       if (loginEmpRole === BRANCH_ADMIN && currBranchId) {
         // Fetch branch-specific users
         response = await axios.get(
-          `${API_HOST}/api/EmpRole/branch/${currBranchId}`,
+          `${API_HOST}/EmpRole/branch/${currBranchId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
       } else {
         // Fetch all employees
-        response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
+        response = await axios.get(`${API_HOST}/EmpRole/employees`, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
@@ -253,7 +253,7 @@ const ManageUserRole = () => {
 
       // Make the PUT request
       const response = await axios.put(
-        `${API_HOST}/api/EmpRole/changeRoleStatus`,
+        `${API_HOST}/EmpRole/changeRoleStatus`,
         updatedRoleRequest,
         {
           headers: {
