@@ -477,7 +477,7 @@ function Sidebar() {
                 to="/PendingRole"
                 icon={UserPlusIcon}
                 text="Pending Users"
-                count={counts.manageUserRoleContdepartment}
+                count={counts.nullRoleEmployeeCountForDepartment}
               />
               <div>
                 {/* Document section */}
