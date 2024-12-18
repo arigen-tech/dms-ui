@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/solid";
 import adminPhoto from "../Assets/profile.svg";
 import axios from "axios";
-import { API_HOST } from "../API/apiConfig";
+import { API_HOST} from "../API/apiConfig";
 import Popup from "../Components/Popup";
 
 const DropdownMenu = ({ items, onSelect, emptyMessage }) => (
@@ -103,7 +103,7 @@ function Header({ toggleSidebar, userName }) {
     try {
       const employeeId = localStorage.getItem("userId");
       const response = await axios.get(
-        `${API_HOST}/EmpRole/${employeeId}/roles/active`,
+        `${API_HOST}/api/EmpRole/${employeeId}/roles/active`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -208,21 +208,6 @@ function Header({ toggleSidebar, userName }) {
     };
   }, [dropdownRoleOpen]);
 
-  // Close dropdown when clicking outside
-  // useEffect(() => {
-  //   const handleOutsideClick = (event) => {
-  //     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-  //       setDropdownRoleOpen(false); // Close the dropdown
-  //     }
-  //   };
-
-  //   document.addEventListener("mousedown", handleOutsideClick);
-  //   return () => {
-  //     document.removeEventListener("mousedown", handleOutsideClick);
-  //   };
-  // }, []);
-
-
   return (
     <header className="bg-blue-800 text-white p-2 flex justify-between items-center shadow-inner relative">
       {popupMessage && (
@@ -264,7 +249,6 @@ function Header({ toggleSidebar, userName }) {
             />
           )}
         </div>
-  
 
         {/* Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
@@ -283,7 +267,7 @@ function Header({ toggleSidebar, userName }) {
           {dropdownOpen && (
             <DropdownMenu
               items={[
-                { label: "Edit Profile", onClick: handleChangePassword },
+                { label: "Change Password", onClick: handleChangePassword },
                 { label: "Logout", onClick: handleLogout },
               ]}
               onSelect={(item) => item.onClick && item.onClick()}
