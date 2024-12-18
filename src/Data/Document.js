@@ -15,8 +15,7 @@ import {
   ArrowRightIcon,
   PrinterIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST } from "../API/apiConfig";
-import { DOCUMENTHEADER_API, UPLOADFILE_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, UPLOADFILE_API } from "../API/apiConfig";
 
 const DocumentManagement = ({ fieldsDisabled }) => {
   const location = useLocation();
@@ -56,6 +55,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
+  const [qrPath, setQrPath] = useState("");
+  const [documentDetails, setDocumentDetails] = useState(null);
+  const [error, setError] = useState("");
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
 
   // Run this effect only when component mounts
   useEffect(() => {
@@ -686,6 +689,97 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setPopupMessage({ message, type });
   };
 
+ 
+  useEffect(() => {
+    if (selectedDoc && selectedDoc.id) {
+      fetchQRCode(selectedDoc.id);
+    }
+  }, [selectedDoc]); 
+
+  const fetchQRCode = async (documentId) => {
+    try {
+       if (!token) {
+        throw new Error('Authentication token is missing');
+      }
+
+      // API URL to fetch the QR code
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,  // Add the token to the header
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch QR code');
+      }
+
+      const qrCodeBlob = await response.blob();
+
+      console.log('Fetched QR code Blob:', qrCodeBlob);
+
+      if (!qrCodeBlob.type.includes('image/png')) {
+        throw new Error('Received data is not a valid image');
+      }
+
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      setQrCodeUrl(qrCodeUrl); 
+
+    } catch (error) {
+      setError('Error displaying QR Code: ' + error.message);
+    }
+  };
+
+  const downloadQRCode = async () => {
+    if (!selectedDoc.id) {
+      alert('Please enter a document ID');
+      return;
+    }
+
+    try {
+
+      if (!token) {
+        throw new Error('Authentication token is missing');
+      }
+
+      // API URL to download the QR code
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+
+      // Fetch the QR code as a Blob (binary data) with the token in the Authorization header
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,  // Add the token to the header
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch QR code');
+      }
+
+      const qrCodeBlob = await response.blob();
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      // Create an anchor link to trigger the download
+      const link = document.createElement('a');
+      link.href = qrCodeUrl;
+      link.download = `QR_Code_${selectedDoc.id}.png`; // Set a default name for the file
+      link.click();
+
+      // Clean up URL object
+      window.URL.revokeObjectURL(qrCodeUrl);
+
+    } catch (error) {
+      setError('Error downloading QR Code: ' + error.message);
+    } finally {
+      // setLoading(false);
+    }
+  };
+
+  
   // const handleSearchResults = (results) => {
   //   setSearchResults(results);
   //   setCurrentPage(1); // Reset to first page when new search results come in
@@ -1047,46 +1141,76 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     </div>
 
                     {/* Document Details */}
-                    <div className="mt-4 text-left">
-                      <p className="text-md text-gray-700">
-                        <strong>Branch :-</strong>{" "}
-                        {selectedDoc?.employee?.branch?.name || "N/A"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>Department :-</strong>{" "}
-                        {selectedDoc?.employee?.department?.name || "N/A"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>File No. :-</strong>{" "}
-                        {selectedDoc?.fileNo || "N/A"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>Title :-</strong> {selectedDoc?.title || "N/A"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>Subject :-</strong>{" "}
-                        {selectedDoc?.subject || "N/A"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>Version :-</strong>{" "}
-                        {selectedDoc?.version || "N/A"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>Category :-</strong>{" "}
-                        {selectedDoc?.categoryMaster?.name || "No Category"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>File Year :-</strong>{" "}
-                        {selectedDoc?.yearMaster?.name || "N/A"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>Status :-</strong>{" "}
-                        {selectedDoc?.approvalStatus || "N/A"}
-                      </p>
-                      <p className="text-md text-gray-700">
-                        <strong>Upload By :-</strong>{" "}
-                        {selectedDoc?.employee?.name || "N/A"}
-                      </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="mt-4 text-left">
+                        <p className="text-md text-gray-700">
+                          <strong>Branch :-</strong>{" "}
+                          {selectedDoc?.employee?.branch?.name || "N/A"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>Department :-</strong>{" "}
+                          {selectedDoc?.employee?.department?.name || "N/A"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>File No. :-</strong>{" "}
+                          {selectedDoc?.fileNo || "N/A"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>Title :-</strong>{" "}
+                          {selectedDoc?.title || "N/A"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>Subject :-</strong>{" "}
+                          {selectedDoc?.subject || "N/A"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>Version :-</strong>{" "}
+                          {selectedDoc?.version || "N/A"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>Category :-</strong>{" "}
+                          {selectedDoc?.categoryMaster?.name || "No Category"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>File Year :-</strong>{" "}
+                          {selectedDoc?.yearMaster?.name || "N/A"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>Status :-</strong>{" "}
+                          {selectedDoc?.approvalStatus || "N/A"}
+                        </p>
+                        <p className="text-md text-gray-700">
+                          <strong>Upload By :-</strong>{" "}
+                          {selectedDoc?.employee?.name || "N/A"}
+                        </p>
+                      </div>
+                      <div className="items-center justify-center z-50">
+                        <p className="text-md text-center text-gray-700 mt-3">
+                          <strong>QR Code:</strong>
+                        </p>
+                        {selectedDoc?.qrPath ? (
+                          <div className="mt-4 text-center">
+                            {/* Display the QR code image */}
+                            <img
+                              src={qrCodeUrl}
+                              alt="QR Code"
+                              className="mx-auto w-full h-full object-contain border border-gray-300 p-2"
+                            />
+                            
+                            {/* Download the QR code */}
+                            <button
+                              onClick={downloadQRCode}
+                              className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                            >
+                              Download
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-center">
+                            No QR code available
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Attached Files */}

@@ -100,11 +100,9 @@ const ManageUserRole = () => {
       if (loginEmpRole === BRANCH_ADMIN && currBranchId) {
         // Fetch branch-specific users
         response = await axios.get(
-          `${API_HOST}/api/EmpRole/branch/${currBranchId}`,
-          {
+          `${API_HOST}/api/EmpRole/branch/${currBranchId}`,{
             headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+          });
       } else {
         // Fetch all employees
         response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
@@ -114,6 +112,7 @@ const ManageUserRole = () => {
 
       // Check the response status
       if (response?.status === 200) {
+        debugger;
         setUsers(response.data); // Store the users in the state
         console.log("Fetched users:", response.data);
       } else {
