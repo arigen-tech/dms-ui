@@ -209,18 +209,19 @@ function Header({ toggleSidebar, userName }) {
   }, [dropdownRoleOpen]);
 
   // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownRoleOpen(false);
-      }
-    };
+  // useEffect(() => {
+  //   const handleOutsideClick = (event) => {
+  //     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+  //       setDropdownRoleOpen(false); // Close the dropdown
+  //     }
+  //   };
 
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, []);
+  //   document.addEventListener("mousedown", handleOutsideClick);
+  //   return () => {
+  //     document.removeEventListener("mousedown", handleOutsideClick);
+  //   };
+  // }, []);
+
 
   return (
     <header className="bg-blue-800 text-white p-2 flex justify-between items-center shadow-inner relative">
@@ -244,7 +245,7 @@ function Header({ toggleSidebar, userName }) {
       </div>
       <div className="flex space-x-4 items-center mr-4">
         {/* Role Dropdown */}
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative">
           <div
             className="flex items-center space-x-2 cursor-pointer"
             onClick={toggleDropdownRole}
@@ -263,6 +264,7 @@ function Header({ toggleSidebar, userName }) {
             />
           )}
         </div>
+  
 
         {/* Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
