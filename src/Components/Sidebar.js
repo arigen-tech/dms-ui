@@ -28,7 +28,13 @@ import { RiFileUserFill } from "react-icons/ri";
 import { IoDocumentLock } from "react-icons/io5";
 import { FaRegFile, FaTimesCircle } from "react-icons/fa";
 import logo3 from "../Assets/logo3.png";
-import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "../API/apiConfig";
+import {
+  API_HOST,
+  SYSTEM_ADMIN,
+  BRANCH_ADMIN,
+  DEPARTMENT_ADMIN,
+  USER,
+} from "../API/apiConfig";
 
 const tokenKey = "tokenKey";
 
@@ -78,13 +84,15 @@ function Sidebar() {
   });
 
   //System Admin
-  const manageUserRoleCont = (counts.totalUser-counts.totalNullEmployeeType);
+  const manageUserRoleCont = counts.totalUser - counts.totalNullEmployeeType;
 
   //Branch Admin
-  const manageUserRoleContbranch = (counts.branchUser-counts.nullRoleEmployeeCountForBranch);
+  const manageUserRoleContbranch =
+    counts.branchUser - counts.nullRoleEmployeeCountForBranch;
 
   //Department Admin
-  const manageUserRoleContdepartment = (counts.departmentUser-counts.nullRoleEmployeeCountForDepartment);
+  const manageUserRoleContdepartment =
+    counts.departmentUser - counts.nullRoleEmployeeCountForDepartment;
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -185,7 +193,6 @@ function Sidebar() {
 
   const role = localStorage.getItem("role");
 
-  
   return (
     <div className="h-screen flex flex-col justify-between bg-blue-800 text-white w-52 p-1 transition-all duration-300">
       <div>
@@ -316,6 +323,11 @@ function Sidebar() {
                       icon={DocumentMagnifyingGlassIcon}
                       text="Search Documents"
                     />
+                    <SidebarLink
+                      to="/searchByScan"
+                      icon={DocumentTextIcon}
+                      text="Search Documents By QR Codes"
+                    />
                   </div>
                 )}
               </div>
@@ -371,11 +383,11 @@ function Sidebar() {
                 count={counts.nullRoleEmployeeCountForBranch}
               />
               <SidebarLink
-                  to="/manageUserRole"
-                  icon={UserPlusIcon}
-                  text="Manage Users Roles"
-                  count={manageUserRoleContbranch}
-                />
+                to="/manageUserRole"
+                icon={UserPlusIcon}
+                text="Manage Users Roles"
+                count={manageUserRoleContbranch}
+              />
               <SidebarLink
                 to="/create-departments"
                 icon={ComputerDesktopIcon}
@@ -423,6 +435,11 @@ function Sidebar() {
                       to="/search"
                       icon={DocumentTextIcon}
                       text="Search Documents"
+                    />
+                    <SidebarLink
+                      to="/searchByScan"
+                      icon={DocumentTextIcon}
+                      text="Search Documents By QR Codes"
                     />
                   </div>
                 )}
@@ -521,6 +538,11 @@ function Sidebar() {
                       icon={DocumentTextIcon}
                       text="Search Documents"
                     />
+                    <SidebarLink
+                      to="/searchByScan"
+                      icon={DocumentTextIcon}
+                      text="Search Documents By QR Codes"
+                    />
                   </div>
                 )}
                 <div>
@@ -595,7 +617,11 @@ function Sidebar() {
                 icon={DocumentTextIcon}
                 text="Search Documents"
               />
-
+              <SidebarLink
+                to="/searchByScan"
+                icon={DocumentTextIcon}
+                text="Search Documents By QR Codes"
+              />
               <div>
                 <button
                   onClick={handleReportToggle}

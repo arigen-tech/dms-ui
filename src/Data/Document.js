@@ -1190,14 +1190,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         </p>
                         {selectedDoc?.qrPath ? (
                           <div className="mt-4 text-center">
-                            {/* Display the QR code image */}
                             <img
                               src={qrCodeUrl}
                               alt="QR Code"
                               className="mx-auto w-full h-full object-contain border border-gray-300 p-2"
                             />
-                            
-                            {/* Download the QR code */}
+
                             <button
                               onClick={downloadQRCode}
                               className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"

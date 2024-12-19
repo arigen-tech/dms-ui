@@ -21,6 +21,7 @@ import UserRoleAssing from "./Pages/UserRoleAssing";
 import ChangePasswordPage from "./Pages/ChangePasswordPage";
 import PrivateRoute from "./Components/PrivateRoute";
 import SearchDoc from "./Pages/SearchDoc"; // Import the Search component
+import SearchByScanning from "./Pages/SearchByScanning";
 import BranchUsers from "./Pages/Branch/BranchUsers";
 import DepartmentUsers from "./Pages/Department/DepartmentUsers"
 import BranchDepartments from "./Pages/Branch/BranchDepartments"
@@ -57,8 +58,10 @@ const protectedRoutes = [
   { path: "/userReport", element: <UserReports />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/manageUserRole", element: <ManageUserRoles />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/documentReport", element: <DocumentsReport />, allowedRoles: [USER, SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
-  { path: "/change-password", element: <ChangePasswordPage />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, // Allow BRANCH_ADMIN access
-  { path: "/search", element: <SearchDoc />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, // Add the search route
+  { path: "/change-password", element: <ChangePasswordPage />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
+  { path: "/search", element: <SearchDoc />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+  { path: "/searchByScan", element: <SearchByScanning />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+
 ];
 
 function App() {

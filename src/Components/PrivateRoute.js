@@ -5,7 +5,7 @@ const PrivateRoute = ({ children, allowedRoles }) => {
 
   if (!role) {
     // If no employeeType in localStorage, redirect to the login page
-    return <Navigate to="/auth" />;
+    return <Navigate to="/" />;
   }
 
   // Check if the employeeType is allowed for this route
