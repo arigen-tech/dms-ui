@@ -11,6 +11,9 @@ import {
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_HOST } from "../../API/apiConfig";
+import Popup from '../../Components/Popup';
+
+
 
 const DepartmentEmployee = () => {
     const [employees, setEmployees] = useState([]);
@@ -31,9 +34,17 @@ const DepartmentEmployee = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [Message, setMessage] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    //const [isSubmitting, setIsSubmitting] = useState(false);
     const [userBranch, setUserBranch] = useState(null);
     const [userDepartment, setUserDepartment] = useState(null);
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupConfig, setPopupConfig] = useState({
+        message: '',
+        type: 'default'
+    });
+
 
     useEffect(() => {
         fetchUserDetails();
@@ -53,7 +64,7 @@ const DepartmentEmployee = () => {
             const token = localStorage.getItem("tokenKey");
             console.log("UserId:", userId);
             console.log("Token:", token);
-    
+
             const response = await axios.get(
                 `${API_HOST}/employee/findById/${userId}`,
                 {
@@ -63,7 +74,7 @@ const DepartmentEmployee = () => {
                 }
             );
             console.log("User details response:", response.data);
-    
+
             setUserBranch(response.data.branch);
             setUserDepartment(response.data.department);
             setFormData(prevData => ({
@@ -78,7 +89,7 @@ const DepartmentEmployee = () => {
             setLoading(false);
         }
     };
-    
+
 
     const fetchDepartmentEmployees = async () => {
         setLoading(true);
@@ -87,7 +98,7 @@ const DepartmentEmployee = () => {
             const token = localStorage.getItem("tokenKey");
             const response = await axios.get(
                 `${API_HOST}/employee/department/${userDepartment.id}`
-,
+                ,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -156,6 +167,8 @@ const DepartmentEmployee = () => {
 
                 if (response.data) {
                     setEmployees([...employees, response.data]);
+
+                    // Reset form data after successful addition
                     setFormData({
                         name: "",
                         email: "",
@@ -164,20 +177,40 @@ const DepartmentEmployee = () => {
                         department: userDepartment,
                     });
                     setError("");
-                    setMessage("Employee added successfully!");
-                    setTimeout(() => setMessage(""), 3000);
+
+                    // Show success message in a popup
+                    setShowPopup(true); // Show the popup for feedback
+                    setPopupConfig({
+                        message: "Employee added successfully!",
+                        type: "success",
+                    });
+
+                    // Automatically hide the flash message after 3 seconds
+                    setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
                 }
             } catch (error) {
                 console.error("Error adding employee:", error);
-                setError(
-                    error.response?.data?.message ||
-                    "Email address is already Registered.please use different one."
-                );
+                const errorMessage = error.response?.data?.message || "Email address is already registered. Please use a different one.";
+
+                // Show error message in a popup
+                setShowPopup(true); // Show the popup for error feedback
+                setPopupConfig({
+                    message: errorMessage,
+                    type: "error",
+                });
             } finally {
                 setIsSubmitting(false);
             }
         } else {
-            setError("Please fill out all fields.");
+            const errorMessage = "Please fill out all fields.";
+
+            // Show error message in a popup
+            setShowPopup(true); // Show the popup for validation issue
+            setPopupConfig({
+                message: errorMessage,
+                type: "error",
+            });
+            setError(errorMessage);
         }
     };
 
@@ -234,6 +267,7 @@ const DepartmentEmployee = () => {
                     );
                     setEmployees(updatedEmployees);
 
+                    // Reset form data after successful edit
                     setFormData({
                         name: "",
                         email: "",
@@ -243,18 +277,40 @@ const DepartmentEmployee = () => {
                     });
 
                     setError("");
-                    setMessage("Employee updated successfully!");
-                    setTimeout(() => setMessage(""), 3000);
+
+                    // Show success message in a popup
+                    setShowPopup(true);
+                    setPopupConfig({
+                        message: "Employee updated successfully!",
+                        type: "success",
+                    });
+
+                    // Automatically hide the flash message after 3 seconds
+                    setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
+
                     setEditingIndex(null);
                 }
             } catch (error) {
-                setError(
-                    error.response?.data?.message ||
-                    "Error updating employee. Please try again."
-                );
+                console.error("Error updating employee:", error);
+                const errorMessage = error.response?.data?.message || "Error updating employee. Please try again.";
+
+                // Show error message in a popup
+                setShowPopup(true);
+                setPopupConfig({
+                    message: errorMessage,
+                    type: "error",
+                });
             }
         } else {
-            setError("Please fill out all fields.");
+            const errorMessage = "Please fill out all fields.";
+            setError(errorMessage);
+
+            // Show error message in a popup for validation issue
+            setShowPopup(true);
+            setPopupConfig({
+                message: errorMessage,
+                type: "error",
+            });
         }
     };
 
@@ -265,9 +321,10 @@ const DepartmentEmployee = () => {
 
     const confirmToggleActive = async () => {
         try {
-            const newStatus = employeeToToggle.active ? false : true;
+            const newStatus = !employeeToToggle.active; // Toggle between true and false
 
-            await axios.put(
+            // Send the PUT request to update the status
+            const response = await axios.put(
                 `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`,
                 newStatus,
                 {
@@ -278,24 +335,52 @@ const DepartmentEmployee = () => {
                 }
             );
 
-            const updatedEmployees = employees.map((employee) =>
-                employee.id === employeeToToggle.id
-                    ? { ...employee, active: newStatus }
-                    : employee
-            );
-            setEmployees(updatedEmployees);
+            if (response.data) {
+                // Update the local employee list after successful status update
+                const updatedEmployees = employees.map((employee) =>
+                    employee.id === employeeToToggle.id
+                        ? { ...employee, active: newStatus }
+                        : employee
+                );
+                setEmployees(updatedEmployees);
 
-            const message = newStatus
-                ? "Employee has been activated."
-                : "Employee has been deactivated.";
-            setMessage(message);
+                // Set flash message based on the new status
+                const message = newStatus
+                    ? "Employee has been activated."
+                    : "Employee has been deactivated.";
+                setShowPopup(true); // Show the popup for feedback
+                setPopupConfig({
+                    message: message,
+                    type: "success",
+                });
 
-            setTimeout(() => setMessage(""), 3000);
+                // Automatically hide the flash message after 3 seconds
+                setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
+            }
         } catch (error) {
             console.error("Error toggling employee status:", error);
+            // Set error message
+            const errorMessage = error.response?.data?.message || "Error toggling employee status. Please try again.";
+
+            // Show error message in a popup
+            setShowPopup(true); // Show the popup for error feedback
+            setPopupConfig({
+                message: errorMessage,
+                type: "error",
+            });
         } finally {
+            // Ensure modal is closed and state is cleared even if there was an error
             setModalVisible(false);
             setEmployeeToToggle(null);
+        }
+    };
+
+    const handleClosePopup = () => {
+        // Refresh the page when the popup is closed after a successful action
+        if (popupConfig.type === 'success') {
+            window.location.reload(); // Refresh the page
+        } else {
+            setShowPopup(false); // Just close the popup for other types
         }
     };
 
@@ -310,30 +395,38 @@ const DepartmentEmployee = () => {
     };
 
     const filteredEmployees = employees.filter((employee) => {
-        // Safeguard for undefined values
-        const name = employee.name || ""; // Fallback to empty string if undefined
-        const email = employee.email || ""; // Fallback to empty string if undefined
-        const mobile = employee.mobile || ""; // Fallback to empty string if undefined
-      
-        // Derive status text
-        const statusText = employee.active === true ? "active" : "inactive";
-      
-        // Safeguard for dates
-        const createdOnText = employee.createdOn ? formatDate(employee.createdOn) : "";
-        const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn) : "";
-      
-        // Ensure searchTerm is valid
+        // Safeguard for undefined values and normalize data
+        const name = employee.name?.toLowerCase() || "";
+        const email = employee.email?.toLowerCase() || "";
+        const mobile = employee.mobile?.toLowerCase() || "";
+        const branch = employee.branch?.name?.toLowerCase() || "n/a";
+        const department = employee.department?.name?.toLowerCase() || "n/a";
+        const role = employee.role?.role?.toLowerCase() || "no role";
+        const statusText = employee.active ? "active" : "inactive";
+        const createdOnText = employee.createdOn ? formatDate(employee.createdOn).toLowerCase() : "";
+        const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn).toLowerCase() : "";
+        const createdBy = employee.createdBy?.name?.toLowerCase() || "unknown";
+        const updatedBy = employee.updatedBy?.name?.toLowerCase() || "unknown";
+
+        // Normalize the search term
         const lowerSearchTerm = searchTerm?.toLowerCase() || "";
-      
+
+        // Return true if any column includes the search term
         return (
-          name.toLowerCase().includes(lowerSearchTerm) ||
-          email.toLowerCase().includes(lowerSearchTerm) ||
-          mobile.toLowerCase().includes(lowerSearchTerm) ||
-          statusText.includes(lowerSearchTerm) ||
-          createdOnText.includes(lowerSearchTerm) ||
-          updatedOnText.includes(lowerSearchTerm)
+            name.includes(lowerSearchTerm) ||
+            email.includes(lowerSearchTerm) ||
+            mobile.includes(lowerSearchTerm) ||
+            branch.includes(lowerSearchTerm) ||
+            department.includes(lowerSearchTerm) ||
+            role.includes(lowerSearchTerm) ||
+            statusText.includes(lowerSearchTerm) ||
+            createdOnText.includes(lowerSearchTerm) ||
+            updatedOnText.includes(lowerSearchTerm) ||
+            createdBy.includes(lowerSearchTerm) ||
+            updatedBy.includes(lowerSearchTerm)
         );
-      });
+    });
+
 
     const sortedEmployees = filteredEmployees.sort((a, b) => b.active - a.active);
 
@@ -343,32 +436,34 @@ const DepartmentEmployee = () => {
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+    const getPageNumbers = () => {
+        const maxPageNumbers = 5; // Show 5 pages at a time
+        const pages = [];
+
+        // Calculate the start and end page numbers
+        const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+        const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+
+        // Push pages to display in the pagination
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        return pages;
+    };
+
+
 
     return (
         <div className="p-1">
             <h1 className="text-xl mb-4 font-semibold">DEPARTMENT USERS</h1>
             <div className="bg-white p-3 rounded-lg shadow-sm">
-                {error && <p className="text-red-500">{error}</p>}
-                {Message && (
-                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
-                        <strong className="font-bold">Success! </strong>
-                        <span className="block sm:inline">{Message}</span>
-                        <button
-                            type="button"
-                            onClick={() => setMessage("")}
-                            className="absolute top-0 right-0 mt-2 mr-2 text-green-500 hover:text-green-700"
-                        >
-                            <svg
-                                className="fill-current h-6 w-6"
-                                role="img"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                aria-label="Close"
-                            >
-                                <path d="M12 10.293l5.293-5.293 1.414 1.414L13.414 12l5.293 5.293-1.414 1.414L12 13.414l-5.293 5.293-1.414-1.414L10.586 12 5.293 6.707 6.707 5.293z" />
-                            </svg>
-                        </button>
-                    </div>
+                {showPopup && (
+                    <Popup
+                        message={popupConfig.message}
+                        type={popupConfig.type}
+                        onClose={handleClosePopup}
+                    />
                 )}
 
                 {loading && <p className="text-blue-500">Loading...</p>}
@@ -402,16 +497,20 @@ const DepartmentEmployee = () => {
                         </label>
 
                         {/* Phone Input */}
+                        {/* Phone Input */}
                         <label className="block text-md font-medium text-gray-700">
                             Phone
                             <input
                                 type="tel"
-                                placeholder="Phone"
+                                placeholder="Enter phone number"
                                 name="mobile"
                                 maxLength={10}
                                 minLength={10}
                                 value={formData.mobile || ""}
                                 onChange={handleInputChange}
+                                onInput={(e) => {
+                                    e.target.value = e.target.value.replace(/[^0-9]/g, ""); // Allow only numbers
+                                }}
                                 className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
@@ -472,27 +571,26 @@ const DepartmentEmployee = () => {
                         </label>
                         <select
                             id="itemsPerPage"
+                            className="border rounded-r-lg p-1.5 outline-none"
                             value={itemsPerPage}
-                            onChange={(e) => {
-                                setItemsPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            className="p-1 rounded-lg outline-none text-sm"
+                            onChange={(e) => setItemsPerPage(Number(e.target.value))}
                         >
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="20">20</option>
+                            {[5, 10, 15, 20].map((num) => (
+                                <option key={num} value={num}>
+                                    {num}
+                                </option>
+                            ))}
                         </select>
                     </div>
-                    <div className="flex items-center bg-white rounded-lg p-2">
-                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                    <div className="flex items-center">
                         <input
                             type="text"
                             placeholder="Search..."
+                            className="border rounded-l-md p-1 outline-none"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="ml-2 outline-none"
                         />
+                        <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
                     </div>
                 </div>
 
@@ -518,7 +616,7 @@ const DepartmentEmployee = () => {
                     <tbody>
                         {paginatedEmployees.map((employee, index) => (
                             <tr key={employee.id}>
-                                <td className="border p-2">{index + 1}</td>
+                                <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
                                 <td className="border p-2">{employee.name}</td>
                                 <td className="border p-2">{employee.email}</td>
                                 <td className="border p-2">{employee.mobile}</td>
@@ -566,54 +664,83 @@ const DepartmentEmployee = () => {
                     <div>
                         <span className="text-sm text-gray-700">
                             Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                            {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                            {totalItems} entries
+                            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
                         </span>
                     </div>
                     <div className="flex items-center">
+                        {/* Previous Button */}
                         <button
                             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
-                            className="bg-slate-200 px-3 py-1 rounded mr-3"
+                            className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                                    ? "bg-gray-300 cursor-not-allowed"
+                                    : "bg-slate-200 hover:bg-slate-300"
+                                }`}
                         >
                             <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
                             Previous
                         </button>
+
+                        {/* Page Numbers */}
+                        {getPageNumbers().map((page, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentPage(page)}
+                                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-slate-200 hover:bg-blue-100"
+                                    }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+
+                        {/* Display Total Pages */}
                         <span className="text-sm text-gray-700">
-                            Page {currentPage} of {totalPages}
+                            of {totalPages} pages
                         </span>
+
+                        {/* Next Button */}
                         <button
                             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
-                            className="bg-slate-200 px-3 py-1 rounded ml-3"
+                            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                                    ? "bg-gray-300 cursor-not-allowed"
+                                    : "bg-slate-200 hover:bg-slate-300"
+                                }`}
                         >
                             Next
                             <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
                         </button>
                     </div>
                 </div>
+
+
             </div>
 
-            {/* Modal for confirming status toggle */}
             {modalVisible && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-lg max-w-sm w-full">
-                        <h2 className="text-xl font-bold mb-4">Confirm Action</h2>
-                        <p className="mb-4">
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+                        <h2 className="text-lg font-semibold mb-4">
+                            Confirm Status Change
+                        </h2>
+                        <p>
                             Are you sure you want to{" "}
-                            {employeeToToggle?.active ? "deactivate" : "activate"}{" "}
-                            this employee?
+                            <strong>
+                                {employeeToToggle.active === true ? "deactivate" : "activate"}
+                            </strong>{" "}
+                            the employee <strong>{employeeToToggle.name}</strong> ?
                         </p>
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex justify-end space-x-4">
                             <button
                                 onClick={() => setModalVisible(false)}
-                                className="px-4 py-2 border rounded hover:bg-gray-100"
+                                className="bg-gray-500 text-white rounded-md px-4 py-2"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmToggleActive}
-                                className="px-4 py-2 bg-blue-900 text-white rounded hover:bg-blue-800"
+                                className="bg-blue-500 text-white rounded-md px-4 py-2"
                             >
                                 Confirm
                             </button>

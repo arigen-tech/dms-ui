@@ -18,6 +18,7 @@ import {
   ROLE_API,
 } from "../API/apiConfig"; // Import your API URLs
 import { API_HOST } from "../API/apiConfig";
+import Popup from '../Components/Popup';
 
 const UserAddEmployee = () => {
   const [employees, setEmployees] = useState([]);
@@ -45,9 +46,17 @@ const UserAddEmployee = () => {
   const [userName, setUserName] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [Message, setMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [isSubmitting, setIsSubmitting] = useState(false);
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
+
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupConfig, setPopupConfig] = useState({
+    message: '',
+    type: 'default'
+  });
 
 
 
@@ -55,6 +64,8 @@ const UserAddEmployee = () => {
     fetchEmployees();
     fetchOptions();
   }, []);
+
+
 
   const fetchEmployees = async () => {
     try {
@@ -242,32 +253,36 @@ const UserAddEmployee = () => {
 
   const handleAddEmployee = async () => {
     console.log("Form Data before submit:", formData);
-  
+
     const isFormDataValid =
       formData.name?.trim() &&
       formData.email?.trim() &&
       formData.mobile?.trim();
     const isBranchSelected = formData.branch?.id;
     const isDepartmentSelected = formData.department?.id;
-  
+
     if (isFormDataValid && isBranchSelected && isDepartmentSelected) {
       setIsSubmitting(true);
       try {
         const token = localStorage.getItem("tokenKey");
         const userId = parseInt(localStorage.getItem("userId"), 10);
-  
+
         if (isNaN(userId)) {
-          setError("User authentication error. Please log in again.");
+          setShowPopup(true);
+          setPopupConfig({
+            message: "User authentication error. Please log in again.",
+            type: "error"
+          });
           setIsSubmitting(false);
           return;
         }
-  
+
         const employeeData = {
           name: formData.name,
           email: formData.email,
           mobile: formData.mobile,
           password: `${formData.name}${formData.mobile.slice(0, 4)}`,
-          isActive: 0, // Use 0 instead of false if the backend expects a number
+          isActive: 0,
           createdBy: { id: userId },
           updatedBy: { id: userId },
           department: { id: parseInt(formData.department.id, 10) },
@@ -275,9 +290,9 @@ const UserAddEmployee = () => {
           createdOn: new Date().toISOString(),
           updatedOn: new Date().toISOString(),
         };
-  
+
         console.log("Formatted Employee Data:", employeeData);
-  
+
         const response = await axios.post(
           `${API_HOST}/register/create`,
           employeeData,
@@ -288,10 +303,10 @@ const UserAddEmployee = () => {
             },
           }
         );
-  
+
         console.log("API Response:", response.data);
-  
-        // Handle successful response
+
+        // Clear form after successful submission
         setEmployees((prevEmployees) => [...prevEmployees, response.data]);
         setFormData({
           name: "",
@@ -300,24 +315,31 @@ const UserAddEmployee = () => {
           branch: { id: "", name: "" },
           department: { id: "", name: "" },
         });
-        setError("");
-        setMessage("Employee added successfully!");
-        setTimeout(() => setMessage(""), 3000);
+
+        setShowPopup(true);
+        setPopupConfig({
+          message: "Employee added successfully!",
+          type: "success"
+        });
+
       } catch (error) {
-        console.error("Detailed Error:", error.response?.data);
-        setError(
-          error.response?.data?.message ||
-          error.response?.data?.msg ||
-          "Failed to add employee. Please try again."
-        );
-      } finally {
-        setIsSubmitting(false);
+        console.log("Full Error:", error);
+        console.log("Error Response:", error.response);
+
+        // Get the error message from the response
+        const errorMessage = error.response?.data || "Failed to add employee. Please try again.";
+
+        setShowPopup(true);
+        setPopupConfig({
+          message: errorMessage,
+          type: "error"
+        });
+
       }
-    } else {
-      setError("Please fill out all fields and select a branch and department.");
     }
-  };
-  
+  }
+
+
 
   const handleEditEmployee = (employeeId) => {
     const employeeToEdit = employees.find((emp) => emp.id === employeeId);
@@ -363,7 +385,6 @@ const UserAddEmployee = () => {
             id: formData.department.id,
             name: formData.department.name,
           },
-          // Only include password if it's provided by the user
           password: formData.password ? formData.password : null,
           updatedOn: new Date().toISOString(),
           enabled: formData.enabled,
@@ -399,22 +420,37 @@ const UserAddEmployee = () => {
           });
 
           setError("");
-          setMessage("Employee updated successfully!");
-          setTimeout(() => setMessage(""), 3000);
+          // Set success message
+          setShowPopup(true);
+          setPopupConfig({
+            message: "Employee updated successfully!",
+            type: "success",
+          });
+          // Automatically hide the flash message after 3 seconds
+          setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
 
           setEditingIndex(null);
         }
       } catch (error) {
         console.error("Error updating employee:", error);
-        setError(
-          error.response?.data?.message ||
-          "Error updating employee. Please try again."
-        );
+        const errorMessage = error.response?.data?.message || "Error updating employee. Please try again.";
+
+        // Set error message
+        setShowPopup(true);
+        setPopupConfig({
+          message: errorMessage,
+          type: "error",
+        });
       }
     } else {
-      setError(
-        "Please fill out all fields and select a branch and department."
-      );
+      const errorMessage = "Please fill out all fields and select a branch and department.";
+      setError(errorMessage);
+      // Optionally, you could show an error popup here as well
+      setShowPopup(true);
+      setPopupConfig({
+        message: errorMessage,
+        type: "error",
+      });
     }
   };
 
@@ -423,12 +459,13 @@ const UserAddEmployee = () => {
     setModalVisible(true);
   };
 
+
   const confirmToggleActive = async () => {
     try {
-      const newStatus = employeeToToggle.active ? false : true; // Toggle between true and false
+      const newStatus = !employeeToToggle.active; // Toggle between true and false
 
       // Send the PUT request to update the status
-      await axios.put(
+      const response = await axios.put(
         `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`, // Updated URL with employee ID
         newStatus, // Send the new status directly as the request body
         {
@@ -439,29 +476,52 @@ const UserAddEmployee = () => {
         }
       );
 
-      // Update the local employee list after successful status update
-      const updatedEmployees = employees.map((employee) =>
-        employee.id === employeeToToggle.id
-          ? { ...employee, active: newStatus }
-          : employee
-      );
-      setEmployees(updatedEmployees);
+      if (response.data) {
+        // Update the local employee list after successful status update
+        const updatedEmployees = employees.map((employee) =>
+          employee.id === employeeToToggle.id
+            ? { ...employee, active: newStatus }
+            : employee
+        );
+        setEmployees(updatedEmployees);
 
-      // Set flash message based on the new status
-      const message = newStatus
-        ? "Employee has been activated."
-        : "Employee has been deactivated.";
-      setMessage(message);
+        // Set flash message based on the new status
+        const message = newStatus
+          ? "Employee has been activated."
+          : "Employee has been deactivated.";
+        setShowPopup(true); // Show the popup for feedback
+        setPopupConfig({
+          message: message,
+          type: "success",
+        });
 
-      // Automatically hide the flash message after 3 seconds
-      setTimeout(() => setMessage(""), 3000);
+        // Automatically hide the flash message after 3 seconds
+        setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
+      }
     } catch (error) {
       console.error("Error toggling employee status:", error);
-      // Optionally, show an error message to the user here
+      const errorMessage = error.response?.data?.message || "Error toggling employee status. Please try again.";
+
+      // Set error message
+      setShowPopup(true); // Show the popup for error feedback
+      setPopupConfig({
+        message: errorMessage,
+        type: "error",
+      });
     } finally {
       // Ensure modal is closed and state is cleared even if there was an error
       setModalVisible(false);
       setEmployeeToToggle(null);
+    }
+  };
+
+
+  const handleClosePopup = () => {
+    // Refresh the page when the popup is closed after a successful action
+    if (popupConfig.type === 'success') {
+      window.location.reload(); // Refresh the page
+    } else {
+      setShowPopup(false); // Just close the popup for other types
     }
   };
 
@@ -476,40 +536,71 @@ const UserAddEmployee = () => {
   };
 
   const filteredEmployees = employees.filter((employee) => {
-    // Safeguard for undefined values
-    const name = employee.name || ""; // Fallback to empty string if undefined
-    const email = employee.email || ""; // Fallback to empty string if undefined
-    const mobile = employee.mobile || ""; // Fallback to empty string if undefined
-  
-    // Derive status text
-    const statusText = employee.active === true ? "active" : "inactive";
-  
-    // Safeguard for dates
-    const createdOnText = employee.createdOn ? formatDate(employee.createdOn) : "";
-    const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn) : "";
-  
-    // Ensure searchTerm is valid
+    // Safeguard for undefined values and normalize data
+    const name = employee.name?.toLowerCase() || "";
+    const email = employee.email?.toLowerCase() || "";
+    const mobile = employee.mobile?.toLowerCase() || "";
+    const branch = employee.branch?.name?.toLowerCase() || "n/a";
+    const department = employee.department?.name?.toLowerCase() || "n/a";
+    const role = employee.role?.role?.toLowerCase() || "no role";
+    const statusText = employee.active ? "active" : "inactive";
+    const createdOnText = employee.createdOn ? formatDate(employee.createdOn).toLowerCase() : "";
+    const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn).toLowerCase() : "";
+    const createdBy = employee.createdBy?.name?.toLowerCase() || "unknown";
+    const updatedBy = employee.updatedBy?.name?.toLowerCase() || "unknown";
+
+    // Normalize the search term
     const lowerSearchTerm = searchTerm?.toLowerCase() || "";
-  
+
+    // Return true if any column includes the search term
     return (
-      name.toLowerCase().includes(lowerSearchTerm) ||
-      email.toLowerCase().includes(lowerSearchTerm) ||
-      mobile.toLowerCase().includes(lowerSearchTerm) ||
+      name.includes(lowerSearchTerm) ||
+      email.includes(lowerSearchTerm) ||
+      mobile.includes(lowerSearchTerm) ||
+      branch.includes(lowerSearchTerm) ||
+      department.includes(lowerSearchTerm) ||
+      role.includes(lowerSearchTerm) ||
       statusText.includes(lowerSearchTerm) ||
       createdOnText.includes(lowerSearchTerm) ||
-      updatedOnText.includes(lowerSearchTerm)
+      updatedOnText.includes(lowerSearchTerm) ||
+      createdBy.includes(lowerSearchTerm) ||
+      updatedBy.includes(lowerSearchTerm)
     );
   });
-  
+
+
 
   const sortedEmployees = filteredEmployees.sort((a, b) => b.active - a.active);
 
   const totalItems = sortedEmployees.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+  // const maxPageButtons = 5; // Maximum number of page buttons to show
+
   const paginatedEmployees = sortedEmployees.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5; // Show 5 pages at a time
+    const pages = [];
+
+    // Calculate the start and end page numbers
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+
+    // Push pages to display in the pagination
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  };
+
+
+
+
+
 
   const role = localStorage.getItem("role");
 
@@ -519,29 +610,12 @@ const UserAddEmployee = () => {
       <div className="bg-white p-3 rounded-lg shadow-sm">
         {error && <p className="text-red-500">{error}</p>}
         {/* Success Message */}
-        {Message && (
-          <div
-            className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
-            role="alert"
-          >
-            <strong className="font-bold">Success! </strong>
-            <span className="block sm:inline">{Message} </span>
-            <button
-              type="button"
-              onClick={() => setMessage("")} // Close the message on button click
-              className="absolute top-0 right-0 mt-2 mr-2 text-green-500 hover:text-green-700"
-            >
-              <svg
-                className="fill-current h-6 w-6"
-                role="img"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                aria-label="Close"
-              >
-                <path d="M12 10.293l5.293-5.293 1.414 1.414L13.414 12l5.293 5.293-1.414 1.414L12 13.414l-5.293 5.293-1.414-1.414L10.586 12 5.293 6.707 6.707 5.293z" />
-              </svg>
-            </button>
-          </div>
+        {showPopup && (
+          <Popup
+            message={popupConfig.message}
+            type={popupConfig.type}
+            onClose={handleClosePopup}
+          />
         )}
 
         {loading && <p className="text-blue-500">Loading...</p>}
@@ -585,9 +659,13 @@ const UserAddEmployee = () => {
                 minLength={10}
                 value={formData.mobile || ""}
                 onChange={handleInputChange}
+                onInput={(e) => {
+                  e.target.value = e.target.value.replace(/[^0-9]/g, ""); // Allow only numbers
+                }}
                 className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
+
 
             {/* Branch Selection */}
             <label className="block text-md font-medium text-gray-700">
@@ -808,36 +886,61 @@ const UserAddEmployee = () => {
               <div>
                 <span className="text-sm text-gray-700">
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                  {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                  {totalItems} entries
+                  {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
                 </span>
               </div>
               <div className="flex items-center">
+                {/* Previous Button */}
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="bg-slate-200 px-3 py-1 rounded mr-3"
+                  className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-slate-200 hover:bg-slate-300"
+                    }`}
                 >
                   <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
                   Previous
                 </button>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map((page, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                        ? "bg-blue-500 text-white"
+                        : "bg-slate-200 hover:bg-blue-100"
+                      }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                {/* Display Total Pages */}
                 <span className="text-sm text-gray-700">
-                  Page {currentPage} of {totalPages}
+                  of {totalPages} pages
                 </span>
+
+                {/* Next Button */}
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="bg-slate-200 px-3 py-1 rounded ml-3"
+                  className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-slate-200 hover:bg-slate-300"
+                    }`}
                 >
                   Next
                   <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
                 </button>
               </div>
             </div>
+
+
+
+
+
           </>
         )}
       </div>

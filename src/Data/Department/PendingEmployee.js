@@ -23,7 +23,7 @@ const EmployeeRole = () => {
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
 
- const [currRoleCode, setCurrRoleCode] = useState("");
+  const [currRoleCode, setCurrRoleCode] = useState("");
 
   const token = localStorage.getItem("tokenKey");
 
@@ -44,7 +44,7 @@ const EmployeeRole = () => {
         }
       );
       setUsers(response.data);
-      
+
     } catch (error) {
       console.error("Error fetching users:", error);
     }
@@ -63,12 +63,12 @@ const EmployeeRole = () => {
           },
         }
       );
-      console.log("user response",userResponse.data);
+      console.log("user response", userResponse.data);
 
       setCurrRoleCode(userResponse.data.role.roleCode);
 
     } catch (error) {
-      
+
     }
   };
   useEffect(() => {
@@ -87,13 +87,13 @@ const EmployeeRole = () => {
           },
         }
       );
-      console.log( "befor filter role",response.data);
-  
+      console.log("befor filter role", response.data);
+
       // Filter roles based on roleCode
       const filteredRoles = response.data.filter((role) => role.roleCode < currRoleCode);
       setRoles(filteredRoles);
       console.log("Filtered roles:", filteredRoles);
-      
+
     } catch (error) {
       console.error("Error fetching roles:", error);
     }
@@ -161,9 +161,33 @@ const EmployeeRole = () => {
     return date.toLocaleDateString("en-GB", options);
   };
 
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter((user) => {
+    // Safeguards for undefined values
+    const name = user.name?.toLowerCase() || "";
+    const email = user.email?.toLowerCase() || "";
+    const mobile = user.mobile?.toLowerCase() || "";
+    const branch = user.branch?.name?.toLowerCase() || "n/a";
+    const department = user.department?.name?.toLowerCase() || "n/a";
+    const createdBy = user.createdBy?.name?.toLowerCase() || "unknown";
+    const role = user.employeeType?.toLowerCase() || "no role";
+    const createdOnText = user.createdOn ? formatDate(user.createdOn).toLowerCase() : "";
+
+    // Normalize the search term
+    const lowerSearchTerm = searchTerm.toLowerCase();
+
+    // Return true if any column includes the search term
+    return (
+      name.includes(lowerSearchTerm) ||
+      email.includes(lowerSearchTerm) ||
+      mobile.includes(lowerSearchTerm) ||
+      branch.includes(lowerSearchTerm) ||
+      department.includes(lowerSearchTerm) ||
+      createdBy.includes(lowerSearchTerm) ||
+      role.includes(lowerSearchTerm) ||
+      createdOnText.includes(lowerSearchTerm)
+    );
+  });
+
   const totalItems = filteredUsers.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -172,11 +196,28 @@ const EmployeeRole = () => {
     currentPage * itemsPerPage
   );
 
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5; // Show 5 pages at a time
+    const pages = [];
+
+    // Calculate the start and end page numbers
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+
+    // Push pages to display in the pagination
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  };
+
+
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">Pending Users</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
-      <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
+        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
 
 
           <div className="flex items-center bg-blue-500 rounded-lg">
@@ -231,8 +272,8 @@ const EmployeeRole = () => {
               </tr>
             </thead>
             <tbody>
-              {users.length > 0 ? (
-                users.map((user, index) => (
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user, index) => (
                   <tr key={user.id}>
                     <td className="border p-2">{index + 1}</td>
                     <td className="border p-2">{user.name}</td>
@@ -278,40 +319,64 @@ const EmployeeRole = () => {
             </tbody>
           </table>
         </div>
+
         <div className="flex justify-between items-center mt-4">
           <div>
             <span className="text-sm text-gray-700">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-              {totalItems} entries
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
             </span>
           </div>
           <div className="flex items-center">
+            {/* Previous Button */}
             <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.max(prev - 1, 1))
-              }
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="bg-slate-200 px-3 py-1 rounded mr-3"
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
               Previous
             </button>
+
+            {/* Page Numbers */}
+            {getPageNumbers().map((page, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                    ? "bg-blue-500 text-white"
+                    : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            {/* Display Total Pages */}
             <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+              of {totalPages} pages
             </span>
+
+            {/* Next Button */}
             <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="bg-slate-200 px-3 py-1 rounded ml-3"
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               Next
               <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
             </button>
           </div>
         </div>
+
+
+
 
         {modalVisible && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -346,8 +411,8 @@ const EmployeeRole = () => {
                 <button
                   onClick={confirmRoleAssignment}
                   className={`${isSubmitting
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-500"
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-500"
                     } text-white p-2 rounded-lg`}
                   disabled={isSubmitting}
                 >

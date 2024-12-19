@@ -18,6 +18,7 @@ import {
     ROLE_API,
 } from "../../API/apiConfig";
 import { API_HOST } from "../../API/apiConfig";
+import Popup from '../../Components/Popup';
 
 const BranchEmployee = () => {
     const [employees, setEmployees] = useState([]);
@@ -39,8 +40,17 @@ const BranchEmployee = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [Message, setMessage] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    //const [isSubmitting, setIsSubmitting] = useState(false);
     const [userBranch, setUserBranch] = useState(null);
+
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupConfig, setPopupConfig] = useState({
+        message: '',
+        type: 'default'
+    });
+
 
     useEffect(() => {
         fetchUserBranch();
@@ -212,24 +222,38 @@ const BranchEmployee = () => {
                     });
 
                     setError("");
-                    setMessage("Employee added successfully!");
+                    // Show success message in a popup
+                    setShowPopup(true);
+                    setPopupConfig({
+                        message: "Employee added successfully!",
+                        type: "success",
+                    });
 
-                    setTimeout(() => setMessage(""), 3000);
+                    // Automatically hide the flash message after 3 seconds
+                    setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
                 }
             } catch (error) {
                 console.error("Error adding employee:", error);
-                setError(
-                    error.response?.data?.message ||
-                    "Email address is already Registered.please use different one."
+                const errorMessage = error.response?.data?.message || "Email address is already registered. Please use a different one.";
 
-                );
+                // Show error message in a popup
+                setShowPopup(true);
+                setPopupConfig({
+                    message: errorMessage,
+                    type: "error",
+                });
             } finally {
                 setIsSubmitting(false);
             }
         } else {
-            setError(
-                "Please fill out all fields and select a department."
-            );
+            const errorMessage = "Please fill out all fields and select a department.";
+            setError(errorMessage);
+            // Optionally, show error popup for validation issue
+            setShowPopup(true);
+            setPopupConfig({
+                message: errorMessage,
+                type: "error",
+            });
         }
     };
 
@@ -303,22 +327,40 @@ const BranchEmployee = () => {
                     });
 
                     setError("");
-                    setMessage("Employee updated successfully!");
-                    setTimeout(() => setMessage(""), 3000);
+
+                    // Show success message in a popup
+                    setShowPopup(true);
+                    setPopupConfig({
+                        message: "Employee updated successfully!",
+                        type: "success",
+                    });
+
+                    // Automatically hide the flash message after 3 seconds
+                    setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
 
                     setEditingIndex(null);
                 }
             } catch (error) {
                 console.error("Error updating employee:", error);
-                setError(
-                    error.response?.data?.message ||
-                    "Error updating employee. Please try again."
-                );
+                const errorMessage = error.response?.data?.message || "Error updating employee. Please try again.";
+
+                // Show error message in a popup
+                setShowPopup(true);
+                setPopupConfig({
+                    message: errorMessage,
+                    type: "error",
+                });
             }
         } else {
-            setError(
-                "Please fill out all fields and select a department."
-            );
+            const errorMessage = "Please fill out all fields and select a department.";
+            setError(errorMessage);
+
+            // Optionally, show error popup for validation issue
+            setShowPopup(true);
+            setPopupConfig({
+                message: errorMessage,
+                type: "error",
+            });
         }
     };
 
@@ -329,9 +371,10 @@ const BranchEmployee = () => {
 
     const confirmToggleActive = async () => {
         try {
-            const newStatus = employeeToToggle.active ? false : true;
+            const newStatus = !employeeToToggle.active; // Toggle between true and false
 
-            await axios.put(
+            // Send the PUT request to update the status
+            const response = await axios.put(
                 `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`,
                 newStatus,
                 {
@@ -342,24 +385,52 @@ const BranchEmployee = () => {
                 }
             );
 
-            const updatedEmployees = employees.map((employee) =>
-                employee.id === employeeToToggle.id
-                    ? { ...employee, active: newStatus }
-                    : employee
-            );
-            setEmployees(updatedEmployees);
+            if (response.data) {
+                // Update the local employee list after successful status update
+                const updatedEmployees = employees.map((employee) =>
+                    employee.id === employeeToToggle.id
+                        ? { ...employee, active: newStatus }
+                        : employee
+                );
+                setEmployees(updatedEmployees);
 
-            const message = newStatus
-                ? "Employee has been activated."
-                : "Employee has been deactivated.";
-            setMessage(message);
+                // Set flash message based on the new status
+                const message = newStatus
+                    ? "Employee has been activated."
+                    : "Employee has been deactivated.";
+                setShowPopup(true); // Show the popup for feedback
+                setPopupConfig({
+                    message: message,
+                    type: "success",
+                });
 
-            setTimeout(() => setMessage(""), 3000);
+                // Automatically hide the flash message after 3 seconds
+                setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
+            }
         } catch (error) {
             console.error("Error toggling employee status:", error);
+            // Set error message
+            const errorMessage = error.response?.data?.message || "Error toggling employee status. Please try again.";
+
+            // Show error message in a popup
+            setShowPopup(true); // Show the popup for error feedback
+            setPopupConfig({
+                message: errorMessage,
+                type: "error",
+            });
         } finally {
+            // Ensure modal is closed and state is cleared even if there was an error
             setModalVisible(false);
             setEmployeeToToggle(null);
+        }
+    };
+
+    const handleClosePopup = () => {
+        // Refresh the page when the popup is closed after a successful action
+        if (popupConfig.type === 'success') {
+            window.location.reload(); // Refresh the page
+        } else {
+            setShowPopup(false); // Just close the popup for other types
         }
     };
 
@@ -374,30 +445,38 @@ const BranchEmployee = () => {
     };
 
     const filteredEmployees = employees.filter((employee) => {
-        // Safeguard for undefined values
-        const name = employee.name || ""; // Fallback to empty string if undefined
-        const email = employee.email || ""; // Fallback to empty string if undefined
-        const mobile = employee.mobile || ""; // Fallback to empty string if undefined
-      
-        // Derive status text
-        const statusText = employee.active === true ? "active" : "inactive";
-      
-        // Safeguard for dates
-        const createdOnText = employee.createdOn ? formatDate(employee.createdOn) : "";
-        const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn) : "";
-      
-        // Ensure searchTerm is valid
+        // Safeguard for undefined values and normalize data
+        const name = employee.name?.toLowerCase() || "";
+        const email = employee.email?.toLowerCase() || "";
+        const mobile = employee.mobile?.toLowerCase() || "";
+        const branch = employee.branch?.name?.toLowerCase() || "n/a";
+        const department = employee.department?.name?.toLowerCase() || "n/a";
+        const role = employee.role?.role?.toLowerCase() || "no role";
+        const statusText = employee.active ? "active" : "inactive";
+        const createdOnText = employee.createdOn ? formatDate(employee.createdOn).toLowerCase() : "";
+        const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn).toLowerCase() : "";
+        const createdBy = employee.createdBy?.name?.toLowerCase() || "unknown";
+        const updatedBy = employee.updatedBy?.name?.toLowerCase() || "unknown";
+
+        // Normalize the search term
         const lowerSearchTerm = searchTerm?.toLowerCase() || "";
-      
+
+        // Return true if any column includes the search term
         return (
-          name.toLowerCase().includes(lowerSearchTerm) ||
-          email.toLowerCase().includes(lowerSearchTerm) ||
-          mobile.toLowerCase().includes(lowerSearchTerm) ||
-          statusText.includes(lowerSearchTerm) ||
-          createdOnText.includes(lowerSearchTerm) ||
-          updatedOnText.includes(lowerSearchTerm)
+            name.includes(lowerSearchTerm) ||
+            email.includes(lowerSearchTerm) ||
+            mobile.includes(lowerSearchTerm) ||
+            branch.includes(lowerSearchTerm) ||
+            department.includes(lowerSearchTerm) ||
+            role.includes(lowerSearchTerm) ||
+            statusText.includes(lowerSearchTerm) ||
+            createdOnText.includes(lowerSearchTerm) ||
+            updatedOnText.includes(lowerSearchTerm) ||
+            createdBy.includes(lowerSearchTerm) ||
+            updatedBy.includes(lowerSearchTerm)
         );
-      });
+    });
+
 
     const sortedEmployees = filteredEmployees.sort((a, b) => b.active - a.active);
 
@@ -408,36 +487,46 @@ const BranchEmployee = () => {
         currentPage * itemsPerPage
     );
 
+    const getPageNumbers = () => {
+        const maxPageNumbers = 5; // Number of pages to display at a time
+        const pages = [];
+        const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+        const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i); const getPageNumbers = () => {
+                const maxPageNumbers = 5; // Show 5 pages at a time
+                const pages = [];
+
+                // Calculate the start and end page numbers
+                const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+                const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+
+                // Push pages to display in the pagination
+                for (let i = startPage; i <= endPage; i++) {
+                    pages.push(i);
+                }
+
+                return pages;
+            };
+
+        }
+
+        return pages;
+    };
+
     const role = localStorage.getItem("role");
 
     return (
         <div className="p-1">
             <h1 className="text-xl mb-4 font-semibold">USERS</h1>
             <div className="bg-white p-3 rounded-lg shadow-sm">
-                {error && <p className="text-red-500">{error}</p>}
-                {Message && (
-                    <div
-                        className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
-                        role="alert"
-                    >
-                        <strong className="font-bold">Success! </strong>
-                        <span className="block sm:inline">{Message} </span>
-                        <button
-                            type="button"
-                            onClick={() => setMessage("")}
-                            className="absolute top-0 right-0 mt-2 mr-2 text-green-500 hover:text-green-700"
-                        >
-                            <svg
-                                className="fill-current h-6 w-6"
-                                role="img"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                aria-label="Close"
-                            >
-                                <path d="M12 10.293l5.293-5.293 1.414 1.414L13.414 12l5.293 5.293-1.414 1.414L12 13.414l-5.293 5.293-1.414-1.414L10.586 12 5.293 6.707 6.707 5.293z" />
-                            </svg>
-                        </button>
-                    </div>
+                {showPopup && (
+                    <Popup
+                        message={popupConfig.message}
+                        type={popupConfig.type}
+                        onClose={handleClosePopup}
+                    />
                 )}
 
                 {loading && <p className="text-blue-500">Loading...</p>}
@@ -481,6 +570,9 @@ const BranchEmployee = () => {
                                 minLength={10}
                                 value={formData.mobile || ""}
                                 onChange={handleInputChange}
+                                onInput={(e) => {
+                                    e.target.value = e.target.value.replace(/[^0-9]/g, ""); // Allow only numbers
+                                }}
                                 className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
@@ -596,7 +688,7 @@ const BranchEmployee = () => {
                             <tbody>
                                 {paginatedEmployees.map((employee, index) => (
                                     <tr key={employee.id}>
-                                        <td className="border p-2">{index + 1}</td>
+                                        <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
                                         <td className="border p-2">{employee.name}</td>
                                         <td className="border p-2">{employee.email}</td>
                                         <td className="border p-2">{employee.mobile}</td>
@@ -644,32 +736,58 @@ const BranchEmployee = () => {
                             <div>
                                 <span className="text-sm text-gray-700">
                                     Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                                    {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                                    {totalItems} entries
+                                    {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
                                 </span>
                             </div>
                             <div className="flex items-center">
+                                {/* Previous Button */}
                                 <button
                                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                                     disabled={currentPage === 1}
-                                    className="bg-slate-200 px-3 py-1 rounded mr-3"
+                                    className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                                            ? "bg-gray-300 cursor-not-allowed"
+                                            : "bg-slate-200 hover:bg-slate-300"
+                                        }`}
                                 >
                                     <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
                                     Previous
                                 </button>
+
+                                {/* Page Numbers */}
+                                {getPageNumbers().map((page, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                                                ? "bg-blue-500 text-white"
+                                                : "bg-slate-200 hover:bg-blue-100"
+                                            }`}
+                                    >
+                                        {page}
+                                    </button>
+                                ))}
+
+                                {/* Display Total Pages */}
                                 <span className="text-sm text-gray-700">
-                                    Page {currentPage} of {totalPages}
+                                    of {totalPages} pages
                                 </span>
+
+                                {/* Next Button */}
                                 <button
                                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                                     disabled={currentPage === totalPages}
-                                    className="bg-slate-200 px-3 py-1 rounded ml-3"
+                                    className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                                            ? "bg-gray-300 cursor-not-allowed"
+                                            : "bg-slate-200 hover:bg-slate-300"
+                                        }`}
                                 >
                                     Next
                                     <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
                                 </button>
                             </div>
                         </div>
+
+
                     </>
                 )}
             </div>
