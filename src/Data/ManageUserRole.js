@@ -38,9 +38,19 @@ const ManageUserRole = () => {
   const employeId = localStorage.getItem("userId");
   const loginEmpRole = localStorage.getItem("role");
 
-  const showPopup = (message, type = "info") => {
-    setPopupMessage({ message, type });
+
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+        window.location.reload();
+      }
+    });
   };
+
+
 
   useEffect(() => {
     fetchUsers();
@@ -90,6 +100,8 @@ const ManageUserRole = () => {
     }
   };
 
+  
+
   const fetchUsers = async () => {
     console.log("currBranchId:", currBranchId);
 
@@ -100,9 +112,9 @@ const ManageUserRole = () => {
       if (loginEmpRole === BRANCH_ADMIN && currBranchId) {
         // Fetch branch-specific users
         response = await axios.get(
-          `${API_HOST}/api/EmpRole/branch/${currBranchId}`,{
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          `${API_HOST}/api/EmpRole/branch/${currBranchId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       } else {
         // Fetch all employees
         response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
@@ -112,7 +124,7 @@ const ManageUserRole = () => {
 
       // Check the response status
       if (response?.status === 200) {
-        debugger;
+
         setUsers(response.data); // Store the users in the state
         console.log("Fetched users:", response.data);
       } else {
@@ -206,7 +218,7 @@ const ManageUserRole = () => {
 
         setSelectedRole("");
         setShowAvailableRoles(false);
-        showPopup("Role added successfully!");
+        showPopup("Role added successfully!", "success");
         fetchUsers();
       } else {
         showPopup("Failed to add the role. Please try again.");
@@ -238,56 +250,52 @@ const ManageUserRole = () => {
 
   const confirmToggleActiveStatus = async () => {
     if (!roleToToggle) {
-      showPopup("No role selected for status change.");
-      return;
+        showPopup("No role selected for status change.");
+        return;
     }
 
     try {
-      // Prepare the payload
-      const updatedRoleRequest = {
-        status: !roleToToggle.active, // Toggle status directly
-        roleId: roleToToggle.roleId, // Role ID
-        empId: empId, // Employee ID
-      };
+        const updatedRoleRequest = {
+            status: !roleToToggle.active, 
+            roleId: roleToToggle.roleId, 
+            empId: empId, 
+        };
 
-      // Make the PUT request
-      const response = await axios.put(
-        `${API_HOST}/api/EmpRole/changeRoleStatus`,
-        updatedRoleRequest,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // Handle success
-      if (response.status === 200) {
-        // Update roles state
-        const updatedRoles = roles.map((role) =>
-          role.id === roleToToggle.id
-            ? { ...role, active: updatedRoleRequest.status }
-            : role
+        const response = await axios.put(
+            `${API_HOST}/api/EmpRole/changeRoleStatus`,
+            updatedRoleRequest,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            }
         );
-        setRoles(updatedRoles); // Update state
-        setModalVisible(false); // Close modal
-        setRoleToToggle(null); // Reset the selected role
-        showPopup("Role status updated successfully.");
-        fetchUsers();
-      } else {
-        showPopup("Failed to update the role status. Please try again.");
-      }
+
+        if (response.status === 200) {
+            const updatedRoles = roles.map((role) =>
+                role.id === roleToToggle.id
+                    ? { ...role, active: updatedRoleRequest.status }
+                    : role
+            );
+            setRoles(updatedRoles); 
+            setModalVisible(false); 
+            setRoleToToggle(null); 
+            showPopup("Role status updated successfully!", "success"); // Change here
+            fetchUsers();
+        } else {
+            showPopup("Failed to update the role status. Please try again.");
+        }
     } catch (error) {
-      console.error(
-        "Error toggling role status:",
-        error.response ? error.response.data : error.message
-      );
-      showPopup(
-        error.response?.data?.message || "An error occurred. Please try again."
-      );
+        console.error(
+            "Error toggling role status:",
+            error.response ? error.response.data : error.message
+        );
+        showPopup(
+            error.response?.data?.message || "An error occurred. Please try again."
+        );
     }
-  };
+};
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -300,7 +308,10 @@ const ManageUserRole = () => {
   };
 
   const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    Object.values(user)
+      .some((value) =>
+        value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      )
   );
 
   const totalItems = filteredUsers.length;
@@ -311,14 +322,22 @@ const ManageUserRole = () => {
     currentPage * itemsPerPage
   );
 
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5;
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
+
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">Manage Employee Roles</h1>
+      {/* Popup Messages */}
       {popupMessage && (
         <Popup
           message={popupMessage.message}
           type={popupMessage.type}
-          onClose={() => setPopupMessage(null)}
+          onClose={popupMessage.onClose}
         />
       )}
       <div className="bg-white p-3 rounded-lg shadow-sm">
@@ -425,28 +444,46 @@ const ManageUserRole = () => {
           <div>
             <span className="text-sm text-gray-700">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
-              entries
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
             </span>
           </div>
           <div className="flex items-center">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="bg-slate-200 px-3 py-1 rounded mr-3"
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
               Previous
             </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <span className="text-sm text-gray-700 mx-2">
+              of {totalPages} pages
             </span>
+
             <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="bg-slate-200 px-3 py-1 rounded ml-3"
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               Next
               <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
@@ -494,9 +531,8 @@ const ManageUserRole = () => {
                   <span>{role.roleName || "Unnamed Role"}</span>
                   <button
                     onClick={() => handleToggleActiveStatus(role)}
-                    className={`p-1 rounded-full ${
-                      role.active === true ? "bg-green-500" : "bg-red-500"
-                    }`}
+                    className={`p-1 rounded-full ${role.active === true ? "bg-green-500" : "bg-red-500"
+                      }`}
                   >
                     {role.active === true ? (
                       <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
@@ -535,11 +571,10 @@ const ManageUserRole = () => {
                       </select>
                       <button
                         onClick={addSelectedRole}
-                        className={`${
-                          isLoading
+                        className={`${isLoading
                             ? "bg-gray-400 cursor-not-allowed"
                             : "bg-green-500"
-                        } text-white px-4 py-2 rounded`}
+                          } text-white px-4 py-2 rounded`}
                         disabled={isLoading} // Disable button when loading
                       >
                         {isLoading ? "Adding..." : "Add Role"}

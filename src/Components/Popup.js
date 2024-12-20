@@ -8,7 +8,6 @@ const Popup = ({
 }) => {
   const [isVisible, setIsVisible] = useState(true);
 
-  // Determine popup style based on type
   const getStyleByType = () => {
     switch (type) {
       case 'success':
@@ -44,7 +43,9 @@ const Popup = ({
 
   const handleClose = () => {
     setIsVisible(false);
-    onClose && onClose();
+    if (onClose) {
+      onClose(); // This will trigger the refresh functionality
+    }
   };
 
   if (!isVisible) return null;
@@ -56,23 +57,23 @@ const Popup = ({
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 p-6 text-center relative">
         <div className={`
           ${styles.iconColor}
-          w-16 h-16 
-          mx-auto 
-          mb-4 
-          rounded-full 
-          border-4 
-          flex 
-          items-center 
-          justify-center 
-          text-3xl 
+          w-16 h-16
+          mx-auto
+          mb-4
+          rounded-full
+          border-4
+          flex
+          items-center
+          justify-center
+          text-3xl
           font-bold
         `}>
           {styles.icon}
         </div>
         <h3 className={`
           ${styles.titleColor}
-          text-xl 
-          font-semibold 
+          text-xl
+          font-semibold
           mb-4
         `}>
           {message}
@@ -80,15 +81,15 @@ const Popup = ({
         <button
           className={`
             ${styles.buttonColor}
-            text-white 
-            font-bold 
-            py-2 
-            px-6 
-            rounded-md 
-            transition-colors 
-            duration-300 
-            focus:outline-none 
-            focus:ring-2 
+            text-white
+            font-bold
+            py-2
+            px-6
+            rounded-md
+            transition-colors
+            duration-300
+            focus:outline-none
+            focus:ring-2
             focus:ring-opacity-50
           `}
           onClick={handleClose}
@@ -97,7 +98,7 @@ const Popup = ({
         </button>
       </div>
     </div>,
-    document.body // Render in the <body> element
+    document.body
   );
 };
 

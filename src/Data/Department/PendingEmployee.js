@@ -4,10 +4,9 @@ import { API_HOST } from "../../API/apiConfig";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
-
   MagnifyingGlassIcon,
-
 } from "@heroicons/react/24/solid";
+import Popup from '../../Components/Popup';
 
 const EmployeeRole = () => {
   const [users, setUsers] = useState([]);
@@ -16,21 +15,17 @@ const EmployeeRole = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-
   const [currRoleCode, setCurrRoleCode] = useState("");
+  const [popupMessage, setPopupMessage] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
 
-
-
   useEffect(() => {
     fetchUsers();
+    fetchEmployees();
   }, []);
 
   const fetchUsers = async () => {
@@ -44,17 +39,14 @@ const EmployeeRole = () => {
         }
       );
       setUsers(response.data);
-
     } catch (error) {
-      console.error("Error fetching users:", error);
+      showPopup("Error fetching users. Please try again.", "error");
     }
   };
 
   const fetchEmployees = async () => {
     try {
       const userId = localStorage.getItem("userId");
-
-      // Fetch user details
       const userResponse = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
@@ -63,14 +55,12 @@ const EmployeeRole = () => {
           },
         }
       );
-      console.log("user response", userResponse.data);
-
       setCurrRoleCode(userResponse.data.role.roleCode);
-
     } catch (error) {
-
+      showPopup("Error fetching employee details.", "error");
     }
   };
+
   useEffect(() => {
     if (currRoleCode) {
       fetchRoles();
@@ -87,21 +77,12 @@ const EmployeeRole = () => {
           },
         }
       );
-      console.log("befor filter role", response.data);
-
-      // Filter roles based on roleCode
       const filteredRoles = response.data.filter((role) => role.roleCode < currRoleCode);
       setRoles(filteredRoles);
-      console.log("Filtered roles:", filteredRoles);
-
     } catch (error) {
-      console.error("Error fetching roles:", error);
+      showPopup("Error fetching roles. Please try again.", "error");
     }
   };
-
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
 
   const handleRoleChange = (userId, newRole) => {
     setSelectedUser(userId);
@@ -122,109 +103,92 @@ const EmployeeRole = () => {
           },
         }
       );
-      setSuccessMessage(response.data);
+      showPopup("Role assigned successfully!", "success");
       fetchUsers();
       setModalVisible(false);
       setSelectedUser(null);
       setSelectedRole("");
-      setTimeout(() => setSuccessMessage(""), 5000);
     } catch (error) {
-      if (error.response && error.response.data) {
-        const backendMessage = error.response.data;
-        if (backendMessage.includes("Employee with ID")) {
-          setErrorMessage("Employee Not Found");
-        } else if (backendMessage.includes("Role with ID")) {
-          setErrorMessage("Role Not Found");
-        } else if (backendMessage.includes("already an admin")) {
-          setErrorMessage("There is already an admin assigned to this department.");
+      let errorMessage = "An unexpected error occurred while updating the role.";
+      if (error.response?.data) {
+        if (error.response.data.includes("Employee with ID")) {
+          errorMessage = "Employee Not Found";
+        } else if (error.response.data.includes("Role with ID")) {
+          errorMessage = "Role Not Found";
+        } else if (error.response.data.includes("already an admin")) {
+          errorMessage = "There is already an admin assigned to this department.";
         } else {
-          setErrorMessage(`Error: ${backendMessage}`);
+          errorMessage = error.response.data;
         }
-      } else {
-        setErrorMessage(
-          "An unexpected error occurred while updating the role. Please try again."
-        );
       }
-      setTimeout(() => setErrorMessage(""), 5000);
+      showPopup(errorMessage, "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handlePopupClose = () => {
+    setPopupMessage(null);
+    window.location.reload(); // This will refresh the entire page
+  };
+
+  const showPopup = (message, type = 'info') => {
+    debugger;
+    setPopupMessage({ 
+      message, 
+      type,
+      onClose: handlePopupClose // Pass the close handler to the popup
+    });
+  };
+
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const options = {
+    return date.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-    };
-    return date.toLocaleDateString("en-GB", options);
+    });
   };
 
   const filteredUsers = users.filter((user) => {
-    // Safeguards for undefined values
-    const name = user.name?.toLowerCase() || "";
-    const email = user.email?.toLowerCase() || "";
-    const mobile = user.mobile?.toLowerCase() || "";
-    const branch = user.branch?.name?.toLowerCase() || "n/a";
-    const department = user.department?.name?.toLowerCase() || "n/a";
-    const createdBy = user.createdBy?.name?.toLowerCase() || "unknown";
-    const role = user.employeeType?.toLowerCase() || "no role";
-    const createdOnText = user.createdOn ? formatDate(user.createdOn).toLowerCase() : "";
+    const searchFields = {
+      name: user.name?.toLowerCase() || "",
+      email: user.email?.toLowerCase() || "",
+      mobile: user.mobile?.toLowerCase() || "",
+      branch: user.branch?.name?.toLowerCase() || "n/a",
+      department: user.department?.name?.toLowerCase() || "n/a",
+      createdBy: user.createdBy?.name?.toLowerCase() || "unknown",
+      role: user.employeeType?.toLowerCase() || "no role",
+      createdOn: user.createdOn ? formatDate(user.createdOn).toLowerCase() : ""
+    };
 
-    // Normalize the search term
     const lowerSearchTerm = searchTerm.toLowerCase();
-
-    // Return true if any column includes the search term
-    return (
-      name.includes(lowerSearchTerm) ||
-      email.includes(lowerSearchTerm) ||
-      mobile.includes(lowerSearchTerm) ||
-      branch.includes(lowerSearchTerm) ||
-      department.includes(lowerSearchTerm) ||
-      createdBy.includes(lowerSearchTerm) ||
-      role.includes(lowerSearchTerm) ||
-      createdOnText.includes(lowerSearchTerm)
-    );
+    return Object.values(searchFields).some(value => value.includes(lowerSearchTerm));
   });
 
   const totalItems = filteredUsers.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-
   const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
   const getPageNumbers = () => {
-    const maxPageNumbers = 5; // Show 5 pages at a time
-    const pages = [];
-
-    // Calculate the start and end page numbers
+    const maxPageNumbers = 5;
     const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
-
-    // Push pages to display in the pagination
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
-
 
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">Pending Users</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
+        {/* Header Controls */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-
-
           <div className="flex items-center bg-blue-500 rounded-lg">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
+            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
               Show:
             </label>
             <select
@@ -232,8 +196,8 @@ const EmployeeRole = () => {
               className="border rounded-r-lg p-1.5 outline-none"
               value={itemsPerPage}
               onChange={(e) => {
-                setItemsPerPage(Number(e.target.value)); // Update items per page
-                setCurrentPage(1); // Reset to the first page
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
               }}
             >
               {[5, 10, 15, 20].map((num) => (
@@ -255,6 +219,7 @@ const EmployeeRole = () => {
           </div>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border">
             <thead>
@@ -275,31 +240,22 @@ const EmployeeRole = () => {
               {paginatedUsers.length > 0 ? (
                 paginatedUsers.map((user, index) => (
                   <tr key={user.id}>
-                    <td className="border p-2">{index + 1}</td>
+                    <td className="border p-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="border p-2">{user.name}</td>
                     <td className="border p-2">{user.email}</td>
                     <td className="border p-2">{user.mobile}</td>
                     <td className="border p-2">{user.branch?.name || "N/A"}</td>
-                    <td className="border p-2">
-                      {user.department?.name || "N/A"}
-                    </td>
+                    <td className="border p-2">{user.department?.name || "N/A"}</td>
                     <td className="border p-2">{formatDate(user.createdOn)}</td>
-                    <td className="border p-2">
-                      {user.createdBy.name}
-                    </td>
-                    <td className="border p-2">
-                      {user.employeeType || "No Role"}
-                    </td>
+                    <td className="border p-2">{user.createdBy.name}</td>
+                    <td className="border p-2">{user.employeeType || "No Role"}</td>
                     <td className="border p-2">
                       <select
                         value={selectedUser === user.id ? selectedRole : ""}
-                        onChange={(e) =>
-                          handleRoleChange(user.id, e.target.value)
-                        }
+                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                        className="w-full p-1 border rounded"
                       >
-                        <option value="" disabled>
-                          Select Role
-                        </option>
+                        <option value="" disabled>Select Role</option>
                         {roles.map((role) => (
                           <option key={role.id} value={role.role}>
                             {role.role}
@@ -320,6 +276,7 @@ const EmployeeRole = () => {
           </table>
         </div>
 
+        {/* Pagination */}
         <div className="flex justify-between items-center mt-4">
           <div>
             <span className="text-sm text-gray-700">
@@ -328,7 +285,6 @@ const EmployeeRole = () => {
             </span>
           </div>
           <div className="flex items-center">
-            {/* Previous Button */}
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
@@ -341,10 +297,9 @@ const EmployeeRole = () => {
               Previous
             </button>
 
-            {/* Page Numbers */}
-            {getPageNumbers().map((page, index) => (
+            {getPageNumbers().map((page) => (
               <button
-                key={index}
+                key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`px-3 py-1 rounded mx-1 ${currentPage === page
                     ? "bg-blue-500 text-white"
@@ -355,12 +310,10 @@ const EmployeeRole = () => {
               </button>
             ))}
 
-            {/* Display Total Pages */}
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-gray-700 mx-2">
               of {totalPages} pages
             </span>
 
-            {/* Next Button */}
             <button
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
@@ -375,44 +328,26 @@ const EmployeeRole = () => {
           </div>
         </div>
 
-
-
-
+        {/* Confirmation Modal */}
         {modalVisible && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <h2 className="text-lg font-semibold mb-4">Confirm Role Assignment</h2>
-              {successMessage && (
-                <p className="text-green-600 mb-4">{successMessage}</p>
-              )}
-              {errorMessage && (
-                <p className="text-red-600 mb-4">{errorMessage}</p>
-              )}
               <p className="mb-4">
-                Are you sure you want to assign the role{" "}
-                <strong>{selectedRole}</strong> to{" "}
-                <strong>
-                  {users.find((user) => user.id === selectedUser)?.name}
-                </strong>
-                ?
+                Are you sure you want to assign the role <strong>{selectedRole}</strong> to{" "}
+                <strong>{users.find((user) => user.id === selectedUser)?.name}</strong>?
               </p>
               <div className="flex justify-end gap-4">
                 <button
-                  onClick={() => {
-                    setModalVisible(false);
-                    setErrorMessage("");
-                    setSuccessMessage("");
-                  }}
-                  className="bg-gray-300 p-2 rounded-lg"
+                  onClick={() => setModalVisible(false)}
+                  className="bg-gray-300 p-2 rounded-lg hover:bg-gray-400"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmRoleAssignment}
-                  className={`${isSubmitting
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-500"
+                  className={`${isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
                     } text-white p-2 rounded-lg`}
                   disabled={isSubmitting}
                 >
@@ -421,6 +356,14 @@ const EmployeeRole = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={handlePopupClose}
+          />
         )}
       </div>
     </div>
