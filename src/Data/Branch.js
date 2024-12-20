@@ -11,6 +11,7 @@ import {
   PlusCircleIcon
 } from '@heroicons/react/24/solid';
 import { BRANCH_API } from '../API/apiConfig';
+import Popup from '../Components/Popup';
 
 const tokenKey = 'tokenKey';
 
@@ -30,6 +31,7 @@ const Branch = () => {
   const [editingBranchId, setEditingBranchId] = useState(null); // Define the state for editing role ID
   const [message, setMessage] = useState(null); // For the success message
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+  const [popupMessage, setPopupMessage] = useState(null);
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -77,23 +79,21 @@ const Branch = () => {
         setFormData({ name: '', address: '', isActive: true });
 
         // Set success message
-        setMessage('Branch added successfully!');
-        setMessageType('success');
+        showPopup('Branch added successfully!', "success");
       } catch (error) {
         console.error('Error adding branch:', error.response ? error.response.data : error.message);
 
         // Set error message
-        setMessage('Failed to add the Branch. Please try again.');
-        setMessageType('error');
+        showPopup('Failed to add the Branch. Please try again.!', "error");
+
       }
     } else {
       // Set warning message
-      setMessage('Please fill in all required fields.');
-      setMessageType('warning');
+      showPopup('Please fill in all required fields.!', "warning");
+
     }
 
-    // Clear the message after 3 seconds
-    setTimeout(() => setMessage(null), 3000);
+
   };
 
 
@@ -124,14 +124,14 @@ const Branch = () => {
       try {
         // Find the branch in the original list by its ID
         const branchIndex = branches.findIndex(branch => branch.id === editingBranchId);
-  
+
         if (branchIndex === -1) {
           setMessage('Branch not found!');
           setMessageType('error');
           setTimeout(() => setMessage(null), 3000);
           return;
         }
-  
+
         // Create the updated branch object
         const updatedBranch = {
           ...branches[branchIndex],
@@ -140,40 +140,38 @@ const Branch = () => {
           isActive: formData.isActive ? 1 : 0,
           updatedOn: new Date().toISOString(),
         };
-  
+
         // Send the update request to the server
         const response = await axios.put(`${BRANCH_API}/update/${updatedBranch.id}`, updatedBranch, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
           },
         });
-  
+
         // Update the original branches list with the updated branch
         const updatedBranches = branches.map(branch =>
           branch.id === updatedBranch.id ? response.data : branch
         );
-  
+
         // Update the state with the modified branches array
         setBranches(updatedBranches);
         setFormData({ name: '', address: '', isActive: true }); // Reset form data
         setEditingBranchId(null); // Reset the editing state
-  
+
         // Show success message
-        setMessage('Branch updated successfully!');
-        setMessageType('success');
+        showPopup('Branch updated successfully!', "success");
       } catch (error) {
         console.error('Error updating branch:', error.response ? error.response.data : error.message);
-  
+
         // Show error message
-        setMessage('Failed to update the branch. Please try again.');
-        setMessageType('error');
+        showPopup('Failed to update the branch. Please try again.!', "error");
+
       }
-  
-      // Clear the message after 3 seconds
-      setTimeout(() => setMessage(null), 3000);
+
+
     }
   };
-  
+
 
 
   const handleToggleActiveStatus = (branch) => {
@@ -189,7 +187,7 @@ const Branch = () => {
           isActive: branchToToggle.isActive === 1 ? 0 : 1, // Toggle between 1 and 0
           updatedOn: new Date().toISOString(),
         };
-  
+
         const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
         const response = await axios.put(
           `${BRANCH_API}/updatestatus/${updatedBranch.id}`, // Update API endpoint
@@ -201,38 +199,45 @@ const Branch = () => {
             },
           }
         );
-  
+
         const updatedBranches = branches.map(branch =>
           branch.id === updatedBranch.id ? response.data : branch
         );
-  
+
         setBranches(updatedBranches);
         setModalVisible(false);
         setBranchToToggle(null);
-  
+
         // Show success message
-        setMessage('Status changed successfully!');
-        setMessageType('success');
+        showPopup('Status changed successfully!', "success");
+
       } catch (error) {
         console.error('Error toggling branch status:', error.response ? error.response.data : error.message);
-  
+
         // Show error message
-        setMessage('Failed to change the status. Please try again.');
-        setMessageType('error');
+        showPopup('Failed to change the status. Please try again!', "error");
+
       }
-  
+
       // Clear the message after 3 seconds
       setTimeout(() => setMessage(null), 3000);
     } else {
       console.error('No Branch selected for status toggle');
-      setMessage('No branch selected for status toggle.');
-      setMessageType('error');
-  
-      // Clear the message after 3 seconds
-      setTimeout(() => setMessage(null), 3000);
+      showPopup('No branch selected for status toggle.!', "error");
     }
   };
-  
+
+
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+        window.location.reload();
+      }
+    });
+  };
 
 
   const formatDate = (dateString) => {
@@ -268,23 +273,28 @@ const Branch = () => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedBranches = sortedBranches.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5;
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
+
+
   return (
     <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">Branches</h1>
-
-      {message && (
-          <div
-            className={`mt-4 p-3 rounded-md text-sm ${messageType === 'success'
-                ? 'bg-green-100 text-green-700'
-                : messageType === 'error'
-                  ? 'bg-red-100 text-red-700'
-                  : 'bg-yellow-100 text-yellow-700'
-              }`}
-          >
-            {message}
-          </div>
-          )}
       <div className="bg-white p-4 rounded-lg shadow-sm">
+
+        {/* Popup Messages */}
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={popupMessage.onClose}
+          />
+        )}
+
         {/* Form Section */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -401,31 +411,53 @@ const Branch = () => {
             </tbody>
           </table>
         </div>
-        
+
 
         {/* Pagination */}
         <div className="flex justify-between items-center mt-4">
           <div>
             <span className="text-sm text-gray-700">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
             </span>
           </div>
           <div className="flex items-center">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="bg-slate-200 px-3 py-1 rounded mr-3"
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
               Previous
             </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <span className="text-sm text-gray-700 mx-2">
+              of {totalPages} pages
             </span>
+
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="bg-slate-200 px-3 py-1 rounded ml-3"
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               Next
               <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />

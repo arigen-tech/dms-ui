@@ -2,6 +2,7 @@ import { CATEGORI_API } from '../API/apiConfig';
 import { ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, PencilIcon, PlusCircleIcon, LockClosedIcon, LockOpenIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Popup from '../Components/Popup';
 
 const tokenKey = 'tokenKey'; // Correct token key name
 
@@ -17,6 +18,7 @@ const Category = () => {
   const [categoryToToggle, setCategoryToToggle] = useState(null);
   const [message, setMessage] = useState(null); // For the success message
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+  const [popupMessage, setPopupMessage] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -64,23 +66,22 @@ const Category = () => {
         setFormData({ name: '' }); // Reset form data
 
         // Set success message
-        setMessage('Category added successfully!');
-        setMessageType('success');
+        showPopup('Category added successfully!',"success");
+        
       } catch (error) {
         console.error('Error adding category:', error.response ? error.response.data : error.message);
 
         // Set error message if request fails
-        setMessage('Failed to add the category. Please try again.');
-        setMessageType('error');
+        setMessage('Failed to add the category. Please try again.!',"error");
+        
       }
     } else {
       // Set warning message if name is not provided
-      setMessage('Please enter a category name.');
-      setMessageType('warning');
+      setMessage('Please enter a category name.!',"warning");
+      
     }
 
-    // Clear the message after 3 seconds
-    setTimeout(() => setMessage(null), 3000);
+    
   };
 
 
@@ -99,16 +100,15 @@ const Category = () => {
       });
   
       // Set success message
-      setMessage('Category loaded successfully for editing!');
-      setMessageType('success');
+      // showPopup('Category loaded successfully for editing!',"success");
+      
     } else {
       // Set error message if category not found
-      setMessage('Category not found. Please try again.');
-      setMessageType('error');
+      // showPopup('Category not found. Please try again.!',"error");
+     
     }
   
-    // Clear the message after 3 seconds
-    setTimeout(() => setMessage(null), 3000);
+    
   };
   
   
@@ -120,8 +120,8 @@ const Category = () => {
   
         if (categoryIndex === -1) {
           // Set error message if category is not found
-          setMessage('Category not found! Please try again.');
-          setMessageType('error');
+          showPopup('Category not found! Please try again.!',"error");
+          
           return;
         }
   
@@ -151,17 +151,16 @@ const Category = () => {
         setEditingCategoryId(null); // Reset the editing state
   
         // Set success message
-        setMessage('Category updated successfully!');
-        setMessageType('success');
+        showPopup('Category updated successfully!',"success");
+        
       } catch (error) {
         console.error('Error updating category:', error.response ? error.response.data : error.message);
         // Set error message if update fails
-        setMessage('Failed to update the category. Please try again.');
-        setMessageType('error');
+        showPopup('Failed to update the category. Please try again.!', "error");
+        
       }
   
-      // Clear the message after 3 seconds
-      setTimeout(() => setMessage(null), 3000);
+     
     }
   };
   
@@ -203,19 +202,19 @@ const Category = () => {
           setCategoryToToggle(null);
   
           // Set success message
-          setMessage('Category status changed successfully!');
-          setMessageType('success');
+          showPopup('Category status changed successfully!',"success");
+          
         } else {
           // Set error message for unexpected response
-          setMessage('Failed to change the category status. Please try again.');
-          setMessageType('error');
+          showPopup('Failed to change the category status. Please try again.',"error");
+          
         }
       } catch (error) {
         console.error('Error toggling Category status:', error.response ? error.response.data : error.message);
   
         // Set error message for failed API request
-        setMessage('Failed to change the category status. Please try again.');
-        setMessageType('error');
+        showPopup('Failed to change the category status. Please try again.',"error");
+        
       }
   
       // Clear the message after 3 seconds
@@ -224,16 +223,22 @@ const Category = () => {
       console.error('No Category selected for status toggle');
   
       // Set error message if no category is selected
-      setMessage('No category selected for status toggle.');
-      setMessageType('error');
-  
-      // Clear the message after 3 seconds
-      setTimeout(() => setMessage(null), 3000);
+      showPopup('No category selected for status toggle.!',"error");
+      
     }
   };
   
   
-  
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({
+        message,
+        type,
+        onClose: () => {
+            setPopupMessage(null);
+            window.location.reload();
+        }
+    });
+};
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -274,22 +279,28 @@ const Category = () => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedCategories = sortedCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5;
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
+
+
+
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">CATEGORIES</h1>
-      {message && (
-        <div
-          className={`mt-4 p-3 rounded-md text-sm ${messageType === 'success'
-            ? 'bg-green-100 text-green-700'
-            : messageType === 'error'
-              ? 'bg-red-100 text-red-700'
-              : 'bg-yellow-100 text-yellow-700'
-            }`}
-        >
-          {message}
-        </div>
-      )}
       <div className="bg-white p-3 rounded-lg shadow-sm">
+        {/* Popup Messages */}
+       {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={popupMessage.onClose}
+          />
+        )}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4">
             <div className="flex flex-col">
@@ -403,31 +414,54 @@ const Category = () => {
         <div className="flex justify-between items-center mt-4">
           <div>
             <span className="text-sm text-gray-700">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
             </span>
           </div>
           <div className="flex items-center">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="bg-slate-200 px-3 py-1 rounded mr-3"
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
               Previous
             </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <span className="text-sm text-gray-700 mx-2">
+              of {totalPages} pages
             </span>
+
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="bg-slate-200 px-3 py-1 rounded ml-3"
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               Next
               <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
             </button>
           </div>
         </div>
+        
       </div>
 
       {modalVisible && (

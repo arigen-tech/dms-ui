@@ -182,6 +182,15 @@ const Year = () => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedYears = sortedYears.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5;
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
+
+
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">YEARS</h1>
@@ -294,25 +303,47 @@ const Year = () => {
         <div className="flex justify-between items-center mt-4">
           <div>
             <span className="text-sm text-gray-700">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
             </span>
           </div>
           <div className="flex items-center">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="bg-slate-200 px-3 py-1 rounded mr-3"
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
               Previous
             </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <span className="text-sm text-gray-700 mx-2">
+              of {totalPages} pages
             </span>
+
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="bg-slate-200 px-3 py-1 rounded ml-3"
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               Next
               <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />

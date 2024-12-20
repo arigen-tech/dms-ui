@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { DEPAETMENT_API, EMPLOYEE_API } from '../../API/apiConfig';
 import { API_HOST } from "../../API/apiConfig";
+import Popup from '../../Components/Popup';
 
 const BranchDepartments = () => {
     const [departments, setDepartments] = useState([]);
@@ -30,6 +31,8 @@ const BranchDepartments = () => {
     const [success, setSuccess] = useState('');
     const [userBranch, setUserBranch] = useState(null);
     const [toggleDepartment, setToggleDepartment] = useState(null);
+    const [popupMessage, setPopupMessage] = useState(null);
+
 
     // Retrieve token from localStorage
     const token = localStorage.getItem('tokenKey');
@@ -116,13 +119,13 @@ const BranchDepartments = () => {
                 });
                 setDepartments([...departments, response.data]);
                 setFormData({ name: '', isActive: true });
-                setSuccess('Department added successfully!');
+                setSuccess('Department added successfully!', "success");
             } catch (error) {
                 console.error('Error adding department:', error);
-                setError('Failed to add the Department. Please try again.');
+                showPopup('Failed to add the Department. Please try again.', "error");
             }
         } else {
-            setError('Please enter a department name.');
+            showPopup('Please enter a department name.', "warning");
         }
     };
 
@@ -160,13 +163,13 @@ const BranchDepartments = () => {
                 setDepartments(updatedDepartments);
                 setFormData({ name: '', isActive: true });
                 setEditingIndex(null);
-                setSuccess('Department updated successfully!');
+                showPopup('Department updated successfully!', "success");
             } catch (error) {
                 console.error('Error updating department:', error);
-                setError('Failed to update the Department. Please try again.');
+                showPopup('Failed to update the Department. Please try again.', "error");
             }
         } else {
-            setError('Please enter a department name.');
+            showPopup('Please enter a department name.');
         }
     };
 
@@ -199,14 +202,25 @@ const BranchDepartments = () => {
                 setDepartments(updatedDepartments);
                 setModalVisible(false);
                 setToggleDepartment(null);
-                alert('Status changed successfully!');
+                showPopup('Status changed successfully!', "success");
             } catch (error) {
                 console.error('Error toggling department status:', error.response ? error.response.data : error.message);
-                alert('Failed to change the status. Please try again.');
+                showPopup('Failed to change the status. Please try again.', "error");
             }
         } else {
             console.error('No department selected for status toggle');
         }
+    };
+
+    const showPopup = (message, type = 'info') => {
+        setPopupMessage({
+            message,
+            type,
+            onClose: () => {
+                setPopupMessage(null);
+                window.location.reload();
+            }
+        });
     };
 
 
@@ -241,15 +255,28 @@ const BranchDepartments = () => {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const paginatedDepartments = sortedDepartments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+    const getPageNumbers = () => {
+        const maxPageNumbers = 5;
+        const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+        const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+        return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    };
+
+
     return (
         <div className="p-4">
             <h1 className="text-xl mb-4 font-semibold">DEPARTMENTS</h1>
             <div className="bg-white p-4 rounded-lg shadow-sm">
-                {error && <p className="text-red-500 mb-4">{error}</p>}
-                {success && <p className="text-green-500 mb-4">{success}</p>}
-                {loading && <p className="text-blue-500 mb-4">Loading...</p>}
 
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
+                    {/* Popup Messages */}
+                    {popupMessage && (
+                        <Popup
+                            message={popupMessage.message}
+                            type={popupMessage.type}
+                            onClose={popupMessage.onClose}
+                        />
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                         {/* Department Name Input */}
                         <label className="block text-md font-medium text-gray-700">
@@ -363,25 +390,47 @@ const BranchDepartments = () => {
                 <div className="flex justify-between items-center mt-4">
                     <div>
                         <span className="text-sm text-gray-700">
-                            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+                            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
                         </span>
                     </div>
                     <div className="flex items-center">
                         <button
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
-                            className="bg-slate-200 px-3 py-1 rounded mr-3"
+                            className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                                ? "bg-gray-300 cursor-not-allowed"
+                                : "bg-slate-200 hover:bg-slate-300"
+                                }`}
                         >
                             <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
                             Previous
                         </button>
-                        <span className="text-sm text-gray-700">
-                            Page {currentPage} of {totalPages}
+
+                        {getPageNumbers().map((page) => (
+                            <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                                    ? "bg-blue-500 text-white"
+                                    : "bg-slate-200 hover:bg-blue-100"
+                                    }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+
+                        <span className="text-sm text-gray-700 mx-2">
+                            of {totalPages} pages
                         </span>
+
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
-                            className="bg-slate-200 px-3 py-1 rounded ml-3"
+                            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                                ? "bg-gray-300 cursor-not-allowed"
+                                : "bg-slate-200 hover:bg-slate-300"
+                                }`}
                         >
                             Next
                             <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
