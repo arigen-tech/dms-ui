@@ -318,6 +318,14 @@ const Search = () => {
     return Math.ceil(searchResults.length / itemsPerPage);
   };
 
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5;
+    const totalPages = calculateTotalPages();
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
+
   userRole = localStorage.getItem('role');
   const renderSearchFields = () => {
     return (
@@ -647,6 +655,7 @@ const Search = () => {
               <table className="min-w-full table-auto bg-white shadow-md rounded-lg">
                 <thead>
                   <tr className="bg-slate-100">
+                    <th className="border p-2 text-left">SR.</th>
                     <th className="border p-2 text-left">File No</th>
                     <th className="border p-2 text-left">Title</th>
                     <th className="border p-2 text-left">Subject</th>
@@ -661,8 +670,11 @@ const Search = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {getPaginatedResults().map((document) => (
+                  {getPaginatedResults().map((document,index) => (
                     <tr key={document.id}>
+                      <td className="border p-2">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </td>
                       <td className="border p-2">{document.fileNo}</td>
                       <td className="border p-2">{document.title}</td>
                       <td className="border p-2">{document.subject}</td>
@@ -699,25 +711,54 @@ const Search = () => {
           )
         )}
 
-        {/* Pagination Controls */}
+        {/* Updated Pagination Controls */}
         <div className="flex justify-between items-center mt-4">
-          <div className="text-sm text-gray-700">
-            Page <span className="font-bold">{currentPage}</span> of <span className="font-bold">{calculateTotalPages()}</span>
+          <div>
+            <span className="text-sm text-gray-700">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, searchResults.length)} of {searchResults.length} entries
+            </span>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex items-center">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="bg-blue-900 text-white rounded-md py-2 px-4 hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
-              <ArrowLeftIcon className="h-5 w-5" />
+              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+              Previous
             </button>
+
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                    ? "bg-blue-500 text-white"
+                    : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <span className="text-sm text-gray-700 mx-2">
+              of {calculateTotalPages()} pages
+            </span>
+
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, calculateTotalPages()))}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, calculateTotalPages()))}
               disabled={currentPage === calculateTotalPages()}
-              className="bg-blue-900 text-white rounded-md py-2 px-4 hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`px-3 py-1 rounded ml-3 ${currentPage === calculateTotalPages()
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
-              <ArrowRightIcon className="h-5 w-5" />
+              Next
+              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
             </button>
           </div>
         </div>
