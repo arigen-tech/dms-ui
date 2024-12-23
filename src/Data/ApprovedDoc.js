@@ -6,6 +6,8 @@ import {
   CheckCircleIcon,
   MagnifyingGlassIcon,
   EyeIcon,
+  ArrowRightIcon,
+  ArrowLeftIcon,
   XMarkIcon,
   PrinterIcon,
 } from "@heroicons/react/24/solid";
@@ -189,24 +191,66 @@ const ApprovedDoc = () => {
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
-  const paginatedDocuments = documents.slice(
+  const filteredDocuments = documents.filter((doc) =>
+    Object.entries(doc).some(([key, value]) => {
+      if (key === "categoryMaster" && value?.name) {
+        return value.name.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      if (key === "employeeBy" && value) {
+        return value.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      if (key === "employee" && value) {
+        return (
+          value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          value.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      if (key === "paths" && Array.isArray(value)) {
+        return value.some((file) =>
+          file.docName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      if (key === "updatedOn" || key === "createdOn") {
+        const date = formatDate(value).toLowerCase();
+        return date.includes(searchTerm.toLowerCase());
+      }
+      if (key === "approvalStatus" && value) {
+        return value.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      if (typeof value === "string") {
+        return value.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      return false;
+    })
+  );
+
+
+  const totalItems = filteredDocuments.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedDocuments = filteredDocuments.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  const totalPages = Math.ceil(documents.length / itemsPerPage);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5;
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  // const handleNextPage = () => {
+  //   if (currentPage < totalPages) {
+  //     setCurrentPage(currentPage + 1);
+  //   }
+  // };
+
+  // const handlePreviousPage = () => {
+  //   if (currentPage > 1) {
+  //     setCurrentPage(currentPage - 1);
+  //   }
+  //};
   const openModal = (doc) => {
     setSelectedDoc(doc); // Set the selected document without paths first
     fetchPaths(doc); // Fetch paths and update the selected document with paths
@@ -287,32 +331,45 @@ const ApprovedDoc = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedDocuments.map((doc, index) => (
-                <tr key={doc.id}>
-                  <td className="border p-2">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </td>
-                  <td className="border p-2">{doc.fileNo}</td>
-                  <td className="border p-2">{doc.title}</td>
-                  <td className="border p-2">{doc.subject}</td>
-                  <td className="border p-2">{doc.version}</td>
-                  <td className="border p-2">
-                    {doc.categoryMaster ? doc.categoryMaster.name : "No Category"}
-                  </td>
-                  <td className="border p-2">{doc.approvalStatus}</td>
-                  <td className="border p-2">{doc.employeeBy.name}</td>
-                  <td className="border px-4 py-2">{formatDate(doc.updatedOn)}</td>
-                  {["ADMIN", "BRANCH ADMIN", "DEPARTMENT ADMIN"].includes(role) && (
+              {paginatedDocuments.length > 0 ? (
+                paginatedDocuments.map((doc, index) => (
+                  <tr key={doc.id}>
                     <td className="border p-2">
-                      <button onClick={() => openModal(doc)}>
-                        <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
-                      </button>
+                      {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                  )}
-
+                    <td className="border p-2">{doc.fileNo || "N/A"}</td>
+                    <td className="border p-2">{doc.title || "N/A"}</td>
+                    <td className="border p-2">{doc.subject || "N/A"}</td>
+                    <td className="border p-2">{doc.version || "N/A"}</td>
+                    <td className="border p-2">
+                      {doc.categoryMaster?.name || "No Category"}
+                    </td>
+                    <td className="border p-2">{doc.approvalStatus || "Pending"}</td>
+                    <td className="border p-2">{doc.employeeBy?.name || "No Employee"}</td>
+                    <td className="border px-4 py-2">
+                      {doc.updatedOn ? formatDate(doc.updatedOn) : "N/A"}
+                    </td>
+                    {["ADMIN", "BRANCH ADMIN", "DEPARTMENT ADMIN"].includes(role) && (
+                      <td className="border p-2">
+                        <button
+                          onClick={() => openModal(doc)}
+                          title={`View details for ${doc.title || "this document"}`}
+                        >
+                          <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="13" className="border p-4 text-center text-gray-500">
+                    No data found.
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
+
           </table>
           <>
             {isOpen && selectedDoc && (
@@ -411,21 +468,55 @@ const ApprovedDoc = () => {
               </div>
             )}
           </>
-          <div className="flex justify-between mt-4">
-            <button
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-gray-300 rounded"
-            >
-              Previous
-            </button>
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-gray-300 rounded"
-            >
-              Next
-            </button>
+          <div className="flex justify-between items-center mt-4">
+            <div>
+              <span className="text-sm text-gray-700">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              </span>
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+                  }`}
+              >
+                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+                Previous
+              </button>
+
+              {getPageNumbers().map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                    ? "bg-blue-500 text-white"
+                    : "bg-slate-200 hover:bg-blue-100"
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <span className="text-sm text-gray-700 mx-2">
+                of {totalPages} pages
+              </span>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+                  }`}
+              >
+                Next
+                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

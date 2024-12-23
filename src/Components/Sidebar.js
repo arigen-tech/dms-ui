@@ -302,7 +302,7 @@ function Sidebar() {
                     <SidebarLink
                       to="/approve-documents"
                       icon={IoDocumentLock}
-                      text="Wait For Approve"
+                      text="Pending Approvals"
                       count={counts.totalPendingDocuments}
                     />
                     <SidebarLink

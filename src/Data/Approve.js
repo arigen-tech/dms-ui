@@ -43,8 +43,8 @@ const Approve = () => {
   }, []);
 
   useEffect(() => {
-    
-      fetchDocuments();
+
+    fetchDocuments();
 
   }, []);
 
@@ -75,13 +75,13 @@ const Approve = () => {
     try {
       const token = localStorage.getItem("tokenKey");
       const userId = localStorage.getItem("userId");
-  
+
       if (!token || !userId) {
         setError("Authentication details missing. Please log in again.");
         setLoading(false); // Stop loading if authentication fails
         return;
       }
-  
+
       // Fetch user details to get department and branch IDs
       const userResponse = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
@@ -89,10 +89,10 @@ const Approve = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       const departmentId = userResponse.data?.department?.id;
       const branchId = userResponse.data?.branch?.id;
-  
+
       // Construct the URL based on the availability of departmentId and branchId
       let url;
       if (!branchId && !departmentId) {
@@ -102,12 +102,12 @@ const Approve = () => {
       } else {
         url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`; // If only branchId exists
       }
-  
+
       // Fetch documents
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       setDocuments(response.data); // Update state with the fetched documents
     } catch (error) {
       if (error?.response?.status === 401) {
@@ -120,7 +120,7 @@ const Approve = () => {
       setLoading(false); // Ensure loading is stopped regardless of success or failure
     }
   };
-  
+
 
   const fetchPaths = async (doc) => {
     try {
@@ -154,30 +154,30 @@ const Approve = () => {
     const month = String(createdOnDate.getMonth() + 1).padStart(2, "0"); // Extract month and pad with zero
     const category = file.documentHeader.categoryMaster.name; // Assuming categoryMaster has categoryName field
     const fileName = file.docName; // The file name
-  
+
     // Construct the URL based on the Spring Boot @GetMapping pattern
     const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${encodeURIComponent(category)}/${encodeURIComponent(fileName)}`;
-  
+
     console.log('File URL:', fileUrl);
-  
+
     try {
       // Fetch the file using axios and pass the token in the headers
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob", // Important to get the response as a blob (binary large object)
       });
-  
+
       // Create a blob from the response and specify it as a PDF or any other type
       const blob = new Blob([response.data], { type: response.headers['content-type'] });
       const blobUrl = window.URL.createObjectURL(blob);
-  
+
       // Open the blob in a new tab
       window.open(blobUrl, "_blank");
     } catch (error) {
       console.error("Error fetching file:", error);
     }
   };
-  
+
 
   const handleStatusChange = (doc, status) => {
     if (status === "REJECTED") {
@@ -277,12 +277,25 @@ const Approve = () => {
   };
 
   const filteredDocuments = documents.filter((doc) =>
-    Object.values(doc).some(
-      (value) =>
+    Object.entries(doc).some(([key, value]) => {
+      if (key === "categoryMaster" && value?.name) {
+        return value.name.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      if (key === "employee" && value) {
+        return (
+          value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          value.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      return (
         value &&
         value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
+      );
+    })
   );
+
+
   const totalItems = filteredDocuments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
@@ -290,9 +303,16 @@ const Approve = () => {
     currentPage * itemsPerPage
   );
 
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5;
+    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
+
   return (
     <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">Document Approval</h1>
+      <h1 className="text-xl mb-4 font-semibold">Pending Approval</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
           <div className="flex items-center bg-blue-500 rounded-lg">
@@ -346,55 +366,62 @@ const Approve = () => {
                 <th className="border p-2 text-left">View</th>
               </tr>
             </thead>
+
             <tbody>
-              {paginatedDocuments.map((doc, index) => (
-                <tr key={doc.id} className="even:bg-gray-50">
-                  <td className="border p-2">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </td>
-                  <td className="border p-2">{doc.title}</td>
-                  <td className="border p-2">{doc.fileNo}</td>
-                  <td className="border p-2">{doc.subject}</td>
-                  <td className="border p-2">{doc.version}</td>
-                  <td className="border p-2">
-                    {new Date(doc.createdOn).toLocaleDateString()}
-                  </td>
-                  <td className="border p-2">
-                    {doc.categoryMaster ? doc.categoryMaster.name : ""}
-                  </td>
-                  <td className="border p-2">
-                    {doc.employee ? doc.employee.name : "N/A"}
-                  </td>
-                  <td className="border p-2">
-                    {doc.employee && doc.employee.department
-                      ? doc.employee.department.name
-                      : "No Department"}
-                  </td>
-                  <td className="border p-2">
-                    {doc.employee && doc.employee.branch
-                      ? doc.employee.branch.name
-                      : "No Branch"}
-                  </td>
-                  <td className="border p-2">{doc.approvalStatus}</td>
-                  <td className="border p-2">
-                    <select
-                      className="border p-1"
-                      onChange={(e) => handleStatusChange(doc, e.target.value)}
-                    >
-                      <option value="">Select Status</option>
-                      <option value="APPROVED">APPROVED</option>
-                      <option value="REJECTED">REJECTED</option>
-                    </select>
-                  </td>
-                  <td className="border p-2">
-                    <td className="">
+              {paginatedDocuments.length > 0 ? (
+                paginatedDocuments.map((doc, index) => (
+                  <tr key={doc.id} className="even:bg-gray-50">
+                    <td className="border p-2">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+                    <td className="border p-2">{doc.title}</td>
+                    <td className="border p-2">{doc.fileNo}</td>
+                    <td className="border p-2">{doc.subject}</td>
+                    <td className="border p-2">{doc.version}</td>
+                    <td className="border p-2">
+                      {new Date(doc.createdOn).toLocaleDateString()}
+                    </td>
+                    <td className="border p-2">
+                      {doc.categoryMaster ? doc.categoryMaster.name : ""}
+                    </td>
+                    <td className="border p-2">
+                      {doc.employee ? doc.employee.name : "N/A"}
+                    </td>
+                    <td className="border p-2">
+                      {doc.employee && doc.employee.department
+                        ? doc.employee.department.name
+                        : "No Department"}
+                    </td>
+                    <td className="border p-2">
+                      {doc.employee && doc.employee.branch
+                        ? doc.employee.branch.name
+                        : "No Branch"}
+                    </td>
+                    <td className="border p-2">{doc.approvalStatus}</td>
+                    <td className="border p-2">
+                      <select
+                        className="border p-1"
+                        onChange={(e) => handleStatusChange(doc, e.target.value)}
+                      >
+                        <option value="">Select Status</option>
+                        <option value="APPROVED">APPROVED</option>
+                        <option value="REJECTED">REJECTED</option>
+                      </select>
+                    </td>
+                    <td className="border p-2">
                       <button onClick={() => openModal(doc)}>
                         <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
                       </button>
                     </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="13" className="border p-4 text-center text-gray-500">
+                    No data found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
 
@@ -483,7 +510,7 @@ const Approve = () => {
                     </h1>
 
                     {Array.isArray(selectedDoc.paths) &&
-                    selectedDoc.paths.length > 0 ? (
+                      selectedDoc.paths.length > 0 ? (
                       <ul className="list-disc list-inside">
                         {selectedDoc.paths.map((file, index) => (
                           <li key={index} className="mb-2">
@@ -513,28 +540,46 @@ const Approve = () => {
           <div>
             <span className="text-sm text-gray-700">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
-              entries
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
             </span>
           </div>
           <div className="flex items-center">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="bg-slate-200 px-3 py-1 rounded mr-3"
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
               Previous
             </button>
-            <span className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <span className="text-sm text-gray-700 mx-2">
+              of {totalPages} pages
             </span>
+
             <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="bg-slate-200 px-3 py-1 rounded ml-3"
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
+                }`}
             >
               Next
               <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
