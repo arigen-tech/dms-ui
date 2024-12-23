@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "../API/apiClient";
 import { useLocation } from "react-router-dom";
 import Search from "./Search"; // Import the Search component
 import Popup from "../Components/Popup";
@@ -71,8 +71,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     fetchDocuments();
     fetchPaths();
     fetchUser();
-  }, []); // Add an empty dependency array to avoid infinite re-renders
-
+  }, []); 
+  
   const handleCategoryChange = (e) => {
     const selectedCategory = categoryOptions.find(
       (category) => category.id === parseInt(e.target.value)
@@ -104,7 +104,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   // Fetch categories
   const fetchCategory = async () => {
     try {
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_HOST}/CategoryMaster/findActiveCategory`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -118,7 +118,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchYear = async () => {
     try {
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_HOST}/YearMaster/findActiveYear`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -134,7 +134,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     try {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -149,7 +149,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchDocuments = async () => {
     try {
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${DOCUMENTHEADER_API}/pending/employee/${UserId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -204,7 +204,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   //     console.log(`Attempting to fetch paths for document ID: ${documentId}`);
   //     console.log(`Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`);
 
-  //     const response = await axios.get(
+  //     const response = await apiClient.get(
   //       `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
   //       {
   //         headers: {
@@ -227,7 +227,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   //     console.error("Error in fetchPaths:", error);
 
   //     // More comprehensive error handling
-  //     if (axios.isAxiosError(error)) {
+  //     if (apiClient.isapiClientError(error)) {
   //       if (error.response) {
   //         console.error("Server responded with error:", {
   //           status: error.response.status,
@@ -264,7 +264,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     const fileUrl = `${API_HOST}/api/documents/download/${branch}/${department}/${year}/${category}/${version}/${fileName}`;
 
     try {
-      const response = await axios.get(fileUrl, {
+      const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
@@ -482,7 +482,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         return null;
       }
 
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
         {
           headers: {
@@ -794,9 +794,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">DOCUMENT MANAGEMENT</h1>
-      {/* Add the Search component
-       <Search onSearchResults={handleSearchResults} /> */}
-
       <div className="bg-white p-3 rounded-lg shadow-sm">
         {popupMessage && (
           <Popup

@@ -59,3 +59,43 @@
     transform: rotate(360deg);
   }
 }
+
+@keyframes scan-line {
+  0% {
+    top: -2px;
+  }
+  50% {
+    top: 50%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.animate-scan-line {
+  animation: scan-line 1.5s linear infinite;
+  background: rgba(0, 0, 255, 0.4);
+  height: 2px; /* Scan line thickness */
+}
+
+#uploaded-image {
+  display: block; /* Ensure the image is displayed when uploaded */
+}
+
+.hidden {
+  display: none;
+}
+
+
+@keyframes scan-line {
+  0% {
+    top: 0;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.animate-scan-line {
+  animation: scan-line 2s linear infinite;
+}

@@ -6,7 +6,7 @@ import {
   PencilSquareIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/solid";
-import axios from "axios";
+import apiClient from "../API/apiClient";
 import { useNavigate } from "react-router-dom";
 import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
@@ -53,7 +53,7 @@ const ChangePasswordPage = () => {
   const fetchEmployeeData = async () => {
     const userId = localStorage.getItem("userId");
     try {
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
           headers: {
@@ -80,7 +80,7 @@ const ChangePasswordPage = () => {
     try {
       const employeeId = localStorage.getItem("userId");
 
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_HOST}/employee/getImageSrc/${employeeId}`,
         {
           headers: {
@@ -120,7 +120,7 @@ const ChangePasswordPage = () => {
     };
 
     try {
-      await axios.post(`${API_HOST}/api/change-password`, changePasswordData);
+      await apiClient.post(`${API_HOST}/api/change-password`, changePasswordData);
       showPopup("Password Changed successfully!", "success");
     } catch (error) {
       if (error.response && error.response.data) {
@@ -156,7 +156,7 @@ const ChangePasswordPage = () => {
     };
 
     try {
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${API_HOST}/employee/update/profile`,
         updateData,
         {
@@ -207,7 +207,7 @@ const ChangePasswordPage = () => {
   
     try {
   
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/employee/upload/${employeeId}`,
         formData,
         {

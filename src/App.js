@@ -28,7 +28,7 @@ import BranchDepartments from "./Pages/Branch/BranchDepartments"
 import PendingUsers from "./Pages/Department/PendingUsers";
 import UserReports from "./Pages/UserReports";
 import DocumentsReport from "./Pages/DocumentsReport";  
-import ManageUserRoles from "./Pages/ManageUserRoles";  
+import ManageUserRoles from "./Pages/ManageUserRoles"; 
 import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
 
 

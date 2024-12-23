@@ -12,7 +12,7 @@ import axios from "axios";
 import { LOGIN_API, LOGIN_API_verify } from "../API/apiConfig";
 import image from "../Assets/image.png";
 import logo2 from "../Assets/logo2.jpg";
-
+import { jwtDecode } from "jwt-decode";
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isOtpRequested, setIsOtpRequested] = useState(false);
@@ -29,9 +29,11 @@ const LoginPage = () => {
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   // Keep existing constants
-  const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const CHARACTERS =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const LENGTH = 5;
 
+  const expirationTime = Math.floor(Date.now() / 1000) + 3600; // expires in 1 hour
   useEffect(() => {
     setCaptcha(generateCaptcha());
   }, []);
@@ -49,7 +51,9 @@ const LoginPage = () => {
     let previousOffsetX = 0;
 
     for (let i = 0; i < LENGTH; i++) {
-      const character = CHARACTERS.charAt(Math.floor(Math.random() * CHARACTERS.length));
+      const character = CHARACTERS.charAt(
+        Math.floor(Math.random() * CHARACTERS.length)
+      );
       const rotation = Math.floor(Math.random() * 20) - 10;
       const offsetX = previousOffsetX + 15;
       const offsetY = Math.floor(Math.random() * 10) - 5;
@@ -76,7 +80,7 @@ const LoginPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleOtpChange = (e) => {
@@ -93,7 +97,7 @@ const LoginPage = () => {
       return;
     }
 
-    if (formData.captcha !== captcha.map(item => item.character).join("")) {
+    if (formData.captcha !== captcha.map((item) => item.character).join("")) {
       setAlertMessage("Invalid captcha. Please try again.");
       handleRefresh();
       return;
@@ -116,7 +120,9 @@ const LoginPage = () => {
         setAlertMessage("OTP has been sent to your email.");
       }
     } catch (error) {
-      setAlertMessage(error.response?.data?.message || "Invalid username or password.");
+      setAlertMessage(
+        error.response?.data?.message || "Invalid username or password."
+      );
     } finally {
       setIsButtonDisabled(false);
     }
@@ -140,13 +146,30 @@ const LoginPage = () => {
 
       if (response.status === 200) {
         const { token, roles, name, id } = response.data;
+
+        // Decode the token to get the expiration time
+        const decodedToken = jwtDecode(token);
+        const expirationTime = decodedToken.exp; // `exp` is in seconds
+
+        // Store values in localStorage
         localStorage.setItem("tokenKey", token);
+        localStorage.setItem("token_expiration", expirationTime);
         localStorage.setItem("email", formData.username);
         localStorage.setItem("UserName", name);
         localStorage.setItem("role", roles);
         localStorage.setItem("userId", id);
 
-        navigate("/dashboard");
+
+        debugger;
+
+        const redirectUrl = localStorage.getItem("redirectUrl");
+        if (redirectUrl) {
+          localStorage.removeItem("redirectUrl"); 
+          navigate(redirectUrl); 
+        } else {
+          navigate("/dashboard");
+        }
+        
       }
     } catch (error) {
       setAlertMessage(error.response?.data?.message || "Invalid OTP.");
@@ -159,11 +182,7 @@ const LoginPage = () => {
     <div className="flex min-h-screen bg-gray-50">
       {/* Left side - Image */}
       <div className="hidden lg:block lg:w-1/2">
-        <img
-          src={image}
-          alt="Login"
-          className="w-full h-full object-cover"
-        />
+        <img src={image} alt="Login" className="w-full h-full object-cover" />
       </div>
 
       {/* Right side - Login Form */}
@@ -192,7 +211,11 @@ const LoginPage = () => {
           )}
 
           <div className="mb-4 text-center">
-            <h2 className={`text-2xl font-bold ${isOtpRequested ? "text-gray-900" : "text-indigo-600"}`}>
+            <h2
+              className={`text-2xl font-bold ${
+                isOtpRequested ? "text-gray-900" : "text-indigo-600"
+              }`}
+            >
               {isOtpRequested ? "Enter OTP" : "Welcome Back"}
             </h2>
             <p className="text-gray-600 mt-2">
@@ -286,7 +309,9 @@ const LoginPage = () => {
                       onClick={handleRefresh}
                       className="p-2 text-blue-600 hover:text-blue-700"
                     >
-                      <ArrowPathIcon className={`w-5 h-5 ${isRotated ? "animate-spin" : ""}`} />
+                      <ArrowPathIcon
+                        className={`w-5 h-5 ${isRotated ? "animate-spin" : ""}`}
+                      />
                     </button>
                   </div>
                   <input

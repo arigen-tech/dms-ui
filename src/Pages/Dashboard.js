@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER  } from "../API/apiConfig";
-import axios from "axios";
+import apiClient from "../API/apiClient";
 import {
   BarChart,
   Bar,
@@ -94,7 +94,7 @@ function Dashboard() {
         throw new Error("User ID or token is missing in localStorage");
       }
 
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
           headers: {
@@ -177,8 +177,8 @@ function Dashboard() {
         }
   
         const [statsResponse, summaryResponse] = await Promise.all([
-          axios.get(dashboardUrl, { ...authHeader, params: { employeeId } }),
-          axios.get(summaryUrl, {
+          apiClient.get(dashboardUrl, { ...authHeader, params: { employeeId } }),
+          apiClient.get(summaryUrl, {
             ...authHeader,
             params: { startDate, endDate },
           }),
