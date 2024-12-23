@@ -164,12 +164,12 @@ const LoginPage = () => {
 
         const redirectUrl = localStorage.getItem("redirectUrl");
         if (redirectUrl) {
-          localStorage.removeItem("redirectUrl"); 
-          navigate(redirectUrl); 
+          localStorage.removeItem("redirectUrl");
+          navigate(redirectUrl);
         } else {
           navigate("/dashboard");
         }
-        
+
       }
     } catch (error) {
       setAlertMessage(error.response?.data?.message || "Invalid OTP.");
@@ -181,8 +181,12 @@ const LoginPage = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Left side - Image */}
-      <div className="hidden lg:block lg:w-1/2">
-        <img src={image} alt="Login" className="w-full h-full object-cover" />
+      <div className="max-w-0 lg:max-w-full lg:w-1/2">
+        <img
+          src={image}
+          alt="Login"
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Right side - Login Form */}
@@ -212,9 +216,8 @@ const LoginPage = () => {
 
           <div className="mb-4 text-center">
             <h2
-              className={`text-2xl font-bold ${
-                isOtpRequested ? "text-gray-900" : "text-indigo-600"
-              }`}
+              className={`text-2xl font-bold ${isOtpRequested ? "text-gray-900" : "text-indigo-600"
+                }`}
             >
               {isOtpRequested ? "Enter OTP" : "Welcome Back"}
             </h2>
