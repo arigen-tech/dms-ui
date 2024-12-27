@@ -573,6 +573,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     // Add versioning to uploadedFilePaths based on directory structure
     const versionedFilePaths = formData.uploadedFilePaths.map((filePath) => {
+      if (typeof filePath !== 'string') {
+        console.error('Invalid filePath format:', filePath);
+        return {
+          path: filePath?.path || 'Unknown', // Adjust as per your data structure
+          version: formData.version,
+        };
+      }
+      
       const versionMatch = filePath.match(/\/V(\d+)\//i); // Extract version from path
       const version = versionMatch ? `V${versionMatch[1]}` : formData.version; // Use extracted or current version
       return {
@@ -580,6 +588,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         version: version,
       };
     });
+    
 
     // Construct the payload
     const payload = {
