@@ -332,18 +332,34 @@ const SearchByScan = () => {
     }
   };
 
-  const openFile = async (file) => {
-    const branch = sanitizeString(headerData?.employee?.branch?.name);
-    const department = sanitizeString(headerData?.employee?.department?.name);
-    const year = sanitizeString(headerData?.yearMaster?.name);
-    const category = sanitizeString(headerData?.categoryMaster?.name);
-    const version = sanitizeString(headerData?.version);
-
-    const fileUrl = `${API_HOST}/api/documents/download/${branch}/${department}/${year}/${category}/${version}/${file}`;
-
-    setLoading(true);
+  const openFile = async (docName, version) => {
     try {
-      const response = await axios.get(fileUrl, {
+      console.log("docName:", docName);
+      console.log("version:", version);
+
+      if (!docName) {
+        showPopup("Document name is missing. Please try again.");
+        return;
+      }
+
+      const branch = headerData?.employee?.branch?.name.replace(/ /g, "_");
+      const department = headerData?.employee?.department?.name.replace(
+        / /g,
+        "_"
+      );
+      const year = headerData?.yearMaster?.name.replace(/ /g, "_");
+      const category = headerData?.categoryMaster?.name.replace(/ /g, "_");
+
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+        branch
+      )}/${encodeURIComponent(department)}/${encodeURIComponent(
+        year
+      )}/${encodeURIComponent(category)}/${encodeURIComponent(
+        version
+      )}/${encodeURIComponent(docName)}`;
+      const token = localStorage.getItem("tokenKey");
+
+      const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
@@ -352,19 +368,18 @@ const SearchByScan = () => {
       const blob = new Blob([response.data], { type: contentType });
       const blobUrl = window.URL.createObjectURL(blob);
 
-      const newWindow = window.open(blobUrl, "_blank");
-      if (newWindow)
-        newWindow.onload = () => window.URL.revokeObjectURL(blobUrl);
+      window.open(blobUrl, "_blank");
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
-      const errorMessage = error.response
-        ? `Error ${error.response.status}: Unable to fetch the file.`
-        : error.request
-        ? "No response from server. Please check your connection."
-        : "An unexpected error occurred.";
-      console.error(errorMessage);
-      showPopup(errorMessage);
-    } finally {
-      setLoading(false);
+      console.error("Error:", error);
+
+      if (error.response) {
+        showPopup(`Error ${error.response.status}: Unable to fetch the file.`);
+      } else if (error.request) {
+        showPopup("No response from server. Please check your connection.");
+      } else {
+        showPopup("An unexpected error occurred.");
+      }
     }
   };
 
@@ -425,15 +440,6 @@ const SearchByScan = () => {
                   <input
                     disabled
                     value={headerData?.subject}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
-
-                <label className="block text-md font-medium text-gray-700">
-                  Version{" "}
-                  <input
-                    disabled
-                    value={headerData?.version}
                     className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
@@ -541,31 +547,61 @@ const SearchByScan = () => {
                   Attached Files
                 </h2>
                 {headerData?.documentDetails?.length > 0 ? (
-                  <ul className="list-disc list-inside text-left mt-2">
-                    {headerData?.documentDetails.map((file, index) => {
-                      const displayName = file.docName.includes("_")
-                        ? file.docName.split("_").slice(1).join("_")
-                        : file.docName;
+                  <div className="overflow-x-auto mt-4">
+                    <table className="table-auto w-full border-collapse border border-gray-300">
+                      <thead>
+                        <tr className="bg-indigo-100">
+                          <th className="border border-gray-300 px-4 py-2 text-center">
+                            S.N.
+                          </th>
+                          <th className="border border-gray-300 px-4 py-2 text-center">
+                            Document Name
+                          </th>
+                          <th className="border border-gray-300 px-4 py-2 text-center">
+                            Version
+                          </th>
+                          <th className="border border-gray-300 px-4 py-2 text-center">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {headerData.documentDetails.map((file, index) => {
+                          const displayName = file.docName.includes("_")
+                            ? file.docName.split("_").slice(1).join("_")
+                            : file.docName;
 
-                      return (
-                        <li key={index} className="mb-2">
-                          <span className="mr-4 text-gray-600">
-                            <strong>{index + 1}</strong> {displayName}
-                          </span>
-                          <button
-                            onClick={() => openFile(file.docName)}
-                            className={`bg-indigo-500 text-white px-3 py-1 rounded shadow-md hover:bg-indigo-600 transition no-print ${
-                              loading ? "opacity-50" : ""
-                            }`}
-                            disabled={loading}
-                            aria-label={`Open ${displayName}`}
-                          >
-                            {loading ? "Loading..." : "Open"}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                          return (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="border border-gray-300 px-4 py-2">
+                                {index + 1}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-2">
+                                {displayName}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-2">
+                                {file.version}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-2">
+                                <button
+                                  onClick={() =>
+                                    openFile(file.docName, file.version)
+                                  }
+                                  className={`bg-indigo-500 text-white px-3 py-1 rounded shadow-md hover:bg-indigo-600 transition no-print ${
+                                    loading ? "opacity-50" : ""
+                                  }`}
+                                  disabled={loading}
+                                  aria-label={`Open ${displayName}`}
+                                >
+                                  {loading ? "Loading..." : "Open"}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <p className="text-sm text-gray-500 mt-2">
                     No attached files available.

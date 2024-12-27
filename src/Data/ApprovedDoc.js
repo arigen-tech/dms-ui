@@ -319,7 +319,6 @@ const ApprovedDoc = () => {
                 <th className="border p-2 text-left">File No</th>
                 <th className="border p-2 text-left">Title</th>
                 <th className="border p-2 text-left">Subject</th>
-                <th className="border p-2 text-left">Version</th>
                 <th className="border p-2 text-left">Category</th>
                 <th className="border p-2 text-left">Approval Status</th>
                 <th className="border p-2 text-left">Approved by</th>
@@ -340,7 +339,6 @@ const ApprovedDoc = () => {
                     <td className="border p-2">{doc.fileNo || "N/A"}</td>
                     <td className="border p-2">{doc.title || "N/A"}</td>
                     <td className="border p-2">{doc.subject || "N/A"}</td>
-                    <td className="border p-2">{doc.version || "N/A"}</td>
                     <td className="border p-2">
                       {doc.categoryMaster?.name || "No Category"}
                     </td>

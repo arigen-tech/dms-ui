@@ -355,7 +355,6 @@ const Approve = () => {
                 <th className="border p-2 text-left">Title</th>
                 <th className="border p-2 text-left">File No</th>
                 <th className="border p-2 text-left">Subject</th>
-                <th className="border p-2 text-left">Version</th>
                 <th className="border p-2 text-left">Uploaded Date</th>
                 <th className="border p-2 text-left">Category</th>
                 <th className="border p-2 text-left">User Name</th>
@@ -377,7 +376,6 @@ const Approve = () => {
                     <td className="border p-2">{doc.title}</td>
                     <td className="border p-2">{doc.fileNo}</td>
                     <td className="border p-2">{doc.subject}</td>
-                    <td className="border p-2">{doc.version}</td>
                     <td className="border p-2">
                       {new Date(doc.createdOn).toLocaleDateString()}
                     </td>

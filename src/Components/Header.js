@@ -267,7 +267,7 @@ function Header({ toggleSidebar, userName }) {
           {dropdownOpen && (
             <DropdownMenu
               items={[
-                { label: "Change Password", onClick: handleChangePassword },
+                { label: "Edit Profile", onClick: handleChangePassword },
                 { label: "Logout", onClick: handleLogout },
               ]}
               onSelect={(item) => item.onClick && item.onClick()}
