@@ -18,7 +18,7 @@ const Approve = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
   const [rejectReasonError, setRejectReasonError] = useState(false);
-  // const [selectedDoc, setSelectedDoc] = useState(null);
+  const [printTrue, setPrintTrue] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,19 +33,15 @@ const Approve = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
 
-  const tokenKey = "tokenKey"; // Key used to retrieve the token from local storage
+  const tokenKey = localStorage.getItem("tokenKey");
 
   const [userBranch, setUserBranch] = useState(null);
 
   useEffect(() => {
     fetchUserBranch();
-  }, []);
-
-  useEffect(() => {
-
     fetchDocuments();
-
   }, []);
 
   const fetchUserBranch = async () => {
@@ -53,11 +49,11 @@ const Approve = () => {
     setError("");
     try {
       const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("tokenKey");
+      const tokenKey = localStorage.getItem("tokenKey");
       const response = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${tokenKey}` },
         }
       );
       setUserBranch(response.data.branch);
@@ -73,66 +69,66 @@ const Approve = () => {
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("tokenKey");
+      const tokenKey = localStorage.getItem("tokenKey");
       const userId = localStorage.getItem("userId");
 
-      if (!token || !userId) {
+      if (!tokenKey || !userId) {
         setError("Authentication details missing. Please log in again.");
-        setLoading(false); // Stop loading if authentication fails
+        setLoading(false);
         return;
       }
-
-      // Fetch user details to get department and branch IDs
       const userResponse = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${tokenKey}` },
         }
       );
 
       const departmentId = userResponse.data?.department?.id;
       const branchId = userResponse.data?.branch?.id;
 
-      // Construct the URL based on the availability of departmentId and branchId
       let url;
       if (!branchId && !departmentId) {
-        url = `${DOCUMENTHEADER_API}/pending`; // If both are null, call this endpoint
+        url = `${DOCUMENTHEADER_API}/pending`;
       } else if (departmentId) {
-        url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}/${departmentId}`; // If departmentId exists
+        url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}/${departmentId}`;
       } else {
-        url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`; // If only branchId exists
+        url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`;
       }
 
-      // Fetch documents
       const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${tokenKey}` },
       });
 
-      setDocuments(response.data); // Update state with the fetched documents
+      setDocuments(response.data);
+
+      console.log("all doc ", response.data);
     } catch (error) {
       if (error?.response?.status === 401) {
         setError("Unauthorized access. Please log in again.");
       } else {
         setError("Error fetching documents. Please try again later.");
       }
-      console.error("Fetch documents error:", error?.response?.data || error.message);
+      console.error(
+        "Fetch documents error:",
+        error?.response?.data || error.message
+      );
     } finally {
-      setLoading(false); // Ensure loading is stopped regardless of success or failure
+      setLoading(false);
     }
   };
 
-
   const fetchPaths = async (doc) => {
     try {
-      const token = localStorage.getItem(tokenKey);
-      if (!token) {
-        throw new Error("No authentication token found.");
+      const tokenKey = localStorage.getItem(tokenKey);
+      if (!tokenKey) {
+        throw new Error("No authentication tokenKey found.");
       }
 
       const response = await axios.get(
         `${API_HOST}/api/documents/byDocumentHeader/${doc.id}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${tokenKey}` },
         }
       );
 
@@ -140,7 +136,7 @@ const Approve = () => {
 
       setSelectedDoc((prevDoc) => ({
         ...prevDoc,
-        paths: response.data || [], // Ensure paths is an array
+        paths: response.data || [],
       }));
     } catch (error) {
       console.error("Error fetching documents:", error.message || error);
@@ -148,36 +144,34 @@ const Approve = () => {
   };
 
   const openFile = async (file) => {
-    const token = localStorage.getItem(tokenKey); // Get the token from localStorage
-    const createdOnDate = new Date(file.createdOn); // Convert timestamp to Date object
-    const year = createdOnDate.getFullYear(); // Extract year
-    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0"); // Extract month and pad with zero
-    const category = file.documentHeader.categoryMaster.name; // Assuming categoryMaster has categoryName field
-    const fileName = file.docName; // The file name
+    const tokenKey = localStorage.getItem(tokenKey);
+    const createdOnDate = new Date(file.createdOn);
+    const year = createdOnDate.getFullYear();
+    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0");
+    const category = file.documentHeader.categoryMaster.name;
+    const fileName = file.docName;
+    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${encodeURIComponent(
+      category
+    )}/${encodeURIComponent(fileName)}`;
 
-    // Construct the URL based on the Spring Boot @GetMapping pattern
-    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${encodeURIComponent(category)}/${encodeURIComponent(fileName)}`;
-
-    console.log('File URL:', fileUrl);
+    console.log("File URL:", fileUrl);
 
     try {
-      // Fetch the file using axios and pass the token in the headers
       const response = await axios.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob", // Important to get the response as a blob (binary large object)
+        headers: { Authorization: `Bearer ${tokenKey}` },
+        responseType: "blob",
       });
 
-      // Create a blob from the response and specify it as a PDF or any other type
-      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
       const blobUrl = window.URL.createObjectURL(blob);
 
-      // Open the blob in a new tab
       window.open(blobUrl, "_blank");
     } catch (error) {
       console.error("Error fetching file:", error);
     }
   };
-
 
   const handleStatusChange = (doc, status) => {
     if (status === "REJECTED") {
@@ -192,14 +186,13 @@ const Approve = () => {
   const approveDocument = async () => {
     try {
       const employeeId = localStorage.getItem("userId");
-      const token = localStorage.getItem(tokenKey);
 
       const response = await axios.patch(
         `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`, // Change to PATCH
         null, // No body needed for the PATCH request since we're using query parameters
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${tokenKey}`,
             employeeId: employeeId, // Include employeeId in headers
           },
           params: {
@@ -222,14 +215,13 @@ const Approve = () => {
   const handleRejectDocument = async () => {
     try {
       const employeeId = localStorage.getItem("userId");
-      const token = localStorage.getItem(tokenKey);
 
       const response = await axios.patch(
         `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`, // Change to PATCH
         null, // No body needed for the PATCH request since we're using query parameters
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${tokenKey}`,
             employeeId: employeeId, // Include employeeId in headers
           },
           params: {
@@ -251,21 +243,100 @@ const Approve = () => {
     }
   };
 
+  const downloadQRCode = async () => {
+    if (!selectedDoc.id) {
+      alert("Please enter a document ID");
+      return;
+    }
+
+    try {
+      if (!tokenKey) {
+        throw new Error("Authentication tokenKey is missing");
+      }
+
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${tokenKey}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+      }
+
+      const qrCodeBlob = await response.blob();
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      const link = document.createElement("a");
+      link.href = qrCodeUrl;
+      link.download = `QR_Code_${selectedDoc.id}.png`;
+      link.click();
+
+      window.URL.revokeObjectURL(qrCodeUrl);
+    } catch (error) {
+      setError("Error downloading QR Code: " + error.message);
+    } finally {
+    }
+  };
+
   const openModal = (doc) => {
     setSelectedDoc(doc); // Set the selected document without paths first
     fetchPaths(doc); // Fetch paths and update the selected document with paths
     setIsOpen(true);
+    fetchQRCode(doc.id);
   };
 
+  console.log("selectedDoc Data:", selectedDoc);
   const closeModal = () => {
     setIsOpen(false);
     setSelectedDoc(null);
   };
 
-  const printPage = () => {
-    window.print(); // Simple print functionality
+  const fetchQRCode = async (documentId) => {
+    try {
+      if (!tokenKey) {
+        throw new Error("Authentication tokenKey is missing");
+      }
+  
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
+  
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${tokenKey}`,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+      }
+  
+      const qrCodeBlob = await response.blob();
+  
+      if (!qrCodeBlob.type.includes("image/png")) {
+        throw new Error("Received data is not a valid image");
+      }
+  
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+  
+      setQrCodeUrl(qrCodeUrl);
+      setError(""); // Clear any previous errors
+    } catch (error) {
+      setQrCodeUrl(null);
+      setError("Error displaying QR Code: " + error.message);
+    }
   };
 
+  const printPage = () => {
+    setPrintTrue(true);
+    window.print();
+    setTimeout(() => {
+      setPrintTrue(false);
+    }, 1000);
+  };
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {
@@ -284,7 +355,9 @@ const Approve = () => {
       if (key === "employee" && value) {
         return (
           value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          value.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          value.department?.name
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
           value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
@@ -295,7 +368,6 @@ const Approve = () => {
     })
   );
 
-
   const totalItems = filteredDocuments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
@@ -305,9 +377,13 @@ const Approve = () => {
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
-    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const startPage =
+      Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
-    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, i) => startPage + i
+    );
   };
 
   return (
@@ -399,7 +475,9 @@ const Approve = () => {
                     <td className="border p-2">
                       <select
                         className="border p-1"
-                        onChange={(e) => handleStatusChange(doc, e.target.value)}
+                        onChange={(e) =>
+                          handleStatusChange(doc, e.target.value)
+                        }
                       >
                         <option value="">Select Status</option>
                         <option value="APPROVED">APPROVED</option>
@@ -415,7 +493,10 @@ const Approve = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="13" className="border p-4 text-center text-gray-500">
+                  <td
+                    colSpan="13"
+                    className="border p-4 text-center text-gray-500"
+                  >
                     No data found.
                   </td>
                 </tr>
@@ -425,11 +506,10 @@ const Approve = () => {
 
           <>
             {isOpen && selectedDoc && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900 bg-opacity-50">
-                <div className="relative bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
-                  {/* Print Button */}
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal">
+                <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6">
                   <button
-                    className="absolute top-2 right-10 text-gray-500 hover:text-gray-700 no-print"
+                    className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
                     onClick={printPage}
                   >
                     <PrinterIcon className="h-6 w-6" />
@@ -437,96 +517,140 @@ const Approve = () => {
 
                   {/* Close Button */}
                   <button
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 no-print"
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
                     onClick={closeModal}
                   >
-                    <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-800" />
+                    <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
                   </button>
 
-                  {/* Modal Content Divided into Two Halves */}
-                  <div className="h-1/2 flex flex-col justify-between">
-                    {/* Top Half */}
-                    <div className="flex justify-between items-center mb-4 mt-4">
-                      <div className="flex items-start space-x-1">
-                        <p className="text-sm text-black font-bold border-b-4 border-black">
+                  {/* Modal Content */}
+                  <div className="flex flex-col h-full mt-8">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
                           D
                         </p>
-                        <p className="text-sm text-black font-bold border-t-4 border-black">
+                        <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
                           MS
                         </p>
                       </div>
+                      <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+                        <strong>Uploaded Date:</strong>{" "}
+                        {formatDate(selectedDoc?.createdOn)}
+                      </p>
+                    </div>
 
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">
-                          <strong>Uploaded Date:</strong>{" "}
-                          {formatDate(selectedDoc?.createdOn)}
+                    {/* Document Details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="mt-6 text-left">
+                        {[
+                          {
+                            label: "Branch",
+                            value: selectedDoc?.employee?.branch?.name,
+                          },
+                          {
+                            label: "Department",
+                            value: selectedDoc?.employee?.department?.name,
+                          },
+                          { label: "File No.", value: selectedDoc?.fileNo },
+                          { label: "Title", value: selectedDoc?.title },
+                          { label: "Subject", value: selectedDoc?.subject },
+                          {
+                            label: "Category",
+                            value:
+                              selectedDoc?.categoryMaster?.name ||
+                              "No Category",
+                          },
+                          {
+                            label: "File Year",
+                            value: selectedDoc?.yearMaster?.name,
+                          },
+                          {
+                            label: "Status",
+                            value: selectedDoc?.approvalStatus,
+                          },
+                          {
+                            label: "Upload By",
+                            value: selectedDoc?.employee?.name,
+                          },
+                        ].map((item, idx) => (
+                          <p key={idx} className="text-md text-gray-700">
+                            <strong>{item.label}:</strong> {item.value || "N/A"}
+                          </p>
+                        ))}
+                      </div>
+                      <div className="items-center justify-center text-center">
+                        <p className="text-md text-gray-700 mt-3">
+                          <strong>QR Code:</strong>
                         </p>
+                        {selectedDoc?.documentDetails[0]?.path ? (
+                          <div className="mt-4">
+                            <img
+                              src={qrCodeUrl}
+                              alt="QR Code"
+                              className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
+                            />
+                            
+                            <button
+                              onClick={downloadQRCode}
+                              className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                            >
+                              Download
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">No QR code available</p>
+                        )}
                       </div>
                     </div>
 
-                    {/* Bottom Half */}
-                    <div className="text-left">
-                      <p className="text-sm text-gray-600">
-                        <strong>File No.:</strong>{" "}
-                        {selectedDoc?.fileNo || "N/A"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Title:</strong> {selectedDoc?.title || "N/A"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Subject:</strong>{" "}
-                        {selectedDoc?.subject || "N/A"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Version:</strong>{" "}
-                        {selectedDoc?.version || "N/A"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Uploaded By:</strong>{" "}
-                        {selectedDoc?.employee.name || "N/A"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Category:</strong>{" "}
-                        {selectedDoc?.categoryMaster?.name || "No Category"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Branch:</strong>{" "}
-                        {selectedDoc?.employee?.branch?.name || "No branch"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Department:</strong>{" "}
-                        {selectedDoc?.employee?.department?.name ||
-                          "No department"}
-                      </p>
+                    {/* Attached Files */}
+                    <div className="mt-6 text-center">
+                      <h2 className="text-lg font-semibold text-indigo-700">
+                        Attached Files
+                      </h2>
+                      {Array.isArray(selectedDoc.documentDetails) &&
+                      selectedDoc.documentDetails.length > 0 ? (
+                        <>
+                          <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
+                            <h3 className="flex-1 text-left ml-2">File Name</h3>
+                            <h3 className="flex-1 text-center">Version</h3>
+                            <h3 className="text-right mr-10 no-print">
+                              Actions
+                            </h3>
+                          </div>
+                          <ul className="space-y-4 max-h-60 overflow-y-auto">
+                            {selectedDoc.documentDetails.map((file, index) => (
+                              <li
+                                key={index}
+                                className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
+                              >
+                                <div className="flex-1 text-left">
+                                  <strong>{index + 1}</strong>{" "}
+                                  {file.docName.split("_").slice(1).join("_")}
+                                </div>
+                                <div className="flex-1 text-center">
+                                  <strong>{file.version}</strong>
+                                </div>
+                                <div className="text-right">
+                                  <button
+                                    onClick={() => openFile(file)}
+                                    className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
+                                  >
+                                    Open
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500 mt-2">
+                          No attached files available.
+                        </p>
+                      )}
                     </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="h-1/2 flex flex-col items-center justify-center mt-4">
-                    <h1 className="text-sm text-center font-bold mb-2">
-                      Attached Files
-                    </h1>
-
-                    {Array.isArray(selectedDoc.paths) &&
-                      selectedDoc.paths.length > 0 ? (
-                      <ul className="list-disc list-inside">
-                        {selectedDoc.paths.map((file, index) => (
-                          <li key={index} className="mb-2">
-                            <span className="mr-4">{file.docName}</span>
-                            <button
-                              onClick={() => openFile(file)} // Pass the file object to openFile function
-                              className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                            >
-                              Open
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        No attached files available.
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -538,17 +662,19 @@ const Approve = () => {
           <div>
             <span className="text-sm text-gray-700">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
+              entries
             </span>
           </div>
           <div className="flex items-center">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
+              className={`px-3 py-1 rounded mr-3 ${
+                currentPage === 1
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+              }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
               Previous
@@ -558,10 +684,11 @@ const Approve = () => {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page
-                  ? "bg-blue-500 text-white"
-                  : "bg-slate-200 hover:bg-blue-100"
-                  }`}
+                className={`px-3 py-1 rounded mx-1 ${
+                  currentPage === page
+                    ? "bg-blue-500 text-white"
+                    : "bg-slate-200 hover:bg-blue-100"
+                }`}
               >
                 {page}
               </button>
@@ -572,12 +699,15 @@ const Approve = () => {
             </span>
 
             <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
+              className={`px-3 py-1 rounded ml-3 ${
+                currentPage === totalPages
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+              }`}
             >
               Next
               <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />

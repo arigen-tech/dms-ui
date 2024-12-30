@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
+  EyeIcon,
+  XMarkIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   PencilIcon,
-  MagnifyingGlassIcon
+  PrinterIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid";
-import {API_HOST} from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 import { useNavigate } from "react-router-dom";
 
 function RejectedDoc() {
@@ -17,6 +20,10 @@ function RejectedDoc() {
   const [error, setError] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [printTrue, setPrintTrue] = useState(false);
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -40,16 +47,17 @@ function RejectedDoc() {
             },
           }
         );
-      } else if (role === "ADMIN" || role === "BRANCH ADMIN" || role === "DEPARTMENT ADMIN") {
-        response = await axios.get(
-          `${API_HOST}/api/documents/rejectedByEmp`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              employeeId: UserId,
-            },
-          }
-        );
+      } else if (
+        role === "ADMIN" ||
+        role === "BRANCH ADMIN" ||
+        role === "DEPARTMENT ADMIN"
+      ) {
+        response = await axios.get(`${API_HOST}/api/documents/rejectedByEmp`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            employeeId: UserId,
+          },
+        });
       }
 
       setDocuments(response.data);
@@ -59,6 +67,193 @@ function RejectedDoc() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPaths = async (doc) => {
+    try {
+      if (!token) {
+        throw new Error("No authentication token found.");
+      }
+
+      if (!doc) {
+        console.error("Document is null or undefined");
+        return null;
+      }
+
+      if (!doc.id) {
+        console.error("Invalid document: No ID found", doc);
+        return null;
+      }
+
+      // Validate doc.id is not just a falsy value
+      const documentId = doc.id.toString().trim();
+      if (!documentId) {
+        console.error("Document ID is empty or invalid", doc);
+        return null;
+      }
+
+      console.log(`Attempting to fetch paths for document ID: ${documentId}`);
+      console.log(
+        `Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`
+      );
+
+      const response = await axios.get(
+        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Paths response:", response.data);
+
+      setSelectedDoc((prevDoc) => ({
+        ...prevDoc,
+        paths: Array.isArray(response.data) ? response.data : [],
+      }));
+
+      return response.data; // Optional: return the data
+    } catch (error) {
+      // More detailed error logging
+      console.error("Error in fetchPaths:", error);
+
+      // More comprehensive error handling
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          console.error("Server responded with error:", {
+            status: error.response.status,
+            data: error.response.data,
+          });
+        } else if (error.request) {
+          console.error("No response received:", error.request);
+        }
+      }
+
+      // Optional: more user-friendly error handling
+      alert(
+        `Failed to fetch document paths: ${error.message || "Unknown error"}`
+      );
+
+      return null; // Explicitly return null on error
+    }
+  };
+
+  const openFile = async (file) => {
+    const token = localStorage.getItem("tokenKey"); // Get the token from localStorage
+    const createdOnDate = new Date(file.createdOn); // Convert timestamp to Date object
+    const year = createdOnDate.getFullYear(); // Extract year
+    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0"); // Extract month and pad with zero
+    const category = file.documentHeader.categoryMaster.name; // Get the category name
+    const fileName = file.docName; // The file name
+
+    // Construct the URL based on the Spring Boot @GetMapping pattern
+    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${category}/${fileName}`;
+
+    try {
+      // Fetch the file using axios and pass the token in the headers
+      const response = await axios.get(fileUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob", // Fetch the file as a blob
+      });
+
+      // Get the MIME type of the file from the response headers
+      const contentType = response.headers["content-type"];
+
+      // Create a blob from the response
+      const blob = new Blob([response.data], { type: contentType });
+
+      // Generate a URL for the blob
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // Open the blob in a new tab
+      window.open(blobUrl, "_blank");
+    } catch (error) {
+      console.error("Error fetching file:", error);
+      alert("There was an error opening the file. Please try again.");
+    }
+  };
+
+  const fetchQRCode = async (documentId) => {
+    try {
+      if (!token) {
+        throw new Error("Authentication token is missing");
+      }
+
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+      }
+
+      const qrCodeBlob = await response.blob();
+
+      if (!qrCodeBlob.type.includes("image/png")) {
+        throw new Error("Received data is not a valid image");
+      }
+
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      setQrCodeUrl(qrCodeUrl);
+      setError(""); // Clear any previous errors
+    } catch (error) {
+      setQrCodeUrl(null);
+      setError("Error displaying QR Code: " + error.message);
+    }
+  };
+
+  const downloadQRCode = async () => {
+    if (!selectedDoc.id) {
+      alert("Please enter a document ID");
+      return;
+    }
+
+    try {
+      if (!token) {
+        throw new Error("Authentication token is missing");
+      }
+
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+      }
+
+      const qrCodeBlob = await response.blob();
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      const link = document.createElement("a");
+      link.href = qrCodeUrl;
+      link.download = `QR_Code_${selectedDoc.id}.png`;
+      link.click();
+
+      window.URL.revokeObjectURL(qrCodeUrl);
+    } catch (error) {
+      setError("Error downloading QR Code: " + error.message);
+    } finally {
+    }
+  };
+
+  const openModal = (doc) => {
+    setSelectedDoc(doc);
+    fetchPaths(doc);
+    setIsOpen(true);
+    fetchQRCode(doc.id);
   };
 
   const formatDate = (dateString) => {
@@ -83,7 +278,9 @@ function RejectedDoc() {
       if (key === "employee" && value) {
         return (
           value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          value.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          value.department?.name
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
           value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
@@ -110,14 +307,44 @@ function RejectedDoc() {
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
-    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const startPage =
+      Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
-    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, i) => startPage + i
+    );
   };
 
   const handleEdit = (docId) => {
-    const data = documents.find(item => item.id === docId);
+    const data = documents.find((item) => item.id === docId);
     navigate("/all-documents", { state: data });
+  };
+
+  const printPage = () => {
+    setPrintTrue(true);
+    window.print();
+    setTimeout(() => {
+      setPrintTrue(false);
+    }, 1000);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setSelectedDoc(null);
+  };
+
+  const formatDates = (timestamp) => {
+    if (!timestamp) {
+      return "N/A";
+    }
+
+    const date = new Date(timestamp); // Convert milliseconds to Date
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   if (loading) return <div>Loading...</div>;
@@ -129,7 +356,10 @@ function RejectedDoc() {
       <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
           <div className="flex items-center bg-blue-500 rounded-lg">
-            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
+            <label
+              htmlFor="itemsPerPage"
+              className="mr-2 ml-2 text-white text-sm"
+            >
               Show:
             </label>
             <select
@@ -176,6 +406,7 @@ function RejectedDoc() {
                 {role === "USER" && (
                   <th className="border p-2 text-left">Edit</th>
                 )}
+                <th className="border p-2 text-left">view</th>
               </tr>
             </thead>
             <tbody>
@@ -191,9 +422,15 @@ function RejectedDoc() {
                     <td className="border p-2">
                       {doc.categoryMaster?.name || "No Category"}
                     </td>
-                    <td className="border p-2">{doc.approvalStatus || "N/A"}</td>
-                    <td className="border p-2">{doc.rejectionReason || "N/A"}</td>
-                    <td className="border p-2">{doc.employeeBy?.name || "N/A"}</td>
+                    <td className="border p-2">
+                      {doc.approvalStatus || "N/A"}
+                    </td>
+                    <td className="border p-2">
+                      {doc.rejectionReason || "N/A"}
+                    </td>
+                    <td className="border p-2">
+                      {doc.employeeBy?.name || "N/A"}
+                    </td>
                     <td className="border px-4 py-2">
                       {doc.updatedOn ? formatDate(doc.updatedOn) : "N/A"}
                     </td>
@@ -204,23 +441,206 @@ function RejectedDoc() {
                         </button>
                       </td>
                     )}
+                    <td className="border p-2">
+                      <button
+                        onClick={() => openModal(doc)}
+                        title={`View details for ${
+                          doc.title || "this document"
+                        }`}
+                      >
+                        <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="11" className="border p-4 text-center text-gray-500">
+                  <td
+                    colSpan="11"
+                    className="border p-4 text-center text-gray-500"
+                  >
                     No data found.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+          <>
+            {isOpen && selectedDoc && (
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal">
+                <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6">
+                  {/* Print Button */}
+                  <button
+                    className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
+                    onClick={printPage}
+                  >
+                    <PrinterIcon className="h-6 w-6" />
+                  </button>
 
+                  <button
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
+                    onClick={closeModal}
+                  >
+                    <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
+                  </button>
+
+                  <div className="flex flex-col h-full mt-8">
+                    <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
+                          D
+                        </p>
+                        <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
+                          MS
+                        </p>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+                        <strong>Uploaded Date:</strong>{" "}
+                        {formatDate(selectedDoc?.createdOn)}
+                      </p>
+                    </div>
+
+                    {/* Document Details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="mt-6 text-left">
+                        {[
+                          {
+                            label: "Branch",
+                            value: selectedDoc?.employee?.branch?.name,
+                          },
+                          {
+                            label: "Department",
+                            value: selectedDoc?.employee?.department?.name,
+                          },
+                          { label: "File No.", value: selectedDoc?.fileNo },
+                          { label: "Title", value: selectedDoc?.title },
+                          { label: "Subject", value: selectedDoc?.subject },
+                          {
+                            label: "Category",
+                            value:
+                              selectedDoc?.categoryMaster?.name ||
+                              "No Category",
+                          },
+                          {
+                            label: "File Year",
+                            value: selectedDoc?.yearMaster?.name,
+                          },
+                          {
+                            label: "Status",
+                            value: selectedDoc?.approvalStatus || "N/A",
+                          },
+                          {
+                            label: "Uploaded By",
+                            value: selectedDoc?.employee?.name,
+                          },
+                          {
+                            label: "Rejected Reason",
+                            value: selectedDoc?.rejectionReason,
+                          },
+                          {
+                            label: "Rejected Date",
+                            value: formatDates(selectedDoc?.approvalStatusOn),
+                          },
+                          {
+                            label: "Rejected By",
+                            value: selectedDoc?.employeeBy?.name,
+                          },
+                        ].map((item, idx) => (
+                          <p key={idx} className="text-md text-gray-700">
+                            <strong>{item.label}:</strong> {item.value || "N/A"}
+                          </p>
+                        ))}
+                      </div>
+
+                      {/* QR Code */}
+                      <div className="text-center">
+                        <p className="text-md text-gray-700 mt-3">
+                          <strong>QR Code:</strong>
+                        </p>
+                        {selectedDoc?.qrPath ? (
+                          <div className="mt-4">
+                            <img
+                              src={qrCodeUrl}
+                              alt="QR Code"
+                              className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
+                            />
+                            <button
+                              onClick={downloadQRCode}
+                              className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                            >
+                              Download
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">No QR code available</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Attached Files */}
+                    <div className="mt-6 text-center">
+                      <h2 className="text-lg font-semibold text-indigo-700">
+                        Attached Files
+                      </h2>
+                      {Array.isArray(selectedDoc.documentDetails) &&
+                      selectedDoc.documentDetails.length > 0 ? (
+                        <>
+                          <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
+                            <h3 className="flex-1 text-left ml-2">File Name</h3>
+                            <h3 className="flex-1 text-center">Version</h3>
+                            <h3 className="text-right mr-10 no-print">
+                              Actions
+                            </h3>
+                          </div>
+                          <ul
+                            className={`space-y-4 ${
+                              printTrue === false &&
+                              selectedDoc.documentDetails.length > 2
+                                ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
+                                : ""
+                            }`}
+                          >
+                            {selectedDoc.documentDetails.map((file, index) => (
+                              <li
+                                key={index}
+                                className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
+                              >
+                                <div className="flex-1 text-left">
+                                  <strong>{index + 1}</strong>{" "}
+                                  {file.docName.split("_").slice(1).join("_")}
+                                </div>
+                                <div className="flex-1 text-center">
+                                  <strong>{file.version}</strong>
+                                </div>
+                                <div className="text-right">
+                                  <button
+                                    onClick={() => openFile(file)}
+                                    className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
+                                  >
+                                    Open
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500 mt-2">
+                          No attached files available.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
           <div className="flex justify-between items-center mt-4">
             <div>
               <span className="text-sm text-gray-700">
                 Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+                {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                {totalItems} entries
               </span>
             </div>
             <div className="flex items-center">
@@ -256,7 +676,9 @@ function RejectedDoc() {
               </span>
 
               <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 className={`px-3 py-1 rounded ml-3 ${
                   currentPage === totalPages
