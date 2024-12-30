@@ -28,7 +28,8 @@ import BranchDepartments from "./Pages/Branch/BranchDepartments"
 import PendingUsers from "./Pages/Department/PendingUsers";
 import UserReports from "./Pages/UserReports";
 import DocumentsReport from "./Pages/DocumentsReport";  
-import ManageUserRoles from "./Pages/ManageUserRoles"; 
+import ManageUserRoles from "./Pages/ManageUserRoles";
+import ArchiveDoc from "./Pages/ArchiveDoc"; 
 import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
 
 
@@ -61,6 +62,7 @@ const protectedRoutes = [
   { path: "/change-password", element: <ChangePasswordPage />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
   { path: "/search", element: <SearchDoc />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/searchByScan", element: <SearchByScanning />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+  { path: "/archive", element: <ArchiveDoc />, allowedRoles: [ SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
 
 ];
 

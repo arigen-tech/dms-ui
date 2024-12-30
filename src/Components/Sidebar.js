@@ -365,6 +365,11 @@ function Sidebar() {
                   </div>
                 )}
               </div>
+              <SidebarLink
+                      to="/archive"
+                      icon={ClipboardDocumentListIcon}
+                      text="Data Archive"
+                    />
             </>
           )}
           {role === BRANCH_ADMIN && (
@@ -478,6 +483,11 @@ function Sidebar() {
                   )}
                 </div>
               </div>
+              <SidebarLink
+                      to="/archive"
+                      icon={ClipboardDocumentListIcon}
+                      text="Data Archive"
+                    />
             </>
           )}
 
@@ -580,6 +590,11 @@ function Sidebar() {
                   )}
                 </div>
               </div>
+              <SidebarLink
+                      to="/archive"
+                      icon={ClipboardDocumentListIcon}
+                      text="Data Archive"
+                    />
             </>
           )}
 
