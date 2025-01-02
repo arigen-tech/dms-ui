@@ -30,6 +30,8 @@ import UserReports from "./Pages/UserReports";
 import DocumentsReport from "./Pages/DocumentsReport";  
 import ManageUserRoles from "./Pages/ManageUserRoles";
 import ArchiveDoc from "./Pages/ArchiveDoc"; 
+import ArchivesDoc from "./Pages/ArchivesDoc"; 
+import AdminsOCR from "./Pages/AdminsOCR"; 
 import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
 
 
@@ -63,6 +65,9 @@ const protectedRoutes = [
   { path: "/search", element: <SearchDoc />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/searchByScan", element: <SearchByScanning />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/archive", element: <ArchiveDoc />, allowedRoles: [ SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+  { path: "/archivesuplod", element: <ArchivesDoc />, allowedRoles: [ SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
+  { path: "/adminOcr", element: <AdminsOCR />, allowedRoles: [SYSTEM_ADMIN] }, 
+  { path: "/adminOCRResponce", element: <AdminsOCR />, allowedRoles: [SYSTEM_ADMIN] }, 
 
 ];
 
