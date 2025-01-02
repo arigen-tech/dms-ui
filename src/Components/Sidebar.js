@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
-  ArrowLeftIcon,
   InboxIcon,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -20,13 +19,12 @@ import {
   ComputerDesktopIcon,
   LockClosedIcon,
   UserCircleIcon,
-  CalendarDaysIcon,
   ShoppingCartIcon,
   ClipboardDocumentListIcon,
 } from "@heroicons/react/24/solid";
-import { RiFileUserFill } from "react-icons/ri";
+import { RiFileUserFill, RiInboxUnarchiveFill ,RiMenuSearchLine , RiInboxArchiveFill, RiArchiveStackFill   } from "react-icons/ri";
 import { IoDocumentLock } from "react-icons/io5";
-import { FaRegFile, FaTimesCircle } from "react-icons/fa";
+import { AiOutlineFileSearch } from "react-icons/ai";
 import logo3 from "../Assets/logo3.png";
 import {
   API_HOST,
@@ -143,6 +141,14 @@ function Sidebar() {
     return localStorage.getItem("isReportOpen") === "true";
   });
 
+  const [isOCROpen, setOCROpen] = useState(() => {
+    return localStorage.getItem("isOCROpen") === "true";
+  });
+
+  const [isArchiveOpen, setArchiveOpen] = useState(() => {
+    return localStorage.getItem("isArchiveOpen") === "true";
+  });
+
   const handleLogout = () => {
     localStorage.removeItem(tokenKey);
     sessionStorage.removeItem("counts");
@@ -165,6 +171,18 @@ function Sidebar() {
     const newReportOpenState = !isReportOpen;
     setReportOpen(newReportOpenState);
     localStorage.setItem("isReportOpen", newReportOpenState);
+  };
+
+  const handleOCRToggle = () => {
+    const newOCROpenState = !isOCROpen;
+    setOCROpen(newOCROpenState);
+    localStorage.setItem("isOCROpen", newOCROpenState);
+  };
+
+  const handleArchiveToggle = () => {
+    const newArchiveOpenState = !isArchiveOpen;
+    setArchiveOpen(newArchiveOpenState);
+    localStorage.setItem("isArchiveOpen", newArchiveOpenState);
   };
 
   const isActive = (path) =>
@@ -365,11 +383,67 @@ function Sidebar() {
                   </div>
                 )}
               </div>
-              <SidebarLink
-                      to="/archive"
-                      icon={ClipboardDocumentListIcon}
-                      text="Data Archive"
+
+              {/* arcive and Ocr */}
+              <div>
+                <button
+                  onClick={handleOCRToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <AiOutlineFileSearch className="h-5 w-5 mr-3" />O C R
+                  </div>
+                  {isOCROpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isOCROpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
+                      to="/adminOcr"
+                      icon={RiMenuSearchLine}
+                      text="Search OCR"
+                      // count={counts.totalRejectedDocuments}
                     />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <button
+                  onClick={handleArchiveToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <RiArchiveStackFill  className="h-5 w-5 mr-3" />
+                    Archive Section
+                  </div>
+                  {isArchiveOpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isArchiveOpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
+                      to="/archive"
+                      icon={RiInboxArchiveFill }
+                      text="Data Archive Download"
+                    />
+
+                    <SidebarLink
+                      to="/archivesuplod"
+                      icon={RiInboxUnarchiveFill }
+                      text="Data Archive Upload"
+                    />
+                  </div>
+                )}
+              </div>
             </>
           )}
           {role === BRANCH_ADMIN && (
@@ -483,11 +557,38 @@ function Sidebar() {
                   )}
                 </div>
               </div>
-              <SidebarLink
+              <div>
+                <button
+                  onClick={handleArchiveToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <RiArchiveStackFill  className="h-5 w-5 mr-3" />
+                    Archive Section
+                  </div>
+                  {isArchiveOpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isArchiveOpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
                       to="/archive"
-                      icon={ClipboardDocumentListIcon}
-                      text="Data Archive"
+                      icon={RiInboxArchiveFill }
+                      text="Data Archive Download"
                     />
+
+                    <SidebarLink
+                      to="/archivesuplod"
+                      icon={RiInboxUnarchiveFill }
+                      text="Data Archive Upload"
+                    />
+                  </div>
+                )}
+              </div>
             </>
           )}
 
@@ -590,11 +691,38 @@ function Sidebar() {
                   )}
                 </div>
               </div>
-              <SidebarLink
+              <div>
+                <button
+                  onClick={handleArchiveToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <RiArchiveStackFill  className="h-5 w-5 mr-3" />
+                    Archive Section
+                  </div>
+                  {isArchiveOpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isArchiveOpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
                       to="/archive"
-                      icon={ClipboardDocumentListIcon}
-                      text="Data Archive"
+                      icon={RiInboxArchiveFill }
+                      text="Data Archive Download"
                     />
+
+                    <SidebarLink
+                      to="/archivesuplod"
+                      icon={RiInboxUnarchiveFill }
+                      text="Data Archive Upload"
+                    />
+                  </div>
+                )}
+              </div>
             </>
           )}
 
