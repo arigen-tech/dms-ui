@@ -16,13 +16,18 @@ const ArchiveDownload = () => {
     endDate: null,
   };
   const [archiveCriteria, setArchiveCriteria] = React.useState(initialFormData);
-  const [userRole, setUserRole] = useState('');
+  let [userRole, setUserRole] = useState(null);
   const [branchOptions, setBranchOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
   const [popupMessage, setPopupMessage] = useState(null);
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const [allArchiveFromDate, setAllArchiveFromDate] = useState(null);
+  const [allArchiveToDate, setAllArchiveToDate] = useState(null);
+  const [allArchiveLoading, setAllArchiveLoading] = useState(false);
+
 
   useEffect(() => {
     fetchUserDetails();
@@ -158,11 +163,11 @@ const ArchiveDownload = () => {
       // Set start time for fromDate
       const startDate = new Date(fromDate);
       startDate.setHours(0, 0, 0, 0); // Start of the day in local time
-  
+
       // Set end time for toDate
       const endDate = new Date(toDate);
       endDate.setHours(23, 59, 59, 999); // End of the day in local time
-  
+
       // Format dates as 'yyyy-MM-dd HH:mm:ss' or similar
       const formatDate = (date) => {
         const year = date.getFullYear();
@@ -173,10 +178,10 @@ const ArchiveDownload = () => {
         const seconds = String(date.getSeconds()).padStart(2, '0');
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
       };
-  
+
       const formattedFromDate = formatDate(startDate); // Local start date
       const formattedToDate = formatDate(endDate); // Local end date
-  
+
       const token = localStorage.getItem('tokenKey');
       const response = await axios.get(`${API_HOST}/archive/download`, {
         params: {
@@ -189,7 +194,7 @@ const ArchiveDownload = () => {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
-  
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -206,12 +211,64 @@ const ArchiveDownload = () => {
       setLoading(false);
     }
   };
-  
-  
+
+  const handleDownloadAll = async () => {
+    setAllArchiveLoading(true);
+    try {
+      // Format dates for the all archives download
+      const formatDate = (date) => {
+        if (!date) return null;
+        const d = new Date(date);
+        return d.toISOString().split('T')[0];
+      };
+
+      const token = localStorage.getItem('tokenKey');
+      const response = await axios.get(`${API_HOST}/archive/download/all`, {
+        params: {
+          fromDate: formatDate(allArchiveFromDate),
+          toDate: formatDate(allArchiveToDate)
+        },
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `all_archives_${new Date().toISOString()}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showPopup('All archives downloaded successfully', 'success');
+    } catch (error) {
+      console.error('Error downloading all archives:', error);
+      showPopup('Failed to download all archives', 'error');
+    } finally {
+      setAllArchiveLoading(false);
+    }
+  };
+
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({ message, type });
   };
+
+  const CustomInput = React.forwardRef(({ value, onClick, placeholder, disabled }, ref) => (
+    <div className="relative">
+      <input
+        type="text"
+        ref={ref}
+        onClick={onClick}
+        value={value}
+        placeholder={placeholder}
+        disabled={disabled}
+        readOnly
+        className="block w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm pl-10 cursor-pointer"
+      />
+      <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
+    </div>
+  ));
 
   const commonInputClasses = "block w-full h-[46px] px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm";
   const commonLabelClasses = "block text-md font-medium text-gray-700 mb-2";
@@ -233,7 +290,7 @@ const ArchiveDownload = () => {
         <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
       </div>
     ));
-
+    userRole = localStorage.getItem('role');
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
         {userRole === "BRANCH ADMIN" ? (
@@ -415,6 +472,61 @@ const ArchiveDownload = () => {
           {loading ? 'Downloading...' : 'Download Archive'}
         </button>
       </div>
+
+      {userRole === 'ADMIN' && (
+        <div className="p-4">
+          <h2 className="text-2xl mb-6 font-semibold text-gray-800">Download All Archives</h2>
+          <div className="bg-white p-6 rounded-xl shadow-md border-t-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
+              <div className={commonWrapperClasses}>
+                <label className={commonLabelClasses} htmlFor="fromDate">
+                  From Date
+                </label>
+                <DatePicker
+                  id="fromDate"
+                  selected={fromDate}
+                  onChange={(date) => setFromDate(date)}
+                  selectsStart
+                  startDate={fromDate}
+                  endDate={toDate}
+                  maxDate={new Date()}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Select a start date"
+                  customInput={<CustomInput />}
+                />
+              </div>
+
+              <div className={commonWrapperClasses}>
+                <label className={commonLabelClasses} htmlFor="toDate">
+                  To Date
+                </label>
+                <DatePicker
+                  id="endDate"
+                  selected={toDate}
+                  onChange={(date) => setToDate(date)}
+                  selectsEnd
+                  startDate={fromDate}
+                  endDate={toDate}
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="End Date"
+                  // maxDate={new Date()} // Prevents selecting dates later than today
+                  // className="w-full px-3 py-2 border rounded-md"
+                  customInput={<CustomInput />}
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleDownloadAll}
+              disabled={allArchiveLoading}
+              className={`bg-blue-900 text-white rounded-lg py-3 px-6 hover:bg-blue-800transition duration-300 shadow-md hover:shadow-lg flex items-center justify-center w-full md:w-auto ${allArchiveLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {allArchiveLoading ? 'Downloading All...' : 'Download All Archives'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
