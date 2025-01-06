@@ -1,9 +1,10 @@
 import React,{useState} from 'react'
 import Sidebar from '../Components/Sidebar';
 import Header from '../Components/Header';
+// import AdminOCRResponse from '../Data/AdminOCRRespons';
 import AdminOCRResponce from '../Data/AdminOCRResponce';
 
-function AdminsOCR() {
+function AdminsOCRResponce() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const toggleSidebar = () => {
@@ -22,4 +23,4 @@ function AdminsOCR() {
   )
 }
 
-export default AdminsOCR
+export default AdminsOCRResponce

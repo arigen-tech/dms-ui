@@ -163,12 +163,9 @@ const AdminOCR = () => {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const docNames = [
-    filteredDocuments
-      .flatMap((doc) => doc.documentDetails.map((detail) => detail.docName)) // Extract docNames
-      .filter(Boolean) // Ensure no null or undefined values
-      .join(","), // Join with commas
-  ];
+  const docNames = filteredDocuments
+    .flatMap((doc) => doc.documentDetails.map((detail) => detail.docName))
+    .filter(Boolean);
 
   console.log("setFilteredDataArray(filtered)", filteredDocuments);
   console.log("docNames", docNames);
@@ -177,7 +174,7 @@ const AdminOCR = () => {
     const apiEndpoint = `${API_OCR_HOST}/search/selected`;
 
     const payload = {
-      query: query, // Use the state value
+      query: query,
       selected_files: docNames,
     };
 
@@ -197,13 +194,54 @@ const AdminOCR = () => {
       .then((data) => {
         console.log("Response from server:", data);
 
-        // Redirect to "/adminOCRResponce" with response data
         navigate("/adminOCRResponce", { state: { responseData: data } });
       })
       .catch((error) => {
         console.error("Error:", error);
       });
   };
+
+  // for test purpose
+
+  // const handleSearch = () => {
+  //   const apiEndpoint = `${API_OCR_HOST}/search/selected`;
+
+  //   const payload = {
+  //     query: "a",
+  //     selected_files: [
+  //       "GOR32M.pdf",
+  //       "KKZ2A1.pdf",
+  //       "test.pdf",
+  //       "arlandaexpress_0000826085.pdf",
+  //       "arlandaexpress_0000875553.pdf",
+  //       "museodelferrocarril_20190922_007.pdf",
+  //       "ozo-5056563.pdf",
+  //       "train_20191019_008.pdf",
+  //       "train_20191019_018.pdf"
+  //     ]
+  //   };
+
+  //   fetch(apiEndpoint, {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify(payload),
+  //   })
+  //     .then((response) => {
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //       }
+  //       return response.json();
+  //     })
+  //     .then((data) => {
+  //       console.log("Response from server:", data);
+  //       navigate("/adminOCRResponce", { state: { responseData: data } });
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error:", error);
+  //     });
+  // };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -237,23 +275,33 @@ const AdminOCR = () => {
       <h1 className="text-xl mb-4 font-semibold">OCR</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 flex flex-wrap gap-4">
-          <label className="block text-md font-medium text-gray-700">
-            Search:
+          <div className="flex items-center gap-1">
+            <label
+              htmlFor="searchQuery"
+              className="text-md font-medium text-gray-700 w-full"
+            >
+              Enter Search Query:
+            </label>
             <input
+              id="searchQuery"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="border p-2"
+              className="border p-2 rounded-sm w-full"
               placeholder="Enter Query"
             />
-          </label>
+          </div>
           <button
             onClick={handleSearch}
-            className="bg-blue-500 text-white p-2 mt-2"
+            disabled={!query} // Disable the button if query is empty
+            className={`bg-blue-500 text-white p-2 rounded-lg ${
+              !query ? "cursor-not-allowed opacity-70" : ""
+            }`}
           >
             Search
           </button>
         </div>
+
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
           <div className="flex items-center bg-blue-500 rounded-lg">
             <label
