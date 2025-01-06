@@ -189,7 +189,7 @@ const ArchiveDownload = () => {
           departmentId: archiveCriteria.departmentId,
           startDate: formattedFromDate,
           endDate: formattedToDate,
-          userRole: userRole.role,
+          userRole: userRole,
         },
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
@@ -442,8 +442,9 @@ const ArchiveDownload = () => {
             endDate={toDate}
             dateFormat="dd-MM-yyyy"
             placeholderText="End Date"
-            maxDate={new Date()} // Prevents selecting dates later than today
-            className="w-full px-3 py-2 border rounded-md"
+            // maxDate={new Date()} // Prevents selecting dates later than today
+            // className="w-full px-3 py-2 border rounded-md"
+            customInput={<CustomInput />}
           />
         </div>
       </div>
@@ -451,9 +452,10 @@ const ArchiveDownload = () => {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl mb-6 font-semibold text-gray-800">Download Archive</h1>
-      <div className="bg-white p-6 rounded-xl shadow-md">
+    <div className="flex flex-col space-y-4">
+      <h2 className="text-2xl mb-6 font-semibold text-gray-800">Download Archive</h2>
+      <div className="bg-white p-6 rounded-xl shadow-md w-full">
+        
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -474,57 +476,55 @@ const ArchiveDownload = () => {
       </div>
 
       {userRole === 'ADMIN' && (
-        <div className="p-4">
-          <h2 className="text-2xl mb-6 font-semibold text-gray-800">Download All Archives</h2>
-          <div className="bg-white p-6 rounded-xl shadow-md border-t-4">
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
-              <div className={commonWrapperClasses}>
-                <label className={commonLabelClasses} htmlFor="fromDate">
-                  From Date
-                </label>
-                <DatePicker
-                  id="fromDate"
-                  selected={fromDate}
-                  onChange={(date) => setFromDate(date)}
-                  selectsStart
-                  startDate={fromDate}
-                  endDate={toDate}
-                  maxDate={new Date()}
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Select a start date"
-                  customInput={<CustomInput />}
-                />
-              </div>
-
-              <div className={commonWrapperClasses}>
-                <label className={commonLabelClasses} htmlFor="toDate">
-                  To Date
-                </label>
-                <DatePicker
-                  id="endDate"
-                  selected={toDate}
-                  onChange={(date) => setToDate(date)}
-                  selectsEnd
-                  startDate={fromDate}
-                  endDate={toDate}
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="End Date"
-                  // maxDate={new Date()} // Prevents selecting dates later than today
-                  // className="w-full px-3 py-2 border rounded-md"
-                  customInput={<CustomInput />}
-                />
-              </div>
+        <div className="flex flex-col space-y-4">
+        <h2 className="text-2xl mb-6 font-semibold text-gray-800">Download All Archives</h2>
+        <div className="bg-white p-6 rounded-xl shadow-md w-full">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
+            <div className={commonWrapperClasses}>
+              <label className={commonLabelClasses} htmlFor="fromDate">
+                From Date
+              </label>
+              <DatePicker
+                id="fromDate"
+                selected={fromDate}
+                onChange={(date) => setFromDate(date)}
+                selectsStart
+                startDate={fromDate}
+                endDate={toDate}
+                maxDate={new Date()}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Select a start date"
+                customInput={<CustomInput />}
+              />
             </div>
 
-            <button
-              onClick={handleDownloadAll}
-              disabled={allArchiveLoading}
-              className={`bg-blue-900 text-white rounded-lg py-3 px-6 hover:bg-blue-800transition duration-300 shadow-md hover:shadow-lg flex items-center justify-center w-full md:w-auto ${allArchiveLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {allArchiveLoading ? 'Downloading All...' : 'Download All Archives'}
-            </button>
+            <div className={commonWrapperClasses}>
+              <label className={commonLabelClasses} htmlFor="toDate">
+                To Date
+              </label>
+              <DatePicker
+                id="endDate"
+                selected={toDate}
+                onChange={(date) => setToDate(date)}
+                selectsEnd
+                startDate={fromDate}
+                endDate={toDate}
+                dateFormat="dd-MM-yyyy"
+                placeholderText="End Date"
+                customInput={<CustomInput />}
+              />
+            </div>
           </div>
+
+          <button
+            onClick={handleDownloadAll}
+            disabled={allArchiveLoading}
+            className={`bg-blue-900 text-white rounded-lg py-3 px-6 hover:bg-blue-800 transition duration-300 shadow-md hover:shadow-lg flex items-center justify-center w-full md:w-auto ${allArchiveLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {allArchiveLoading ? 'Downloading All...' : 'Download All Archives'}
+          </button>
+        </div>
         </div>
       )}
     </div>
