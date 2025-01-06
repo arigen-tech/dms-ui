@@ -32,6 +32,9 @@ import ManageUserRoles from "./Pages/ManageUserRoles";
 import ArchiveDoc from "./Pages/ArchiveDoc"; 
 import ArchivesDoc from "./Pages/ArchivesDoc"; 
 import AdminsOCR from "./Pages/AdminsOCR"; 
+import BrAdminsOCR from "./Pages/BrAdminsOCR"; 
+import DpAdminsOCR from "./Pages/DpAdminsOCR"; 
+import UsersOCR from "./Pages/UsersOCR"; 
 import AdminsOCRResponce from "./Pages/AdminsOCRResponce"; 
 import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
 
@@ -67,8 +70,11 @@ const protectedRoutes = [
   { path: "/searchByScan", element: <SearchByScanning />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/archive", element: <ArchiveDoc />, allowedRoles: [ SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/archivesuplod", element: <ArchivesDoc />, allowedRoles: [ SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
-  { path: "/adminOcr", element: <AdminsOCR />, allowedRoles: [SYSTEM_ADMIN] }, 
-  { path: "/adminOCRResponce", element: <AdminsOCRResponce />, allowedRoles: [SYSTEM_ADMIN] }, 
+  { path: "/adminOcr", element: <AdminsOCR />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/brAdminOcr", element: <BrAdminsOCR />, allowedRoles: [BRANCH_ADMIN] }, 
+  { path: "/dpAdminOcr", element: <DpAdminsOCR />, allowedRoles: [DEPARTMENT_ADMIN] }, 
+  { path: "/userOcr", element: <UsersOCR />, allowedRoles: [USER] }, 
+  { path: "/adminOCRResponce", element: <AdminsOCRResponce />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] }, 
 
 ];
 

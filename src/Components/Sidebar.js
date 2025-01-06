@@ -559,6 +559,32 @@ function Sidebar() {
               </div>
               <div>
                 <button
+                  onClick={handleOCRToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <AiOutlineFileSearch className="h-5 w-5 mr-3" />O C R
+                  </div>
+                  {isOCROpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isOCROpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
+                      to="/brAdminOcr"
+                      icon={RiMenuSearchLine}
+                      text="Search OCR"
+                      // count={counts.totalRejectedDocuments}
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
+                <button
                   onClick={handleArchiveToggle}
                   className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
@@ -693,6 +719,32 @@ function Sidebar() {
               </div>
               <div>
                 <button
+                  onClick={handleOCRToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <AiOutlineFileSearch className="h-5 w-5 mr-3" />O C R
+                  </div>
+                  {isOCROpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isOCROpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
+                      to="/dpAdminOcr"
+                      icon={RiMenuSearchLine}
+                      text="Search OCR"
+                      // count={counts.totalRejectedDocuments}
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
+                <button
                   onClick={handleArchiveToggle}
                   className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
@@ -788,6 +840,31 @@ function Sidebar() {
                       icon={DocumentTextIcon}
                       text="Document Report"
                       // count={counts.totalRejectedDocuments}
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
+                <button
+                  onClick={handleOCRToggle}
+                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                >
+                  <div className="flex items-center">
+                    <AiOutlineFileSearch className="h-5 w-5 mr-3" />O C R
+                  </div>
+                  {isOCROpen ? (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4" />
+                  )}
+                </button>
+                {isOCROpen && (
+                  <div className="ml-2 flex flex-col space-y-1">
+                    <hr className="border-t border-blue-800 mt-1" />
+                    <SidebarLink
+                      to="/userOcr"
+                      icon={RiMenuSearchLine}
+                      text="Search OCR"
                     />
                   </div>
                 )}
