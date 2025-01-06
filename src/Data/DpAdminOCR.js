@@ -416,7 +416,7 @@ const DpAdminOCR = () => {
               <th className="border p-2 text-left">Uploaded Date</th>
               <th className="border p-2 text-left">Category</th>
               <th className="border p-2 text-left">File Year</th>
-              <th className="border p-2 text-left">User Name</th>
+              <th className="border p-2 text-left">Uploaded By</th>
               <th className="border p-2 text-left">Department</th>
               <th className="border p-2 text-left">Branch</th>
               <th className="border p-2 text-left">Approval Status</th>

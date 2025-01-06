@@ -34,6 +34,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [uploadedFileVersion, setUploadedFileVersion] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [handleEditDocumentActive, setHandleEditDocumentActive] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
@@ -422,6 +423,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const handleEditDocument = (doc) => {
     console.log("Editing document:", doc);
+    setHandleEditDocumentActive(true);
     setEditingDoc(doc);
 
     const existingFiles = (doc.documentDetails || []).map((detail) => ({
@@ -1056,6 +1058,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         handleVersionChange(index, e.target.value.trim())
                       }
                       className="border rounded px-2 py-1 text-sm"
+                      disabled={!handleEditDocumentActive} 
                       placeholder="v1"
                     />
                   </label>
@@ -1074,13 +1077,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           })}
 
           <div className="flex justify-between items-center">
-            <div
+            {uploadedFilePath != 0 && (
+              <div
               className="text-red-800 cursor-pointer hover:underline"
               onClick={handleDiscardAll}
               aria-label="Discard All Files"
             >
               Discard All
             </div>
+            )}
 
             <div className="mt-3">
               {editingDoc === null ? (
