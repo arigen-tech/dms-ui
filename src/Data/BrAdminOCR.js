@@ -6,17 +6,19 @@ import {
   DEPAETMENT_API,
   BRANCH_API,
   YEAR_API,
+  API_HOST,
   CATEGORI_API,
   API_OCR_HOST,
 } from "../API/apiConfig";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
 
-const AdminOCR = () => {
+const BrAdminOCR = () => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
+  const [userBranch, setUserBranch] = useState([]);
   const [years, setYears] = useState([]);
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -52,8 +54,45 @@ const AdminOCR = () => {
     }
   };
 
+  //   const fetchUser = async () => {
+  //     try {
+  //       const userId = localStorage.getItem("userId");
+  //       const response = await axios.get(
+  //         `${API_HOST}/employee/findById/${userId}`,
+  //         {
+  //           headers: { Authorization: `Bearer ${token}` },
+  //         }
+  //       );
+  //       setUserBranch(response.data.branch);
+  //       //   setUserDep(response.data.department.name);
+  //     } catch (error) {
+  //       console.error("Error fetching user branch:", error);
+  //     }
+  //   };
+
+  const fetchUser = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      const response = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const userBranch = response.data.branch.name; // Extract branch name
+      setUserBranch(response.data.branch);
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        branch: userBranch, // Set the branch filter to the user's branch
+      }));
+    } catch (error) {
+      console.error("Error fetching user branch:", error);
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
+    fetchUser();
   }, []);
 
   const fetchDropdownData = (url, setState, allLabel) => {
@@ -83,6 +122,7 @@ const AdminOCR = () => {
     );
   }, []);
 
+  console.log("userBranch", userBranch);
   useEffect(() => {
     const applyFilters = () => {
       let filtered = documents;
@@ -142,8 +182,14 @@ const AdminOCR = () => {
     applyFilters();
   }, [filters, documents]);
 
+  const handleFilterChange = (key, value) => {
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [key]: value,
+    }));
+  };
+
   useEffect(() => {
-    // Fetch departments based on the selected branch
     if (filters.branch !== "All") {
       const branchId = branches.find(
         (branch) => branch.name === filters.branch
@@ -159,9 +205,9 @@ const AdminOCR = () => {
     }
   }, [filters.branch, branches]);
 
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
-  };
+  //   const handleFilterChange = (field, value) => {
+  //     setFilters((prev) => ({ ...prev, [field]: value }));
+  //   };
 
   const docNames = filteredDocuments
     .flatMap((doc) => doc.documentDetails.map((detail) => detail.docName))
@@ -201,48 +247,6 @@ const AdminOCR = () => {
       });
   };
 
-  // for test purpose
-
-  // const handleSearch = () => {
-  //   const apiEndpoint = `${API_OCR_HOST}/search/selected`;
-
-  //   const payload = {
-  //     query: "a",
-  //     selected_files: [
-  //       "GOR32M.pdf",
-  //       "KKZ2A1.pdf",
-  //       "test.pdf",
-  //       "arlandaexpress_0000826085.pdf",
-  //       "arlandaexpress_0000875553.pdf",
-  //       "museodelferrocarril_20190922_007.pdf",
-  //       "ozo-5056563.pdf",
-  //       "train_20191019_008.pdf",
-  //       "train_20191019_018.pdf"
-  //     ]
-  //   };
-
-  //   fetch(apiEndpoint, {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify(payload),
-  //   })
-  //     .then((response) => {
-  //       if (!response.ok) {
-  //         throw new Error(`HTTP error! status: ${response.status}`);
-  //       }
-  //       return response.json();
-  //     })
-  //     .then((data) => {
-  //       console.log("Response from server:", data);
-  //       navigate("/adminOCRResponce", { state: { responseData: data } });
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error:", error);
-  //     });
-  // };
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-GB", {
@@ -272,7 +276,7 @@ const AdminOCR = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">Admin OCR</h1>
+      <h1 className="text-xl mb-4 font-semibold">Branch Admin OCR</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 flex flex-wrap gap-4">
           <div className="flex items-center gap-1">
@@ -331,8 +335,9 @@ const AdminOCR = () => {
               value={filters.branch}
               onChange={(e) => handleFilterChange("branch", e.target.value)}
               className="border p-2"
+              disabled={true} 
             >
-              {/* <option value="All">All Branches</option> */}
+              <option value="All">All Branches</option>
               {branches.map((branch) => (
                 <option key={branch.id} value={branch.name}>
                   {branch.name}
@@ -530,4 +535,4 @@ const AdminOCR = () => {
   );
 };
 
-export default AdminOCR;
+export default BrAdminOCR;
