@@ -894,7 +894,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   return (
     <div className="p-1">
-      <h1 className="text-xl mb-4 font-semibold">DOCUMENT MANAGEMENT</h1>
+      <h1 className="text-xl mb-4 font-semibold">Upload Document</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
         {popupMessage && (
           <Popup
