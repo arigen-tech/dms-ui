@@ -22,7 +22,13 @@ import {
   ShoppingCartIcon,
   ClipboardDocumentListIcon,
 } from "@heroicons/react/24/solid";
-import { RiFileUserFill, RiInboxUnarchiveFill ,RiMenuSearchLine , RiInboxArchiveFill, RiArchiveStackFill   } from "react-icons/ri";
+import {
+  RiFileUserFill,
+  RiInboxUnarchiveFill,
+  RiMenuSearchLine,
+  RiInboxArchiveFill,
+  RiArchiveStackFill,
+} from "react-icons/ri";
 import { IoDocumentLock } from "react-icons/io5";
 import { AiOutlineFileSearch } from "react-icons/ai";
 import logo3 from "../Assets/logo3.png";
@@ -371,14 +377,18 @@ function Sidebar() {
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
-                      // count={counts.totalRejectedDocuments}
                     />
 
                     <SidebarLink
                       to="/userReport"
                       icon={RiFileUserFill}
                       text="User Report"
-                      // count={counts.totalRejectedDocuments}
+                    />
+
+                    <SidebarLink
+                      to="/scan"
+                      icon={RiFileUserFill}
+                      text="Scan Document"
                     />
                   </div>
                 )}
@@ -418,7 +428,7 @@ function Sidebar() {
                   className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
-                    <RiArchiveStackFill  className="h-5 w-5 mr-3" />
+                    <RiArchiveStackFill className="h-5 w-5 mr-3" />
                     Archive Section
                   </div>
                   {isArchiveOpen ? (
@@ -432,13 +442,13 @@ function Sidebar() {
                     <hr className="border-t border-blue-800 mt-1" />
                     <SidebarLink
                       to="/archive"
-                      icon={RiInboxArchiveFill }
+                      icon={RiInboxArchiveFill}
                       text="Data Archive Download"
                     />
 
                     <SidebarLink
                       to="/archivesuplod"
-                      icon={RiInboxUnarchiveFill }
+                      icon={RiInboxUnarchiveFill}
                       text="Data Archive Upload"
                     />
                   </div>
@@ -589,7 +599,7 @@ function Sidebar() {
                   className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
-                    <RiArchiveStackFill  className="h-5 w-5 mr-3" />
+                    <RiArchiveStackFill className="h-5 w-5 mr-3" />
                     Archive Section
                   </div>
                   {isArchiveOpen ? (
@@ -603,13 +613,13 @@ function Sidebar() {
                     <hr className="border-t border-blue-800 mt-1" />
                     <SidebarLink
                       to="/archive"
-                      icon={RiInboxArchiveFill }
+                      icon={RiInboxArchiveFill}
                       text="Data Archive Download"
                     />
 
                     <SidebarLink
                       to="/archivesuplod"
-                      icon={RiInboxUnarchiveFill }
+                      icon={RiInboxUnarchiveFill}
                       text="Data Archive Upload"
                     />
                   </div>
@@ -749,7 +759,7 @@ function Sidebar() {
                   className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
-                    <RiArchiveStackFill  className="h-5 w-5 mr-3" />
+                    <RiArchiveStackFill className="h-5 w-5 mr-3" />
                     Archive Section
                   </div>
                   {isArchiveOpen ? (
@@ -763,13 +773,13 @@ function Sidebar() {
                     <hr className="border-t border-blue-800 mt-1" />
                     <SidebarLink
                       to="/archive"
-                      icon={RiInboxArchiveFill }
+                      icon={RiInboxArchiveFill}
                       text="Data Archive Download"
                     />
 
                     <SidebarLink
                       to="/archivesuplod"
-                      icon={RiInboxUnarchiveFill }
+                      icon={RiInboxUnarchiveFill}
                       text="Data Archive Upload"
                     />
                   </div>
