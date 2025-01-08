@@ -49,7 +49,6 @@ const Approve = () => {
     setError("");
     try {
       const userId = localStorage.getItem("userId");
-      const tokenKey = localStorage.getItem("tokenKey");
       const response = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
@@ -69,7 +68,6 @@ const Approve = () => {
     setLoading(true);
     setError("");
     try {
-      const tokenKey = localStorage.getItem("tokenKey");
       const userId = localStorage.getItem("userId");
 
       if (!tokenKey || !userId) {
@@ -120,7 +118,6 @@ const Approve = () => {
 
   const fetchPaths = async (doc) => {
     try {
-      const tokenKey = localStorage.getItem(tokenKey);
       if (!tokenKey) {
         throw new Error("No authentication tokenKey found.");
       }
@@ -144,34 +141,50 @@ const Approve = () => {
   };
 
   const openFile = async (file) => {
-    const tokenKey = localStorage.getItem(tokenKey);
-    const createdOnDate = new Date(file.createdOn);
-    const year = createdOnDate.getFullYear();
-    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0");
-    const category = file.documentHeader.categoryMaster.name;
-    const fileName = file.docName;
-    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${encodeURIComponent(
-      category
-    )}/${encodeURIComponent(fileName)}`;
-
-    console.log("File URL:", fileUrl);
-
     try {
+      if (!file) {
+        throw new Error("File object is undefined.");
+      }
+      console.log(file);
+  
+      const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+      const department = selectedDoc.employee.department.name.replace(
+        / /g,
+        "_"
+      );
+      const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+      const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+
+      const version = file.version;
+      const fileName = file.docName.replace(/ /g, "_");
+
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+        branch
+      )}/${encodeURIComponent(department)}/${encodeURIComponent(
+        year
+      )}/${encodeURIComponent(category)}/${encodeURIComponent(
+        version
+      )}/${encodeURIComponent(fileName)}`;
+  
+      console.log("File URL:", fileUrl);
+  
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${tokenKey}` },
         responseType: "blob",
       });
-
+  
       const blob = new Blob([response.data], {
         type: response.headers["content-type"],
       });
       const blobUrl = window.URL.createObjectURL(blob);
-
+  
       window.open(blobUrl, "_blank");
     } catch (error) {
-      console.error("Error fetching file:", error);
+      console.error("Error fetching file:", error.message);
     }
   };
+  
+ 
 
   const handleStatusChange = (doc, status) => {
     if (status === "REJECTED") {

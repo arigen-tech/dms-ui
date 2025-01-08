@@ -136,7 +136,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const fetchUser = async () => {
     try {
       const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("tokenKey");
       const response = await apiClient.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
@@ -179,86 +178,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   console.log("all doc by user", documents);
 
-  // const fetchPaths = async (doc) => {
-  //   try {
-  //     const token = localStorage.getItem("tokenKey");
-  //     if (!token) {
-  //       throw new Error("No authentication token found.");
-  //     }
-
-  //     // More comprehensive document validation
-  //     if (!doc) {
-  //       console.error("Document is null or undefined");
-  //       return null;
-  //     }
-
-  //     if (!doc.id) {
-  //       console.error("Invalid document: No ID found", doc);
-  //       return null;
-  //     }
-
-  //     // Validate doc.id is not just a falsy value
-  //     const documentId = doc.id.toString().trim();
-  //     if (!documentId) {
-  //       console.error("Document ID is empty or invalid", doc);
-  //       return null;
-  //     }
-
-  //     console.log(`Attempting to fetch paths for document ID: ${documentId}`);
-  //     console.log(`Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`);
-
-  //     const response = await apiClient.get(
-  //       `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //           'Content-Type': 'application/json'
-  //         },
-  //       }
-  //     );
-
-  //     console.log("Paths response:", response.data);
-
-  //     setSelectedDoc((prevDoc) => ({
-  //       ...prevDoc,
-  //       paths: Array.isArray(response.data) ? response.data : [],
-  //     }));
-
-  //     return response.data; // Optional: return the data
-  //   } catch (error) {
-  //     // More detailed error logging
-  //     console.error("Error in fetchPaths:", error);
-
-  //     // More comprehensive error handling
-  //     if (apiClient.isapiClientError(error)) {
-  //       if (error.response) {
-  //         console.error("Server responded with error:", {
-  //           status: error.response.status,
-  //           data: error.response.data
-  //         });
-  //       } else if (error.request) {
-  //         console.error("No response received:", error.request);
-  //       }
-  //     }
-
-  //     // Optional: more user-friendly error handling
-  //     showPopup(`Failed to fetch document paths: ${error.message || 'Unknown error'}`);
-
-  //     return null; // Explicitly return null on error
-  //   }
-  // };
-
   const openFile = async (file) => {
     try {
       console.log("file: ", file); // Log the entire file object to inspect its structure
 
       console.log("selectedDocs", selectedDoc);
-
-      // Check if the required fields exist, otherwise handle accordingly
-      // const branch = file.path.split("/")[0];
-      // const department = file.path.split("/")[1];
-      // const year = file.path.split("/")[2];
-      // const category = file.path.split("/")[3];
 
       const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
       const department = selectedDoc.employee.department.name.replace(
@@ -279,7 +203,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         version
       )}/${encodeURIComponent(fileName)}`;
 
-      const token = localStorage.getItem("tokenKey");
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
@@ -461,7 +384,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const handleSaveEdit = async () => {
     const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("tokenKey");
 
     if (!userId || !token) {
       showPopup("User not logged in. Please log in again.", "error");
@@ -647,7 +569,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchPaths = async (doc) => {
     try {
-      const token = localStorage.getItem("tokenKey");
       if (!token) {
         throw new Error("No authentication token found.");
       }

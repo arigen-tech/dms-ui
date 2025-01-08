@@ -148,37 +148,46 @@ const ApprovedDoc = () => {
   };
 
   const openFile = async (file) => {
-    const token = localStorage.getItem("tokenKey"); // Get the token from localStorage
-    const createdOnDate = new Date(file.createdOn); // Convert timestamp to Date object
-    const year = createdOnDate.getFullYear(); // Extract year
-    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0"); // Extract month and pad with zero
-    const category = file.documentHeader.categoryMaster.name; // Get the category name
-    const fileName = file.docName; // The file name
-
-    // Construct the URL based on the Spring Boot @GetMapping pattern
-    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${category}/${fileName}`;
-
     try {
-      // Fetch the file using axios and pass the token in the headers
+      if (!file) {
+        throw new Error("File object is undefined.");
+      }
+      console.log(file);
+  
+      const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+      const department = selectedDoc.employee.department.name.replace(
+        / /g,
+        "_"
+      );
+      const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+      const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+
+      const version = file.version;
+      const fileName = file.docName.replace(/ /g, "_");
+
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+        branch
+      )}/${encodeURIComponent(department)}/${encodeURIComponent(
+        year
+      )}/${encodeURIComponent(category)}/${encodeURIComponent(
+        version
+      )}/${encodeURIComponent(fileName)}`;
+  
+      console.log("File URL:", fileUrl);
+  
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob", // Fetch the file as a blob
+        responseType: "blob",
       });
-
-      // Get the MIME type of the file from the response headers
-      const contentType = response.headers["content-type"];
-
-      // Create a blob from the response
-      const blob = new Blob([response.data], { type: contentType });
-
-      // Generate a URL for the blob
+  
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
       const blobUrl = window.URL.createObjectURL(blob);
-
-      // Open the blob in a new tab
+  
       window.open(blobUrl, "_blank");
     } catch (error) {
-      console.error("Error fetching file:", error);
-      alert("There was an error opening the file. Please try again.");
+      console.error("Error fetching file:", error.message);
     }
   };
 
