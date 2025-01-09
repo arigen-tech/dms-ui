@@ -331,8 +331,8 @@ const ManageUserRole = () => {
 
   return (
     <div className="p-1">
-      <h1 className="text-xl mb-4 font-semibold">Manage Employee Roles</h1>
-      {/* Popup Messages */}
+      <h1 className="text-lg sm:text-xl mb-4 font-semibold">Manage Employee Roles</h1>
+      <div className="bg-white p-3 rounded-lg shadow-sm">
       {popupMessage && (
         <Popup
           message={popupMessage.message}
@@ -340,7 +340,6 @@ const ManageUserRole = () => {
           onClose={popupMessage.onClose}
         />
       )}
-      <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
           <div className="flex items-center bg-blue-500 rounded-lg">
             <label

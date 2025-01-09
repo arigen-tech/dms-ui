@@ -28,14 +28,19 @@ import {
   CalendarDaysIcon,
   ComputerDesktopIcon,
   DocumentArrowDownIcon,
-  DocumentChartBarIcon,
+  DocumentCheckIcon,
+  DocumentMinusIcon,
+  DocumentIcon,
   DocumentMagnifyingGlassIcon,
   KeyIcon,
-  ServerStackIcon,
   ShoppingCartIcon,
   UserCircleIcon,
   UsersIcon,
 } from "@heroicons/react/24/solid";
+import { IoDocumentLock } from "react-icons/io5";
+import { FaUserClock } from "react-icons/fa6";
+
+
 
 function Dashboard() {
   const [chartData, setChartData] = useState([]);
@@ -283,7 +288,7 @@ function Dashboard() {
                   <StatBlock
                     title="Total Pending Users"
                     value={stats.totalNullEmployeeType}
-                    Icon={UsersIcon}
+                    Icon={FaUserClock}
                   />
                 </Link>
 
@@ -330,14 +335,14 @@ function Dashboard() {
                 <StatBlock
                   title="Total Documents"
                   value={stats.totalDocument}
-                  Icon={DocumentArrowDownIcon}
+                  Icon={DocumentIcon}
                 />
 
                 <Link to="/approve-documents" className="block">
                   <StatBlock
                     title="Pending Documents"
                     value={stats.totalPendingDocuments}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={IoDocumentLock}
                   />
                 </Link>
 
@@ -345,7 +350,7 @@ function Dashboard() {
                   <StatBlock
                     title="Approved Documents"
                     value={stats.totalApprovedDocuments}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={DocumentCheckIcon}
                   />
                 </Link>
 
@@ -353,7 +358,7 @@ function Dashboard() {
                   <StatBlock
                     title="Rejected Documents"
                     value={stats.totalRejectedDocuments}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={DocumentMinusIcon}
                   />
                 </Link>
               </>
@@ -373,7 +378,7 @@ function Dashboard() {
                   <StatBlock
                     title="Pending Users"
                     value={stats.nullRoleEmployeeCountForBranch}
-                    Icon={UsersIcon}
+                    Icon={FaUserClock}
                   />
                 </Link>
 
@@ -388,14 +393,14 @@ function Dashboard() {
                 <StatBlock
                   title="Total Documents"
                   value={totalDocsbyBranch}
-                  Icon={DocumentArrowDownIcon}
+                  Icon={DocumentIcon}
                 />
 
                 <Link to="/approve-documents" className="block">
                   <StatBlock
                     title="Pending Documents"
                     value={stats.totalPendingDocumentsById}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={IoDocumentLock}
                   />
                 </Link>
 
@@ -403,7 +408,7 @@ function Dashboard() {
                   <StatBlock
                     title="Approved Documents"
                     value={stats.totalApprovedStatusDocById}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={DocumentCheckIcon}
                   />
                 </Link>
 
@@ -411,7 +416,7 @@ function Dashboard() {
                   <StatBlock
                     title="Rejected Documents"
                     value={stats.totalRejectedStatusDocById}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={DocumentMinusIcon}
                   />
                 </Link>
               </>
@@ -431,20 +436,20 @@ function Dashboard() {
                   <StatBlock
                     title="Pending Users"
                     value={stats.nullRoleEmployeeCountForDepartment}
-                    Icon={UsersIcon}
+                    Icon={FaUserClock}
                   />
                 </Link>
 
                 <StatBlock
                   title="Total Documents"
                   value={totalDocsbyDep}
-                  Icon={DocumentArrowDownIcon}
+                  Icon={DocumentIcon}
                 />
                 <Link to="/approve-documents" className="block">
                   <StatBlock
                     title="Pending Documents"
                     value={stats.totalPendingDocumentsByDepartmentId}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={IoDocumentLock}
                   />
                 </Link>
 
@@ -452,7 +457,7 @@ function Dashboard() {
                   <StatBlock
                     title="Approved Documents"
                     value={stats.totalApprovedStatusDocByDepartmentId}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={DocumentCheckIcon}
                   />
                 </Link>
 
@@ -460,7 +465,7 @@ function Dashboard() {
                   <StatBlock
                     title="Rejected Documents"
                     value={stats.totalRejectedStatusDocByDepartmentId}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={DocumentMinusIcon}
                   />
                 </Link>
               </>
@@ -468,11 +473,7 @@ function Dashboard() {
 
             {role === USER && (
               <>
-                <StatBlock
-                  title="Total Documents"
-                  value={totalDocsbyUser}
-                  Icon={DocumentArrowDownIcon}
-                />
+                
                 <Link to="/users" className="block">
                   <StatBlock
                     title="Create User"
@@ -481,11 +482,17 @@ function Dashboard() {
                   />
                 </Link>
 
+                <StatBlock
+                  title="Total Documents"
+                  value={totalDocsbyUser}
+                  Icon={DocumentIcon}
+                />
+
                 <Link to="/all-documents" className="block">
                   <StatBlock
                     title="Pending Documents"
                     value={stats.pendingDocsbyid}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={IoDocumentLock}
                   />
                 </Link>
 
@@ -493,7 +500,7 @@ function Dashboard() {
                   <StatBlock
                     title="Approved Documents"
                     value={stats.approvedDocsbyid}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={DocumentCheckIcon}
                   />
                 </Link>
 
@@ -501,7 +508,7 @@ function Dashboard() {
                   <StatBlock
                     title="Rejected Documents"
                     value={stats.rejectedDocsbyid}
-                    Icon={DocumentMagnifyingGlassIcon}
+                    Icon={DocumentMinusIcon}
                   />
                 </Link>
               </>

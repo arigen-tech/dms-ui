@@ -15,12 +15,12 @@ import {
   DocumentMagnifyingGlassIcon,
   DocumentIcon,
   KeyIcon,
+  CalendarDaysIcon,
   UserPlusIcon,
   ComputerDesktopIcon,
   LockClosedIcon,
   UserCircleIcon,
   ShoppingCartIcon,
-  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/solid";
 import {
   RiFileUserFill,
@@ -32,6 +32,7 @@ import {
 import { IoDocumentLock } from "react-icons/io5";
 import { AiOutlineFileSearch } from "react-icons/ai";
 import { MdAdfScanner } from "react-icons/md";
+import { FaUserClock } from "react-icons/fa6";
 import logo3 from "../Assets/logo3.png";
 import {
   API_HOST,
@@ -219,7 +220,7 @@ function Sidebar() {
   const role = localStorage.getItem("role");
 
   return (
-    <div className="h-screen flex flex-col justify-between bg-blue-800 text-white w-52 p-1 transition-all duration-300">
+    <div className="max-h-[100%] overflow-y-auto print:max-h-none print:overflow-auto h-screen flex flex-col justify-between bg-blue-800 text-white w-52 p-1 transition-all duration-300 hide-scrollbar">
       <div>
         <div className="flex items-center border-b border-t justify-center mb-2">
           <img className="flex w-30 h-30" src={logo3} alt="DMS" />
@@ -241,7 +242,7 @@ function Sidebar() {
                 <hr className="border-t border-blue-800 mt-1" />
                 <SidebarLink
                   to="/userRoleAssing"
-                  icon={UserPlusIcon}
+                  icon={FaUserClock}
                   text="Total Pending Users"
                   count={counts.totalNullEmployeeType}
                 />
@@ -299,7 +300,7 @@ function Sidebar() {
                     <hr className="border-t border-blue-800" />
                     <SidebarLink
                       to="/create-year"
-                      icon={ShoppingCartIcon}
+                      icon={CalendarDaysIcon}
                       text="Years"
                       count={counts.annualYear}
                     />
@@ -462,7 +463,7 @@ function Sidebar() {
               />
               <SidebarLink
                 to="/userRoleAssing"
-                icon={UserPlusIcon}
+                icon={FaUserClock}
                 text="Pending Users"
                 count={counts.nullRoleEmployeeCountForBranch}
               />
@@ -511,13 +512,13 @@ function Sidebar() {
                     />
                     <SidebarLink
                       to="/total-rejected"
-                      icon={DocumentTextIcon}
+                      icon={DocumentMinusIcon}
                       text="Rejected Documents"
                       count={counts.totalRejectedStatusDocById}
                     />
                     <SidebarLink
                       to="/search"
-                      icon={DocumentTextIcon}
+                      icon={DocumentMagnifyingGlassIcon}
                       text="Search Documents"
                     />
                     <SidebarLink
@@ -634,7 +635,7 @@ function Sidebar() {
               />
               <SidebarLink
                 to="/PendingRole"
-                icon={UserPlusIcon}
+                icon={FaUserClock}
                 text="Pending Users"
                 count={counts.nullRoleEmployeeCountForDepartment}
               />
@@ -671,13 +672,13 @@ function Sidebar() {
                     />
                     <SidebarLink
                       to="/total-rejected"
-                      icon={DocumentTextIcon}
+                      icon={DocumentMinusIcon}
                       text="Rejected Documents"
                       count={counts.totalRejectedStatusDocByDepartmentId}
                     />
                     <SidebarLink
                       to="/search"
-                      icon={DocumentTextIcon}
+                      icon={DocumentMagnifyingGlassIcon}
                       text="Search Documents"
                     />
                     <SidebarLink

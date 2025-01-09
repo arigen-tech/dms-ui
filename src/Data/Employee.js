@@ -18,7 +18,7 @@ import {
   ROLE_API,
 } from "../API/apiConfig"; // Import your API URLs
 import { API_HOST } from "../API/apiConfig";
-import Popup from '../Components/Popup';
+import Popup from "../Components/Popup";
 
 const UserAddEmployee = () => {
   const [employees, setEmployees] = useState([]);
@@ -50,22 +50,17 @@ const UserAddEmployee = () => {
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
 
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupConfig, setPopupConfig] = useState({
-    message: '',
-    type: 'default'
+    message: "",
+    type: "default",
   });
-
-
 
   useEffect(() => {
     fetchEmployees();
     fetchOptions();
   }, []);
-
-
 
   const fetchEmployees = async () => {
     try {
@@ -111,11 +106,14 @@ const UserAddEmployee = () => {
 
       if (isAdmin) {
         // Fetch all employees if the user is an admin
-        const allEmployeesResponse = await axios.get(`${API_HOST}/employee/findAll`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const allEmployeesResponse = await axios.get(
+          `${API_HOST}/employee/findAll`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         console.log("All employees data:", allEmployeesResponse.data);
         setEmployees(allEmployeesResponse.data);
@@ -131,18 +129,15 @@ const UserAddEmployee = () => {
         );
 
         console.log("Employees created by user:", createdByResponse.data);
-        // setEmployees(createdByResponse.data.payload || []); 
+        // setEmployees(createdByResponse.data.payload || []);
         setEmployees(createdByResponse.data.response);
         // Adjust based on your API response structure
       }
-
-
     } catch (error) {
       console.error("Error fetching user details or employees:", error);
       setError("Could not fetch user details or employees");
     }
   };
-
 
   // const fetchEmployees = async () => {
   //   setLoading(true);
@@ -271,7 +266,7 @@ const UserAddEmployee = () => {
           setShowPopup(true);
           setPopupConfig({
             message: "User authentication error. Please log in again.",
-            type: "error"
+            type: "error",
           });
           setIsSubmitting(false);
           return;
@@ -319,27 +314,24 @@ const UserAddEmployee = () => {
         setShowPopup(true);
         setPopupConfig({
           message: "Employee added successfully!",
-          type: "success"
+          type: "success",
         });
-
       } catch (error) {
         console.log("Full Error:", error);
         console.log("Error Response:", error.response);
 
         // Get the error message from the response
-        const errorMessage = error.response?.data || "Failed to add employee. Please try again.";
+        const errorMessage =
+          error.response?.data || "Failed to add employee. Please try again.";
 
         setShowPopup(true);
         setPopupConfig({
           message: errorMessage,
-          type: "error"
+          type: "error",
         });
-
       }
     }
-  }
-
-
+  };
 
   const handleEditEmployee = (employeeId) => {
     const employeeToEdit = employees.find((emp) => emp.id === employeeId);
@@ -433,7 +425,9 @@ const UserAddEmployee = () => {
         }
       } catch (error) {
         console.error("Error updating employee:", error);
-        const errorMessage = error.response?.data?.message || "Error updating employee. Please try again.";
+        const errorMessage =
+          error.response?.data?.message ||
+          "Error updating employee. Please try again.";
 
         // Set error message
         setShowPopup(true);
@@ -443,7 +437,8 @@ const UserAddEmployee = () => {
         });
       }
     } else {
-      const errorMessage = "Please fill out all fields and select a branch and department.";
+      const errorMessage =
+        "Please fill out all fields and select a branch and department.";
       setError(errorMessage);
       // Optionally, you could show an error popup here as well
       setShowPopup(true);
@@ -458,7 +453,6 @@ const UserAddEmployee = () => {
     setEmployeeToToggle(employee);
     setModalVisible(true);
   };
-
 
   const confirmToggleActive = async () => {
     try {
@@ -500,7 +494,9 @@ const UserAddEmployee = () => {
       }
     } catch (error) {
       console.error("Error toggling employee status:", error);
-      const errorMessage = error.response?.data?.message || "Error toggling employee status. Please try again.";
+      const errorMessage =
+        error.response?.data?.message ||
+        "Error toggling employee status. Please try again.";
 
       // Set error message
       setShowPopup(true); // Show the popup for error feedback
@@ -515,10 +511,9 @@ const UserAddEmployee = () => {
     }
   };
 
-
   const handleClosePopup = () => {
     // Refresh the page when the popup is closed after a successful action
-    if (popupConfig.type === 'success') {
+    if (popupConfig.type === "success") {
       window.location.reload(); // Refresh the page
     } else {
       setShowPopup(false); // Just close the popup for other types
@@ -544,8 +539,12 @@ const UserAddEmployee = () => {
     const department = employee.department?.name?.toLowerCase() || "n/a";
     const role = employee.role?.role?.toLowerCase() || "no role";
     const statusText = employee.active ? "active" : "inactive";
-    const createdOnText = employee.createdOn ? formatDate(employee.createdOn).toLowerCase() : "";
-    const updatedOnText = employee.updatedOn ? formatDate(employee.updatedOn).toLowerCase() : "";
+    const createdOnText = employee.createdOn
+      ? formatDate(employee.createdOn).toLowerCase()
+      : "";
+    const updatedOnText = employee.updatedOn
+      ? formatDate(employee.updatedOn).toLowerCase()
+      : "";
     const createdBy = employee.createdBy?.name?.toLowerCase() || "unknown";
     const updatedBy = employee.updatedBy?.name?.toLowerCase() || "unknown";
 
@@ -568,8 +567,6 @@ const UserAddEmployee = () => {
     );
   });
 
-
-
   const sortedEmployees = filteredEmployees.sort((a, b) => b.active - a.active);
 
   const totalItems = sortedEmployees.length;
@@ -586,7 +583,8 @@ const UserAddEmployee = () => {
     const pages = [];
 
     // Calculate the start and end page numbers
-    const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const startPage =
+      Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
 
     // Push pages to display in the pagination
@@ -597,16 +595,11 @@ const UserAddEmployee = () => {
     return pages;
   };
 
-
-
-
-
-
   const role = localStorage.getItem("role");
 
   return (
     <div className="p-1">
-      <h1 className="text-xl mb-4 font-semibold">USERS</h1>
+      <h1 className="text-lg sm:text-xl mb-4 font-semibold">USERS</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
         {error && <p className="text-red-500">{error}</p>}
         {/* Success Message */}
@@ -665,7 +658,6 @@ const UserAddEmployee = () => {
                 className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
-
 
             {/* Branch Selection */}
             <label className="block text-md font-medium text-gray-700">
@@ -742,9 +734,6 @@ const UserAddEmployee = () => {
           </div>
         </div>
 
-
-
-
         {(role === "ADMIN" || role === "USER") && (
           <>
             <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
@@ -783,7 +772,6 @@ const UserAddEmployee = () => {
               </div>
             </div>
 
-
             <table className="w-full border-collapse border">
               <thead className="bg-gray-100">
                 <tr>
@@ -797,22 +785,24 @@ const UserAddEmployee = () => {
                   <th className="border p-2 text-left">Created Date</th>
                   <th className="border p-2 text-left">Updated Date</th>
                   <th className="border p-2 text-left">Created By</th>
-                  {(role === "ADMIN") && (
+                  {role === "ADMIN" && (
                     <>
                       <th className="border p-2 text-left">Updated By</th>
-                      <th className="border p-2 text-left">Status</th></>
+                      <th className="border p-2 text-left">Status</th>
+                    </>
                   )}
                   <th className="border p-2 text-left">Edit</th>
-                  {(role === "ADMIN") && (
+                  {role === "ADMIN" && (
                     <th className="border p-2 text-left">Access</th>
                   )}
-
                 </tr>
               </thead>
               <tbody>
                 {paginatedEmployees.map((employee, index) => (
                   <tr key={employee.id}>
-                    <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
+                    <td className="border p-2">
+                      {index + 1 + (currentPage - 1) * itemsPerPage}
+                    </td>
                     <td className="border p-2">{employee.name}</td>
                     <td className="border p-2">{employee.email}</td>
                     <td className="border p-2">{employee.mobile}</td>
@@ -832,12 +822,10 @@ const UserAddEmployee = () => {
                       {formatDate(employee.updatedOn)}
                     </td>
 
-                    {(role === "USER") && (
-                      <td className="border p-2">
-                        {userName || "Unknown"}
-                      </td>
+                    {role === "USER" && (
+                      <td className="border p-2">{userName || "Unknown"}</td>
                     )}
-                    {(role === "ADMIN") && (
+                    {role === "ADMIN" && (
                       <>
                         <td className="border p-2">
                           {employee.createdBy?.name || "Unknown"}
@@ -852,7 +840,6 @@ const UserAddEmployee = () => {
                       </>
                     )}
 
-
                     <td className="border p-2">
                       <button
                         onClick={() => handleEditEmployee(employee.id)}
@@ -861,12 +848,13 @@ const UserAddEmployee = () => {
                         <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                       </button>
                     </td>
-                    {(role === "ADMIN") && (
+                    {role === "ADMIN" && (
                       <td className="border p-2">
                         <button
                           onClick={() => handleToggleActive(employee)}
-                          className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"
-                            }`}
+                          className={`p-1 rounded-full ${
+                            employee.active ? "bg-green-500" : "bg-red-500"
+                          }`}
                         >
                           {employee.active ? (
                             <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
@@ -876,7 +864,6 @@ const UserAddEmployee = () => {
                         </button>
                       </td>
                     )}
-
                   </tr>
                 ))}
               </tbody>
@@ -886,18 +873,22 @@ const UserAddEmployee = () => {
               <div>
                 <span className="text-sm text-gray-700">
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                  {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+                  {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                  {totalItems} entries
                 </span>
               </div>
               <div className="flex items-center">
                 {/* Previous Button */}
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                  className={`px-3 py-1 rounded mr-3 ${
+                    currentPage === 1
                       ? "bg-gray-300 cursor-not-allowed"
                       : "bg-slate-200 hover:bg-slate-300"
-                    }`}
+                  }`}
                 >
                   <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
                   Previous
@@ -908,10 +899,11 @@ const UserAddEmployee = () => {
                   <button
                     key={index}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                    className={`px-3 py-1 rounded mx-1 ${
+                      currentPage === page
                         ? "bg-blue-500 text-white"
                         : "bg-slate-200 hover:bg-blue-100"
-                      }`}
+                    }`}
                   >
                     {page}
                   </button>
@@ -924,23 +916,21 @@ const UserAddEmployee = () => {
 
                 {/* Next Button */}
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                  className={`px-3 py-1 rounded ml-3 ${
+                    currentPage === totalPages
                       ? "bg-gray-300 cursor-not-allowed"
                       : "bg-slate-200 hover:bg-slate-300"
-                    }`}
+                  }`}
                 >
                   Next
                   <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
                 </button>
               </div>
             </div>
-
-
-
-
-
           </>
         )}
       </div>
