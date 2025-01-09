@@ -31,6 +31,7 @@ import {
 } from "react-icons/ri";
 import { IoDocumentLock } from "react-icons/io5";
 import { AiOutlineFileSearch } from "react-icons/ai";
+import { MdAdfScanner } from "react-icons/md";
 import logo3 from "../Assets/logo3.png";
 import {
   API_HOST,
@@ -383,12 +384,6 @@ function Sidebar() {
                       to="/userReport"
                       icon={RiFileUserFill}
                       text="User Report"
-                    />
-
-                    <SidebarLink
-                      to="/scan"
-                      icon={RiFileUserFill}
-                      text="Scan Document"
                     />
                   </div>
                 )}
@@ -797,6 +792,12 @@ function Sidebar() {
                 icon={UserGroupIcon}
                 text="Users"
                 count={counts.createdByCount}
+              />
+
+              <SidebarLink
+                to="/scan"
+                icon={MdAdfScanner}
+                text="Scan Document"
               />
               <SidebarLink
                 to="/all-documents"
