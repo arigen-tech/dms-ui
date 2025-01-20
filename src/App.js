@@ -38,7 +38,7 @@ import UsersOCR from "./Pages/UsersOCR";
 import AdminsOCRResponce from "./Pages/AdminsOCRResponce"; 
 import Scanner from "./Pages/Scanner"; 
 import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
-
+import Notification from "./Data/Notification"
 
 
 const protectedRoutes = [
@@ -76,7 +76,8 @@ const protectedRoutes = [
   { path: "/dpAdminOcr", element: <DpAdminsOCR />, allowedRoles: [DEPARTMENT_ADMIN] }, 
   { path: "/userOcr", element: <UsersOCR />, allowedRoles: [USER] }, 
   { path: "/adminOCRResponce", element: <AdminsOCRResponce />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] }, 
-  { path: "/scan", element: <Scanner />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] }, 
+  { path: "/scan", element: <Scanner />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] },
+   
 ];
 
 function App() {
@@ -96,6 +97,7 @@ function App() {
             />
           ))}
           <Route path="/" element={<LoginPage />} />
+          <Route path="/notifications" element={<Notification />} />
         </Routes>
       </div>
     </Router>

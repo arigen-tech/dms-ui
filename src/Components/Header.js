@@ -4,11 +4,14 @@ import {
   Bars3Icon,
   PencilIcon,
   ArrowRightOnRectangleIcon,
+  BellIcon,
+  BellAlertIcon
 } from "@heroicons/react/24/solid";
 import adminPhoto from "../Assets/profile.svg";
 import axios from "axios";
 import { API_HOST} from "../API/apiConfig";
 import Popup from "../Components/Popup";
+import { NotificationBell } from "../Data/Notification"
 
 const DropdownMenu = ({ items, onSelect, emptyMessage }) => (
   <div className="absolute right-0 mt-0.5 w-48 bg-white rounded-md shadow-lg z-10">
@@ -43,6 +46,7 @@ function Header({ toggleSidebar, userName }) {
   const role = localStorage.getItem("role");
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [targetRoleName, setTargetRoleName] = useState("");
+  const [notifications, setNotifications] = useState([]);
 
   // Handle logout functionality
   const handleLogout = () => {
@@ -181,6 +185,14 @@ function Header({ toggleSidebar, userName }) {
     setPopupMessage({ message, type });
   };
 
+  // Function to navigate to the notifications page
+  const handleNotificationClick = () => {
+    navigate("/notifications"); // Redirect to the notifications page
+  };
+  const addNotification = (message) => {
+    setNotifications((prev) => [...prev, { message }]);
+  };
+
   useEffect(() => {
     if (dropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
@@ -236,6 +248,8 @@ function Header({ toggleSidebar, userName }) {
             onClick={toggleDropdownRole}
           >
             <span className="font-light text-sm mr-1">{role || "Role"}</span>
+            <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
+
           </div>
           {dropdownRoleOpen && (
             <DropdownMenu
@@ -249,6 +263,9 @@ function Header({ toggleSidebar, userName }) {
             />
           )}
         </div>
+
+        {/* Notification Icon */}
+        <NotificationBell />
 
         {/* Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
