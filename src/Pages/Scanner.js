@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
 import axios from "axios";
+import { API_HOST } from '../API/apiConfig';
 
 const Scanner = () => {
   const [scanStatus, setScanStatus] = useState(null);
@@ -27,7 +28,7 @@ const Scanner = () => {
   
     try {
       const response = await axios.post(
-        `http://localhost:8080/api/scan/start?totalPages=${totalPages}&scanType=${scanType}`,
+        `${API_HOST}/api/scan/start?totalPages=${totalPages}&scanType=${scanType}`,
         null,
         {
           headers: {

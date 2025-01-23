@@ -330,9 +330,9 @@ const ManageUserRole = () => {
   };
 
   return (
-    <div className="p-1">
+    <div className="p-1  max-w-screen-lg mx-auto">
       <h1 className="text-lg sm:text-xl mb-4 font-semibold">Manage Employee Roles</h1>
-      <div className="bg-white p-3 rounded-lg shadow-sm">
+      <div className="bg-white p-3 rounded-lg shadow-sm overflow-x-auto">
       {popupMessage && (
         <Popup
           message={popupMessage.message}

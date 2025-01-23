@@ -598,9 +598,9 @@ const UserAddEmployee = () => {
   const role = localStorage.getItem("role");
 
   return (
-    <div className="p-1">
+    <div className="p-1 max-w-screen-lg mx-auto">
       <h1 className="text-lg sm:text-xl mb-4 font-semibold">USERS</h1>
-      <div className="bg-white p-3 rounded-lg shadow-sm">
+      <div className="bg-white p-3 rounded-lg shadow-sm overflow-x-auto">
         {error && <p className="text-red-500">{error}</p>}
         {/* Success Message */}
         {showPopup && (
@@ -772,6 +772,7 @@ const UserAddEmployee = () => {
               </div>
             </div>
 
+            <div className="overflow-x-auto">
             <table className="w-full border-collapse border">
               <thead className="bg-gray-100">
                 <tr>
@@ -868,6 +869,7 @@ const UserAddEmployee = () => {
                 ))}
               </tbody>
             </table>
+            </div>
 
             <div className="flex justify-between items-center mt-4">
               <div>
