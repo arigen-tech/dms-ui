@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useLocation } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -12,6 +13,7 @@ import {
 import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 
 const Approve = () => {
+  const location = useLocation();
   const [documents, setDocuments] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -34,6 +36,7 @@ const Approve = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [highlightedDocId, setHighlightedDocId] = useState(null);
 
   const tokenKey = localStorage.getItem("tokenKey");
 
@@ -43,6 +46,40 @@ const Approve = () => {
     fetchUserBranch();
     fetchDocuments();
   }, []);
+
+  useEffect(() => {
+    // Check if there's a document ID passed from notification
+    const searchParams = new URLSearchParams(location.search);
+    const notificationDocId = searchParams.get('docId');
+    
+    if (notificationDocId && documents.length > 0) {
+      const filteredDocuments = documents.filter((doc) =>
+        Object.entries(doc).some(([key, value]) => {
+          if (key === "id") {
+            return value.toString() === notificationDocId;
+          }
+          return false;
+        })
+      );
+  
+      if (filteredDocuments.length > 0) {
+        const highlightId = parseInt(notificationDocId);
+        setHighlightedDocId(highlightId);
+        
+        // Find and set the correct page
+        const pageForDocument = findPageForDocument(highlightId);
+        setCurrentPage(pageForDocument);
+      }
+    }
+  }, [location.search, documents, itemsPerPage]);
+
+  const findPageForDocument = (documentId) => {
+    const documentIndex = filteredDocuments.findIndex(doc => doc.id === documentId);
+    if (documentIndex !== -1) {
+      return Math.ceil((documentIndex + 1) / itemsPerPage);
+    }
+    return 1;
+  };
 
   const fetchUserBranch = async () => {
     setLoading(true);
@@ -458,7 +495,14 @@ const Approve = () => {
             <tbody>
               {paginatedDocuments.length > 0 ? (
                 paginatedDocuments.map((doc, index) => (
-                  <tr key={doc.id} className="even:bg-gray-50">
+                  <tr 
+                  key={doc.id}
+                  className={
+                    doc.id === highlightedDocId 
+                    ? 'bg-yellow-100' 
+                    : ''
+                  }
+                >
                     <td className="border p-2">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>

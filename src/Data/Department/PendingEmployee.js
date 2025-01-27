@@ -7,6 +7,7 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid";
 import Popup from '../../Components/Popup';
+import { useLocation } from 'react-router-dom';
 
 const EmployeeRole = () => {
   const [users, setUsers] = useState([]);
@@ -20,6 +21,8 @@ const EmployeeRole = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [currRoleCode, setCurrRoleCode] = useState("");
   const [popupMessage, setPopupMessage] = useState(null);
+  const [highlightedUserId, setHighlightedUserId] = useState(null);
+  const location = useLocation(); 
 
   const token = localStorage.getItem("tokenKey");
 
@@ -27,6 +30,41 @@ const EmployeeRole = () => {
     fetchUsers();
     fetchEmployees();
   }, []);
+
+  useEffect(() => {
+    // Check if there's a user ID passed from notification
+    const searchParams = new URLSearchParams(location.search);
+    const notificationUserId = searchParams.get('userId');
+    
+    if (notificationUserId && users.length > 0) {
+      const filteredUsers = users.filter((user) =>
+        Object.entries(user).some(([key, value]) => {
+          if (key === "id") {
+            return value.toString() === notificationUserId;
+          }
+          return false;
+        })
+      );
+  
+      if (filteredUsers.length > 0) {
+        const highlightId = parseInt(notificationUserId);
+        setHighlightedUserId(highlightId);
+        
+        // Find and set the correct page
+        const pageForUser = findPageForUser(highlightId);
+        setCurrentPage(pageForUser);
+      }
+    }
+  }, [location.search, users, itemsPerPage]);
+
+  const findPageForUser = (userId) => {
+    const userIndex = filteredUsers.findIndex(user => user.id === userId);
+    if (userIndex !== -1) {
+      return Math.ceil((userIndex + 1) / itemsPerPage);
+    }
+    return 1;
+  };
+
 
   const fetchUsers = async () => {
     try {
@@ -134,8 +172,8 @@ const EmployeeRole = () => {
 
   const showPopup = (message, type = 'info') => {
     debugger;
-    setPopupMessage({ 
-      message, 
+    setPopupMessage({
+      message,
       type,
       onClose: handlePopupClose // Pass the close handler to the popup
     });
@@ -239,7 +277,10 @@ const EmployeeRole = () => {
             <tbody>
               {paginatedUsers.length > 0 ? (
                 paginatedUsers.map((user, index) => (
-                  <tr key={user.id}>
+                  <tr
+                    key={user.id}
+                    className={`${user.id === highlightedUserId ? 'bg-yellow-100' : ''}`}
+                  >
                     <td className="border p-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="border p-2">{user.name}</td>
                     <td className="border p-2">{user.email}</td>
@@ -289,8 +330,8 @@ const EmployeeRole = () => {
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
               className={`px-3 py-1 rounded mr-3 ${currentPage === 1
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-slate-200 hover:bg-slate-300"
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
                 }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
@@ -302,8 +343,8 @@ const EmployeeRole = () => {
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`px-3 py-1 rounded mx-1 ${currentPage === page
-                    ? "bg-blue-500 text-white"
-                    : "bg-slate-200 hover:bg-blue-100"
+                  ? "bg-blue-500 text-white"
+                  : "bg-slate-200 hover:bg-blue-100"
                   }`}
               >
                 {page}
@@ -318,8 +359,8 @@ const EmployeeRole = () => {
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
               className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-slate-200 hover:bg-slate-300"
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-slate-200 hover:bg-slate-300"
                 }`}
             >
               Next

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useLocation } from 'react-router-dom';
 import {
   EyeIcon,
   XMarkIcon,
@@ -14,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 
 function RejectedDoc() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [documents, setDocuments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -24,6 +26,7 @@ function RejectedDoc() {
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [printTrue, setPrintTrue] = useState(false);
+  const [highlightedDocId, setHighlightedDocId] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -32,6 +35,40 @@ function RejectedDoc() {
   useEffect(() => {
     fetchDocuments();
   }, []);
+
+  useEffect(() => {
+    // Check if there's a document ID passed from notification
+    const searchParams = new URLSearchParams(location.search);
+    const notificationDocId = searchParams.get('docId');
+    
+    if (notificationDocId && documents.length > 0) {
+      const filteredDocuments = documents.filter((doc) =>
+        Object.entries(doc).some(([key, value]) => {
+          if (key === "id") {
+            return value.toString() === notificationDocId;
+          }
+          return false;
+        })
+      );
+  
+      if (filteredDocuments.length > 0) {
+        const highlightId = parseInt(notificationDocId);
+        setHighlightedDocId(highlightId);
+        
+        // Find and set the correct page
+        const pageForDocument = findPageForDocument(highlightId);
+        setCurrentPage(pageForDocument);
+      }
+    }
+  }, [location.search, documents, itemsPerPage]);
+
+  const findPageForDocument = (documentId) => {
+    const documentIndex = filteredDocuments.findIndex(doc => doc.id === documentId);
+    if (documentIndex !== -1) {
+      return Math.ceil((documentIndex + 1) / itemsPerPage);
+    }
+    return 1;
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -412,7 +449,14 @@ function RejectedDoc() {
             <tbody>
               {paginatedDocuments.length > 0 ? (
                 paginatedDocuments.map((doc, index) => (
-                  <tr key={doc.id}>
+                  <tr 
+                  key={doc.id}
+                  className={
+                    doc.id === highlightedDocId 
+                    ? 'bg-yellow-100' 
+                    : ''
+                  }
+                >
                     <td className="border p-2">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
