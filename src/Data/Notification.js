@@ -299,7 +299,7 @@ export const Notification = () => {
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={handleBack}
-                    className="p-2.5 rounded-xl bg-blue-700 text-white hover:bg-blue-600 transition-all duration-200 transform hover:scale-105"
+                    className="p-2.5 rounded-xl bg-blue-950 text-white hover:bg-blue-950 transition-all duration-200 transform hover:scale-105"
                   >
                     <ArrowLeftIcon className="h-6 w-6" />
                   </button>
@@ -397,7 +397,7 @@ export const Notification = () => {
               <div className="flex items-center space-x-4">
                 <button
                   onClick={handleBack}
-                  className="p-2.5 rounded-xl bg-blue-950 text-white  transition-all duration-200 transform hover:scale-105"
+                  className="p-2.5 rounded-xl bg-blue-950 text-white  hover:bg-blue-950  transition-all duration-200 transform hover:scale-105"
                 >
                   <ArrowLeftIcon className="h-6 w-6" />
                 </button>

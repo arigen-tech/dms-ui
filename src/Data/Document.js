@@ -944,9 +944,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             <button
               onClick={handleUploadDocument}
               disabled={!isUploadEnabled}
-              className={`ml-2 text-white rounded-xl p-2 h-14 mt-6 ${
-                isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
-              }`}
+              className={`ml-2 text-white rounded-xl p-2 h-14 mt-6 ${isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
+                }`}
             >
               Upload
             </button>
@@ -979,7 +978,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         handleVersionChange(index, e.target.value.trim())
                       }
                       className="border rounded px-2 py-1 text-sm"
-                      disabled={!handleEditDocumentActive} 
+                      disabled={!handleEditDocumentActive}
                       placeholder="v1"
                     />
                   </label>
@@ -1000,12 +999,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           <div className="flex justify-between items-center">
             {uploadedFilePath != 0 && (
               <div
-              className="text-red-800 cursor-pointer hover:underline"
-              onClick={handleDiscardAll}
-              aria-label="Discard All Files"
-            >
-              Discard All
-            </div>
+                className="text-red-800 cursor-pointer hover:underline"
+                onClick={handleDiscardAll}
+                aria-label="Discard All Files"
+              >
+                Discard All
+              </div>
             )}
 
             <div className="mt-3">
@@ -1117,60 +1116,49 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               ))}
             </tbody>
           </table>
-          <div className="flex justify-between items-center mt-4">
-            <div>
+          <div className="flex items-center mt-4">
+            {/* Previous Button */}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                }`}
+            >
+              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+              Previous
+            </button>
+
+            {/* Page Number Buttons */}
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            {/* Page Count Info */}
+            <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+            {/* Next Button */}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                }`}
+            >
+              Next
+              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+            </button>
+            <div className="ml-4">
               <span className="text-sm text-gray-700">
                 Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
                 {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
                 {totalItems} entries
               </span>
-            </div>
-            <div className="flex items-center">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 rounded mr-3 ${
-                  currentPage === 1
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-slate-200 hover:bg-slate-300"
-                }`}
-              >
-                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                Previous
-              </button>
-
-              {getPageNumbers().map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 rounded mx-1 ${
-                    currentPage === page
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-200 hover:bg-blue-100"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <span className="text-sm text-gray-700 mx-2">
-                of {totalPages} pages
-              </span>
-
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded ml-3 ${
-                  currentPage === totalPages
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-slate-200 hover:bg-slate-300"
-                }`}
-              >
-                Next
-                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-              </button>
             </div>
           </div>
 
@@ -1281,7 +1269,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         Attached Files
                       </h2>
                       {Array.isArray(selectedDoc.paths) &&
-                      selectedDoc.paths.length > 0 ? (
+                        selectedDoc.paths.length > 0 ? (
                         <>
                           <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
                             <h3 className="flex-1 text-left ml-2">File Name</h3>
@@ -1291,12 +1279,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                             </h3>
                           </div>
                           <ul
-                            className={`space-y-4 ${
-                              printTrue === false &&
-                              selectedDoc.paths.length > 2
+                            className={`space-y-4 ${printTrue === false &&
+                                selectedDoc.paths.length > 2
                                 ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
                                 : ""
-                            }`}
+                              }`}
                           >
                             {selectedDoc.paths.map((file, index) => (
                               <li

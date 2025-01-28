@@ -63,7 +63,7 @@ const Year = () => {
         const response = await axios.post(`${YEAR_API}/save`, newYear, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setYears([...years, response.data]); 
+        setYears([...years, response.data]);
         setFormData({ year: '' }); // Reset the form field
         showPopup("YEAR Added successfully!", "success");
       } catch (error) {
@@ -98,7 +98,7 @@ const Year = () => {
         showPopup('Year updated successfully!');
       } catch (error) {
         console.error('Error updating year:', error.response ? error.response.data : error.message);
-        showPopup('Failed to update the year. Please try again.'); 
+        showPopup('Failed to update the year. Please try again.');
       }
     }
   };
@@ -144,7 +144,7 @@ const Year = () => {
       console.error('No Year selected for status toggle');
     }
   };
-  
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {
@@ -195,7 +195,7 @@ const Year = () => {
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">YEARS</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
-      {popupMessage && (
+        {popupMessage && (
           <Popup
             message={popupMessage.message}
             type={popupMessage.type}
@@ -230,32 +230,51 @@ const Year = () => {
           </div>
         </div>
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-          <div className="flex items-center bg-blue-500 rounded-lg">
-            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">Show:</label>
-            <select
-              id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none"
-              value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+        <div className="flex items-center mt-4">
+          {/* Previous Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+            Previous
+          </button>
+
+          {/* Page Number Buttons */}
+          {getPageNumbers().map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                }`}
             >
-              {[5, 10, 15, 20].map(num => (
-                <option key={num} value={num}>{num}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="border rounded-l-md p-1 outline-none"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+              {page}
+            </button>
+          ))}
+
+          {/* Page Count Info */}
+          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+          {/* Next Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            Next
+            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+          </button>
+          <div className="ml-4">
+            <span className="text-sm text-gray-700">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} entries
+            </span>
           </div>
         </div>
-
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border">
             <thead>

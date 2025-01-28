@@ -145,13 +145,13 @@ const Role = () => {
       try {
         // Find the role in the original list by its ID
         const roleIndex = roles.findIndex((role) => role.id === editingRoleId);
-  
+
         if (roleIndex === -1) {
           setMessage("Role not found!");
           setMessageType("error");
           return;
         }
-  
+
         // Create the updated role object
         const updatedRole = {
           ...roles[roleIndex],
@@ -159,7 +159,7 @@ const Role = () => {
           roleCode: formData.roleCode,
           updatedOn: new Date().toISOString(),
         };
-  
+
         // Send the update request to the server
         const response = await axios.put(
           `${ROLE_API}/update/${updatedRole.id}`,
@@ -170,17 +170,17 @@ const Role = () => {
             },
           }
         );
-  
+
         // Update the original roles list with the updated role
         const updatedRoles = roles.map((role) =>
           role.id === updatedRole.id ? response.data : role
         );
-  
+
         // Update the state with the modified roles array
         setRoles(updatedRoles);
         setFormData({ role: "", roleCode: "" }); // Reset form data
         setEditingRoleId(null); // Reset the editing state
-  
+
         // Set success message
         showPopup("Role updated successfully!", "success");
       } catch (error) {
@@ -188,7 +188,7 @@ const Role = () => {
           "Error updating role:",
           error.response ? error.response.data : error.message
         );
-  
+
         // Set error message
         showPopup("Failed to update the role. Please Cheack Unique.");
       }
@@ -200,11 +200,11 @@ const Role = () => {
         showPopup("Please provide a valid role code.");
       }
     }
-  
+
     // Clear the message after 3 seconds
     setTimeout(() => setMessage(null), 3000);
   };
-  
+
 
   const handleToggleActiveStatus = (role) => {
     setRoleToToggle(role);
@@ -244,10 +244,10 @@ const Role = () => {
           setRoleToToggle(null); // Reset the selected role
 
           // Set success message
-          showPopup("Role status changed successfully!","success");
+          showPopup("Role status changed successfully!", "success");
         } else {
           // Set error message if response status is not 200
-          showPopup("Failed to change the status. Please try again.","error");
+          showPopup("Failed to change the status. Please try again.", "error");
         }
       } catch (error) {
         console.error(
@@ -256,13 +256,13 @@ const Role = () => {
         );
 
         // Set error message in case of an exception
-        showPopup("Failed to change the status. Please try again.","error");
+        showPopup("Failed to change the status. Please try again.", "error");
       }
     } else {
       console.error("No role selected for status toggle");
 
       // Set warning message if no role is selected
-      showPopup("Please select a role to change its status.","warning");
+      showPopup("Please select a role to change its status.", "warning");
     }
 
     // Clear the message after 3 seconds
@@ -323,12 +323,12 @@ const Role = () => {
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">ROLES</h1>
       {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={() => setPopupMessage(null)}
-          />
-        )}
+        <Popup
+          message={popupMessage.message}
+          type={popupMessage.type}
+          onClose={() => setPopupMessage(null)}
+        />
+      )}
       <div className="bg-white p-3 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4">
@@ -461,9 +461,8 @@ const Role = () => {
                   <td className="border p-2">
                     <button
                       onClick={() => handleToggleActiveStatus(role)}
-                      className={`p-1 rounded-full ${
-                        role.isActive === true ? "bg-green-500" : "bg-red-500"
-                      }`}
+                      className={`p-1 rounded-full ${role.isActive === true ? "bg-green-500" : "bg-red-500"
+                        }`}
                     >
                       {role.isActive === true ? (
                         <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
@@ -478,54 +477,49 @@ const Role = () => {
           </table>
         </div>
 
-        <div className="flex justify-between items-center mt-4">
-          <div>
+        <div className="flex items-center mt-4">
+          {/* Previous Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+            Previous
+          </button>
+
+          {/* Page Number Buttons */}
+          {getPageNumbers().map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          {/* Page Count Info */}
+          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+          {/* Next Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            Next
+            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+          </button>
+          <div className="ml-4">
             <span className="text-sm text-gray-700">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} entries
             </span>
-          </div>
-          <div className="flex items-center">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              Previous
-            </button>
-
-            {getPageNumbers().map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page
-                  ? "bg-blue-500 text-white"
-                  : "bg-slate-200 hover:bg-blue-100"
-                  }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <span className="text-sm text-gray-700 mx-2">
-              of {totalPages} pages
-            </span>
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              Next
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
           </div>
         </div>
       </div>

@@ -100,7 +100,7 @@ const ManageUserRole = () => {
     }
   };
 
-  
+
 
   const fetchUsers = async () => {
     console.log("currBranchId:", currBranchId);
@@ -250,52 +250,52 @@ const ManageUserRole = () => {
 
   const confirmToggleActiveStatus = async () => {
     if (!roleToToggle) {
-        showPopup("No role selected for status change.");
-        return;
+      showPopup("No role selected for status change.");
+      return;
     }
 
     try {
-        const updatedRoleRequest = {
-            status: !roleToToggle.active, 
-            roleId: roleToToggle.roleId, 
-            empId: empId, 
-        };
+      const updatedRoleRequest = {
+        status: !roleToToggle.active,
+        roleId: roleToToggle.roleId,
+        empId: empId,
+      };
 
-        const response = await axios.put(
-            `${API_HOST}/api/EmpRole/changeRoleStatus`,
-            updatedRoleRequest,
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-
-        if (response.status === 200) {
-            const updatedRoles = roles.map((role) =>
-                role.id === roleToToggle.id
-                    ? { ...role, active: updatedRoleRequest.status }
-                    : role
-            );
-            setRoles(updatedRoles); 
-            setModalVisible(false); 
-            setRoleToToggle(null); 
-            showPopup("Role status updated successfully!", "success"); // Change here
-            fetchUsers();
-        } else {
-            showPopup("Failed to update the role status. Please try again.");
+      const response = await axios.put(
+        `${API_HOST}/api/EmpRole/changeRoleStatus`,
+        updatedRoleRequest,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
+
+      if (response.status === 200) {
+        const updatedRoles = roles.map((role) =>
+          role.id === roleToToggle.id
+            ? { ...role, active: updatedRoleRequest.status }
+            : role
+        );
+        setRoles(updatedRoles);
+        setModalVisible(false);
+        setRoleToToggle(null);
+        showPopup("Role status updated successfully!", "success"); // Change here
+        fetchUsers();
+      } else {
+        showPopup("Failed to update the role status. Please try again.");
+      }
     } catch (error) {
-        console.error(
-            "Error toggling role status:",
-            error.response ? error.response.data : error.message
-        );
-        showPopup(
-            error.response?.data?.message || "An error occurred. Please try again."
-        );
+      console.error(
+        "Error toggling role status:",
+        error.response ? error.response.data : error.message
+      );
+      showPopup(
+        error.response?.data?.message || "An error occurred. Please try again."
+      );
     }
-};
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -333,13 +333,13 @@ const ManageUserRole = () => {
     <div className="p-1  max-w-screen-lg mx-auto">
       <h1 className="text-lg sm:text-xl mb-4 font-semibold">Manage Employee Roles</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm overflow-x-auto">
-      {popupMessage && (
-        <Popup
-          message={popupMessage.message}
-          type={popupMessage.type}
-          onClose={popupMessage.onClose}
-        />
-      )}
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={popupMessage.onClose}
+          />
+        )}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
           <div className="flex items-center bg-blue-500 rounded-lg">
             <label
@@ -439,54 +439,49 @@ const ManageUserRole = () => {
           </table>
         </div>
 
-        <div className="flex justify-between items-center mt-4">
-          <div>
+        <div className="flex items-center mt-4">
+          {/* Previous Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+            Previous
+          </button>
+
+          {/* Page Number Buttons */}
+          {getPageNumbers().map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          {/* Page Count Info */}
+          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+          {/* Next Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            Next
+            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+          </button>
+          <div className="ml-4">
             <span className="text-sm text-gray-700">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} entries
             </span>
-          </div>
-          <div className="flex items-center">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              Previous
-            </button>
-
-            {getPageNumbers().map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page
-                  ? "bg-blue-500 text-white"
-                  : "bg-slate-200 hover:bg-blue-100"
-                  }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <span className="text-sm text-gray-700 mx-2">
-              of {totalPages} pages
-            </span>
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              Next
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
           </div>
         </div>
       </div>
@@ -571,8 +566,8 @@ const ManageUserRole = () => {
                       <button
                         onClick={addSelectedRole}
                         className={`${isLoading
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-green-500"
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-green-500"
                           } text-white px-4 py-2 rounded`}
                         disabled={isLoading} // Disable button when loading
                       >

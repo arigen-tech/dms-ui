@@ -267,54 +267,49 @@ const EmployeeRole = () => {
         </div>
 
         {/* Pagination Controls */}
-        <div className="flex justify-between items-center mt-4">
-          <div>
+        <div className="flex items-center mt-4">
+          {/* Previous Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+            Previous
+          </button>
+
+          {/* Page Number Buttons */}
+          {getPageNumbers().map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          {/* Page Count Info */}
+          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+          {/* Next Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            Next
+            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+          </button>
+          <div className="ml-4">
             <span className="text-sm text-gray-700">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} entries
             </span>
-          </div>
-          <div className="flex items-center">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              Previous
-            </button>
-
-            {getPageNumbers().map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page
-                  ? "bg-blue-500 text-white"
-                  : "bg-slate-200 hover:bg-blue-100"
-                  }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <span className="text-sm text-gray-700 mx-2">
-              of {totalPages} pages
-            </span>
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              Next
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
           </div>
         </div>
 

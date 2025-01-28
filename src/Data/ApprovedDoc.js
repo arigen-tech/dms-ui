@@ -44,7 +44,7 @@ const ApprovedDoc = () => {
     // Check if there's a document ID passed from notification
     const searchParams = new URLSearchParams(location.search);
     const notificationDocId = searchParams.get('docId');
-    
+
     if (notificationDocId && documents.length > 0) {
       const filteredDocuments = documents.filter((doc) =>
         Object.entries(doc).some(([key, value]) => {
@@ -54,11 +54,11 @@ const ApprovedDoc = () => {
           return false;
         })
       );
-  
+
       if (filteredDocuments.length > 0) {
         const highlightId = parseInt(notificationDocId);
         setHighlightedDocId(highlightId);
-        
+
         // Find and set the correct page
         const pageForDocument = findPageForDocument(highlightId);
         setCurrentPage(pageForDocument);
@@ -197,7 +197,7 @@ const ApprovedDoc = () => {
         throw new Error("File object is undefined.");
       }
       console.log(file);
-  
+
       const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
       const department = selectedDoc.employee.department.name.replace(
         / /g,
@@ -216,19 +216,19 @@ const ApprovedDoc = () => {
       )}/${encodeURIComponent(category)}/${encodeURIComponent(
         version
       )}/${encodeURIComponent(fileName)}`;
-  
+
       console.log("File URL:", fileUrl);
-  
+
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
-  
+
       const blob = new Blob([response.data], {
         type: response.headers["content-type"],
       });
       const blobUrl = window.URL.createObjectURL(blob);
-  
+
       window.open(blobUrl, "_blank");
     } catch (error) {
       console.error("Error fetching file:", error.message);
@@ -472,14 +472,14 @@ const ApprovedDoc = () => {
             <tbody>
               {paginatedDocuments.length > 0 ? (
                 paginatedDocuments.map((doc, index) => (
-                  <tr 
-                  key={doc.id}
-                  className={
-                    doc.id === highlightedDocId 
-                    ? 'bg-yellow-100' 
-                    : ''
-                  }
-                >
+                  <tr
+                    key={doc.id}
+                    className={
+                      doc.id === highlightedDocId
+                        ? 'bg-yellow-100'
+                        : ''
+                    }
+                  >
                     <td className="border p-2">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
@@ -515,9 +515,8 @@ const ApprovedDoc = () => {
                     <td className="border p-2">
                       <button
                         onClick={() => openModal(doc)}
-                        title={`View details for ${
-                          doc.title || "this document"
-                        }`}
+                        title={`View details for ${doc.title || "this document"
+                          }`}
                       >
                         <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
                       </button>
@@ -650,7 +649,7 @@ const ApprovedDoc = () => {
                         Attached Files
                       </h2>
                       {Array.isArray(selectedDoc.documentDetails) &&
-                      selectedDoc.documentDetails.length > 0 ? (
+                        selectedDoc.documentDetails.length > 0 ? (
                         <>
                           <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
                             <h3 className="flex-1 text-left ml-2">File Name</h3>
@@ -660,12 +659,11 @@ const ApprovedDoc = () => {
                             </h3>
                           </div>
                           <ul
-                            className={`space-y-4 ${
-                              printTrue === false &&
-                              selectedDoc.documentDetails.length > 2
+                            className={`space-y-4 ${printTrue === false &&
+                                selectedDoc.documentDetails.length > 2
                                 ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
                                 : ""
-                            }`}
+                              }`}
                           >
                             {selectedDoc.documentDetails.map((file, index) => (
                               <li
@@ -702,60 +700,49 @@ const ApprovedDoc = () => {
               </div>
             )}
           </>
-          <div className="flex justify-between items-center mt-4">
-            <div>
+          <div className="flex items-center mt-4">
+            {/* Previous Button */}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                }`}
+            >
+              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+              Previous
+            </button>
+
+            {/* Page Number Buttons */}
+            {getPageNumbers().map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            {/* Page Count Info */}
+            <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+            {/* Next Button */}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                }`}
+            >
+              Next
+              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+            </button>
+            <div className="ml-4">
               <span className="text-sm text-gray-700">
                 Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
                 {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
                 {totalItems} entries
               </span>
-            </div>
-            <div className="flex items-center">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 rounded mr-3 ${
-                  currentPage === 1
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-slate-200 hover:bg-slate-300"
-                }`}
-              >
-                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                Previous
-              </button>
-
-              {getPageNumbers().map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 rounded mx-1 ${
-                    currentPage === page
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-200 hover:bg-blue-100"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <span className="text-sm text-gray-700 mx-2">
-                of {totalPages} pages
-              </span>
-
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded ml-3 ${
-                  currentPage === totalPages
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-slate-200 hover:bg-slate-300"
-                }`}
-              >
-                Next
-                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-              </button>
             </div>
           </div>
         </div>

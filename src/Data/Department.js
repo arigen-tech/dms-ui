@@ -67,14 +67,14 @@ const Department = () => {
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({
-        message,
-        type,
-        onClose: () => {
-            setPopupMessage(null);
-            window.location.reload();
-        }
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+        window.location.reload();
+      }
     });
-};
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -118,35 +118,35 @@ const Department = () => {
           updatedOn: new Date().toISOString(),
           isActive: formData.isActive ? 1 : 0,
         };
-  
+
         const response = await axios.post(`${DEPAETMENT_API}/save`, newDepartment, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
         });
-  
+
         setDepartments([...departments, response.data]);
         setFormData({ name: '', branch: null, isActive: true });
-  
+
         // Set success message
-        showPopup('Department added successfully!',"success");
-       
+        showPopup('Department added successfully!', "success");
+
       } catch (error) {
         console.error('Error adding department:', error.response ? error.response.data : error.message);
-  
+
         // Set error message
-        showPopup('Failed to add the Department. Please try again.',"error");
+        showPopup('Failed to add the Department. Please try again.', "error");
         ;
       }
     } else {
       // Set warning message
-      showPopup('Please fill in all required fields.',"warning");
-      
+      showPopup('Please fill in all required fields.', "warning");
+
     }
-  
+
   };
-  
+
 
   const handleEditDepartment = (departmentId) => {
     // Set the ID of the department being edited
@@ -173,14 +173,14 @@ const Department = () => {
       try {
         // Find the department in the original list by its ID
         const departmentIndex = departments.findIndex(department => department.id === formData.id);
-  
+
         if (departmentIndex === -1) {
           setMessage('Department not found!');
           setMessageType('error');
           setTimeout(() => setMessage(null), 3000);
           return;
         }
-  
+
         // Create the updated department object
         const updatedDepartment = {
           ...departments[departmentIndex],
@@ -189,7 +189,7 @@ const Department = () => {
           isActive: formData.isActive ? 1 : 0,
           updatedOn: new Date().toISOString(),
         };
-  
+
         // Send the update request to the server
         const response = await axios.put(`${DEPAETMENT_API}/update/${updatedDepartment.id}`, updatedDepartment, {
           headers: {
@@ -197,35 +197,35 @@ const Department = () => {
             'Authorization': `Bearer ${token}`,
           },
         });
-  
+
         // Update the original departments list with the updated department
         const updatedDepartments = departments.map(department =>
           department.id === updatedDepartment.id ? response.data : department
         );
-  
+
         // Update the state with the modified departments array
         setDepartments(updatedDepartments);
         setFormData({ name: '', branch: null, isActive: true }); // Reset form data
         setEditingIndex(null); // Reset the editing state
-  
+
         // Set success message
-        showPopup('Department updated successfully!',"success");
-        
+        showPopup('Department updated successfully!', "success");
+
       } catch (error) {
         console.error('Error updating department:', error.response ? error.response.data : error.message);
-  
+
         // Set error message
-        showPopup('Failed to update the department. Please try again.!',"error");
-        
+        showPopup('Failed to update the department. Please try again.!', "error");
+
       }
     } else {
       // Set warning message
-      showPopup('Please fill in all required fields.!',"warning");
-     
+      showPopup('Please fill in all required fields.!', "warning");
+
     }
-  
+
   };
-  
+
 
 
 
@@ -238,7 +238,7 @@ const Department = () => {
     if (toggleDepartment) {
       try {
         const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
-  
+
         const token = localStorage.getItem('tokenKey');
         const response = await axios.put(
           `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
@@ -250,35 +250,35 @@ const Department = () => {
             },
           }
         );
-  
+
         // Update the department's status locally
         const updatedDepartments = departments.map(dept =>
           dept.id === toggleDepartment.id ? { ...dept, isActive: isActive } : dept
         );
-  
+
         setDepartments(updatedDepartments);
         setModalVisible(false); // Close modal
         setToggleDepartment(null); // Clear the toggle department state
-  
+
         // Set success message
-        showPopup('Status changed successfully!',"success");
-        
+        showPopup('Status changed successfully!', "success");
+
       } catch (error) {
         console.error('Error toggling department status:', error.response ? error.response.data : error.message);
-  
+
         // Set error message
-        showPopup('Failed to change the status. Please try again.',"error");
-        
+        showPopup('Failed to change the status. Please try again.', "error");
+
       }
     } else {
       // Set warning message
-      showPopup('No department selected for status toggle.',"warning");
-      
+      showPopup('No department selected for status toggle.', "warning");
+
     }
-  
-    
+
+
   };
-  
+
 
   const filteredDepartments = departments.filter(department => {
     const statusText = department.isActive === 1 ? 'active' : 'inactive';
@@ -312,11 +312,11 @@ const Department = () => {
   return (
     <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">DEPARTMENTS</h1>
-      
+
       <div className="bg-white p-4 rounded-lg shadow-sm">
 
-         {/* Popup Messages */}
-         {popupMessage && (
+        {/* Popup Messages */}
+        {popupMessage && (
           <Popup
             message={popupMessage.message}
             type={popupMessage.type}
@@ -452,54 +452,49 @@ const Department = () => {
         </div>
 
         {/* Pagination Controls */}
-        <div className="flex justify-between items-center mt-4">
-          <div>
+        <div className="flex items-center mt-4">
+          {/* Previous Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+            Previous
+          </button>
+
+          {/* Page Number Buttons */}
+          {getPageNumbers().map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          {/* Page Count Info */}
+          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+          {/* Next Button */}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
+          >
+            Next
+            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+          </button>
+          <div className="ml-4">
             <span className="text-sm text-gray-700">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} entries
             </span>
-          </div>
-          <div className="flex items-center">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              Previous
-            </button>
-
-            {getPageNumbers().map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page
-                  ? "bg-blue-500 text-white"
-                  : "bg-slate-200 hover:bg-blue-100"
-                  }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <span className="text-sm text-gray-700 mx-2">
-              of {totalPages} pages
-            </span>
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              Next
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
           </div>
         </div>
       </div>
