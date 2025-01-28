@@ -38,7 +38,8 @@ import UsersOCR from "./Pages/UsersOCR";
 import AdminsOCRResponce from "./Pages/AdminsOCRResponce"; 
 import Scanner from "./Pages/Scanner"; 
 import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
-import Notification from "./Data/Notification"
+import Notification from "./Data/Notification";
+import ChatBotPopup from "./Components/ChatBotPopup"
 
 
 const protectedRoutes = [
@@ -84,6 +85,7 @@ function App() {
   return (
     <Router>
       <div>
+      <ChatBotPopup />
         <Routes>
           {protectedRoutes.map((route) => (
             <Route
@@ -99,6 +101,7 @@ function App() {
           <Route path="/" element={<LoginPage />} />
           <Route path="/notifications" element={<Notification />} />
         </Routes>
+        
       </div>
     </Router>
   );
