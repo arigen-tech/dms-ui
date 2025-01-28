@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { XMarkIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import Draggable from 'react-draggable';
+import { API_Chatbot_HOST } from '../API/apiConfig';
 
 const ChatBotPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,7 +56,7 @@ const ChatBotPopup = () => {
   const sendMessageToAPI = async (userMessage) => {
     try {
       setIsTyping(true);
-      const response = await fetch('http://192.168.1.14:8000/chat/message', {
+      const response = await fetch(`${API_Chatbot_HOST}/chat/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
