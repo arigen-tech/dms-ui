@@ -229,7 +229,10 @@ const LoginPage = () => {
           </div>
 
           {alertMessage && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+            <div className={`mb-4 p-3 rounded-md ${alertMessage === "OTP has been sent to your email."
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+              }`}>
               {alertMessage}
             </div>
           )}
