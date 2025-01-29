@@ -251,7 +251,7 @@ const ChatBotPopup = () => {
                 type="submit"
                 className="p-3 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 text-white
                          rounded-full shadow-md hover:shadow-lg transition-all duration-300
-                         hover:from-blue-600 hover:to-blue-700 active:scale-95
+                         hover:from-blue-600 hover:to-pink-500 hover:via-purple-500 active:scale-95
                          disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!newMessage.trim()}
               >
