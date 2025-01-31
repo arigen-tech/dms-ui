@@ -5,7 +5,8 @@ import {
   PencilIcon,
   ArrowRightOnRectangleIcon,
   BellIcon,
-  BellAlertIcon
+  BellAlertIcon,
+  UserIcon
 } from "@heroicons/react/24/solid";
 import adminPhoto from "../Assets/profile.svg";
 import axios from "axios";
@@ -247,20 +248,25 @@ function Header({ toggleSidebar, userName }) {
             className="flex items-center space-x-2 cursor-pointer"
             onClick={toggleDropdownRole}
           >
+            <UserIcon className="h-5 w-5 text-gray-300" />
             <span className="font-light text-sm mr-1">{role || "Role"}</span>
             <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
-
           </div>
           {dropdownRoleOpen && (
-            <DropdownMenu
-              items={roleName}
-              onSelect={(targetRoleName) => {
-                console.log("Selected Role from Dropdown:", targetRoleName); // Debugging
-                handleRoleSwitch(targetRoleName);
-                setDropdownRoleOpen(false); // Close dropdown after selection
-              }}
-              emptyMessage="No roles available"
-            />
+            <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
+              <DropdownMenu
+                items={roleName.map((role) => ({
+                  label: <span className="flex items-center text-green-600 hover:bg-green-200 p-2 rounded transition duration-200"><UserIcon className="h-5 w-5 mr-2" /> {role}</span>,
+                  onClick: () => {
+                    handleRoleSwitch(role);
+                    setDropdownRoleOpen(false);
+                  },
+                }))}
+                onSelect={(item) => item.onClick && item.onClick()}
+                emptyMessage="No roles available"
+                className="max-h-48 overflow-y-auto"
+              />
+            </div>
           )}
         </div>
 
@@ -282,14 +288,22 @@ function Header({ toggleSidebar, userName }) {
             />
           </div>
           {dropdownOpen && (
-            <DropdownMenu
-              items={[
-                { label: "Edit Profile", onClick: handleChangePassword },
-                { label: "Logout", onClick: handleLogout },
-              ]}
-              onSelect={(item) => item.onClick && item.onClick()}
-              emptyMessage="No options available"
-            />
+            <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
+              <DropdownMenu
+                items={[
+                  { 
+                    label: <span className="flex items-center text-blue-600 hover:bg-blue-200 p-2 rounded transition duration-200"><PencilIcon className="h-5 w-5 mr-2" /> Edit Profile</span>, 
+                    onClick: handleChangePassword 
+                  },
+                  { 
+                    label: <span className="flex items-center text-red-600 hover:bg-red-200 p-2 rounded transition duration-200"><ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" /> Logout</span>, 
+                    onClick: handleLogout 
+                  },
+                ]}
+                onSelect={(item) => item.onClick && item.onClick()}
+                emptyMessage="No options available"
+              />
+            </div>
           )}
         </div>
 
