@@ -10,15 +10,35 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row bg-neutral-100 h-screen w-screen overflow-hidden">
+    <div className="flex flex-row bg-neutral-100 h-screen w-screen overflow-hidden">
+      {/* Sidebar with transition */}
+      <div
+        className={`transform transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } fixed md:relative z-30`}
+      >
+        {sidebarOpen && <Sidebar />}
+      </div>
+
+      {/* Overlay for mobile view when sidebar is open */}
       {sidebarOpen && (
-        <div className="fixed md:relative z-10 w-64 md:w-auto">
-          <Sidebar />
-        </div>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+          onClick={toggleSidebar}
+        ></div>
       )}
-      <div className="flex flex-col flex-1">
-        <Header toggleSidebar={toggleSidebar} />
-        <div className="flex-1 p-4 min-h-0 overflow-auto">{children}</div>
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 w-full">
+        {/* Header */}
+        <div className="w-full z-10">
+          <Header toggleSidebar={toggleSidebar} />
+        </div>
+
+        {/* Children (Main Content) */}
+        <div className="flex-1 p-4 min-h-0 overflow-auto mt-16 md:mt-0">
+          {children}
+        </div>
       </div>
     </div>
   );

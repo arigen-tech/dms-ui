@@ -10,6 +10,7 @@ import apiClient from "../API/apiClient";
 import { useNavigate } from "react-router-dom";
 import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
+import Profile_Image from "../Assets/Profile_Background.jpg"
 
 const ChangePasswordPage = () => {
   const [formData, setFormData] = useState({
@@ -269,8 +270,9 @@ const ChangePasswordPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center" 
+    style={{ backgroundImage: `url(${Profile_Image})`}}>
+      <div className="bg-blue-200 rounded-lg shadow-lg p-4 w-full max-w-lg mt-4 mb-4">
       {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -281,7 +283,7 @@ const ChangePasswordPage = () => {
         {activeForm === null && (
           <>
             <div className="">
-              <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
+              <h2 className="text-xl font-bold text-center text-gray-900 mb-2">
                 Employee Profile
               </h2>
               <div className="flex items-center justify-center mb-4">
@@ -289,54 +291,54 @@ const ChangePasswordPage = () => {
                   <img
                     src={photo || imageSrc} 
                     alt="Profile"
-                    className="h-28 w-28 border-2 border-gray-400 rounded-full mb-2 object-cover"
+                    className="h-20 w-20 border-2 border-gray-400 rounded-full mb-2 object-cover"
                   />
                 ) : (
-                  <UserCircleIcon className="h-24 w-24 text-rose-800 border-4 border-black rounded-full" />
+                  <UserCircleIcon className="h-20 w-20 text-rose-800 border-4 border-black rounded-full" />
                 )}
               </div>
-              <p className="text-xl text-gray-900 ml-20 my-2">
+              <p className="text-md text-gray-900 ml-20 my-2">
                 Name: <strong>{employee?.name}</strong>
               </p>
-              <p className="text-xl text-gray-900 ml-20 my-2">
+              <p className="text-md text-gray-900 ml-20 my-2">
                 Branch: <strong>{employee?.branch?.name || "All"}</strong>
               </p>
               {department && (
-                <p className="text-xl text-gray-900 ml-20 my-2">
+                <p className="text-md text-gray-900 ml-20 my-2">
                   Department:{" "}
                   <strong>{employee?.department?.name || "All"}</strong>
                 </p>
               )}
-              <p className="text-xl text-gray-900 ml-20 my-2">
+              <p className="text-md text-gray-900 ml-20 my-2">
                 Role: <strong>{employee?.role.role}</strong>
               </p>
-              <p className="text-xl text-gray-900 ml-20 my-2">
+              <p className="text-md text-gray-900 ml-20 my-2">
                 Mobile: <strong>{employee?.mobile}</strong>
               </p>
-              <p className="text-xl text-gray-900 ml-20 my-2">
+              <p className="text-md text-gray-900 ml-20 my-2">
                 Joined Date: <strong>{formatDate(employee?.createdOn)}</strong>
               </p>
-              <p className="text-xl text-gray-900 ml-20 my-2">
+              <p className="text-md text-gray-900 ml-20 my-2">
                 Email: <strong>{employee?.email}</strong>
               </p>
 
               <div className="flex flex-col space-y-4 my-5">
                 <button
                   onClick={() => setActiveForm("editProfile")}
-                  className="bg-rose-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-rose-700 transition duration-300"
+                  className="bg-rose-600 text-white font-semibold py-1 px-2 rounded-lg hover:bg-rose-700 transition duration-300"
                 >
                   Edit Profile
                 </button>
                 <button
                   onClick={() => setActiveForm("changePassword")}
-                  className="bg-rose-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-rose-700 transition duration-300"
+                  className="bg-rose-800 text-white font-semibold py-1 px-2 rounded-lg hover:bg-rose-700 transition duration-300"
                 >
                   Change Password
                 </button>
                 <button
                   onClick={handleBackClick}
                   type="button"
-                  className="bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300"
+                  className="bg-gray-400 text-white font-semibold py-1 px-2 rounded-lg hover:bg-gray-700 transition duration-300"
                 >
                   Back
                 </button>
@@ -346,7 +348,7 @@ const ChangePasswordPage = () => {
         )}
 
         {activeForm === "changePassword" && (
-          <div className="rounded-lg p-6 shadow-xl flex flex-col items-center justify-center bg-blue-200 bg-opacity-80 backdrop-filter backdrop-blur-md">
+          <div className="">
             <h2 className="text-3xl font-semibold text-gray-800 mb-4">
               Change Password
             </h2>
@@ -468,7 +470,7 @@ const ChangePasswordPage = () => {
         )}
 
         {activeForm === "editProfile" && (
-          <div className="rounded-lg p-6 shadow-xl flex flex-col items-center justify-center bg-blue-200 bg-opacity-80 backdrop-filter backdrop-blur-md">
+          <div className="">
             <h2 className="text-3xl font-semibold text-gray-800 mb-4">
               Edit Your Profile
             </h2>

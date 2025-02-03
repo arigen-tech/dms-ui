@@ -5,31 +5,32 @@ import { API_Chatbot_HOST } from '../API/apiConfig';
 
 const ChatBotPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    // {
-    //   text: "👋 Hello! I'm ARI, your personal assistant. How can I help you today?",
-    //   isBot: true,
-    //   timestamp: new Date()
-    // },
-    // Sample messages for scroll demonstration
-    ...Array(8).fill(null).map((_, i) => ({
-      text: `Previous message ${i + 1} for chat history demonstration`,
-      isBot: i % 2 === 0,
-      timestamp: new Date(Date.now() - (i * 60000))
-    }))
-  ]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
+  // Check if device is mobile
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
   useEffect(() => {
     setMessages([{
-      text: "👋 Hello! I'm ARI, your personal assistant. How can I help you today?",
+      text: "👋 Hello! I'm Ari, your personal assistant. How can I help you today?",
       isBot: true,
       timestamp: new Date()
-    }]); // Clear all messages but add back welcome message
+    }]);
   }, []);
 
   const scrollToBottom = (behavior = 'smooth') => {
@@ -38,7 +39,6 @@ const ChatBotPopup = () => {
 
   const handleScroll = () => {
     if (!chatContainerRef.current) return;
-
     const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
     setShowScrollButton(!isNearBottom);
@@ -117,62 +117,43 @@ const ChatBotPopup = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      {/* Draggable Chat Button */}
-      <Draggable handle=".drag-handle">
+      {/* Draggable Chat Button - Only draggable on desktop */}
+      <Draggable handle=".drag-handle" disabled={isMobile}>
         <div className="inline-block">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="drag-handle relative p-5 rounded-full overflow-hidden group
+            className="drag-handle relative p-4 md:p-5 rounded-full overflow-hidden group
                       shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-500
                       hover:shadow-[0_8px_30px_rgba(59,130,246,0.6)]
                       active:scale-95 cursor-pointer transform-gpu"
           >
-            {/* Animated background layers */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-500 
                             to-pink-500 opacity-85 animate-gradient-xy"></div>
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-400 
                             to-pink-400 opacity-0 group-hover:opacity-90 transition-all duration-500 
                             scale-0 group-hover:scale-100"></div>
-
-            {/* Glowing effect */}
-            <div className="absolute inset-0 rounded-full opacity-40 group-hover:opacity-60 
-                            transition-opacity duration-500 animate-pulse"
-              style={{
-                background: 'radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, transparent 70%)'
-              }}></div>
-
-            {/* Content */}
             <div className="relative flex items-center justify-center">
-              <ChatBubbleOvalLeftEllipsisIcon className="h-8 w-8 text-white transform transition-all duration-300 
+              <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6 md:h-8 md:w-8 text-white transform transition-all duration-300 
                                                         group-hover:scale-110 group-hover:rotate-12" />
             </div>
-
-            {/* Ripple effect on hover */}
-            <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-25
-                            transition-opacity duration-300"
-              style={{
-                background: 'radial-gradient(circle at center, transparent 0%, rgba(255,255,255,0.8) 100%)',
-                animation: 'ripple 1.5s infinite'
-              }}></div>
           </button>
         </div>
       </Draggable>
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-20 right-0 w-96 bg-white rounded-lg 
-                        shadow-2xl flex flex-col max-h-[600px]">
+        <div className={`${isMobile ? 'fixed inset-0 m-0' : 'absolute bottom-20 right-0 w-96'} 
+                        bg-white rounded-lg shadow-2xl flex flex-col 
+                        ${isMobile ? 'h-full' : 'max-h-[600px]'}`}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 p-3 rounded-t-lg 
-                          flex justify-between items-center absolute top-0 left-0 right-0 z-10">
+          <div className="bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 
+                         p-3 flex justify-between items-center sticky top-0 z-10">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-inner relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5 text-blue-600 transform transition-all duration-300 
-                                                          group-hover:scale-110 group-hover:rotate-12" />
+              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-inner">
+                <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">ARI Assistant</h3>
+                <h3 className="text-white font-bold text-base">Ask ARI 1.0</h3>
                 {isTyping && (
                   <span className="text-xs text-blue-100">typing...</span>
                 )}
@@ -180,7 +161,7 @@ const ChatBotPopup = () => {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white opacity-80 hover:opacity-100 transition-opacity duration-300 hover:rotate-90 transform"
+              className="text-white opacity-80 hover:opacity-100 transition-opacity duration-300"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
@@ -190,10 +171,10 @@ const ChatBotPopup = () => {
           <div
             ref={chatContainerRef}
             onScroll={handleScroll}
-            className="flex-1 p-4 pt-14 space-y-4 overflow-y-auto min-h-[calc(100vh-200px)] max-h-[calc(100vh-200px)]
+            className={`flex-1 p-4 rounded-lg space-y-4 overflow-y-auto
+                      ${isMobile ? 'h-[calc(100vh-120px)]' : 'min-h-[400px] max-h-[500px]'}
                       scrollbar scrollbar-w-2 scrollbar-thumb-blue-500 
-                      scrollbar-track-gray-100 scrollbar-thumb-rounded-full"
-            style={{ scrollBehavior: 'smooth' }}
+                      scrollbar-track-gray-100 scrollbar-thumb-rounded-full`}
           >
             {messages.map((message, index) => (
               <div
@@ -201,19 +182,18 @@ const ChatBotPopup = () => {
                 className={`flex ${message.isBot ? 'justify-start' : 'justify-end'} 
                            animate-fade-in-up`}
               >
-                <div className={`max-w-[80%] transform transition-all duration-300 ease-out
-                              ${message.isBot ? 'translate-x-0' : 'translate-x-0'}`}>
+                <div className={`max-w-[80%]`}>
                   <div
-                    className={`p-3 rounded-lg ${
+                    className={`p-3 rounded-lg mt-8 ${
                       message.isBot 
                         ? 'bg-gray-100 text-gray-800' 
                         : 'bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 text-white'
-                    } shadow-sm hover:shadow-md transition-shadow duration-300`}
+                    } shadow-sm`}
                   >
                     {message.text}
                   </div>
-                  <div className={`text-xs text-gray-500 mt-1 ${message.isBot ? 'ml-2' : 'mr-2 text-right'
-                    }`}>
+                  <div className={`text-xs text-gray-500 mt-1 ${
+                    message.isBot ? 'ml-2' : 'mr-2 text-right'}`}>
                     {formatTime(message.timestamp)}
                   </div>
                 </div>
@@ -237,22 +217,21 @@ const ChatBotPopup = () => {
 
           {/* Input Form */}
           <form onSubmit={handleSendMessage}
-            className="p-4 bg-white border-t border-gray-200 sticky bottom-0 z-10">
+            className="p-4 bg-white border-t border-gray-200 sticky bottom-0 rounded-lg">
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Message ARI..."
-                className="flex-1 p-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2
-                         focus:ring-blue-500 focus:bg-white transition-all duration-300"
+                className="flex-1 p-2 md:p-3 bg-gray-100 rounded-full focus:outline-none 
+                         focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-300"
               />
               <button
                 type="submit"
-                className="p-3 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 text-white
-                         rounded-full shadow-md hover:shadow-lg transition-all duration-300
-                         hover:from-blue-600 hover:to-pink-500 hover:via-purple-500 active:scale-95
-                         disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 md:p-3 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 
+                         text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300
+                         active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!newMessage.trim()}
               >
                 <PaperAirplaneIcon className="h-5 w-5 transform" />

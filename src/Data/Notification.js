@@ -305,16 +305,10 @@ export const Notification = () => {
                   </button>
                   <h1 className="text-3xl font-bold text-white">Notifications</h1>
                 </div>
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="p-2 rounded-lg bg-blue-700 text-white hover:bg-blue-600 transition-all duration-200 lg:hidden"
-                >
-                  <AdjustmentsHorizontalIcon className="h-6 w-6" />
-                </button>
               </div>
 
               <div
-                className={`flex flex-nowrap gap-3 transition-all duration-300 overflow-x-auto pb-4 ${showFilters ? "max-h-96" : "max-h-0 lg:max-h-96"} overflow-hidden`}
+                className={`flex flex-nowrap gap-3 transition-all duration-300 overflow-x-auto pb-4 max-h-96 overflow-hidden`}
               >
                 {NOTIFICATION_TYPES.filter(
                   (type) =>

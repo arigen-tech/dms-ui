@@ -20,7 +20,7 @@ const DropdownMenu = ({ items, onSelect, emptyMessage }) => (
       items.map((item, index) => (
         <div
           key={index}
-          className="px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+          className="px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer rounded-md"
           onClick={() => onSelect && onSelect(item)} // Handle item selection
         >
           {typeof item === "string" ? item : item.label}{" "}
@@ -222,7 +222,7 @@ function Header({ toggleSidebar, userName }) {
   }, [dropdownRoleOpen]);
 
   return (
-    <header className="bg-blue-800 text-white p-2 flex justify-between items-center shadow-inner relative">
+    <header className="bg-blue-800 text-white p-2 flex flex-col md:flex-row justify-between items-end shadow-inner relative">
       {popupMessage && (
         <Popup
           message={popupMessage.message}
@@ -230,18 +230,20 @@ function Header({ toggleSidebar, userName }) {
           onClose={handleClose}
         />
       )}
-      <div className="flex items-center">
+      <div className="flex items-center w-full justify-between md:justify-start mb-1">
         <button
           onClick={toggleSidebar}
           className="text-gray-300 hover:text-white p-2 rounded-lg transition duration-200 mr-4"
         >
           <Bars3Icon className="h-7 w-7" />
         </button>
-        <h2 className="font-bold text-2xl">
+        <h2 className="font-bold text-2xl mb-1.5">
           <span className="font-light">Document Management System</span>
         </h2>
       </div>
-      <div className="flex space-x-4 items-center mr-4">
+      <div className="flex space-x-4 items-center mr-10">
+      <NotificationBell />
+      <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
         {/* Role Dropdown */}
         <div className="relative">
           <div
@@ -250,13 +252,12 @@ function Header({ toggleSidebar, userName }) {
           >
             <UserIcon className="h-5 w-5 text-gray-300" />
             <span className="font-light text-sm mr-1">{role || "Role"}</span>
-            <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
           </div>
           {dropdownRoleOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
               <DropdownMenu
                 items={roleName.map((role) => ({
-                  label: <span className="flex items-center text-green-600 hover:bg-green-200 p-2 rounded transition duration-200"><UserIcon className="h-5 w-5 mr-2" /> {role}</span>,
+                  label: <span className="flex items-center text-sm text-blue-600 p-0.5 rounded transition duration-200 m"><UserIcon className="h-3 w-3 mr-2" /> {role}</span>,
                   onClick: () => {
                     handleRoleSwitch(role);
                     setDropdownRoleOpen(false);
@@ -271,12 +272,11 @@ function Header({ toggleSidebar, userName }) {
         </div>
 
         {/* Notification Icon */}
-        <NotificationBell />
 
         {/* Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <div
-            className="flex items-center space-x-2 cursor-pointer"
+            className="flex items-center space-x-4 cursor-pointer"
             onClick={toggleDropdown}
           >
             <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
@@ -292,11 +292,11 @@ function Header({ toggleSidebar, userName }) {
               <DropdownMenu
                 items={[
                   { 
-                    label: <span className="flex items-center text-blue-600 hover:bg-blue-200 p-2 rounded transition duration-200"><PencilIcon className="h-5 w-5 mr-2" /> Edit Profile</span>, 
+                    label: <span className="flex items-center text-blue-600 p-1 rounded transition duration-200 text-sm"><PencilIcon className="h-3 w-3 mr-2" /> Edit Profile</span>, 
                     onClick: handleChangePassword 
                   },
                   { 
-                    label: <span className="flex items-center text-red-600 hover:bg-red-200 p-2 rounded transition duration-200"><ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" /> Logout</span>, 
+                    label: <span className="flex items-center text-red-600 p-1 rounded transition duration-200 text-sm"><ArrowRightOnRectangleIcon className="h-3 w-3 mr-2" /> Logout</span>, 
                     onClick: handleLogout 
                   },
                 ]}

@@ -1,5 +1,19 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 .App {
   text-align: center;
+  height: 100vh; /* Fill viewport height */
+  width: 100vw; /* Fill viewport width */
+  overflow: hidden; /* Prevent scrolling on main container */
+  position: fixed; /* Lock the container */
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
   zoom: 75%;
 }
 
@@ -38,13 +52,14 @@
 
 .App-header {
   background-color: #282c34;
-  min-height: 100vh;
+  height: 100%; /* Change from min-height to height */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  overflow-y: auto; /* Allow scrolling within header if needed */
 }
 
 .App-link {
