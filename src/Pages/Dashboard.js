@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER  } from "../API/apiConfig";
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
 import {
   BarChart,
@@ -39,6 +39,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { IoDocumentLock } from "react-icons/io5";
 import { FaUserClock } from "react-icons/fa6";
+import Layout from "../Components/Layout";
 
 
 
@@ -88,7 +89,7 @@ function Dashboard() {
     fetchUserDetails();
   }, []);
 
-  
+
 
   const fetchUserDetails = async () => {
     try {
@@ -149,19 +150,19 @@ function Dashboard() {
         const employeeId = localStorage.getItem("userId");
         const token = localStorage.getItem("tokenKey");
         const role = localStorage.getItem("role");
-  
+
         if (!token || !employeeId) {
           throw new Error("Unauthorized: Token or Employee ID missing.");
         }
-  
+
         const authHeader = { headers: { Authorization: `Bearer ${token}` } };
         const baseUrl = `${API_HOST}/api/documents`;
         const dashboardUrl = `${API_HOST}/api/dashboard/getAllCount/${employeeId}`;
         const startDate = `${currentYear}-01-01 00:00:00`;
         const endDate = `${currentYear}-12-31 23:59:59`;
-  
+
         let summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
-  
+
         switch (role) {
           case SYSTEM_ADMIN:
             summaryUrl = `${baseUrl}/monthly-total`;
@@ -180,7 +181,7 @@ function Dashboard() {
           default:
             throw new Error("Invalid role.");
         }
-  
+
         const [statsResponse, summaryResponse] = await Promise.all([
           apiClient.get(dashboardUrl, { ...authHeader, params: { employeeId } }),
           apiClient.get(summaryUrl, {
@@ -188,40 +189,40 @@ function Dashboard() {
             params: { startDate, endDate },
           }),
         ]);
-  
+
         setStats(statsResponse.data);
-  
+
         const {
           months,
           approvedDocuments,
           rejectedDocuments,
           pendingDocuments,
         } = summaryResponse.data;
-  
+
         const mappedData = months.map((month, index) => ({
           name: month,
           ApprovedDocuments: approvedDocuments[index],
           RejectedDocuments: rejectedDocuments[index],
           PendingDocuments: pendingDocuments[index],
         }));
-  
+
         setChartData(mappedData);
       } catch (error) {
         console.error("Error fetching data:", error);
-  
+
         const isUnauthorized =
           error.response?.status === 401 ||
           error.message === "Unauthorized: Token or Employee ID missing.";
-  
+
         if (isUnauthorized) {
           navigate("/login");
         }
       }
     };
-  
+
     fetchStatsAndData();
   }, [navigate, currentYear, branchesId, departmentId]);
-  
+
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -266,262 +267,254 @@ function Dashboard() {
 
 
   return (
-    <div className="flex flex-row bg-gray-200 h-screen w-screen overflow-hidden">
-      {sidebarOpen && <Sidebar />}
-      <div className="flex flex-col flex-1">
-        <Header toggleSidebar={toggleSidebar} />
-        <div className="flex-1 p-4 min-h-0 overflow-auto">
-          <h2 className="text-xl mb-4 font-semibold">DASHBOARD</h2>
+    <Layout>
+      <div className="flex flex-col p-4 min-h-full w-full">
+        <h2 className="text-xl mb-4 font-semibold">DASHBOARD</h2>
 
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            {role === SYSTEM_ADMIN && (
-              <>
-                <Link to="/users" className="block">
-                  <StatBlock
-                    title="Total Users"
-                    value={stats.totalUser}
-                    Icon={UsersIcon}
-                  />
-                </Link>
-                
-                <Link to="/userRoleAssing" className="block">
-                  <StatBlock
-                    title="Total Pending Users"
-                    value={stats.totalNullEmployeeType}
-                    Icon={FaUserClock}
-                  />
-                </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {role === SYSTEM_ADMIN && (
+            <>
+              <Link to="/users" className="block">
+                <StatBlock title="Total Users" value={stats.totalUser} Icon={UsersIcon} />
+              </Link>
 
-                <Link to="/create-branch" className="block">
-                  <StatBlock
-                    title="Total Branches"
-                    value={stats.totalBranches}
-                    Icon={KeyIcon}
-                  />
-                </Link>
-
-                <Link to="/create-department" className="block">
-                  <StatBlock
-                    title="Total Departments"
-                    value={stats.totalDepartment}
-                    Icon={ComputerDesktopIcon}
-                  />
-                </Link>
-
-                <Link to="/create-role" className="block">
-                  <StatBlock
-                    title="Total Roles"
-                    value={stats.totalRoles}
-                    Icon={UserCircleIcon}
-                  />
-                </Link>
-
-                <Link to="/create-category" className="block">
-                  <StatBlock
-                    title="Total Categories"
-                    value={stats.totalCategories}
-                    Icon={ShoppingCartIcon}
-                  />
-                </Link>
-
-                <Link to="/create-year" className="block">
-                  <StatBlock
-                    title="Total Year"
-                    value={stats.annualYear}
-                    Icon={CalendarDaysIcon}
-                  />
-                </Link>
-
+              <Link to="/userRoleAssing" className="block">
                 <StatBlock
-                  title="Total Documents"
-                  value={stats.totalDocument}
-                  Icon={DocumentIcon}
+                  title="Total Pending Users"
+                  value={stats.totalNullEmployeeType}
+                  Icon={FaUserClock}
                 />
+              </Link>
 
-                <Link to="/approve-documents" className="block">
-                  <StatBlock
-                    title="Pending Documents"
-                    value={stats.totalPendingDocuments}
-                    Icon={IoDocumentLock}
-                  />
-                </Link>
-
-                <Link to="/total-approved" className="block">
-                  <StatBlock
-                    title="Approved Documents"
-                    value={stats.totalApprovedDocuments}
-                    Icon={DocumentCheckIcon}
-                  />
-                </Link>
-
-                <Link to="/total-rejected" className="block">
-                  <StatBlock
-                    title="Rejected Documents"
-                    value={stats.totalRejectedDocuments}
-                    Icon={DocumentMinusIcon}
-                  />
-                </Link>
-              </>
-            )}
-
-            {role === BRANCH_ADMIN && (
-              <>
-                <Link to="/branchusers" className="block">
-                  <StatBlock
-                    title="Branch Users"
-                    value={stats.branchUser}
-                    Icon={UsersIcon}
-                  />
-                </Link>
-
-                <Link to="/userRoleAssing" className="block">
-                  <StatBlock
-                    title="Pending Users"
-                    value={stats.nullRoleEmployeeCountForBranch}
-                    Icon={FaUserClock}
-                  />
-                </Link>
-
-                <Link to="/create-departments" className="block">
-                  <StatBlock
-                    title="Total Departments"
-                    value={stats.departmentCountForBranch}
-                    Icon={ComputerDesktopIcon}
-                  />
-                </Link>
-
+              <Link to="/create-branch" className="block">
                 <StatBlock
-                  title="Total Documents"
-                  value={totalDocsbyBranch}
-                  Icon={DocumentIcon}
+                  title="Total Branches"
+                  value={stats.totalBranches}
+                  Icon={KeyIcon}
                 />
+              </Link>
 
-                <Link to="/approve-documents" className="block">
-                  <StatBlock
-                    title="Pending Documents"
-                    value={stats.totalPendingDocumentsById}
-                    Icon={IoDocumentLock}
-                  />
-                </Link>
-
-                <Link to="/total-approved" className="block">
-                  <StatBlock
-                    title="Approved Documents"
-                    value={stats.totalApprovedStatusDocById}
-                    Icon={DocumentCheckIcon}
-                  />
-                </Link>
-
-                <Link to="/total-rejected" className="block">
-                  <StatBlock
-                    title="Rejected Documents"
-                    value={stats.totalRejectedStatusDocById}
-                    Icon={DocumentMinusIcon}
-                  />
-                </Link>
-              </>
-            )}
-
-            {role === DEPARTMENT_ADMIN && (
-              <>
-                <Link to="/Departmentusers" className="block">
-                  <StatBlock
-                    title="Department Users"
-                    value={stats.departmentUser}
-                    Icon={UsersIcon}
-                  />
-                </Link>
-
-                <Link to="/PendingRole" className="block">
-                  <StatBlock
-                    title="Pending Users"
-                    value={stats.nullRoleEmployeeCountForDepartment}
-                    Icon={FaUserClock}
-                  />
-                </Link>
-
+              <Link to="/create-department" className="block">
                 <StatBlock
-                  title="Total Documents"
-                  value={totalDocsbyDep}
-                  Icon={DocumentIcon}
+                  title="Total Departments"
+                  value={stats.totalDepartment}
+                  Icon={ComputerDesktopIcon}
                 />
-                <Link to="/approve-documents" className="block">
-                  <StatBlock
-                    title="Pending Documents"
-                    value={stats.totalPendingDocumentsByDepartmentId}
-                    Icon={IoDocumentLock}
-                  />
-                </Link>
+              </Link>
 
-                <Link to="/total-approved" className="block">
-                  <StatBlock
-                    title="Approved Documents"
-                    value={stats.totalApprovedStatusDocByDepartmentId}
-                    Icon={DocumentCheckIcon}
-                  />
-                </Link>
-
-                <Link to="/total-rejected" className="block">
-                  <StatBlock
-                    title="Rejected Documents"
-                    value={stats.totalRejectedStatusDocByDepartmentId}
-                    Icon={DocumentMinusIcon}
-                  />
-                </Link>
-              </>
-            )}
-
-            {role === USER && (
-              <>
-                
-                <Link to="/users" className="block">
-                  <StatBlock
-                    title="Create User"
-                    value={stats.createdByCount}
-                    Icon={UsersIcon}
-                  />
-                </Link>
-
+              <Link to="/create-role" className="block">
                 <StatBlock
-                  title="Total Documents"
-                  value={totalDocsbyUser}
-                  Icon={DocumentIcon}
+                  title="Total Roles"
+                  value={stats.totalRoles}
+                  Icon={UserCircleIcon}
                 />
+              </Link>
 
-                <Link to="/all-documents" className="block">
-                  <StatBlock
-                    title="Pending Documents"
-                    value={stats.pendingDocsbyid}
-                    Icon={IoDocumentLock}
-                  />
-                </Link>
+              <Link to="/create-category" className="block">
+                <StatBlock
+                  title="Total Categories"
+                  value={stats.totalCategories}
+                  Icon={ShoppingCartIcon}
+                />
+              </Link>
 
-                <Link to="/approvedDocs" className="block">
-                  <StatBlock
-                    title="Approved Documents"
-                    value={stats.approvedDocsbyid}
-                    Icon={DocumentCheckIcon}
-                  />
-                </Link>
+              <Link to="/create-year" className="block">
+                <StatBlock
+                  title="Total Year"
+                  value={stats.annualYear}
+                  Icon={CalendarDaysIcon}
+                />
+              </Link>
 
-                <Link to="/rejectedDocs" className="block">
-                  <StatBlock
-                    title="Rejected Documents"
-                    value={stats.rejectedDocsbyid}
-                    Icon={DocumentMinusIcon}
-                  />
-                </Link>
-              </>
-            )}
-          </div>
+              <StatBlock
+                title="Total Documents"
+                value={stats.totalDocument}
+                Icon={DocumentIcon}
+              />
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Bar Chart */}
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-2">
-                Monthly Document Stats {currentYear}
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
+              <Link to="/approve-documents" className="block">
+                <StatBlock
+                  title="Pending Documents"
+                  value={stats.totalPendingDocuments}
+                  Icon={IoDocumentLock}
+                />
+              </Link>
+
+              <Link to="/total-approved" className="block">
+                <StatBlock
+                  title="Approved Documents"
+                  value={stats.totalApprovedDocuments}
+                  Icon={DocumentCheckIcon}
+                />
+              </Link>
+
+              <Link to="/total-rejected" className="block">
+                <StatBlock
+                  title="Rejected Documents"
+                  value={stats.totalRejectedDocuments}
+                  Icon={DocumentMinusIcon}
+                />
+              </Link>
+            </>
+          )}
+
+          {role === BRANCH_ADMIN && (
+            <>
+              <Link to="/branchusers" className="block">
+                <StatBlock
+                  title="Branch Users"
+                  value={stats.branchUser}
+                  Icon={UsersIcon}
+                />
+              </Link>
+
+              <Link to="/userRoleAssing" className="block">
+                <StatBlock
+                  title="Pending Users"
+                  value={stats.nullRoleEmployeeCountForBranch}
+                  Icon={FaUserClock}
+                />
+              </Link>
+
+              <Link to="/create-departments" className="block">
+                <StatBlock
+                  title="Total Departments"
+                  value={stats.departmentCountForBranch}
+                  Icon={ComputerDesktopIcon}
+                />
+              </Link>
+
+              <StatBlock
+                title="Total Documents"
+                value={totalDocsbyBranch}
+                Icon={DocumentIcon}
+              />
+
+              <Link to="/approve-documents" className="block">
+                <StatBlock
+                  title="Pending Documents"
+                  value={stats.totalPendingDocumentsById}
+                  Icon={IoDocumentLock}
+                />
+              </Link>
+
+              <Link to="/total-approved" className="block">
+                <StatBlock
+                  title="Approved Documents"
+                  value={stats.totalApprovedStatusDocById}
+                  Icon={DocumentCheckIcon}
+                />
+              </Link>
+
+              <Link to="/total-rejected" className="block">
+                <StatBlock
+                  title="Rejected Documents"
+                  value={stats.totalRejectedStatusDocById}
+                  Icon={DocumentMinusIcon}
+                />
+              </Link>
+            </>
+          )}
+
+          {role === DEPARTMENT_ADMIN && (
+            <>
+              <Link to="/Departmentusers" className="block">
+                <StatBlock
+                  title="Department Users"
+                  value={stats.departmentUser}
+                  Icon={UsersIcon}
+                />
+              </Link>
+
+              <Link to="/PendingRole" className="block">
+                <StatBlock
+                  title="Pending Users"
+                  value={stats.nullRoleEmployeeCountForDepartment}
+                  Icon={FaUserClock}
+                />
+              </Link>
+
+              <StatBlock
+                title="Total Documents"
+                value={totalDocsbyDep}
+                Icon={DocumentIcon}
+              />
+              <Link to="/approve-documents" className="block">
+                <StatBlock
+                  title="Pending Documents"
+                  value={stats.totalPendingDocumentsByDepartmentId}
+                  Icon={IoDocumentLock}
+                />
+              </Link>
+
+              <Link to="/total-approved" className="block">
+                <StatBlock
+                  title="Approved Documents"
+                  value={stats.totalApprovedStatusDocByDepartmentId}
+                  Icon={DocumentCheckIcon}
+                />
+              </Link>
+
+              <Link to="/total-rejected" className="block">
+                <StatBlock
+                  title="Rejected Documents"
+                  value={stats.totalRejectedStatusDocByDepartmentId}
+                  Icon={DocumentMinusIcon}
+                />
+              </Link>
+            </>
+          )}
+
+          {role === USER && (
+            <>
+
+              <Link to="/users" className="block">
+                <StatBlock
+                  title="Create User"
+                  value={stats.createdByCount}
+                  Icon={UsersIcon}
+                />
+              </Link>
+
+              <StatBlock
+                title="Total Documents"
+                value={totalDocsbyUser}
+                Icon={DocumentIcon}
+              />
+
+              <Link to="/all-documents" className="block">
+                <StatBlock
+                  title="Pending Documents"
+                  value={stats.pendingDocsbyid}
+                  Icon={IoDocumentLock}
+                />
+              </Link>
+
+              <Link to="/approvedDocs" className="block">
+                <StatBlock
+                  title="Approved Documents"
+                  value={stats.approvedDocsbyid}
+                  Icon={DocumentCheckIcon}
+                />
+              </Link>
+
+              <Link to="/rejectedDocs" className="block">
+                <StatBlock
+                  title="Rejected Documents"
+                  value={stats.rejectedDocsbyid}
+                  Icon={DocumentMinusIcon}
+                />
+              </Link>
+            </>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Bar Chart */}
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-2">Monthly Document Stats {currentYear}</h3>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
@@ -546,113 +539,113 @@ function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            </div>
 
             {/* Line Chart */}
             <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-2">
-                Page Document Stats {currentYear}
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="ApprovedDocuments"
-                    stroke="#82ca9d"
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="RejectedDocuments"
-                    stroke="#FF0000"
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="PendingDocuments"
-                    stroke="#f0ad4e"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+              <h3 className="text-lg font-semibold mb-2">Page Document Stats {currentYear}</h3>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="ApprovedDocuments"
+                      stroke="#82ca9d"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="RejectedDocuments"
+                      stroke="#FF0000"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="PendingDocuments"
+                      stroke="#f0ad4e"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              </div>
 
-            {/* Polar Chart */}
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-2">
-                Polar Document Stats
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <RadarChart outerRadius="80%" data={chartData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="name" />
-                  <PolarRadiusAxis />
-                  {/* Radar components for each data set */}
-                  <Radar
-                    name="Approved Documents"
-                    dataKey="ApprovedDocuments"
-                    stroke="#82ca9d"
-                    fill="#82ca9d"
-                    fillOpacity={0.6}
-                  />
-                  <Radar
-                    name="Rejected Documents"
-                    dataKey="RejectedDocuments"
-                    stroke="#FF0000"
-                    fill="#FF0000"
-                    fillOpacity={0.6}
-                  />
-                  <Radar
-                    name="Pending Documents"
-                    dataKey="PendingDocuments"
-                    stroke="#f0ad4e"
-                    fill="#f0ad4e"
-                    fillOpacity={0.6}
-                  />
-                  {/* Tooltip to display data when mouse hovers */}
-                  <Tooltip />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Pie Chart */}
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-2">
-                Document Status Distribution
-              </h3>
-              <ResponsiveContainer width="100%" height={400}>
-                <PieChart>
-                  <Pie
-                    data={pieChartData} // Use the calculated totals here
-                    dataKey="value" // Value to use for Pie slices
-                    nameKey="name" // Name of each section (Approved, Rejected, Pending)
-                    cx="50%" // Centering the Pie chart
-                    cy="50%" // Centering the Pie chart
-                    outerRadius={80} // Outer radius of the Pie chart
-                    label // Adding labels inside Pie slices
-                  >
-                    {pieChartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
+              {/* Polar Chart */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">Polar Document Stats</h3>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer>
+                    <RadarChart outerRadius="80%" data={chartData}>
+                      <PolarGrid />
+                      <PolarAngleAxis dataKey="name" />
+                      <PolarRadiusAxis />
+                      {/* Radar components for each data set */}
+                      <Radar
+                        name="Approved Documents"
+                        dataKey="ApprovedDocuments"
+                        stroke="#82ca9d"
+                        fill="#82ca9d"
+                        fillOpacity={0.6}
                       />
-                    ))}
-                  </Pie>
-                  <Tooltip /> {/* Tooltip to show data when hovered */}
-                  <Legend />{" "}
-                  {/* Legend to show which color corresponds to which name */}
-                </PieChart>
-              </ResponsiveContainer>
+                      <Radar
+                        name="Rejected Documents"
+                        dataKey="RejectedDocuments"
+                        stroke="#FF0000"
+                        fill="#FF0000"
+                        fillOpacity={0.6}
+                      />
+                      <Radar
+                        name="Pending Documents"
+                        dataKey="PendingDocuments"
+                        stroke="#f0ad4e"
+                        fill="#f0ad4e"
+                        fillOpacity={0.6}
+                      />
+                      {/* Tooltip to display data when mouse hovers */}
+                      <Tooltip />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+                </div>
+
+                {/* Pie Chart */}
+                <div className="bg-white p-4 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-2">Document Status Distribution</h3>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer>
+                      <PieChart>
+                        <Pie
+                          data={pieChartData} // Use the calculated totals here
+                          dataKey="value" // Value to use for Pie slices
+                          nameKey="name" // Name of each section (Approved, Rejected, Pending)
+                          cx="50%" // Centering the Pie chart
+                          cy="50%" // Centering the Pie chart
+                          outerRadius={80} // Outer radius of the Pie chart
+                          label // Adding labels inside Pie slices
+                        >
+                          {pieChartData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip /> {/* Tooltip to show data when hovered */}
+                        <Legend />{" "}
+                        {/* Legend to show which color corresponds to which name */}
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+          </Layout>
+          );
 }
 
-export default Dashboard;
+          export default Dashboard;

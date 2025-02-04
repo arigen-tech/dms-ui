@@ -192,18 +192,18 @@ const LoginPage = () => {
       {/* Right side - Login Form */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 md:p-8">
         {/* Logo and Title */}
-        <div className="w-full max-w-md text-center mb-4">
+        <div className="w-full max-w-md text-center mb-2">
           <img
             src={logo2}
             alt="AGT Document Management System"
-            className="mx-auto h-32 w-64 object-cover mb-2"
+            className="mx-auto w-28 object-cover mb-2"
           />
-          <h2 className="text-2xl text-blue-800 font-semibold">
+          <h2 className="text-lg text-blue-800 font-semibold">
             Document Management System
           </h2>
         </div>
 
-        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 md:p-8">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-4 md:p-4">
           {isOtpRequested && (
             <button
               onClick={handleBack}
@@ -214,14 +214,14 @@ const LoginPage = () => {
             </button>
           )}
 
-          <div className="mb-4 text-center">
+          <div className="mb-1 text-center">
             <h2
-              className={`text-2xl font-bold ${isOtpRequested ? "text-gray-900" : "text-indigo-600"
+              className={`text-lg font-bold ${isOtpRequested ? "text-gray-900" : "text-indigo-600"
                 }`}
             >
               {isOtpRequested ? "Enter OTP" : "Welcome Back"}
             </h2>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 mt-1">
               {isOtpRequested
                 ? "Please enter the OTP sent to your email"
                 : "Please sign in to your account"}
@@ -246,14 +246,14 @@ const LoginPage = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserIcon className="h-5 w-5 text-gray-400" />
+                      <UserIcon className="h-4 w-4 text-gray-400" />
                     </div>
                     <input
                       type="email"
                       name="username"
                       value={formData.username}
                       onChange={handleInputChange}
-                      className="pl-10 w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="pl-10 w-full p-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Enter your email"
                       required
                     />
@@ -266,14 +266,14 @@ const LoginPage = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                      <LockClosedIcon className="h-4 w-4 text-gray-400" />
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="pl-10 w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="pl-10 w-full p-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Enter your password"
                       required
                     />
@@ -283,9 +283,9 @@ const LoginPage = () => {
                       className="absolute right-3 top-1/2 -translate-y-1/2"
                     >
                       {showPassword ? (
-                        <EyeSlashIcon className="w-5 h-5 text-gray-400" />
+                        <EyeSlashIcon className="w-4 h-4 text-gray-400" />
                       ) : (
-                        <EyeIcon className="w-5 h-5 text-gray-400" />
+                        <EyeIcon className="w-4 h-4 text-gray-400" />
                       )}
                     </button>
                   </div>
@@ -296,7 +296,7 @@ const LoginPage = () => {
                     Captcha
                   </label>
                   <div className="flex items-center space-x-4">
-                    <div className="flex-1 p-3 bg-gray-100 rounded-md select-none">
+                    <div className="flex-1 p-1 bg-gray-100 rounded-md select-none">
                       {captcha.map((item, index) => (
                         <span
                           key={index}
@@ -326,7 +326,7 @@ const LoginPage = () => {
                     value={formData.captcha}
                     onChange={handleInputChange}
                     onPaste={handleCaptchaPaste}
-                    className="mt-2 w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-2 w-full p-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter captcha"
                     required
                   />

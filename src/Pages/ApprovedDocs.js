@@ -1,6 +1,6 @@
 import React,{useState, useEffect} from 'react'
 import Sidebar from '../Components/Sidebar';
-import Header from '../Components/Header';
+import Layout from '../Components/Layout';
 import ApprovedDoc from '../Data/ApprovedDoc';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
@@ -42,15 +42,9 @@ function ApprovedDocs() {
         setSidebarOpen(!sidebarOpen);
     };
     return (
-        <div className='flex flex-row bg-neutral-100 h-screen w-screen overflow-hidden'>
-            {sidebarOpen && <Sidebar />}
-            <div className='flex flex-col flex-1'>
-                <Header toggleSidebar={toggleSidebar} />
-                <div className='flex-1 p-4 min-h-0 overflow-auto'>
-                    <ApprovedDoc/>
-                </div>
-            </div>
-        </div>
+        <Layout>
+        <ApprovedDoc/>
+      </Layout>
   )
 }
 
