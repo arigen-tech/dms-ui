@@ -283,16 +283,36 @@ const Role = () => {
   };
 
   const filteredRoles = roles.filter((role) => {
-    const statusText = role.isActive === 1 ? "active" : "inactive";
+    // Explicitly convert status to text representation
+    const statusText = role.isActive === true ? "active" : "inactive";
+  
+    // Format creation date to searchable text
     const createdOnText = formatDate(role.createdOn);
+  
+    // Format update date to searchable text
     const updatedOnText = formatDate(role.updatedOn);
-
+  
+    // Improved search logic with multiple matching strategies
     return (
+      // Role name search
       (role.role &&
-        role.role.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      statusText.includes(searchTerm.toLowerCase()) ||
-      createdOnText.includes(searchTerm.toLowerCase()) ||
-      updatedOnText.includes(searchTerm.toLowerCase())
+        (role.role.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+      
+      // Role code search
+      (role.roleCode &&
+        role.roleCode.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      
+      // Enhanced status search with multiple matching approaches
+      (statusText.toLowerCase() === searchTerm.toLowerCase() || 
+       statusText.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       (searchTerm.toLowerCase() === 'active' && role.isActive === true) ||
+       (searchTerm.toLowerCase() === 'inactive' && role.isActive === false)) ||
+      
+      // Creation date search
+      (createdOnText.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      
+      // Update date search
+      (updatedOnText.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 

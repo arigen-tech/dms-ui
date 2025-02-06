@@ -153,8 +153,8 @@ export const Notification = () => {
       })
       const allNotifications = response.data.response
 
-      // Filter notifications based on role
-      const filteredNotifications = allNotifications.filter((notification) => {
+      // First filter by role
+      const roleFilteredNotifications = allNotifications.filter((notification) => {
         if (role === "DEPARTMENT ADMIN") {
           return ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED"].includes(notification.type)
         } else {
@@ -168,10 +168,12 @@ export const Notification = () => {
         }
       })
 
-      // Only set unread notifications
-       // Filter out read notifications
-       const unreadNotifications = response.data.response.filter(notification => !notification.read);
-       setNotifications(unreadNotifications);
+      // Then filter out read notifications
+      const unreadNotifications = roleFilteredNotifications.filter(
+        (notification) => !notification.read
+      )
+
+      setNotifications(unreadNotifications)
       setError(null)
     } catch (error) {
       console.error("Error fetching notifications:", error)
@@ -293,89 +295,91 @@ export const Notification = () => {
             </div>
           </div>
         ) : !isDetailView ? (
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
-            <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-800">
-              <div className="flex justify-between items-center mb-8">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={handleBack}
-                    className="p-2.5 rounded-xl bg-blue-950 text-white hover:bg-blue-950 transition-all duration-200 transform hover:scale-105"
-                  >
-                    <ArrowLeftIcon className="h-6 w-6" />
-                  </button>
-                  <h1 className="text-3xl font-bold text-white">Notifications</h1>
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
+            <div className="flex-shrink-0">
+              <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-800">
+                <div className="flex justify-between items-center mb-8">
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={handleBack}
+                      className="p-2.5 rounded-xl bg-blue-950 text-white hover:bg-blue-950 transition-all duration-200 transform hover:scale-105"
+                    >
+                      <ArrowLeftIcon className="h-6 w-6" />
+                    </button>
+                    <h1 className="text-3xl font-bold text-white">Notifications</h1>
+                  </div>
                 </div>
-              </div>
 
-              <div
-                className={`flex flex-nowrap gap-3 transition-all duration-300 overflow-x-auto pb-4 max-h-96 overflow-hidden`}
-              >
-                {NOTIFICATION_TYPES.filter(
-                  (type) =>
-                    type === "all" ||
-                    (role === "DEPARTMENT ADMIN"
-                      ? ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED"].includes(type)
-                      : [
+                <div
+                  className={`flex flex-nowrap gap-3 transition-all duration-300 overflow-x-auto pb-4 max-h-96 overflow-hidden`}
+                >
+                  {NOTIFICATION_TYPES.filter(
+                    (type) =>
+                      type === "all" ||
+                      (role === "DEPARTMENT ADMIN"
+                        ? ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED"].includes(type)
+                        : [
                           "EMPLOYEE_UPDATE",
                           "EMPLOYEE_STATUS_CHANGE",
                           "ROLE_UPDATE",
                           "DOCUMENT_APPROVAL",
                           "DOCUMENT_REJECTION",
                         ].includes(type)),
-                ).map((filterType) => (
-                  <button
-                    key={filterType}
-                    onClick={() => setFilter(filterType)}
-                    className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 whitespace-nowrap flex-shrink-0 ${
-                      filter === filterType
-                        ? "bg-white text-blue-600 shadow-lg scale-105"
-                        : "bg-blue-950 text-white hover:bg-blue-950"
-                    }`}
-                  >
-                    {formatFilterLabel(filterType)}
-                  </button>
-                ))}
+                  ).map((filterType) => (
+                    <button
+                      key={filterType}
+                      onClick={() => setFilter(filterType)}
+                      className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 whitespace-nowrap flex-shrink-0 ${filter === filterType
+                          ? "bg-white text-blue-600 shadow-lg scale-105"
+                          : "bg-blue-950 text-white hover:bg-blue-950"
+                        }`}
+                    >
+                      {formatFilterLabel(filterType)}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="divide-y divide-gray-100">
-              {filteredNotifications.length > 0 ? (
-                filteredNotifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`p-6 hover:bg-gray-50 transition-all duration-200 cursor-pointer ${
-                      !notification.isRead ? "bg-blue-50" : ""
-                    }`}
-                  >
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0">{getNotificationIcon(notification.type)}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-base font-semibold text-gray-900">{notification.title}</p>
-                          <span
-                            className={`px-3 py-1.5 text-xs font-medium rounded-full ${getPriorityColor(notification.priority)}`}
-                          >
-                            {notification.priority}
-                          </span>
+            <div className="flex-1 overflow-y-auto">
+              <div className="divide-y divide-gray-100">
+                {filteredNotifications.length > 0 ? (
+                  filteredNotifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`p-6 hover:bg-gray-50 transition-all duration-200 cursor-pointer ${!notification.isRead ? "bg-blue-50" : ""
+                        }`}
+                    >
+                      <div className="flex items-start space-x-4">
+                        <div className="flex-shrink-0">{getNotificationIcon(notification.type)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-base font-semibold text-gray-900">{notification.title}</p>
+                            <span
+                              className={`px-3 py-1.5 text-xs font-medium rounded-full ${getPriorityColor(notification.priority)}`}
+                            >
+                              {notification.priority}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{notification.message}</p>
+                          <p className="text-xs text-gray-400 mt-2 font-medium">{getTimeAgo(notification.createdOn)}</p>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-2 font-medium">{getTimeAgo(notification.createdOn)}</p>
+                        <ChevronRightIcon className="h-5 w-5 text-gray-400" />
                       </div>
-                      <ChevronRightIcon className="h-5 w-5 text-gray-400" />
                     </div>
+                  ))
+                ) : (
+                  <div className="p-12 text-center text-gray-500">
+                    <BellIcon className="h-16 w-16 mx-auto text-gray-400 mb-6" />
+                    <p className="text-xl font-medium mb-2">No notifications to display</p>
+                    <p className="text-sm text-gray-400">We'll notify you when something arrives</p>
                   </div>
-                ))
-              ) : (
-                <div className="p-12 text-center text-gray-500">
-                  <BellIcon className="h-16 w-16 mx-auto text-gray-400 mb-6" />
-                  <p className="text-xl font-medium mb-2">No notifications to display</p>
-                  <p className="text-sm text-gray-400">We'll notify you when something arrives</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            <div className="p-4 flex justify-center">
+            <div className="flex-shrink-0 p-4 flex justify-center border-t border-gray-100">
               <button
                 onClick={clearAllNotifications}
                 className="flex items-center space-x-2 p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
@@ -386,42 +390,64 @@ export const Notification = () => {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-800">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleBack}
-                  className="p-2.5 rounded-xl bg-blue-950 text-white  hover:bg-blue-950  transition-all duration-200 transform hover:scale-105"
-                >
-                  <ArrowLeftIcon className="h-6 w-6" />
-                </button>
-                <h2 className="text-2xl font-bold text-white">{selectedNotification?.title}</h2>
-              </div>
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden h-[calc(100vh-4rem)] flex flex-col">
+          {/* Header */}
+          <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-blue-800 p-8">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleBack}
+                className="p-2.5 rounded-xl bg-blue-950 text-white hover:bg-blue-900 transition-all duration-200"
+              >
+                <ArrowLeftIcon className="h-6 w-6" />
+              </button>
+              <h2 className="text-2xl font-bold text-white truncate">
+                {selectedNotification?.title}
+              </h2>
             </div>
+          </div>
+      
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
             <div className="p-8">
-              <div className="flex items-center space-x-4 mb-8">
-                {selectedNotification && getNotificationIcon(selectedNotification.type)}
-                <span className="text-sm text-gray-500 font-medium">{getTimeAgo(selectedNotification.createdOn)}</span>
+              {/* Metadata */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  {selectedNotification && getNotificationIcon(selectedNotification.type)}
+                  <span className="text-sm text-gray-500 font-medium">
+                    {getTimeAgo(selectedNotification?.createdOn)}
+                  </span>
+                </div>
+                <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${getPriorityColor(selectedNotification?.priority)}`}>
+                  {selectedNotification?.priority}
+                </span>
               </div>
-              <div className="prose max-w-none">
+      
+              {/* Message */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6">
                 <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
                   {selectedNotification?.message}
                 </p>
               </div>
+      
+              {/* Detailed Message */}
               {selectedNotification?.detailedMessage && (
-                <div
-                  className="mt-6 border-t pt-6"
-                  dangerouslySetInnerHTML={{
-                    __html: selectedNotification.detailedMessage,
-                  }}
-                />
+                <div className="bg-gray-50 rounded-xl p-6 mt-4">
+                  <h3 className="text-lg font-semibold mb-4">Additional Details</h3>
+                  <div
+                    className="prose max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: selectedNotification.detailedMessage,
+                    }}
+                  />
+                </div>
               )}
-
+      
+              {/* Navigation Button */}
               {selectedNotification && getNavigationButton(selectedNotification) && (
                 <div className="mt-8 flex justify-center">
                   <button
                     onClick={() => navigate(getNavigationButton(selectedNotification).path)}
-                    className="px-6 py-3 bg-blue-950 text-white rounded-xl hover:bg-blue-950 transition-all duration-200 transform hover:scale-105 flex items-center space-x-2"
+                    className="px-6 py-3 bg-blue-950 text-white rounded-xl hover:bg-blue-900 transition-all duration-200 flex items-center space-x-2"
                   >
                     <ChevronRightIcon className="h-5 w-5" />
                     <span>{getNavigationButton(selectedNotification).label}</span>
@@ -430,6 +456,7 @@ export const Notification = () => {
               )}
             </div>
           </div>
+        </div>
         )}
       </div>
     </div>

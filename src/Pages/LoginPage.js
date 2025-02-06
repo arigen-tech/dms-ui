@@ -246,7 +246,7 @@ const LoginPage = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserIcon className="h-4 w-4 text-gray-400" />
+                      <UserIcon className="h-4 w-4 text-blue-600" />
                     </div>
                     <input
                       type="email"
@@ -266,7 +266,7 @@ const LoginPage = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <LockClosedIcon className="h-4 w-4 text-gray-400" />
+                      <LockClosedIcon className="h-4 w-4 text-blue-600" />
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
@@ -283,9 +283,9 @@ const LoginPage = () => {
                       className="absolute right-3 top-1/2 -translate-y-1/2"
                     >
                       {showPassword ? (
-                        <EyeSlashIcon className="w-4 h-4 text-gray-400" />
+                        <EyeSlashIcon className="w-4 h-4 text-blue-600" />
                       ) : (
-                        <EyeIcon className="w-4 h-4 text-gray-400" />
+                        <EyeIcon className="w-4 h-4 text-blue-600" />
                       )}
                     </button>
                   </div>
