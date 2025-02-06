@@ -268,7 +268,7 @@ function Dashboard() {
 
   return (
     <Layout>
-      <div className="flex flex-col p-4 min-h-full w-full">
+      <div className="flex flex-col p-4 min-h-full w-full bg-slate-100">
         <h2 className="text-xl mb-4 font-semibold">DASHBOARD</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

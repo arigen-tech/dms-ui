@@ -1,26 +1,29 @@
 import React, { useState } from "react";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
+import Footer from "../Components/Footer";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
+  
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
   return (
-    <div className="flex flex-row bg-neutral-100 h-screen w-screen overflow-hidden">
-      {/* Sidebar with transition */}
+    <div className="flex h-screen w-screen overflow-hidden bg-neutral-100">
+      {/* Sidebar Container */}
       <div
-        className={`transform transition-transform duration-300 ${
+        className={`fixed md:relative z-30 h-full transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed md:relative z-30`}
+        }`}
       >
-        {sidebarOpen && <Sidebar />}
+        <div className="h-full overflow-y-auto">
+          {sidebarOpen && <Sidebar />}
+        </div>
       </div>
 
-      {/* Overlay for mobile view when sidebar is open */}
+      {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
@@ -28,16 +31,23 @@ const Layout = ({ children }) => {
         ></div>
       )}
 
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 w-full">
+      {/* Main Content Container */}
+      <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
-        <div className="w-full z-10">
-          <Header toggleSidebar={toggleSidebar} />
-        </div>
+        <Header toggleSidebar={toggleSidebar} />
 
-        {/* Children (Main Content) */}
-        <div className="flex-1 p-4 min-h-0 overflow-auto md:mt-0">
-          {children}
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-auto">
+          {/* Content Wrapper */}
+          <div className="min-h-full">
+            {/* Main Content */}
+            <main className="p-4">
+              {children}
+            </main>
+
+            {/* Footer */}
+            <Footer />
+          </div>
         </div>
       </div>
     </div>
