@@ -304,7 +304,8 @@ function RejectedDoc() {
   };
 
   // Enhanced filtering logic matching ApprovedDoc
-  const filteredDocuments = documents.filter((doc) =>
+  const filteredDocuments = documents
+  .filter((doc) =>
     Object.entries(doc).some(([key, value]) => {
       if (key === "categoryMaster" && value?.name) {
         return value.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -321,19 +322,33 @@ function RejectedDoc() {
           value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
+      if (key === "paths" && Array.isArray(value)) {
+        return value.some((file) =>
+          file.docName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
       if (key === "updatedOn" || key === "createdOn") {
         const date = formatDate(value).toLowerCase();
         return date.includes(searchTerm.toLowerCase());
       }
-      if (key === "approvalStatus" || key === "rejectionReason") {
-        return value?.toLowerCase().includes(searchTerm.toLowerCase());
+      if (key === "approvalStatus" && value) {
+        return value.toLowerCase().includes(searchTerm.toLowerCase());
       }
       if (typeof value === "string") {
         return value.toLowerCase().includes(searchTerm.toLowerCase());
       }
       return false;
     })
-  );
+  )
+  .sort((a, b) => {
+    // First sort by status change (non-pending status goes to top)
+    if (a.approvalStatus !== "Pending" && b.approvalStatus === "Pending") return -1;
+    if (a.approvalStatus === "Pending" && b.approvalStatus !== "Pending") return 1;
+
+    // If both have the same status state, sort by approval date
+    return new Date(b.approvalStatusOn || 0) - new Date(a.approvalStatusOn || 0);
+  });
+
 
   const totalItems = filteredDocuments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);

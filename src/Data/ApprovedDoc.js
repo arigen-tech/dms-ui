@@ -245,7 +245,8 @@ const ApprovedDoc = () => {
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
-  const filteredDocuments = documents.filter((doc) =>
+  const filteredDocuments = documents
+  .filter((doc) =>
     Object.entries(doc).some(([key, value]) => {
       if (key === "categoryMaster" && value?.name) {
         return value.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -279,7 +280,16 @@ const ApprovedDoc = () => {
       }
       return false;
     })
-  );
+  )
+  .sort((a, b) => {
+    // First sort by status change (non-pending status goes to top)
+    if (a.approvalStatus !== "Pending" && b.approvalStatus === "Pending") return -1;
+    if (a.approvalStatus === "Pending" && b.approvalStatus !== "Pending") return 1;
+
+    // If both have the same status state, sort by approval date
+    return new Date(b.approvalStatusOn || 0) - new Date(a.approvalStatusOn || 0);
+  });
+
 
   const fetchQRCode = async (documentId) => {
     try {
