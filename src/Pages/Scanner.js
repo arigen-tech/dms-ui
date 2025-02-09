@@ -63,7 +63,7 @@ const Scanner = () => {
   
   return (
     <Layout>
-      <div className="flex items-center justify-center min-h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg">
+      <div className="flex items-center justify-center h-[600px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg">
         <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md m-4">
           <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">
             Scan Your Documents

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_HOST } from '../API/apiConfig';
+import apiClient from "../API/apiClient";
 import axios from 'axios';
 import {
   ArrowLeftIcon,
@@ -35,10 +36,16 @@ const Search = () => {
   const [noResultsFound, setNoResultsFound] = useState(false);
   const [yearOptions, setYearOptions] = useState([]);
   const [popupMessage, setPopupMessage] = useState(null);
+  const [error, setError] = useState("");
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [printTrue, setPrintTrue] = useState(false);
 
   // Pagination state
   const [itemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+
+
+  const token = localStorage.getItem("tokenKey");
 
   useEffect(() => {
     fetchUserDetails();
@@ -272,21 +279,40 @@ const Search = () => {
   };
 
   const printPage = () => {
+    setPrintTrue(true);
     window.print();
+    setTimeout(() => {
+      setPrintTrue(false);
+    }, 1000);
   };
 
   const openFile = async (file) => {
-    const token = localStorage.getItem("tokenKey");
-    const createdOnDate = new Date(file.createdOn);
-    const year = createdOnDate.getFullYear();
-    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0");
-    const category = file.documentHeader.categoryMaster.name;
-    const fileName = file.docName;
-
-    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${category}/${fileName}`;
-
     try {
-      const response = await axios.get(fileUrl, {
+      console.log("file: ", file); // Log the entire file object to inspect its structure
+
+      console.log("selectedDocs", selectedDoc);
+
+      const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+      const department = selectedDoc.employee.department.name.replace(
+        / /g,
+        "_"
+      );
+      const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+      const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+
+      const version = file.version;
+      const fileName = file.docName.replace(/ /g, "_");
+
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+        branch
+      )}/${encodeURIComponent(department)}/${encodeURIComponent(
+        year
+      )}/${encodeURIComponent(category)}/${encodeURIComponent(
+        version
+      )}/${encodeURIComponent(fileName)}`;
+
+
+      const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
@@ -294,10 +320,117 @@ const Search = () => {
       const contentType = response.headers["content-type"];
       const blob = new Blob([response.data], { type: contentType });
       const blobUrl = window.URL.createObjectURL(blob);
+
+      // Open the file in a new tab
       window.open(blobUrl, "_blank");
+
+      // Revoke the blob URL after use
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
-      console.error("Error fetching file:", error);
-      showPopup("There was an error opening the file. Please try again.");
+      console.error("Error:", error);
+
+      if (error.response) {
+        console.error("Error response:", error.response);
+        showPopup(`Error ${error.response.status}: Unable to fetch the file.`);
+      } else if (error.request) {
+        console.error("Error request:", error.request);
+        showPopup("No response from server. Please check your connection.");
+      } else if (
+        error.message === "Invalid file structure or missing required fields."
+      ) {
+        showPopup(
+          "Invalid file data. Please ensure all required fields are present."
+        );
+      } else {
+        console.error("Error message:", error.message);
+        showPopup("An unexpected error occurred.");
+      }
+    }
+  };
+
+   useEffect(() => {
+      if (selectedDoc && selectedDoc.id) {
+        fetchQRCode(selectedDoc.id);
+      }
+    }, [selectedDoc]);
+    
+  const fetchQRCode = async (documentId) => {
+    try {
+      if (!token) {
+        throw new Error("Authentication token is missing");
+      }
+
+      // API URL to fetch the QR code
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`, // Add the token to the header
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+      }
+
+      const qrCodeBlob = await response.blob();
+
+      console.log("Fetched QR code Blob:", qrCodeBlob);
+
+      if (!qrCodeBlob.type.includes("image/png")) {
+        throw new Error("Received data is not a valid image");
+      }
+
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      setQrCodeUrl(qrCodeUrl);
+    } catch (error) {
+      setError("Error displaying QR Code: " + error.message);
+    }
+  };
+
+  const downloadQRCode = async () => {
+    if (!selectedDoc.id) {
+      alert("Please enter a document ID");
+      return;
+    }
+
+    try {
+      if (!token) {
+        throw new Error("Authentication token is missing");
+      }
+
+      // API URL to download the QR code
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+
+      // Fetch the QR code as a Blob (binary data) with the token in the Authorization header
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`, // Add the token to the header
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+      }
+
+      const qrCodeBlob = await response.blob();
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      // Create an anchor link to trigger the download
+      const link = document.createElement("a");
+      link.href = qrCodeUrl;
+      link.download = `QR_Code_${selectedDoc.id}.png`; // Set a default name for the file
+      link.click();
+
+      // Clean up URL object
+      window.URL.revokeObjectURL(qrCodeUrl);
+    } catch (error) {
+      setError("Error downloading QR Code: " + error.message);
+    } finally {
+      // setLoading(false);
     }
   };
 
@@ -659,7 +792,7 @@ const Search = () => {
                     <th className="border p-2 text-left">File No</th>
                     <th className="border p-2 text-left">Title</th>
                     <th className="border p-2 text-left">Subject</th>
-                    <th className="border p-2 text-left">Version</th>
+                    {/* <th className="border p-2 text-left">Version</th> */}
                     <th className="border p-2 text-left">Category</th>
                     <th className="border p-2 text-left">Year</th>
                     <th className="border p-2 text-left">Branch</th>
@@ -678,7 +811,7 @@ const Search = () => {
                       <td className="border p-2">{document.fileNo}</td>
                       <td className="border p-2">{document.title}</td>
                       <td className="border p-2">{document.subject}</td>
-                      <td className="border p-2">{document.version}</td>
+                      {/* <td className="border p-2">{document.version}</td> */}
                       <td className="border p-2">
                         {document.categoryMaster?.name || "No Category"}
                       </td>
@@ -774,78 +907,161 @@ const Search = () => {
 
         {/* Document View Modal */}
         {isOpen && selectedDoc && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900 bg-opacity-50">
-            <div className="relative bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
+            <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6 my-8 mx-4">
+            <div className="max-h-[80vh] overflow-y-auto">
               <button
-                className="absolute top-2 right-10 text-gray-500 hover:text-gray-700 no-print"
+                className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
                 onClick={printPage}
               >
                 <PrinterIcon className="h-6 w-6" />
               </button>
 
+              {/* Close Button */}
               <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 no-print"
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
                 onClick={closeModal}
               >
-                <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-800" />
+                <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
               </button>
 
-              <div className="h-1/2 flex flex-col justify-between">
-                <div className="flex justify-between items-center mb-4 mt-4">
-                  <div className="flex items-start space-x-1">
-                    <p className="text-sm text-black font-bold border-b-4 border-black">D</p>
-                    <p className="text-sm text-black font-bold border-t-4 border-black">MS</p>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">
-                      <strong>Uploaded Date:</strong>{" "}
-                      {formatDate(selectedDoc?.createdOn)}
+              {/* Modal Content */}
+              <div className="flex flex-col h-full mt-8">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
+                      D
+                    </p>
+                    <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
+                      MS
                     </p>
                   </div>
-                </div>
-
-                <div className="text-left">
-                  <p className="text-sm text-gray-600">
-                    <strong>File No.:</strong> {selectedDoc?.fileNo || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <strong>Title:</strong> {selectedDoc?.title || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <strong>Subject:</strong> {selectedDoc?.subject || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <strong>Version:</strong> {selectedDoc?.version || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <strong>Category:</strong> {selectedDoc?.categoryMaster?.name || "No Category"}
+                  <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+                    <strong>Uploaded Date:</strong>{" "}
+                    {formatDate(selectedDoc?.createdOn)}
                   </p>
                 </div>
-              </div>
 
-              <div className="h-1/2 flex flex-col items-center justify-center mt-4">
-                <h1 className="text-sm text-center font-bold mb-2">Attached Files</h1>
-
-                {Array.isArray(selectedDoc.paths) && selectedDoc.paths.length > 0 ? (
-                  <ul className="list-disc list-inside">
-                    {selectedDoc.paths.map((file, index) => (
-                      <li key={index} className="mb-2">
-                        <span className="mr-4">{file.docName}</span>
-                        <button
-                          onClick={() => openFile(file)}
-                          className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                        >
-                          Open
-                        </button>
-                      </li>
+                {/* Document Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="mt-6 text-left">
+                    {[
+                      {
+                        label: "Branch",
+                        value: selectedDoc?.employee?.branch?.name,
+                      },
+                      {
+                        label: "Department",
+                        value: selectedDoc?.employee?.department?.name,
+                      },
+                      { label: "File No.", value: selectedDoc?.fileNo },
+                      { label: "Title", value: selectedDoc?.title },
+                      { label: "Subject", value: selectedDoc?.subject },
+                      {
+                        label: "Category",
+                        value:
+                          selectedDoc?.categoryMaster?.name ||
+                          "No Category",
+                      },
+                      {
+                        label: "File Year",
+                        value: selectedDoc?.yearMaster?.name,
+                      },
+                      {
+                        label: "Status",
+                        value: selectedDoc?.approvalStatus,
+                      },
+                      {
+                        label: "Upload By",
+                        value: selectedDoc?.employee?.name,
+                      },
+                    ].map((item, idx) => (
+                      <p key={idx} className="text-md text-gray-700">
+                        <strong>{item.label} :-</strong>{" "}
+                        {item.value || "N/A"}
+                      </p>
                     ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-gray-500">No attached files available.</p>
-                )}
+                  </div>
+                  <div className="items-center justify-center text-center">
+                    <p className="text-md text-gray-700 mt-3">
+                      <strong>QR Code:</strong>
+                    </p>
+                    {selectedDoc?.qrPath ? (
+                      <div className="mt-4">
+                        <img
+                          src={qrCodeUrl}
+                          alt="QR Code"
+                          className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
+                        />
+                        <button
+                          onClick={downloadQRCode}
+                          className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">No QR code available</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Attached Files */}
+                <div className="mt-6 text-center">
+                  <h2 className="text-lg font-semibold text-indigo-700">
+                    Attached Files
+                  </h2>
+                  {Array.isArray(selectedDoc.paths) &&
+                    selectedDoc.paths.length > 0 ? (
+                    <>
+                      <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
+                        <h3 className="flex-1 text-left ml-2">File Name</h3>
+                        <h3 className="flex-1 text-center">Version</h3>
+                        <h3 className="text-right mr-10 no-print">
+                          Actions
+                        </h3>
+                      </div>
+                      <ul
+                        className={`space-y-4 ${printTrue === false &&
+                          selectedDoc.paths.length > 2
+                          ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
+                          : ""
+                          }`}
+                      >
+                        {selectedDoc.paths.map((file, index) => (
+                          <li
+                            key={index}
+                            className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
+                          >
+                            <div className="flex-1 text-left">
+                              <strong>{index + 1}</strong>{" "}
+                              {file.docName.split("_").slice(1).join("_")}
+                            </div>
+                            <div className="flex-1 text-center">
+                              <strong>{file.version}</strong>
+                            </div>
+                            <div className="text-right">
+                              <button
+                                onClick={() => openFile(file)}
+                                className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
+                              >
+                                Open
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-2">
+                      No attached files available.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
+          </div>
           </div>
         )}
       </div>

@@ -9,7 +9,7 @@ const Layout = ({ children }) => {
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-
+  
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-100">
       {/* Sidebar Container */}
@@ -39,9 +39,9 @@ const Layout = ({ children }) => {
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-auto">
           {/* Content Wrapper */}
-          <div className="min-h-full">
+          <div className="min-h-full flex flex-col"> {/* Added flex and flex-col */}
             {/* Main Content */}
-            <main className="p-4">
+            <main className="p-4 flex-1"> {/* Added flex-1 */}
               {children}
             </main>
 
