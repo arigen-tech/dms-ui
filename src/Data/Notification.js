@@ -297,7 +297,7 @@ export const Notification = () => {
         ) : !isDetailView ? (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
             <div className="flex-shrink-0">
-              <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-800">
+              <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-800 to-blue-800">
                 <div className="flex justify-between items-center mb-8">
                   <div className="flex items-center space-x-4">
                     <button
