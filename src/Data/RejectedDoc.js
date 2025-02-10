@@ -305,49 +305,49 @@ function RejectedDoc() {
 
   // Enhanced filtering logic matching ApprovedDoc
   const filteredDocuments = documents
-  .filter((doc) =>
-    Object.entries(doc).some(([key, value]) => {
-      if (key === "categoryMaster" && value?.name) {
-        return value.name.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (key === "employeeBy" && value) {
-        return value.name?.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (key === "employee" && value) {
-        return (
-          value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          value.department?.name
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      if (key === "paths" && Array.isArray(value)) {
-        return value.some((file) =>
-          file.docName.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      if (key === "updatedOn" || key === "createdOn") {
-        const date = formatDate(value).toLowerCase();
-        return date.includes(searchTerm.toLowerCase());
-      }
-      if (key === "approvalStatus" && value) {
-        return value.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (typeof value === "string") {
-        return value.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      return false;
-    })
-  )
-  .sort((a, b) => {
-    // First sort by status change (non-pending status goes to top)
-    if (a.approvalStatus !== "Pending" && b.approvalStatus === "Pending") return -1;
-    if (a.approvalStatus === "Pending" && b.approvalStatus !== "Pending") return 1;
+    .filter((doc) =>
+      Object.entries(doc).some(([key, value]) => {
+        if (key === "categoryMaster" && value?.name) {
+          return value.name.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        if (key === "employeeBy" && value) {
+          return value.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        if (key === "employee" && value) {
+          return (
+            value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            value.department?.name
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        if (key === "paths" && Array.isArray(value)) {
+          return value.some((file) =>
+            file.docName.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        if (key === "updatedOn" || key === "createdOn") {
+          const date = formatDate(value).toLowerCase();
+          return date.includes(searchTerm.toLowerCase());
+        }
+        if (key === "approvalStatus" && value) {
+          return value.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        if (typeof value === "string") {
+          return value.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        return false;
+      })
+    )
+    .sort((a, b) => {
+      // First sort by status change (non-pending status goes to top)
+      if (a.approvalStatus !== "Pending" && b.approvalStatus === "Pending") return -1;
+      if (a.approvalStatus === "Pending" && b.approvalStatus !== "Pending") return 1;
 
-    // If both have the same status state, sort by approval date
-    return new Date(b.approvalStatusOn || 0) - new Date(a.approvalStatusOn || 0);
-  });
+      // If both have the same status state, sort by approval date
+      return new Date(b.approvalStatusOn || 0) - new Date(a.approvalStatusOn || 0);
+    });
 
 
   const totalItems = filteredDocuments.length;
@@ -521,167 +521,158 @@ function RejectedDoc() {
           </table>
           <>
             {isOpen && selectedDoc && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal">
-                <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6">
-                  {/* Print Button */}
-                  <button
-                    className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
-                    onClick={printPage}
-                  >
-                    <PrinterIcon className="h-6 w-6" />
-                  </button>
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
+                <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6 my-8 mx-4">
+                  <div className="max-h-[80vh] overflow-y-auto">
+                    <button
+                      className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
+                      onClick={printPage}
+                    >
+                      <PrinterIcon className="h-6 w-6" />
+                    </button>
 
-                  <button
-                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
-                    onClick={closeModal}
-                  >
-                    <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
-                  </button>
+                    {/* Close Button */}
+                    <button
+                      className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
+                      onClick={closeModal}
+                    >
+                      <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
+                    </button>
 
-                  <div className="flex flex-col h-full mt-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
-                      <div className="flex items-center space-x-2">
-                        <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
-                          D
-                        </p>
-                        <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
-                          MS
-                        </p>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-                        <strong>Uploaded Date:</strong>{" "}
-                        {formatDate(selectedDoc?.createdOn)}
-                      </p>
-                    </div>
-
-                    {/* Document Details */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="mt-6 text-left">
-                        {[
-                          {
-                            label: "Branch",
-                            value: selectedDoc?.employee?.branch?.name,
-                          },
-                          {
-                            label: "Department",
-                            value: selectedDoc?.employee?.department?.name,
-                          },
-                          { label: "File No.", value: selectedDoc?.fileNo },
-                          { label: "Title", value: selectedDoc?.title },
-                          { label: "Subject", value: selectedDoc?.subject },
-                          {
-                            label: "Category",
-                            value:
-                              selectedDoc?.categoryMaster?.name ||
-                              "No Category",
-                          },
-                          {
-                            label: "File Year",
-                            value: selectedDoc?.yearMaster?.name,
-                          },
-                          {
-                            label: "Status",
-                            value: selectedDoc?.approvalStatus || "N/A",
-                          },
-                          {
-                            label: "Uploaded By",
-                            value: selectedDoc?.employee?.name,
-                          },
-                          {
-                            label: "Rejected Reason",
-                            value: selectedDoc?.rejectionReason,
-                          },
-                          {
-                            label: "Rejected Date",
-                            value: formatDates(selectedDoc?.approvalStatusOn),
-                          },
-                          {
-                            label: "Rejected By",
-                            value: selectedDoc?.employeeBy?.name,
-                          },
-                        ].map((item, idx) => (
-                          <p key={idx} className="text-md text-gray-700">
-                            <strong>{item.label}:</strong> {item.value || "N/A"}
+                    {/* Modal Content */}
+                    <div className="flex flex-col h-full mt-8">
+                      {/* Header */}
+                      <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
+                        <div className="flex items-center space-x-2">
+                          <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
+                            D
                           </p>
-                        ))}
-                      </div>
-
-                      {/* QR Code */}
-                      <div className="text-center">
-                        <p className="text-md text-gray-700 mt-3">
-                          <strong>QR Code:</strong>
+                          <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
+                            MS
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+                          <strong>Uploaded Date:</strong>{" "}
+                          {formatDate(selectedDoc?.createdOn)}
                         </p>
-                        {selectedDoc?.qrPath ? (
-                          <div className="mt-4">
-                            <img
-                              src={qrCodeUrl}
-                              alt="QR Code"
-                              className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
-                            />
-                            <button
-                              onClick={downloadQRCode}
-                              className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
-                            >
-                              Download
-                            </button>
-                          </div>
-                        ) : (
-                          <p className="text-gray-500">No QR code available</p>
-                        )}
                       </div>
-                    </div>
 
-                    {/* Attached Files */}
-                    <div className="mt-6 text-center">
-                      <h2 className="text-lg font-semibold text-indigo-700">
-                        Attached Files
-                      </h2>
-                      {Array.isArray(selectedDoc.documentDetails) &&
-                        selectedDoc.documentDetails.length > 0 ? (
-                        <>
-                          <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
-                            <h3 className="flex-1 text-left ml-2">File Name</h3>
-                            <h3 className="flex-1 text-center">Version</h3>
-                            <h3 className="text-right mr-10 no-print">
-                              Actions
-                            </h3>
-                          </div>
-                          <ul
-                            className={`space-y-4 ${printTrue === false &&
-                                selectedDoc.documentDetails.length > 2
+                      {/* Document Details */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="mt-6 text-left">
+                          {[
+                            {
+                              label: "Branch",
+                              value: selectedDoc?.employee?.branch?.name,
+                            },
+                            {
+                              label: "Department",
+                              value: selectedDoc?.employee?.department?.name,
+                            },
+                            { label: "File No.", value: selectedDoc?.fileNo },
+                            { label: "Title", value: selectedDoc?.title },
+                            { label: "Subject", value: selectedDoc?.subject },
+                            {
+                              label: "Category",
+                              value:
+                                selectedDoc?.categoryMaster?.name ||
+                                "No Category",
+                            },
+                            {
+                              label: "File Year",
+                              value: selectedDoc?.yearMaster?.name,
+                            },
+                            {
+                              label: "Status",
+                              value: selectedDoc?.approvalStatus,
+                            },
+                            {
+                              label: "Upload By",
+                              value: selectedDoc?.employee?.name,
+                            },
+                          ].map((item, idx) => (
+                            <p key={idx} className="text-md text-gray-700">
+                              <strong>{item.label} :-</strong>{" "}
+                              {item.value || "N/A"}
+                            </p>
+                          ))}
+                        </div>
+                        <div className="items-center justify-center text-center">
+                          <p className="text-md text-gray-700 mt-3">
+                            <strong>QR Code:</strong>
+                          </p>
+                          {selectedDoc?.qrPath ? (
+                            <div className="mt-4">
+                              <img
+                                src={qrCodeUrl}
+                                alt="QR Code"
+                                className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
+                              />
+                              <button
+                                onClick={downloadQRCode}
+                                className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                              >
+                                Download
+                              </button>
+                            </div>
+                          ) : (
+                            <p className="text-gray-500">No QR code available</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Attached Files */}
+                      <div className="mt-6 text-center">
+                        <h2 className="text-lg font-semibold text-indigo-700">
+                          Attached Files
+                        </h2>
+                        {Array.isArray(selectedDoc.paths) &&
+                          selectedDoc.paths.length > 0 ? (
+                          <>
+                            <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
+                              <h3 className="flex-1 text-left ml-2">File Name</h3>
+                              <h3 className="flex-1 text-center">Version</h3>
+                              <h3 className="text-right mr-10 no-print">
+                                Actions
+                              </h3>
+                            </div>
+                            <ul
+                              className={`space-y-4 ${printTrue === false &&
+                                selectedDoc.paths.length > 2
                                 ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
                                 : ""
-                              }`}
-                          >
-                            {selectedDoc.documentDetails.map((file, index) => (
-                              <li
-                                key={index}
-                                className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
-                              >
-                                <div className="flex-1 text-left">
-                                  <strong>{index + 1}</strong>{" "}
-                                  {file.docName.split("_").slice(1).join("_")}
-                                </div>
-                                <div className="flex-1 text-center">
-                                  <strong>{file.version}</strong>
-                                </div>
-                                <div className="text-right">
-                                  <button
-                                    onClick={() => openFile(file)}
-                                    className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
-                                  >
-                                    Open
-                                  </button>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </>
-                      ) : (
-                        <p className="text-sm text-gray-500 mt-2">
-                          No attached files available.
-                        </p>
-                      )}
+                                }`}
+                            >
+                              {selectedDoc.paths.map((file, index) => (
+                                <li
+                                  key={index}
+                                  className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
+                                >
+                                  <div className="flex-1 text-left">
+                                    <strong>{index + 1}</strong>{" "}
+                                    {file.docName.split("_").slice(1).join("_")}
+                                  </div>
+                                  <div className="flex-1 text-center">
+                                    <strong>{file.version}</strong>
+                                  </div>
+                                  <div className="text-right">
+                                    <button
+                                      onClick={() => openFile(file)}
+                                      className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
+                                    >
+                                      Open
+                                    </button>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-500 mt-2">
+                            No attached files available.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
