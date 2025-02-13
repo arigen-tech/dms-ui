@@ -736,8 +736,9 @@ const UserAddEmployee = () => {
 
         {(role === "ADMIN" || role === "USER") && (
           <>
-            <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-              <div className="flex items-center bg-blue-500 rounded-lg">
+            <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+              {/* Items Per Page (50%) */}
+              <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
                 <label
                   htmlFor="itemsPerPage"
                   className="mr-2 ml-2 text-white text-sm"
@@ -746,11 +747,11 @@ const UserAddEmployee = () => {
                 </label>
                 <select
                   id="itemsPerPage"
-                  className="border rounded-r-lg p-1.5 outline-none"
+                  className="border rounded-r-lg p-1.5 outline-none w-full"
                   value={itemsPerPage}
                   onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value)); // Update items per page
-                    setCurrentPage(1); // Reset to the first page
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
                   }}
                 >
                   {[5, 10, 15, 20].map((num) => (
@@ -760,11 +761,13 @@ const UserAddEmployee = () => {
                   ))}
                 </select>
               </div>
-              <div className="flex items-center">
+
+              {/* Search Input (Remaining Space) */}
+              <div className="flex items-center w-full md:w-auto flex-1">
                 <input
                   type="text"
                   placeholder="Search..."
-                  className="border rounded-l-md p-1 outline-none"
+                  className="border rounded-l-md p-1 outline-none w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -772,150 +775,150 @@ const UserAddEmployee = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-            <table className="w-full border-collapse border">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border p-2 text-left">SR.</th>
-                  <th className="border p-2 text-left">Name</th>
-                  <th className="border p-2 text-left">Email</th>
-                  <th className="border p-2 text-left">Phone No.</th>
-                  <th className="border p-2 text-left">Branch</th>
-                  <th className="border p-2 text-left">Department</th>
-                  <th className="border p-2 text-left">Role</th>
-                  <th className="border p-2 text-left">Created Date</th>
-                  <th className="border p-2 text-left">Updated Date</th>
-                  <th className="border p-2 text-left">Created By</th>
-                  {role === "ADMIN" && (
-                    <>
-                      <th className="border p-2 text-left">Updated By</th>
-                      <th className="border p-2 text-left">Status</th>
-                    </>
-                  )}
-                  <th className="border p-2 text-left">Edit</th>
-                  {role === "ADMIN" && (
-                    <th className="border p-2 text-left">Access</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedEmployees.map((employee, index) => (
-                  <tr key={employee.id}>
-                    <td className="border p-2">
-                      {index + 1 + (currentPage - 1) * itemsPerPage}
-                    </td>
-                    <td className="border p-2">{employee.name}</td>
-                    <td className="border p-2">{employee.email}</td>
-                    <td className="border p-2">{employee.mobile}</td>
-                    <td className="border p-2">
-                      {employee.branch?.name || "N/A"}
-                    </td>
-                    <td className="border p-2">
-                      {employee.department?.name || "N/A"}
-                    </td>
-                    <td className="border p-2">
-                      {employee.role?.role || "No Role"}
-                    </td>
-                    <td className="border p-2">
-                      {formatDate(employee.createdOn)}
-                    </td>
-                    <td className="border p-2">
-                      {formatDate(employee.updatedOn)}
-                    </td>
 
-                    {role === "USER" && (
-                      <td className="border p-2">{userName || "Unknown"}</td>
-                    )}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border p-2 text-left">SR.</th>
+                    <th className="border p-2 text-left">Name</th>
+                    <th className="border p-2 text-left">Email</th>
+                    <th className="border p-2 text-left">Phone No.</th>
+                    <th className="border p-2 text-left">Branch</th>
+                    <th className="border p-2 text-left">Department</th>
+                    <th className="border p-2 text-left">Role</th>
+                    <th className="border p-2 text-left">Created Date</th>
+                    <th className="border p-2 text-left">Updated Date</th>
+                    <th className="border p-2 text-left">Created By</th>
                     {role === "ADMIN" && (
                       <>
-                        <td className="border p-2">
-                          {employee.createdBy?.name || "Unknown"}
-                        </td>
-
-                        <td className="border p-2">
-                          {employee.updatedBy?.name || "Unknown"}
-                        </td>
-                        <td className="border p-2">
-                          {employee.active ? "Active" : "Inactive"}
-                        </td>
+                        <th className="border p-2 text-left">Updated By</th>
+                        <th className="border p-2 text-left">Status</th>
                       </>
                     )}
-
-                    <td className="border p-2">
-                      <button
-                        onClick={() => handleEditEmployee(employee.id)}
-                        className="text-blue-600"
-                      >
-                        <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
-                      </button>
-                    </td>
+                    <th className="border p-2 text-left">Edit</th>
                     {role === "ADMIN" && (
-                      <td className="border p-2">
-                        <button
-                          onClick={() => handleToggleActive(employee)}
-                          className={`p-1 rounded-full ${
-                            employee.active ? "bg-green-500" : "bg-red-500"
-                          }`}
-                        >
-                          {employee.active ? (
-                            <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
-                          ) : (
-                            <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
-                          )}
-                        </button>
-                      </td>
+                      <th className="border p-2 text-left">Access</th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedEmployees.map((employee, index) => (
+                    <tr key={employee.id}>
+                      <td className="border p-2">
+                        {index + 1 + (currentPage - 1) * itemsPerPage}
+                      </td>
+                      <td className="border p-2">{employee.name}</td>
+                      <td className="border p-2">{employee.email}</td>
+                      <td className="border p-2">{employee.mobile}</td>
+                      <td className="border p-2">
+                        {employee.branch?.name || "N/A"}
+                      </td>
+                      <td className="border p-2">
+                        {employee.department?.name || "N/A"}
+                      </td>
+                      <td className="border p-2">
+                        {employee.role?.role || "No Role"}
+                      </td>
+                      <td className="border p-2">
+                        {formatDate(employee.createdOn)}
+                      </td>
+                      <td className="border p-2">
+                        {formatDate(employee.updatedOn)}
+                      </td>
+
+                      {role === "USER" && (
+                        <td className="border p-2">{userName || "Unknown"}</td>
+                      )}
+                      {role === "ADMIN" && (
+                        <>
+                          <td className="border p-2">
+                            {employee.createdBy?.name || "Unknown"}
+                          </td>
+
+                          <td className="border p-2">
+                            {employee.updatedBy?.name || "Unknown"}
+                          </td>
+                          <td className="border p-2">
+                            {employee.active ? "Active" : "Inactive"}
+                          </td>
+                        </>
+                      )}
+
+                      <td className="border p-2">
+                        <button
+                          onClick={() => handleEditEmployee(employee.id)}
+                          className="text-blue-600"
+                        >
+                          <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
+                        </button>
+                      </td>
+                      {role === "ADMIN" && (
+                        <td className="border p-2">
+                          <button
+                            onClick={() => handleToggleActive(employee)}
+                            className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"
+                              }`}
+                          >
+                            {employee.active ? (
+                              <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
+                            ) : (
+                              <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
+                            )}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-           <div className="flex items-center mt-4">
-                     {/* Previous Button */}
-                     <button
-                       onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                       disabled={currentPage === 1}
-                       className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                         }`}
-                     >
-                       <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                       Previous
-                     </button>
-           
-                     {/* Page Number Buttons */}
-                     {getPageNumbers().map((page) => (
-                       <button
-                         key={page}
-                         onClick={() => setCurrentPage(page)}
-                         className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                           }`}
-                       >
-                         {page}
-                       </button>
-                     ))}
-           
-                     {/* Page Count Info */}
-                     <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
-           
-                     {/* Next Button */}
-                     <button
-                       onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                       disabled={currentPage === totalPages}
-                       className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                         }`}
-                     >
-                       Next
-                       <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-                     </button>
-                     <div className="ml-4">
-                     <span className="text-sm text-gray-700">
-                           Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                           {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                           {totalItems} entries
-                         </span>
-                         </div>
-                   </div>
+            <div className="flex items-center mt-4">
+              {/* Previous Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                  }`}
+              >
+                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+                Previous
+              </button>
+
+              {/* Page Number Buttons */}
+              {getPageNumbers().map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+              {/* Next Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                  }`}
+              >
+                Next
+                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+              </button>
+              <div className="ml-4">
+                <span className="text-sm text-gray-700">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                  {totalItems} entries
+                </span>
+              </div>
+            </div>
           </>
         )}
       </div>
