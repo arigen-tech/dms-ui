@@ -285,32 +285,32 @@ const Role = () => {
   const filteredRoles = roles.filter((role) => {
     // Explicitly convert status to text representation
     const statusText = role.isActive === true ? "active" : "inactive";
-  
+
     // Format creation date to searchable text
     const createdOnText = formatDate(role.createdOn);
-  
+
     // Format update date to searchable text
     const updatedOnText = formatDate(role.updatedOn);
-  
+
     // Improved search logic with multiple matching strategies
     return (
       // Role name search
       (role.role &&
         (role.role.toLowerCase().includes(searchTerm.toLowerCase()))) ||
-      
+
       // Role code search
       (role.roleCode &&
         role.roleCode.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      
+
       // Enhanced status search with multiple matching approaches
-      (statusText.toLowerCase() === searchTerm.toLowerCase() || 
-       statusText.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       (searchTerm.toLowerCase() === 'active' && role.isActive === true) ||
-       (searchTerm.toLowerCase() === 'inactive' && role.isActive === false)) ||
-      
+      (statusText.toLowerCase() === searchTerm.toLowerCase() ||
+        statusText.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (searchTerm.toLowerCase() === 'active' && role.isActive === true) ||
+        (searchTerm.toLowerCase() === 'inactive' && role.isActive === false)) ||
+
       // Creation date search
       (createdOnText.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      
+
       // Update date search
       (updatedOnText.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -409,8 +409,9 @@ const Role = () => {
           </div>
         </div>
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-          <div className="flex items-center bg-blue-500 rounded-lg">
+        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* Items Per Page (50%) */}
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label
               htmlFor="itemsPerPage"
               className="mr-2 ml-2 text-white text-sm"
@@ -419,9 +420,12 @@ const Role = () => {
             </label>
             <select
               id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
             >
               {[5, 10, 15, 20].map((num) => (
                 <option key={num} value={num}>
@@ -430,11 +434,13 @@ const Role = () => {
               ))}
             </select>
           </div>
-          <div className="flex items-center">
+
+          {/* Search Input (Remaining Space) */}
+          <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
               placeholder="Search..."
-              className="border rounded-l-md p-1 outline-none"
+              className="border rounded-l-md p-1 outline-none w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

@@ -425,8 +425,9 @@ const ApprovedDoc = () => {
       <div className="bg-white p-3 rounded-lg shadow-sm">
         {error && <div className="text-red-500 mb-4">{error}</div>}
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-          <div className="flex items-center bg-blue-500 rounded-lg">
+        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* Items Per Page (50%) */}
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label
               htmlFor="itemsPerPage"
               className="mr-2 ml-2 text-white text-sm"
@@ -435,11 +436,11 @@ const ApprovedDoc = () => {
             </label>
             <select
               id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={itemsPerPage}
               onChange={(e) => {
-                setItemsPerPage(Number(e.target.value)); // Update items per page
-                setCurrentPage(1); // Reset to the first page
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
               }}
             >
               {[5, 10, 15, 20].map((num) => (
@@ -449,11 +450,13 @@ const ApprovedDoc = () => {
               ))}
             </select>
           </div>
-          <div className="flex items-center">
+
+          {/* Search Input (Remaining Space) */}
+          <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
               placeholder="Search..."
-              className="border rounded-l-md p-1 outline-none"
+              className="border rounded-l-md p-1 outline-none w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

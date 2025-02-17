@@ -351,29 +351,42 @@ const Branch = () => {
         </div>
 
         {/* Search and Items Per Page Section */}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-          <div className="flex items-center bg-blue-500 rounded-lg">
-            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">Show:</label>
+        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* Items Per Page (50%) */}
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
+            <label
+              htmlFor="itemsPerPage"
+              className="mr-2 ml-2 text-white text-sm"
+            >
+              Show:
+            </label>
             <select
               id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
             >
-              {[5, 10, 15, 20].map(option => (
-                <option key={option} value={option}>{option}</option>
+              {[5, 10, 15, 20].map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
               ))}
             </select>
           </div>
-          <div className="relative">
+
+          {/* Search Input (Remaining Space) */}
+          <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
-              placeholder="Search Branch"
+              placeholder="Search..."
+              className="border rounded-l-md p-1 outline-none w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="p-2 border rounded-lg pl-10 outline-none"
             />
-            <MagnifyingGlassIcon className="absolute top-2 left-2 h-5 w-5 text-gray-500" />
+            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
         </div>
 
@@ -464,12 +477,12 @@ const Branch = () => {
             <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
           </button>
           <div className="ml-4">
-          <span className="text-sm text-gray-700">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                {totalItems} entries
-              </span>
-              </div>
+            <span className="text-sm text-gray-700">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} entries
+            </span>
+          </div>
         </div>
       </div>
 
