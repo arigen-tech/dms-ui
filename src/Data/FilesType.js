@@ -48,7 +48,7 @@ const FilesType = () => {
           'Authorization': `Bearer ${token}`,
         },
       });
-      setFilesType(response.data.response);
+      setFilesType(response?.data?.response);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
     }
@@ -233,14 +233,14 @@ const FilesType = () => {
     return date.toLocaleString('en-GB', options).replace(',', '');
   };
 
-  const filteredFilesType = filesType.filter(fileTypes => {
-    const statusText = fileTypes.isActive ? '1' : '0';
+  const filteredFilesType = filesType?.filter(fileTypes => {
+    const statusText = fileTypes?.isActive ? '1' : '0';
     const createdOnText = formatDate(fileTypes.createdOn);
     const updatedOnText = formatDate(fileTypes.updatedOn);
   
     return (
-      fileTypes.filetype?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fileTypes.extension?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fileTypes?.filetype?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fileTypes?.extension?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       statusText.includes(searchTerm.toLowerCase()) ||
       createdOnText.includes(searchTerm.toLowerCase()) ||
       updatedOnText.includes(searchTerm.toLowerCase())
