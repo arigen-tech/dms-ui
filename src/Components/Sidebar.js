@@ -63,6 +63,7 @@ function Sidebar() {
           totalBranches: 0,
           totalDepartment: 0,
           totalRoles: 0,
+          totalFilesType: 0,
           documentType: 0,
           annualYear: 0,
           totalNullEmployeeType: 0,
@@ -311,7 +312,7 @@ function Sidebar() {
                       to="/create-fileType"
                       icon={GiFiles}
                       text="Files Types"
-                      count={counts.annualYear}
+                      count={counts.totalFilesType}
                     />
                   </div>
                 )}

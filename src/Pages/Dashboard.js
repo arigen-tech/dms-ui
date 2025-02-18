@@ -24,6 +24,7 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import Sidebar from "../Components/Sidebar";
 import Header from "../Components/Header";
+import { GiFiles } from "react-icons/gi";
 import {
   CalendarDaysIcon,
   ComputerDesktopIcon,
@@ -59,6 +60,7 @@ function Dashboard() {
     storageUsed: 0,
     totalBranches: 0,
     totalDepartment: 0,
+    totalFilesType: 0,
     totalRoles: 0,
     documentType: 0,
     annualYear: 0,
@@ -323,6 +325,14 @@ function Dashboard() {
                   title="Total Year"
                   value={stats.annualYear}
                   Icon={CalendarDaysIcon}
+                />
+              </Link>
+
+              <Link to="/create-fileType" className="block">
+                <StatBlock
+                  title="Total Files Types"
+                  value={stats.totalFilesType}
+                  Icon={GiFiles}
                 />
               </Link>
 
