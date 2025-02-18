@@ -122,23 +122,23 @@ const ArchiveUpload = () => {
       showPopup('Please select a file to upload', 'error');
       return;
     }
-  
+
     setUploading(true);
     const formData = new FormData();
     formData.append('file', selectedFile);
-    
+
     // Determine which endpoint to use based on admin's selections
     const isAdmin = userRole === 'ADMIN';
     const hasSelectedBranchDept = archiveCriteria.branchId && archiveCriteria.departmentId;
     const endpoint = isAdmin && !hasSelectedBranchDept ? '/restore/all' : '/restore/upload';
-  
+
     // Add parameters based on endpoint
     if (endpoint === '/restore/upload') {
       formData.append('branchId', archiveCriteria.branchId);
       formData.append('departmentId', archiveCriteria.departmentId);
       formData.append('userRole', userRole);
     }
-  
+
     try {
       const token = localStorage.getItem('tokenKey');
       await axios.post(`${API_HOST}${endpoint}`, formData, {
@@ -151,7 +151,7 @@ const ArchiveUpload = () => {
           setUploadProgress(progress);
         }
       });
-  
+
       showPopup('Archive restored successfully', 'success');
       setSelectedFile(null);
       setUploadProgress(0);
@@ -306,10 +306,37 @@ const ArchiveUpload = () => {
 
         <div className="mb-6">
           {renderArchiveFields()}
-          
+
           <div className="max-w-xl bg-slate-100 p-6 rounded-lg mt-6">
             <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50">
+
+              <label
+                className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.name.toLowerCase().endsWith('.zip')) {
+                      setSelectedFile(file);
+                    } else {
+                      showPopup('Please select a valid ZIP file', 'error');
+                    }
+                  }
+                }}
+              >
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <CloudArrowUpIcon className="w-10 h-10 mb-3 text-gray-400" />
                   <p className="mb-2 text-sm text-gray-500">
@@ -348,9 +375,8 @@ const ArchiveUpload = () => {
         <button
           onClick={handleUpload}
           disabled={uploading || !selectedFile}
-          className={`bg-blue-900 text-white rounded-lg py-3 px-6 hover:bg-blue-800 transition duration-300 shadow-md hover:shadow-lg flex items-center justify-center w-full md:w-auto ${
-            (uploading || !selectedFile) ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
+          className={`bg-blue-900 text-white rounded-lg py-3 px-6 hover:bg-blue-800 transition duration-300 shadow-md hover:shadow-lg flex items-center justify-center w-full md:w-auto ${(uploading || !selectedFile) ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
         >
           {uploading ? 'Restoring...' : 'Restore Archive'}
         </button>
