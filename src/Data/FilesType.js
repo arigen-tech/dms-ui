@@ -137,7 +137,7 @@ const FilesType = () => {
           },
         });
 
-        const updatedFileTypes = filesType.map(branch =>
+        const updatedFileTypes = filesType?.map(branch =>
           branch.id === updatedFileType.id ? response.data : branch
         );
 
@@ -182,7 +182,7 @@ const FilesType = () => {
           }
         );
 
-        const updatedFilesTypes = filesType.map(filesTypes =>
+        const updatedFilesTypes = filesType?.map(filesTypes =>
           filesTypes.id === updatedFilesType.id ? response.data : filesTypes
         );
 
@@ -384,7 +384,7 @@ const FilesType = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedFiles.map((fileType, index) => (
+              {paginatedFiles?.map((fileType, index) => (
                 <tr key={fileType.id}>
                   <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
                   <td className="border p-2">{fileType.filetype}</td>
@@ -430,7 +430,7 @@ const FilesType = () => {
           </button>
 
           {/* Page Number Buttons */}
-          {getPageNumbers().map((page) => (
+          {getPageNumbers()?.map((page) => (
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
