@@ -253,7 +253,7 @@ const FilesType = () => {
   const totalItems = sortedfile?.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  const paginatedFiles = sortedfile.slice(
+  const paginatedFiles = sortedfile?.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
