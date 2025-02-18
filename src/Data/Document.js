@@ -1,8 +1,9 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import apiClient from "../API/apiClient";
 import { useLocation } from "react-router-dom";
 import Search from "./Search"; // Import the Search component
 import Popup from "../Components/Popup";
+import { useDropzone } from "react-dropzone";
 
 import {
   PencilIcon,
@@ -15,7 +16,7 @@ import {
   ArrowRightIcon,
   PrinterIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API, UPLOADFILE_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, UPLOADFILE_API, FILETYPE_API } from "../API/apiConfig";
 
 const DocumentManagement = ({ fieldsDisabled }) => {
   const location = useLocation();
@@ -48,25 +49,29 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const fileInputRef = useRef(null);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [isUploading, setIsUploading] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null); // To hold the document being edited
   const [updatedDoc, setUpdatedDoc] = useState(null);
   const [searchResults, setSearchResults] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [uploadProgress, setUploadProgress] = useState(0);
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
   const [qrPath, setQrPath] = useState("");
   const [documentDetails, setDocumentDetails] = useState(null);
   const [error, setError] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [filesType, setFilesType] = useState([]);
+  const [unsportFile, setUnsportFile] = useState(false);
+  const [viewFileTypeModel, setViewFileTypeModel] = useState(false);
+  const [folderUpload, setFolderUpload] = useState(false);
+
 
   // Run this effect only when component mounts
   useEffect(() => {
     if (data) {
-      debugger;
       handleEditDocument(data);
     }
     fetchCategory();
@@ -74,7 +79,21 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     fetchDocuments();
     fetchPaths();
     fetchUser();
+
   }, []);
+
+  const fetchFilesType = async () => {
+    try {
+      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      setFilesType(response.data.response);
+    } catch (error) {
+      console.error('Error fetching Files Types:', error);
+    }
+  };
 
   const handleCategoryChange = (e) => {
     const selectedCategory = categoryOptions.find(
@@ -178,6 +197,55 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   console.log("all doc by user", documents);
 
+  const extractFiles = async (items, fileList = []) => {
+    for (const item of items) {
+      if (item.kind === "file") {
+        fileList.push(item.getAsFile());
+      } else if (item.kind === "directory") {
+        const directoryReader = item.createReader();
+        const readEntries = async () => {
+          const entries = await new Promise((resolve) =>
+            directoryReader.readEntries(resolve)
+          );
+          if (entries.length > 0) {
+            await extractFiles(entries, fileList);
+          }
+        };
+        await readEntries();
+      }
+    }
+    return fileList;
+  };
+
+  const onDrop = useCallback(async (acceptedFiles, event) => {
+    let files = acceptedFiles;
+    console.log("Dropped Files:", acceptedFiles);
+
+    // If folder is dropped, extract all files inside
+    if (folderUpload) {
+      const items = event.dataTransfer.items;
+      files = await extractFiles(items);
+    }
+
+    setSelectedFiles(files);
+
+    // Update File Input Value Programmatically
+    const dataTransfer = new DataTransfer();
+    files.forEach((file) => dataTransfer.items.add(file));
+    if (fileInputRef.current) {
+      fileInputRef.current.files = dataTransfer.files;
+    }
+  }, [folderUpload]);
+
+  // Dropzone Configuration
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    noClick: true,
+    noKeyboard: true,
+    directory: folderUpload,
+    multiple: !folderUpload, // Allow multiple files if not a folder
+  });
+
   const openFile = async (file) => {
     try {
       console.log("file: ", file); // Log the entire file object to inspect its structure
@@ -260,80 +328,98 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-  // Handle the file upload when the "Upload" button is clicked
   const handleUploadDocument = async () => {
     if (selectedFiles.length === 0) {
       showPopup("Please select at least one file to upload.");
       return;
     }
 
+    setIsUploading(true);
+    setUploadProgress(0);
+
     const uploadData = new FormData();
 
-    // Append form data to FormData object
     const { category, year, version } = formData;
     uploadData.append("category", category.name);
     uploadData.append("year", year.name);
-    uploadData.append("version", version || 1); // Default to version 1 if not provided
+    uploadData.append("version", version || 1);
     uploadData.append("branch", userBranch);
     uploadData.append("department", userDep);
 
-    // Append files
     selectedFiles.forEach((file) => uploadData.append("files", file));
 
-    try {
-      const response = await fetch(`${API_HOST}/api/documents/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: uploadData,
-      });
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
-      if (!response.ok) {
-        const errorDetails = await response.text();
-        throw new Error(
-          `HTTP error! Status: ${response.status}. Details: ${errorDetails}`
-        );
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percentComplete);
       }
+    };
 
-      const filePaths = await response.json();
-      console.log("Files uploaded successfully:", filePaths);
+    xhr.onload = () => {
+      setIsUploading(false);
 
-      if (!Array.isArray(filePaths)) {
-        throw new Error("Invalid file paths returned from the server.");
+      if (xhr.status === 200) {
+        try {
+          const filePaths = JSON.parse(xhr.responseText);
+
+          if (!Array.isArray(filePaths)) {
+            throw new Error("Invalid file paths returned from the server.");
+          }
+
+          setFormData((prevData) => ({
+            ...prevData,
+            uploadedFilePaths: [
+              ...(prevData.uploadedFilePaths || []),
+              ...filePaths.map((filePath) => ({
+                path: filePath,
+                version: `V${version}`,
+              })),
+            ],
+          }));
+
+          setUploadedFileNames((prevNames) => [
+            ...prevNames,
+            ...selectedFiles.map((file) => file.name),
+          ]);
+
+          setUploadedFilePath((prevPath) => [
+            ...prevPath,
+            ...filePaths.map((filePath) => ({
+              path: filePath,
+              version: `${version}`,
+            })),
+          ]);
+
+          showPopup("Files uploaded successfully!", "success");
+          setUnsportFile(false);
+          resetFileSelection();
+        } catch (error) {
+          showPopup(`Error processing the server response: ${error.message}`, "error");
+        }
+      } else if (xhr.status === 400) {
+        try {
+          const errorResponse = JSON.parse(xhr.responseText);
+          const errorMessage = errorResponse || "Unknown error";
+          setUnsportFile(true);
+          showPopup(`File upload failed: ${errorMessage}`, "error");
+        } catch (err) {
+          showPopup("File upload failed: Invalid response from server.", "error");
+        }
+      } else {
+        showPopup(`File upload failed: ${xhr.statusText}`, "error");
       }
+    };
 
-      // Update state after successful upload
-      setFormData((prevData) => ({
-        ...prevData,
-        uploadedFilePaths: [
-          ...(prevData.uploadedFilePaths || []),
-          ...filePaths.map((filePath) => ({
-            path: filePath,
-            version: `V${version}`, // Ensure single prefix
-          })),
-        ],
-      }));
+    xhr.onerror = () => {
+      setIsUploading(false);
+      showPopup("File upload failed due to network error.", "error");
+    };
 
-      setUploadedFileNames((prevNames) => [
-        ...prevNames,
-        ...selectedFiles.map((file) => file.name),
-      ]);
-
-      setUploadedFilePath((prevPath) => [
-        ...prevPath,
-        ...filePaths.map((filePath) => ({
-          path: filePath,
-          version: `${version}`,
-        })),
-      ]);
-
-      showPopup("Files uploaded successfully!", "success");
-
-      // Reset states and clear file input
-      resetFileSelection();
-    } catch (error) {
-      console.error("Error uploading files:", error);
-      showPopup(`File upload failed: ${error.message}`, "error");
-    }
+    xhr.send(uploadData);
   };
 
   const resetFileSelection = () => {
@@ -466,6 +552,18 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setUploadedFileVersion([]);
     setEditingDoc(null);
   };
+
+  const viewfiletype = () => {
+    fetchFilesType();
+    setViewFileTypeModel(true);
+    setIsUploading(false);
+  }
+
+  const handlecloseFileType = () => {
+    setViewFileTypeModel(false);
+    setIsUploading(false);
+  }
+
 
   const handleVersionChange = (index, newVersion) => {
     setUploadedFilePath((prevPaths) =>
@@ -815,8 +913,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     );
   };
 
+
+  const filteredFiles = filesType.filter((file) =>
+    file.filetype.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    file.extension.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="p-1">
+    <div {...getRootProps()} className="p-1">
+      <input {...getInputProps()} />
       <h1 className="text-xl mb-4 font-semibold">Upload Document</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
         {popupMessage && (
@@ -910,6 +1015,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 ))}
               </select>
             </label>
+            {unsportFile === true && (
+              <button onClick={viewfiletype} className="bg-blue-600 text-white h-12 px-2 mt-7 rounded-md">
+                Show Supported File Types
+              </button>
+            )}
           </div>
           <div className=" mt-5 mb-5 grid grid-cols-3 gap-4">
             <label className="block text-md font-medium text-gray-700">
@@ -927,6 +1037,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               />
             </label>
 
+            <label className="flex items-center space-x-2">
+              <input type="checkbox" onChange={() => setFolderUpload(!folderUpload)} />
+              <span>Folder Upload Enable</span>
+            </label>
+
             <label className="block text-md font-medium text-gray-700">
               Upload Files
               <div className="flex items-center gap-2">
@@ -936,6 +1051,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   accept=""
                   multiple
                   onChange={handleFileChange}
+                  webkitdirectory={folderUpload ? "true" : undefined}
                   className="mt-1 block w-full p-3 border rounded-md outline-none"
                 />
               </div>
@@ -943,12 +1059,48 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
             <button
               onClick={handleUploadDocument}
-              disabled={!isUploadEnabled}
-              className={`ml-2 text-white rounded-xl p-2 h-14 mt-6 ${isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
+              disabled={!isUploadEnabled || isUploading}
+              className={`ml-2 text-white rounded-xl p-2 h-14 mt-6 flex items-center justify-center relative transition-all duration-300 ${isUploading ? "bg-blue-600 cursor-not-allowed" : isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
                 }`}
             >
-              Upload
+              {isUploading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-white"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    ></path>
+                  </svg>
+                  Uploading... {uploadProgress}%
+                </>
+              ) : (
+                "Upload"
+              )}
+
+              {/* Progress Bar (Only visible when uploading) */}
+              {isUploading && (
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
+                  <div
+                    className="h-full bg-green-500 transition-all"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              )}
             </button>
+
+
           </div>
 
           {uploadedFilePath.map((file, index) => {
@@ -1320,6 +1472,43 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   </div>
                 </div>
               </div>
+            )}
+
+            {viewFileTypeModel === true && (
+              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 bg-white shadow-lg rounded-lg p-4 border border-gray-200 max-h-80 overflow-y-auto">
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-lg font-semibold">Supported File Types</h2>
+                  <button
+                    onClick={handlecloseFileType}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    ✖
+                  </button>
+                </div>
+
+                {/* Search Input */}
+                <input
+                  type="text"
+                  placeholder="Search file type..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+
+                <ul className="space-y-2">
+                  {filteredFiles.length > 0 ? (
+                    filteredFiles.map((file) => (
+                      <li key={file.id} className="flex justify-between text-gray-700">
+                        <span>{file.filetype}</span>
+                        <span className="text-gray-500">{file.extension}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-gray-500">No matching file types found</li>
+                  )}
+                </ul>
+              </div>
+
             )}
           </>
         </div>

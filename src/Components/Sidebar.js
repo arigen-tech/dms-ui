@@ -33,6 +33,8 @@ import { IoDocumentLock } from "react-icons/io5";
 import { AiOutlineFileSearch } from "react-icons/ai";
 import { MdAdfScanner } from "react-icons/md";
 import { FaUserClock } from "react-icons/fa6";
+import { GiFiles } from "react-icons/gi";
+
 import logo3 from "../Assets/logo3.png";
 import {
   API_HOST,
@@ -302,6 +304,13 @@ function Sidebar() {
                       to="/create-year"
                       icon={CalendarDaysIcon}
                       text="Years"
+                      count={counts.annualYear}
+                    />
+                    <hr className="border-t border-blue-800" />
+                    <SidebarLink
+                      to="/create-fileType"
+                      icon={GiFiles}
+                      text="Files Types"
                       count={counts.annualYear}
                     />
                   </div>

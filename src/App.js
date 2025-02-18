@@ -39,8 +39,9 @@ import AdminsOCRResponce from "./Pages/AdminsOCRResponce";
 import Scanner from "./Pages/Scanner"; 
 import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
 import Notification from "./Data/Notification";
-import ChatBotPopup from "./Components/ChatBotPopup"
-
+import ChatBotPopup from "./Components/ChatBotPopup";
+import IDCardGenerator from "./Components/IDCardGenerator";
+import FilesType from "./Pages/FilesTypes";
 
 const protectedRoutes = [
   { path: "/dashboard", element: <Dashboard />, allowedRoles: [SYSTEM_ADMIN, USER, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
@@ -78,6 +79,8 @@ const protectedRoutes = [
   { path: "/userOcr", element: <UsersOCR />, allowedRoles: [USER] }, 
   { path: "/adminOCRResponce", element: <AdminsOCRResponce />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] }, 
   { path: "/scan", element: <Scanner />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] },
+  { path: "/idcard", element: <IDCardGenerator />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/create-fileType", element: <FilesType />, allowedRoles: [SYSTEM_ADMIN] },
    
 ];
 
