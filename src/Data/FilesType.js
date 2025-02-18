@@ -248,9 +248,9 @@ const FilesType = () => {
   });
   
 
-  const sortedfile = filteredFilesType.sort((a, b) => b.isActive - a.isActive);
+  const sortedfile = filteredFilesType?.sort((a, b) => b.isActive - a.isActive);
 
-  const totalItems = sortedfile.length;
+  const totalItems = sortedfile?.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const paginatedFiles = sortedfile.slice(
