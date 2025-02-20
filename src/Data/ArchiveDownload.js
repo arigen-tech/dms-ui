@@ -5,6 +5,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import { CalendarIcon } from '@heroicons/react/24/outline';
 import { API_HOST } from '../API/apiConfig';
 import Popup from '../Components/Popup';
+import { FILETYPE_API } from '../API/apiConfig';
+
 
 const ArchiveDownload = () => {
   const [fromDate, setFromDate] = useState(null);
@@ -14,6 +16,7 @@ const ArchiveDownload = () => {
     departmentId: '',
     startDate: null,
     endDate: null,
+    fileTypes: [], // Add fileTypes
   };
   const [archiveCriteria, setArchiveCriteria] = React.useState(initialFormData);
   let [userRole, setUserRole] = useState(null);
@@ -27,11 +30,19 @@ const ArchiveDownload = () => {
   const [allArchiveFromDate, setAllArchiveFromDate] = useState(null);
   const [allArchiveToDate, setAllArchiveToDate] = useState(null);
   const [allArchiveLoading, setAllArchiveLoading] = useState(false);
+  const [fileTypes, setFileTypes] = useState([]);
+  const [selectedFileTypes, setSelectedFileTypes] = useState([]);
+  const [selectAllFileTypes, setSelectAllFileTypes] = useState(false);
+  const [selectedAllArchiveFileTypes, setSelectedAllArchiveFileTypes] = useState([]);
+  const [selectAllArchiveFileTypes, setSelectAllArchiveFileTypes] = useState(false);
+
+
 
 
   useEffect(() => {
     fetchUserDetails();
     fetchBranches();
+    fetchFileTypes();
   }, []);
 
   // useEffect(() => {
@@ -41,6 +52,65 @@ const ArchiveDownload = () => {
   //     toDate: toDate ? toDate.toISOString().split('T')[0] : ''
   //   }));
   // }, [fromDate, toDate]);
+
+  const fetchFileTypes = async () => {
+    try {
+      const token = localStorage.getItem('tokenKey');
+      const response = await axios.get(`${FILETYPE_API}/getAllActive`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      setFileTypes(response.data.response);
+    } catch (error) {
+      console.error('Error fetching Files Types:', error);
+      showPopup('Failed to fetch file types', 'error');
+    }
+  };
+
+  const handleFileTypeChange = (fileType, isAllArchive = false) => {
+    const { selectedTypes, setSelectedTypes, selectAll, setSelectAll } = isAllArchive
+      ? {
+        selectedTypes: selectedAllArchiveFileTypes,
+        setSelectedTypes: setSelectedAllArchiveFileTypes,
+        selectAll: selectAllArchiveFileTypes,
+        setSelectAll: setSelectAllArchiveFileTypes,
+      }
+      : {
+        selectedTypes: selectedFileTypes,
+        setSelectedTypes: setSelectedFileTypes,
+        selectAll: selectAllFileTypes,
+        setSelectAll: setSelectAllFileTypes,
+      };
+
+    let newSelectedTypes;
+    if (fileType === 'all') {
+      if (!selectAll) {
+        newSelectedTypes = fileTypes.map(type => type.extension);
+        setSelectAll(true);
+      } else {
+        newSelectedTypes = [];
+        setSelectAll(false);
+      }
+    } else {
+      if (selectedTypes.includes(fileType)) {
+        newSelectedTypes = selectedTypes.filter(type => type !== fileType);
+        setSelectAll(false);
+      } else {
+        newSelectedTypes = [...selectedTypes, fileType];
+        if (newSelectedTypes.length === fileTypes.length) {
+          setSelectAll(true);
+        }
+      }
+    }
+    setSelectedTypes(newSelectedTypes);
+    if (!isAllArchive) {
+      setArchiveCriteria(prev => ({
+        ...prev,
+        fileTypes: newSelectedTypes
+      }));
+    }
+  };
 
   const fetchUserDetails = async () => {
     try {
@@ -160,38 +230,40 @@ const ArchiveDownload = () => {
   const handleDownload = async () => {
     setLoading(true);
     try {
-      // Set start time for fromDate
-      const startDate = new Date(fromDate);
-      startDate.setHours(0, 0, 0, 0); // Start of the day in local time
-
-      // Set end time for toDate
-      const endDate = new Date(toDate);
-      endDate.setHours(23, 59, 59, 999); // End of the day in local time
-
-      // Format dates as 'yyyy-MM-dd HH:mm:ss' or similar
+      // Format dates to match backend's expected format (YYYY-MM-DD)
       const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        if (!date) return null;
+        return date.toISOString().split('T')[0];
       };
 
-      const formattedFromDate = formatDate(startDate); // Local start date
-      const formattedToDate = formatDate(endDate); // Local end date
+      const formattedFromDate = formatDate(fromDate);
+      const formattedToDate = formatDate(toDate);
 
       const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(`${API_HOST}/archive/download`, {
-        params: {
-          branchId: archiveCriteria.branchId,
-          departmentId: archiveCriteria.departmentId,
-          startDate: formattedFromDate,
-          endDate: formattedToDate,
-          userRole: userRole,
+
+      // Construct the query parameters
+      const params = new URLSearchParams();
+      params.append('branchId', archiveCriteria.branchId);
+      if (archiveCriteria.departmentId) {
+        params.append('departmentId', archiveCriteria.departmentId);
+      }
+      if (formattedFromDate) {
+        params.append('fromDate', formattedFromDate);
+      }
+      if (formattedToDate) {
+        params.append('toDate', formattedToDate);
+      }
+      params.append('userRole', userRole);
+
+      // Add each file type as a separate query parameter
+      selectedFileTypes.forEach(fileType => {
+        params.append('fileTypes', fileType);
+      });
+
+      const response = await axios.get(`${API_HOST}/archive/download?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         },
-        headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
 
@@ -212,23 +284,36 @@ const ArchiveDownload = () => {
     }
   };
 
+  // Similarly update the handleDownloadAll function
   const handleDownloadAll = async () => {
     setAllArchiveLoading(true);
     try {
-      // Format dates for the all archives download
       const formatDate = (date) => {
         if (!date) return null;
-        const d = new Date(date);
-        return d.toISOString().split('T')[0];
+        return date.toISOString().split('T')[0];
       };
 
+      const formattedFromDate = formatDate(allArchiveFromDate);
+      const formattedToDate = formatDate(allArchiveToDate);
+
+      const params = new URLSearchParams();
+      if (formattedFromDate) {
+        params.append('fromDate', formattedFromDate);
+      }
+      if (formattedToDate) {
+        params.append('toDate', formattedToDate);
+      }
+
+      // Add file types to the all archives download request
+      selectedFileTypes.forEach(fileType => {
+        params.append('fileTypes', fileType);
+      });
+
       const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(`${API_HOST}/archive/download/all`, {
-        params: {
-          fromDate: formatDate(allArchiveFromDate),
-          toDate: formatDate(allArchiveToDate)
+      const response = await axios.get(`${API_HOST}/archive/download/all?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         },
-        headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
 
@@ -248,7 +333,6 @@ const ArchiveDownload = () => {
       setAllArchiveLoading(false);
     }
   };
-
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({ message, type });
@@ -451,11 +535,89 @@ const ArchiveDownload = () => {
     );
   };
 
+  // Add this new section to renderArchiveFields
+  const renderFileTypeSelection = (isAllArchive = false) => {
+    const selectedTypes = isAllArchive ? selectedAllArchiveFileTypes : selectedFileTypes;
+    const isSelected = isAllArchive ? selectAllArchiveFileTypes : selectAllFileTypes;
+    
+    return (
+      <div className="mb-6 bg-slate-100 p-8 rounded-xl shadow-sm">
+        <label className="block text-lg font-semibold text-gray-800 mb-4">
+          File Types
+        </label>
+        
+        <div className="space-y-4">
+          <div className="flex items-center bg-white p-3 rounded-lg shadow-sm">
+            <input
+              type="checkbox"
+              id={isAllArchive ? "selectAllArchive" : "selectAll"}
+              checked={isSelected}
+              onChange={() => handleFileTypeChange('all', isAllArchive)}
+              className="h-5 w-5 rounded accent-blue-800 cursor-pointer"
+            />
+            <label htmlFor={isAllArchive ? "selectAllArchive" : "selectAll"} className="ml-3 text-gray-700 font-medium">
+              Select All
+            </label>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {fileTypes.map((fileType) => {
+              const isTypeSelected = selectedTypes.includes(fileType.extension);
+              return (
+                <div
+                  key={fileType.id}
+                  className="bg-white p-4 rounded-lg shadow-sm"
+                >
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`fileType-${isAllArchive ? 'all-' : ''}${fileType.id}`}
+                      checked={isTypeSelected}
+                      onChange={() => handleFileTypeChange(fileType.extension, isAllArchive)}
+                      className="h-5 w-5 rounded accent-blue-800 cursor-pointer"
+                    />
+                    <label
+                      htmlFor={`fileType-${isAllArchive ? 'all-' : ''}${fileType.id}`}
+                      className="ml-3 cursor-pointer flex-grow"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700 font-medium">
+                          {fileType.extension}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {fileType.id}
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        <div className="mt-6 flex items-center justify-between text-sm">
+          <span className="text-blue-800">
+            Selected: {selectedTypes.length} types
+          </span>
+          <span className="text-blue-800 font-medium">
+            Total: {fileTypes.length} types
+          </span>
+        </div>
+      </div>
+    );
+  };
+  
+  
+
+
+
+
   return (
     <div className="flex flex-col space-y-4">
       <h2 className="text-2xl mb-6 font-semibold text-gray-800">Download Archive</h2>
       <div className="bg-white p-6 rounded-xl shadow-md w-full">
-        
+
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -465,6 +627,7 @@ const ArchiveDownload = () => {
         )}
 
         {renderArchiveFields()}
+        {renderFileTypeSelection(false)}
 
         <button
           onClick={handleDownload}
@@ -477,54 +640,56 @@ const ArchiveDownload = () => {
 
       {userRole === 'ADMIN' && (
         <div className="flex flex-col space-y-4">
-        <h2 className="text-2xl mb-6 font-semibold text-gray-800">Download All Archives</h2>
-        <div className="bg-white p-6 rounded-xl shadow-md w-full">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
-            <div className={commonWrapperClasses}>
-              <label className={commonLabelClasses} htmlFor="fromDate">
-                From Date
-              </label>
-              <DatePicker
-                id="fromDate"
-                selected={fromDate}
-                onChange={(date) => setFromDate(date)}
-                selectsStart
-                startDate={fromDate}
-                endDate={toDate}
-                maxDate={new Date()}
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Select a start date"
-                customInput={<CustomInput />}
-              />
+          <h2 className="text-2xl mb-6 font-semibold text-gray-800">Download All Archives</h2>
+          <div className="bg-white p-6 rounded-xl shadow-md w-full">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
+              <div className={commonWrapperClasses}>
+                <label className={commonLabelClasses} htmlFor="fromDate">
+                  From Date
+                </label>
+                <DatePicker
+                  id="fromDate"
+                  selected={fromDate}
+                  onChange={(date) => setFromDate(date)}
+                  selectsStart
+                  startDate={fromDate}
+                  endDate={toDate}
+                  maxDate={new Date()}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Select a start date"
+                  customInput={<CustomInput />}
+                />
+              </div>
+
+              <div className={commonWrapperClasses}>
+                <label className={commonLabelClasses} htmlFor="toDate">
+                  To Date
+                </label>
+                <DatePicker
+                  id="endDate"
+                  selected={toDate}
+                  onChange={(date) => setToDate(date)}
+                  selectsEnd
+                  startDate={fromDate}
+                  endDate={toDate}
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="End Date"
+                  customInput={<CustomInput />}
+                />
+              </div>
             </div>
 
-            <div className={commonWrapperClasses}>
-              <label className={commonLabelClasses} htmlFor="toDate">
-                To Date
-              </label>
-              <DatePicker
-                id="endDate"
-                selected={toDate}
-                onChange={(date) => setToDate(date)}
-                selectsEnd
-                startDate={fromDate}
-                endDate={toDate}
-                dateFormat="dd-MM-yyyy"
-                placeholderText="End Date"
-                customInput={<CustomInput />}
-              />
-            </div>
+            {renderFileTypeSelection(true)}
+
+            <button
+              onClick={handleDownloadAll}
+              disabled={allArchiveLoading}
+              className={`bg-blue-900 text-white rounded-lg py-3 px-6 hover:bg-blue-800 transition duration-300 shadow-md hover:shadow-lg flex items-center justify-center w-full md:w-auto ${allArchiveLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {allArchiveLoading ? 'Downloading All...' : 'Download All Archives'}
+            </button>
           </div>
-
-          <button
-            onClick={handleDownloadAll}
-            disabled={allArchiveLoading}
-            className={`bg-blue-900 text-white rounded-lg py-3 px-6 hover:bg-blue-800 transition duration-300 shadow-md hover:shadow-lg flex items-center justify-center w-full md:w-auto ${allArchiveLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {allArchiveLoading ? 'Downloading All...' : 'Download All Archives'}
-          </button>
-        </div>
         </div>
       )}
     </div>
