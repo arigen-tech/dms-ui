@@ -67,6 +67,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [unsportFile, setUnsportFile] = useState(false);
   const [viewFileTypeModel, setViewFileTypeModel] = useState(false);
   const [folderUpload, setFolderUpload] = useState(false);
+  const [uploadController, setUploadController] = useState(null);
 
 
   // Run this effect only when component mounts
@@ -344,68 +345,106 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     uploadData.append("version", version || 1);
     uploadData.append("branch", userBranch);
     uploadData.append("department", userDep);
-  
     selectedFiles.forEach((file) => uploadData.append("files", file));
   
+    const controller = new AbortController();
+    setUploadController(controller);
+    
     try {
-      const response = await fetch(`${API_HOST}/api/documents/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: uploadData,
-      });
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
   
-      const result = await response.json();
-      setIsUploading(false);
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(progress);
+        }
+      };
   
-      if (response.ok) {
-        if (result.uploadedFiles.length > 0) {
-          setFormData((prevData) => ({
-            ...prevData,
-            uploadedFilePaths: [
-              ...(prevData.uploadedFilePaths || []),
+      xhr.onload = () => {
+        setIsUploading(false);
+        setUploadController(null);
+  
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const result = JSON.parse(xhr.responseText);
+  
+          if (result.uploadedFiles.length > 0) {
+            setFormData((prevData) => ({
+              ...prevData,
+              uploadedFilePaths: [
+                ...(prevData.uploadedFilePaths || []),
+                ...result.uploadedFiles.map((filePath) => ({
+                  path: filePath,
+                  version: `V${version}`,
+                })),
+              ],
+            }));
+    
+            setUploadedFileNames((prevNames) => [
+              ...prevNames,
+              ...selectedFiles.map((file) => file.name),
+            ]);
+    
+            setUploadedFilePath((prevPath) => [
+              ...prevPath,
               ...result.uploadedFiles.map((filePath) => ({
                 path: filePath,
-                version: `V${version}`,
+                version: `${version}`,
               })),
-            ],
-          }));
-  
-          setUploadedFileNames((prevNames) => [
-            ...prevNames,
-            ...selectedFiles.map((file) => file.name),
-          ]);
-  
-          setUploadedFilePath((prevPath) => [
-            ...prevPath,
-            ...result.uploadedFiles.map((filePath) => ({
-              path: filePath,
-              version: `${version}`,
-            })),
-          ]);
-  
-          showPopup("Files uploaded successfully!", "success");
+            ]);
+    
+            showPopup("Files uploaded successfully!", "success");
+          }
+    
+          if (result.errors.length > 0) {
+            showPopup(
+              `Some files failed to upload:\n${result.errors
+                .map((err) => `${err.file}: ${err.error}`)
+                .join("\n")}`,
+              "error"
+            );
+            setUnsportFile(true);  
+          }
+        } else {
+          showPopup(`File upload failed: ${xhr.statusText}`, "error");
         }
+      };
   
-        if (result.errors.length > 0) {
-          showPopup(
-            `Some files failed to upload:\n${result.errors
-              .map((err) => `${err.file}: ${err.error}`)
-              .join("\n")}`,
-            "error"
-          );
-          setUnsportFile(true);  
-        }
-      } else {
-        showPopup(`File upload failed: ${result.errors || "Unknown error"}`, "error");
-      }
+      xhr.onerror = () => {
+        setIsUploading(false);
+        showPopup("Upload failed due to a network error.", "error");
+      };
+  
+      xhr.onabort = () => {
+        setIsUploading(false);
+        setUploadController(null);
+        showPopup("Upload has been canceled.", "warning");
+      };
+  
+      controller.signal.addEventListener("abort", () => {
+        xhr.abort();
+      });
+  
+      xhr.send(uploadData);
     } catch (error) {
       setIsUploading(false);
       showPopup(`File upload failed: ${error.message}`, "error");
     }
   };
   
+
+  const handleCancelUpload = () => {
+    if (uploadController) {
+      uploadController.abort(); 
+      setUploadController(null);
+      setIsUploading(false);
+      showPopup("Upload has been canceled.", "warning");
+    }
+  };
+  
+
+
 
   const resetFileSelection = () => {
     setSelectedFiles([]);
@@ -1084,6 +1123,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 </div>
               )}
             </button>
+
+            {isUploading && (
+              <button onClick={handleCancelUpload} className="bg-red-500 text-white px-4 py-2 rounded">
+                Cancel Upload
+              </button>
+            )}
 
 
           </div>
