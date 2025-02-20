@@ -333,94 +333,79 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       showPopup("Please select at least one file to upload.");
       return;
     }
-
+  
     setIsUploading(true);
     setUploadProgress(0);
-
+  
     const uploadData = new FormData();
-
     const { category, year, version } = formData;
     uploadData.append("category", category.name);
     uploadData.append("year", year.name);
     uploadData.append("version", version || 1);
     uploadData.append("branch", userBranch);
     uploadData.append("department", userDep);
-
+  
     selectedFiles.forEach((file) => uploadData.append("files", file));
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
-    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percentComplete = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percentComplete);
-      }
-    };
-
-    xhr.onload = () => {
+  
+    try {
+      const response = await fetch(`${API_HOST}/api/documents/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: uploadData,
+      });
+  
+      const result = await response.json();
       setIsUploading(false);
-
-      if (xhr.status === 200) {
-        try {
-          const filePaths = JSON.parse(xhr.responseText);
-
-          if (!Array.isArray(filePaths)) {
-            throw new Error("Invalid file paths returned from the server.");
-          }
-
+  
+      if (response.ok) {
+        if (result.uploadedFiles.length > 0) {
           setFormData((prevData) => ({
             ...prevData,
             uploadedFilePaths: [
               ...(prevData.uploadedFilePaths || []),
-              ...filePaths.map((filePath) => ({
+              ...result.uploadedFiles.map((filePath) => ({
                 path: filePath,
                 version: `V${version}`,
               })),
             ],
           }));
-
+  
           setUploadedFileNames((prevNames) => [
             ...prevNames,
             ...selectedFiles.map((file) => file.name),
           ]);
-
+  
           setUploadedFilePath((prevPath) => [
             ...prevPath,
-            ...filePaths.map((filePath) => ({
+            ...result.uploadedFiles.map((filePath) => ({
               path: filePath,
               version: `${version}`,
             })),
           ]);
-
+  
           showPopup("Files uploaded successfully!", "success");
-          setUnsportFile(false);
-          resetFileSelection();
-        } catch (error) {
-          showPopup(`Error processing the server response: ${error.message}`, "error");
         }
-      } else if (xhr.status === 400) {
-        try {
-          const errorResponse = JSON.parse(xhr.responseText);
-          const errorMessage = errorResponse || "Unknown error";
-          setUnsportFile(true);
-          showPopup(`File upload failed: ${errorMessage}`, "error");
-        } catch (err) {
-          showPopup("File upload failed: Invalid response from server.", "error");
+  
+        if (result.errors.length > 0) {
+          showPopup(
+            `Some files failed to upload:\n${result.errors
+              .map((err) => `${err.file}: ${err.error}`)
+              .join("\n")}`,
+            "error"
+          );
+          setUnsportFile(true);  
         }
       } else {
-        showPopup(`File upload failed: ${xhr.statusText}`, "error");
+        showPopup(`File upload failed: ${result.errors || "Unknown error"}`, "error");
       }
-    };
-
-    xhr.onerror = () => {
+    } catch (error) {
       setIsUploading(false);
-      showPopup("File upload failed due to network error.", "error");
-    };
-
-    xhr.send(uploadData);
+      showPopup(`File upload failed: ${error.message}`, "error");
+    }
   };
+  
 
   const resetFileSelection = () => {
     setSelectedFiles([]);
@@ -1043,7 +1028,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             </label>
 
             <label className="block text-md font-medium text-gray-700">
-              Upload Files
+              Upload {folderUpload ? "Folders" : "Files"}
               <div className="flex items-center gap-2">
                 <input
                   type="file"
