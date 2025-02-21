@@ -664,7 +664,7 @@ const ArchiveDownload = () => {
                 key={fileType}
                 onClick={() => handleFileTypeClick(fileType, isAllArchive)}
                 className={`bg-white px-3 py-2 rounded-lg shadow-sm cursor-pointer transition-all duration-200
-                  hover:bg-blue-50 hover:-translate-y-0.5 text-center
+                  hover:-translate-y-0.5 text-center
                   ${selectedFileType === fileType ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
               >
                 <span className="text-gray-700 text-sm font-medium">{fileType}</span>
