@@ -80,6 +80,7 @@ const FilesType = () => {
         setFormData({ filetype: '', extension: '', isActive: true });
 
         showPopup('FileType added successfully!', "success");
+        fetchFilesType();
       } catch (error) {
         console.error('Error adding FileType:', error.response ? error.response.data : error.message);
 
@@ -144,7 +145,7 @@ const FilesType = () => {
         setFilesType(updatedFileTypes);
         setFormData({ filetype: '', extension: '', isActive: 1 });
         seteditingFileTypeId(null);
-
+        fetchFilesType();
         showPopup('File Type updated successfully!', "success");
       } catch (error) {
         console.error('Error updating File Type:', error.response ? error.response.data : error.message);
@@ -190,7 +191,7 @@ const FilesType = () => {
         setModalVisible(false);
         setFileTypeToToggle(null);
 
-        // Show success message
+        fetchFilesType();
         showPopup('Status changed successfully!', "success");
 
       } catch (error) {
@@ -236,7 +237,7 @@ const FilesType = () => {
     const statusText = fileTypes?.isActive ? '1' : '0';
     const createdOnText = formatDate(fileTypes.createdOn);
     const updatedOnText = formatDate(fileTypes.updatedOn);
-  
+
     return (
       fileTypes?.filetype?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       fileTypes?.extension?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -245,7 +246,7 @@ const FilesType = () => {
       updatedOnText.includes(searchTerm.toLowerCase())
     );
   });
-  
+
 
   const sortedfile = filteredFilesType?.sort((a, b) => b.isActive - a.isActive);
 
@@ -258,7 +259,7 @@ const FilesType = () => {
   );
 
   const getPageNumbers = () => {
-    const maxPageNumbers = 5; 
+    const maxPageNumbers = 5;
     const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
