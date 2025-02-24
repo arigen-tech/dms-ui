@@ -633,7 +633,7 @@ const ArchiveDownload = () => {
                 shadow-sm hover:shadow-md
                 ${selectedFileType === 'all' 
                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                  : 'bg-white text-blue-600 hover:bg-blue-50'
+                  : 'bg-white text-blue-600 '
                 }
                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
                 transform hover:-translate-y-0.5
