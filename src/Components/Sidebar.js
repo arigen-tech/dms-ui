@@ -21,6 +21,7 @@ import {
   LockClosedIcon,
   UserCircleIcon,
   ShoppingCartIcon,
+  IdentificationIcon
 } from "@heroicons/react/24/solid";
 import {
   RiFileUserFill,
@@ -55,41 +56,41 @@ function Sidebar() {
     return savedCounts
       ? JSON.parse(savedCounts)
       : {
-          totalUser: 0,
-          branchUser: 0,
-          totalDocument: 0,
-          pendingDocument: 0,
-          storageUsed: 0,
-          totalBranches: 0,
-          totalDepartment: 0,
-          totalRoles: 0,
-          totalFilesType: 0,
-          documentType: 0,
-          annualYear: 0,
-          totalNullEmployeeType: 0,
-          totalCategories: 0,
-          totalApprovedDocuments: 0,
-          totalRejectedDocuments: 0,
-          totalPendingDocuments: 0,
-          totalApprovedDocumentsById: 0,
-          totalRejectedDocumentsById: 0,
-          totalPendingDocumentsById: 0,
-          totalDocumentsById: 0,
-          totalApprovedStatusDocById: 0,
-          totalRejectedStatusDocById: 0,
-          departmentCountForBranch: 0,
-          nullRoleEmployeeCountForBranch: 0,
-          departmentUser: 0,
-          rejectedDocsbyid: 0,
-          approvedDocsbyid: 0,
-          pendingDocsbyid: 0,
-          createdByCount: 0,
-          nullRoleEmployeeCountForDepartment: 0,
-          totalDocumentsByDepartmentId: 0,
-          totalPendingDocumentsByDepartmentId: 0,
-          totalApprovedStatusDocByDepartmentId: 0,
-          totalRejectedStatusDocByDepartmentId: 0,
-        };
+        totalUser: 0,
+        branchUser: 0,
+        totalDocument: 0,
+        pendingDocument: 0,
+        storageUsed: 0,
+        totalBranches: 0,
+        totalDepartment: 0,
+        totalRoles: 0,
+        totalFilesType: 0,
+        documentType: 0,
+        annualYear: 0,
+        totalNullEmployeeType: 0,
+        totalCategories: 0,
+        totalApprovedDocuments: 0,
+        totalRejectedDocuments: 0,
+        totalPendingDocuments: 0,
+        totalApprovedDocumentsById: 0,
+        totalRejectedDocumentsById: 0,
+        totalPendingDocumentsById: 0,
+        totalDocumentsById: 0,
+        totalApprovedStatusDocById: 0,
+        totalRejectedStatusDocById: 0,
+        departmentCountForBranch: 0,
+        nullRoleEmployeeCountForBranch: 0,
+        departmentUser: 0,
+        rejectedDocsbyid: 0,
+        approvedDocsbyid: 0,
+        pendingDocsbyid: 0,
+        createdByCount: 0,
+        nullRoleEmployeeCountForDepartment: 0,
+        totalDocumentsByDepartmentId: 0,
+        totalPendingDocumentsByDepartmentId: 0,
+        totalApprovedStatusDocByDepartmentId: 0,
+        totalRejectedStatusDocByDepartmentId: 0,
+      };
   });
 
   //System Admin
@@ -255,6 +256,12 @@ function Sidebar() {
                   icon={UserPlusIcon}
                   text="Manage Users Roles"
                   count={manageUserRoleCont}
+                />
+                <hr className="border-t border-blue-800 mt-1" />
+                <SidebarLink
+                  to="/idcard"
+                  icon={IdentificationIcon}
+                  text="Generate I'D Card"
                 />
                 <button
                   onClick={handleCreateToggle}
@@ -422,7 +429,7 @@ function Sidebar() {
                       to="/adminOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
-                      // count={counts.totalRejectedDocuments}
+                    // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}
@@ -482,6 +489,12 @@ function Sidebar() {
                 icon={UserPlusIcon}
                 text="Manage Users Roles"
                 count={manageUserRoleContbranch}
+              />
+              <hr className="border-t border-blue-800 mt-1" />
+              <SidebarLink
+                to="/idcard"
+                icon={IdentificationIcon}
+                text="Generate I'D Card"
               />
               <SidebarLink
                 to="/create-departments"
@@ -560,14 +573,14 @@ function Sidebar() {
                         to="/documentReport"
                         icon={DocumentTextIcon}
                         text="Document Report"
-                        // count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                       />
 
                       <SidebarLink
                         to="/userReport"
                         icon={RiFileUserFill}
                         text="User Report"
-                        // count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                       />
                     </div>
                   )}
@@ -594,7 +607,7 @@ function Sidebar() {
                       to="/brAdminOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
-                      // count={counts.totalRejectedDocuments}
+                    // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}
@@ -648,6 +661,12 @@ function Sidebar() {
                 icon={FaUserClock}
                 text="Pending Users"
                 count={counts.nullRoleEmployeeCountForDepartment}
+              />
+              <hr className="border-t border-blue-800 mt-1" />
+              <SidebarLink
+                to="/idcard"
+                icon={IdentificationIcon}
+                text="Generate I'D Card"
               />
               <div>
                 {/* Document section */}
@@ -720,14 +739,14 @@ function Sidebar() {
                         to="/documentReport"
                         icon={DocumentTextIcon}
                         text="Document Report"
-                        // count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                       />
 
                       <SidebarLink
                         to="/userReport"
                         icon={RiFileUserFill}
                         text="User Report"
-                        // count={counts.totalRejectedDocuments}
+                      // count={counts.totalRejectedDocuments}
                       />
                     </div>
                   )}
@@ -754,7 +773,7 @@ function Sidebar() {
                       to="/dpAdminOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
-                      // count={counts.totalRejectedDocuments}
+                    // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}
@@ -861,7 +880,7 @@ function Sidebar() {
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
-                      // count={counts.totalRejectedDocuments}
+                    // count={counts.totalRejectedDocuments}
                     />
                   </div>
                 )}

@@ -37,6 +37,7 @@ import {
   ShoppingCartIcon,
   UserCircleIcon,
   UsersIcon,
+  IdentificationIcon
 } from "@heroicons/react/24/solid";
 import { IoDocumentLock } from "react-icons/io5";
 import { FaUserClock } from "react-icons/fa6";
@@ -288,6 +289,13 @@ function Dashboard() {
                 />
               </Link>
 
+              <Link to="/idcard" className="block">
+                <StatBlock
+                  title="Generate I'D Card"
+                  Icon={IdentificationIcon}
+                />
+              </Link>
+
               <Link to="/create-branch" className="block">
                 <StatBlock
                   title="Total Branches"
@@ -386,6 +394,13 @@ function Dashboard() {
                 />
               </Link>
 
+              <Link to="/idcard" className="block">
+                <StatBlock
+                  title="Generate I'D Card"
+                  Icon={IdentificationIcon}
+                />
+              </Link>
+
               <Link to="/create-departments" className="block">
                 <StatBlock
                   title="Total Departments"
@@ -441,6 +456,13 @@ function Dashboard() {
                   title="Pending Users"
                   value={stats.nullRoleEmployeeCountForDepartment}
                   Icon={FaUserClock}
+                />
+              </Link>
+
+              <Link to="/idcard" className="block">
+                <StatBlock
+                  title="Generate I'D Card"
+                  Icon={IdentificationIcon}
                 />
               </Link>
 

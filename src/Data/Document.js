@@ -222,15 +222,29 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     let files = acceptedFiles;
     console.log("Dropped Files:", acceptedFiles);
 
-    // If folder is dropped, extract all files inside
-    if (folderUpload) {
-      const items = event.dataTransfer.items;
-      files = await extractFiles(items);
+    let isFolderDropped = false;
+
+    files.forEach((file) => {
+      const path = file.path || file.webkitRelativePath || file.name;
+      const slashCount = (path.match(/[\\/]/g) || []).length;
+
+      if (slashCount > 1) {
+        isFolderDropped = true;
+      }
+    });
+
+    if (isFolderDropped && !folderUpload) {
+      showPopup("Please enable 'folderUpload' to upload folders.", "warning");
+      return;
+    }
+
+    if (!isFolderDropped && folderUpload) {
+      showPopup("Please disable 'folderUpload' to upload files.", "warning");
+      return;
     }
 
     setSelectedFiles(files);
 
-    // Update File Input Value Programmatically
     const dataTransfer = new DataTransfer();
     files.forEach((file) => dataTransfer.items.add(file));
     if (fileInputRef.current) {
@@ -238,13 +252,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   }, [folderUpload]);
 
-  // Dropzone Configuration
+
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     noClick: true,
     noKeyboard: true,
     directory: folderUpload,
-    multiple: !folderUpload, // Allow multiple files if not a folder
+    multiple: !folderUpload,
   });
 
   const openFile = async (file) => {
@@ -331,13 +345,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const handleUploadDocument = async () => {
     if (selectedFiles.length === 0) {
-      showPopup("Please select at least one file to upload.");
+      showPopup("Please select at least one file to upload.", "warning");
       return;
     }
-  
+
     setIsUploading(true);
     setUploadProgress(0);
-  
+
     const uploadData = new FormData();
     const { category, year, version } = formData;
     uploadData.append("category", category.name);
@@ -346,29 +360,29 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     uploadData.append("branch", userBranch);
     uploadData.append("department", userDep);
     selectedFiles.forEach((file) => uploadData.append("files", file));
-  
+
     const controller = new AbortController();
     setUploadController(controller);
-    
+
     try {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-  
+
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const progress = Math.round((event.loaded / event.total) * 100);
           setUploadProgress(progress);
         }
       };
-  
+
       xhr.onload = () => {
         setIsUploading(false);
         setUploadController(null);
-  
+
         if (xhr.status >= 200 && xhr.status < 300) {
           const result = JSON.parse(xhr.responseText);
-  
+
           if (result.uploadedFiles.length > 0) {
             setFormData((prevData) => ({
               ...prevData,
@@ -380,12 +394,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 })),
               ],
             }));
-    
+
             setUploadedFileNames((prevNames) => [
               ...prevNames,
               ...selectedFiles.map((file) => file.name),
             ]);
-    
+
             setUploadedFilePath((prevPath) => [
               ...prevPath,
               ...result.uploadedFiles.map((filePath) => ({
@@ -393,10 +407,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 version: `${version}`,
               })),
             ]);
-    
+
             showPopup("Files uploaded successfully!", "success");
           }
-    
+
           if (result.errors.length > 0) {
             showPopup(
               `Some files failed to upload:\n${result.errors
@@ -404,45 +418,45 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 .join("\n")}`,
               "error"
             );
-            setUnsportFile(true);  
+            setUnsportFile(true);
           }
         } else {
           showPopup(`File upload failed: ${xhr.statusText}`, "error");
         }
       };
-  
+
       xhr.onerror = () => {
         setIsUploading(false);
         showPopup("Upload failed due to a network error.", "error");
       };
-  
+
       xhr.onabort = () => {
         setIsUploading(false);
         setUploadController(null);
         showPopup("Upload has been canceled.", "warning");
       };
-  
+
       controller.signal.addEventListener("abort", () => {
         xhr.abort();
       });
-  
+
       xhr.send(uploadData);
     } catch (error) {
       setIsUploading(false);
       showPopup(`File upload failed: ${error.message}`, "error");
     }
   };
-  
+
 
   const handleCancelUpload = () => {
     if (uploadController) {
-      uploadController.abort(); 
+      uploadController.abort();
       setUploadController(null);
       setIsUploading(false);
       showPopup("Upload has been canceled.", "warning");
     }
   };
-  
+
 
 
 
@@ -572,9 +586,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       year: null,
     });
     setUploadedFilePath([]);
+    setSelectedFiles([]);
     setUploadedFileNames([]);
     setUploadedFileVersion([]);
     setEditingDoc(null);
+    setUnsportFile(false);
   };
 
   const viewfiletype = () => {
@@ -745,7 +761,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
 
     if (editingDoc) {
-      // Distinguish between existing and newly uploaded files
       const isExistingFile = index < editingDoc.documentDetails.length;
 
       if (isExistingFile) {
@@ -1061,24 +1076,30 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               />
             </label>
 
-            <label className="flex items-center space-x-2">
-              <input type="checkbox" onChange={() => setFolderUpload(!folderUpload)} />
-              <span>Folder Upload Enable</span>
+            <label className="block text-md font-medium text-gray-700">
+              Folder Upload Enable
+              <div className="flex mt-4">
+                <input
+                  type="checkbox"
+                  checked={folderUpload}
+                  onChange={() => setFolderUpload(!folderUpload)}
+                  className="mt-1 block w-5 h-5 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="ml-3">{folderUpload ? "Enable" : "Disable"}</span>
+              </div>
             </label>
 
             <label className="block text-md font-medium text-gray-700">
               Upload {folderUpload ? "Folders" : "Files"}
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept=""
-                  multiple
-                  onChange={handleFileChange}
-                  webkitdirectory={folderUpload ? "true" : undefined}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none"
-                />
-              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=""
+                multiple
+                onChange={handleFileChange}
+                webkitdirectory={folderUpload ? "true" : undefined}
+                className="bg-white mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </label>
 
             <button
@@ -1125,7 +1146,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             </button>
 
             {isUploading && (
-              <button onClick={handleCancelUpload} className="bg-red-500 text-white px-4 py-2 rounded">
+              <button onClick={handleCancelUpload} className="bg-red-500 text-white h-14 mt-6 px-4 py-2 rounded">
                 Cancel Upload
               </button>
             )}

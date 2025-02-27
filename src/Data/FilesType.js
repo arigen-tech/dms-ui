@@ -186,7 +186,7 @@ const FilesType = () => {
         const updatedFilesTypes = filesType?.map(filesTypes =>
           filesTypes.id === updatedFilesType.id ? response.data : filesTypes
         );
-
+ 
         setFilesType(updatedFilesTypes);
         setModalVisible(false);
         setFileTypeToToggle(null);

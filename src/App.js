@@ -79,7 +79,7 @@ const protectedRoutes = [
   { path: "/userOcr", element: <UsersOCR />, allowedRoles: [USER] }, 
   { path: "/adminOCRResponce", element: <AdminsOCRResponce />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] }, 
   { path: "/scan", element: <Scanner />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] },
-  { path: "/idcard", element: <IDCardGenerator />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/idcard", element: <IDCardGenerator />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
   { path: "/create-fileType", element: <FilesType />, allowedRoles: [SYSTEM_ADMIN] },
    
 ];
