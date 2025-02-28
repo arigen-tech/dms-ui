@@ -543,141 +543,272 @@ function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Bar Chart */}
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-2">Monthly Document Stats {currentYear}</h3>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
+          {/* Bar Chart */}
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">📊 Monthly Document Stats {currentYear}</h3>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 30 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                  <XAxis
+                    dataKey="name"
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                    interval={0}
+                    tick={{
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      fill: '#4a5568'
+                    }}
+                    tickLine={{ stroke: '#4a5568' }}
+                    axisLine={{ stroke: '#4a5568', strokeWidth: 2 }}
+                  />
+                  <YAxis
+                    tick={{
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      fill: '#4a5568'
+                    }}
+                    tickLine={{ stroke: '#4a5568' }}
+                    axisLine={{ stroke: '#4a5568', strokeWidth: 2 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '2px solid #2d3748',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{
+                      paddingTop: '10px',
+                      fontWeight: 'bold'
+                    }}
+                    iconSize={12}
+                    iconType="circle"
+                  />
                   <Bar
                     dataKey="RejectedDocuments"
                     fill="#FF0000"
                     name="Rejected Documents"
+                    radius={[4, 4, 0, 0]}
+                    barSize={20}
                   />
                   <Bar
                     dataKey="ApprovedDocuments"
                     fill="#82ca9d"
                     name="Approved Documents"
+                    radius={[4, 4, 0, 0]}
+                    barSize={20}
                   />
                   <Bar
                     dataKey="PendingDocuments"
                     fill="#f0ad4e"
                     name="Pending Documents"
+                    radius={[4, 4, 0, 0]}
+                    barSize={20}
                   />
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          {/* Line Chart */}
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">📈 Page Document Stats {currentYear}</h3>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 30 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                  <XAxis
+                    dataKey="name"
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                    interval={0}
+                    tick={{
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      fill: '#4a5568'
+                    }}
+                    tickLine={{ stroke: '#4a5568' }}
+                    axisLine={{ stroke: '#4a5568', strokeWidth: 2 }}
+                  />
+                  <YAxis
+                    tick={{
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      fill: '#4a5568'
+                    }}
+                    tickLine={{ stroke: '#4a5568' }}
+                    axisLine={{ stroke: '#4a5568', strokeWidth: 2 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '2px solid #2d3748',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{
+                      paddingTop: '10px',
+                      fontWeight: 'bold'
+                    }}
+                    iconSize={12}
+                    iconType="circle"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="ApprovedDocuments"
+                    stroke="#82ca9d"
+                    strokeWidth={3}
+                    dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="RejectedDocuments"
+                    stroke="#FF0000"
+                    strokeWidth={3}
+                    dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="PendingDocuments"
+                    stroke="#f0ad4e"
+                    strokeWidth={3}
+                    dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
+          </div>
 
-            {/* Line Chart */}
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-2">Page Document Stats {currentYear}</h3>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="ApprovedDocuments"
-                      stroke="#82ca9d"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="RejectedDocuments"
-                      stroke="#FF0000"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="PendingDocuments"
-                      stroke="#f0ad4e"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              </div>
-
-              {/* Polar Chart */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">Polar Document Stats</h3>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer>
-                    <RadarChart outerRadius="80%" data={chartData}>
-                      <PolarGrid />
-                      <PolarAngleAxis dataKey="name" />
-                      <PolarRadiusAxis />
-                      {/* Radar components for each data set */}
-                      <Radar
-                        name="Approved Documents"
-                        dataKey="ApprovedDocuments"
-                        stroke="#82ca9d"
-                        fill="#82ca9d"
-                        fillOpacity={0.6}
-                      />
-                      <Radar
-                        name="Rejected Documents"
-                        dataKey="RejectedDocuments"
-                        stroke="#FF0000"
-                        fill="#FF0000"
-                        fillOpacity={0.6}
-                      />
-                      <Radar
-                        name="Pending Documents"
-                        dataKey="PendingDocuments"
-                        stroke="#f0ad4e"
-                        fill="#f0ad4e"
-                        fillOpacity={0.6}
-                      />
-                      {/* Tooltip to display data when mouse hovers */}
-                      <Tooltip />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
-                </div>
-
-                {/* Pie Chart */}
-                <div className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-2">Document Status Distribution</h3>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer>
-                      <PieChart>
-                        <Pie
-                          data={pieChartData} // Use the calculated totals here
-                          dataKey="value" // Value to use for Pie slices
-                          nameKey="name" // Name of each section (Approved, Rejected, Pending)
-                          cx="50%" // Centering the Pie chart
-                          cy="50%" // Centering the Pie chart
-                          outerRadius={80} // Outer radius of the Pie chart
-                          label // Adding labels inside Pie slices
-                        >
-                          {pieChartData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip /> {/* Tooltip to show data when hovered */}
-                        <Legend />{" "}
-                        {/* Legend to show which color corresponds to which name */}
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
+          {/* Polar Chart */}
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">🌀 Polar Document Stats {currentYear}</h3>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart outerRadius="70%" data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                  <PolarGrid stroke="#e0e0e0" />
+                  <PolarAngleAxis
+                    dataKey="name"
+                    tick={{
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      fill: '#4a5568'
+                    }}
+                  />
+                  <PolarRadiusAxis
+                    tick={{
+                      fontSize: 10,
+                      fontWeight: 'bold',
+                      fill: '#4a5568'
+                    }}
+                  />
+                  <Radar
+                    name="Approved Documents"
+                    dataKey="ApprovedDocuments"
+                    stroke="#82ca9d"
+                    fill="#82ca9d"
+                    fillOpacity={0.6}
+                    strokeWidth={2}
+                  />
+                  <Radar
+                    name="Rejected Documents"
+                    dataKey="RejectedDocuments"
+                    stroke="#FF0000"
+                    fill="#FF0000"
+                    fillOpacity={0.6}
+                    strokeWidth={2}
+                  />
+                  <Radar
+                    name="Pending Documents"
+                    dataKey="PendingDocuments"
+                    stroke="#f0ad4e"
+                    fill="#f0ad4e"
+                    fillOpacity={0.6}
+                    strokeWidth={2}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '2px solid #2d3748',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{
+                      paddingTop: '10px',
+                      fontWeight: 'bold'
+                    }}
+                    iconSize={12}
+                    iconType="circle"
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
             </div>
-          </Layout>
-          );
+          </div>
+
+          {/* Pie Chart */}
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">🎯 Document Status Distribution {currentYear}</h3>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                  <Pie
+                    data={pieChartData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    innerRadius={40}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => [`${value} documents`, 'Count']}
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '2px solid #2d3748',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{
+                      paddingTop: '15px',
+                      fontWeight: 'bold'
+                    }}
+                    iconSize={12}
+                    iconType="circle"
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
 }
 
-          export default Dashboard;
+export default Dashboard;
