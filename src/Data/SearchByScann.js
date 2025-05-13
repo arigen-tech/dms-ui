@@ -10,7 +10,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { BsQrCode } from "react-icons/bs";
 import Popup from "../Components/Popup";
 import axios from "axios";
-import { QrReader } from "react-qr-reader";
+import QrReader from "react-qr-reader";
+
 
 const SearchByScan = () => {
   const navigate = useNavigate();
@@ -587,9 +588,8 @@ const SearchByScan = () => {
                                   onClick={() =>
                                     openFile(file.docName, file.version)
                                   }
-                                  className={`bg-indigo-500 text-white px-3 py-1 rounded shadow-md hover:bg-indigo-600 transition no-print ${
-                                    loading ? "opacity-50" : ""
-                                  }`}
+                                  className={`bg-indigo-500 text-white px-3 py-1 rounded shadow-md hover:bg-indigo-600 transition no-print ${loading ? "opacity-50" : ""
+                                    }`}
                                   disabled={loading}
                                   aria-label={`Open ${displayName}`}
                                 >
@@ -661,20 +661,23 @@ const SearchByScan = () => {
                 )}
 
                 {cameraActive && (
-                  <div className="mt-4">
+                  <div className="mt-4 flex flex-col items-center">
                     <QrReader
-                      onResult={(result, error) => {
-                        if (result) {
-                          setQrData(result.text);
-                          setCameraActive(false); // Turn off camera after successful scan
-                        }
-                        if (error) {
-                          setError(error?.message);
+                      delay={300}
+                      onError={(err) => {
+                        console.error("QR Scan Error:", err);
+                        setError(err?.message || "Unknown error");
+                      }}
+                      onScan={(data) => {
+                        if (data) {
+                          setQrData(data);
                         }
                       }}
-                      style={{ width: "100%" }}
-                      className="w-80 h-80"
+                      style={{ width: "300px" }}
+                      className="border border-gray-300 rounded"
+                      facingMode="environment"
                     />
+
                   </div>
                 )}
               </div>

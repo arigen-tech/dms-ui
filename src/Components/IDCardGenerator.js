@@ -14,6 +14,11 @@ import idBgImage1 from '../Assets/idbg1.jpg';
 import dummyDp from '../Assets/dummyDp.png';
 import Barcode from "react-barcode";
 import { toPng } from "html-to-image";
+import Popup from "../Components/Popup";
+
+
+
+
 
 const IDCardGenerator = () => {
     const [layout, setLayout] = useState("vertical");
@@ -28,107 +33,156 @@ const IDCardGenerator = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [userBranchId, setUserBranchId] = useState();
     const [userDepartmentId, setUserDepartmentId] = useState();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+    const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
+    const [popupMessage, setPopupMessage] = useState(null);
 
     const token = localStorage.getItem("tokenKey");
     const role = localStorage.getItem("role");
 
+
     useEffect(() => {
         fetchUserDetails();
-        if (SYSTEM_ADMIN === "ADMIN") {
-            fetchEmployees();
-        } else if (BRANCH_ADMIN === "BRANCH ADMIN") {
-            fetchBranchEmployees();
-        } else if (DEPARTMENT_ADMIN === "DEPARTMENT ADMIN") {
-            fetchDepartmentEmployees();
-        } else {
-            console.log("Invilide role to Access Generate I'D Cards");
-        }
     }, []);
-
-
-
-
+    
+    useEffect(() => {
+        if (!role) return;
+    
+        switch (role) {
+            case SYSTEM_ADMIN:
+                fetchEmployees();
+                break;
+            case BRANCH_ADMIN:
+                if (userBranchId) fetchBranchEmployees();
+                break;
+            case DEPARTMENT_ADMIN:
+                if (userDepartmentId) fetchDepartmentEmployees();
+                break;
+            default:
+                console.log("Invalid role to Access Generate ID Cards");
+        }
+    }, [role, userBranchId, userDepartmentId]); 
+    
     const fetchUserDetails = async () => {
         try {
             const userId = localStorage.getItem("userId");
-            const response = await axios.get(
-                `${API_HOST}/employee/findById/${userId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+    
             console.log("User details response:", response.data);
-
-            setUserBranchId(response.data?.branch.id);
-            setUserDepartmentId(response.data?.department.id);
+            setUserBranchId(response.data?.branch?.id);
+            setUserDepartmentId(response.data?.department?.id);
         } catch (error) {
             console.error("Error fetching user details:", error.response || error);
         }
     };
-
+    
     const fetchEmployees = async () => {
         try {
             const response = await axios.get(`${API_HOST}/employee/findAll`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
+    
             if (response.data.length > 0) {
                 setAllUsers(response.data);
             }
-
             console.log(response.data);
         } catch (error) {
             console.error("Error fetching employees:", error);
         }
     };
-
+    
     const fetchBranchEmployees = async () => {
+        if (!userBranchId) return;
         try {
-            const employeeResponse = await axios.get(
-                `${API_HOST}/employee/branch/${userBranchId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            if (employeeResponse.data.length > 0) {
-                setAllUsers(employeeResponse.data);
-            }
-        } catch (error) {
-            console.error("Error fetching employees:", error);
-        }
-    };
-
-    const fetchDepartmentEmployees = async () => {
-        try {
-            const response = await axios.get(
-                `${API_HOST}/employee/department/${userDepartmentId}`
-                ,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await axios.get(`${API_HOST}/employee/branch/${userBranchId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+    
             if (response.data.length > 0) {
                 setAllUsers(response.data);
             }
         } catch (error) {
-            console.error("Error fetching employees:", error);
+            console.error("Error fetching branch employees:", error);
+        }
+    };
+    
+    const fetchDepartmentEmployees = async () => {
+        if (!userDepartmentId) return;
+        try {
+            const response = await axios.get(`${API_HOST}/employee/department/${userDepartmentId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+    
+            if (response.data.length > 0) {
+                setAllUsers(response.data);
+            }
+        } catch (error) {
+            console.error("Error fetching department employees:", error);
+        }
+    };
+    
+
+
+
+    const handleProfilePicChange = (e, employeeId, employeeName) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setSelectedFile(file);
+        setSelectedEmployeeId(employeeId);
+        setSelectedEmployeeName(employeeName);
+
+        setIsModalOpen(true);
+    };
+
+    const handleConfirmUpload = async () => {
+        if (!selectedFile || !selectedEmployeeId) return;
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        try {
+            const response = await axios.post(
+                `${API_HOST}/employee/upload/${selectedEmployeeId}`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            if (response.status === 200) {
+                const newImageSrc = URL.createObjectURL(selectedFile);
+                setImageSrcs((prev) => ({
+                    ...prev,
+                    [selectedEmployeeId]: newImageSrc,
+                }));
+
+                setIsModalOpen(false);
+                setSelectedFile(null);
+                setSelectedEmployeeId(null);
+                setSelectedEmployeeName("");
+
+                showPopup("Profile picture updated successfully!", "success");
+            }
+        } catch (error) {
+            console.error("Error updating profile picture:", error);
+            showPopup(`Failed to Updating Profile picture.`, "error");
         }
     };
 
-
-
-    // useEffect(() => {
-    //     if (userData.length > 0) {
-    //         fetchImages();
-    //     }
-    // }, [userData]);
-
+    const handleCancelUpload = () => {
+        setIsModalOpen(false);
+        setSelectedFile(null);
+        setSelectedEmployeeId(null);
+        setSelectedEmployeeName("");
+    };
 
     const fetchImages = async () => {
         let images = {};
@@ -157,24 +211,9 @@ const IDCardGenerator = () => {
         setImageSrcs(images);
     };
 
-    // const handleDownload = async () => {
-    //     if (!layout) return;
-
-    //     for (let i = 0; i < userData.length; i++) {
-    //         const card = cardRefs.current[i];
-    //         if (!card) continue;
-
-    //         const canvas = await html2canvas(card);
-    //         const link = document.createElement("a");
-    //         link.href = canvas.toDataURL("image/png");
-    //         link.download = `ID_Card_${userData[i].employeeId}.png`;
-    //         link.click();
-    //     }
-    // };
-
     const handleDownload = () => {
         if (!cardRefs.current) return;
-    
+
         cardRefs.current.forEach((card, index) => {
             if (card) {
                 toPng(card)
@@ -206,6 +245,9 @@ const IDCardGenerator = () => {
         return date.toLocaleString('en-GB', options).replace(',', '');
     };
 
+    const showPopup = (message, type = "info") => {
+        setPopupMessage({ message, type });
+    };
 
     const filteredUsers = allUsers.filter(users => {
         const statusText = users.isActive ? 'active' : 'inactive';
@@ -286,6 +328,14 @@ const IDCardGenerator = () => {
                 <h1 className="text-xl mb-4 font-semibold">I'D Cards</h1>
                 <div className="bg-white p-3 rounded-lg shadow-sm">
 
+                    {popupMessage && (
+                        <Popup
+                            message={popupMessage.message}
+                            type={popupMessage.type}
+                            onClose={() => setPopupMessage(null)}
+                        />
+                    )}
+
                     <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
                         <div className="flex items-center bg-blue-500 rounded-lg">
                             <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">Show:</label>
@@ -326,6 +376,7 @@ const IDCardGenerator = () => {
                                     <th className="border p-2 text-left">Created On</th>
                                     <th className="border p-2 text-left">Updated On</th>
                                     <th className="border p-2 text-left">Status</th>
+                                    <th className="border p-2 text-left">Change Profile Pic</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -344,6 +395,13 @@ const IDCardGenerator = () => {
                                         <td className="border p-2">{formatDate(emp?.createdOn)}</td>
                                         <td className="border p-2">{formatDate(emp?.updatedOn)}</td>
                                         <td className="border p-2">{emp.active ? 'Active' : 'Inactive'}</td>
+                                        <td className="border p-2">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handleProfilePicChange(e, emp.id, emp.name)}
+                                            />
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -517,6 +575,31 @@ const IDCardGenerator = () => {
                     </div>
 
                 </>
+            )}
+
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg">
+                        <h2 className="text-lg font-semibold mb-4">Confirm Upload</h2>
+                        <p className="mb-4">
+                            Are you sure you want to upload a new profile picture for <strong>{selectedEmployeeName}</strong>?
+                        </p>
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={handleCancelUpload}
+                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmUpload}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </Layout>
     );

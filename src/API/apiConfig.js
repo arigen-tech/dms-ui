@@ -1,8 +1,8 @@
 
- export const API_HOST = 'https://103.133.215.182:8443/Dms';
+//  export const API_HOST = 'https://103.133.215.182:8443/Dms';
 
 
-//  export const API_HOST = 'http://localhost:8080';
+ export const API_HOST = 'http://localhost:8080';
 //  export const API_HOST = 'http://192.168.1.5:1111';
 
  export const API_OCR_HOST = 'https://103.133.215.182:1112/docs';
