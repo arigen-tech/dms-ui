@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useLocation } from 'react-router-dom';
 import {
@@ -12,6 +12,9 @@ import {
 } from "@heroicons/react/24/solid";
 import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 import { useNavigate } from "react-router-dom";
+import FilePreviewModal from "../Components/FilePreviewModal";
+import apiClient from "../API/apiClient";
+
 
 function RejectedDoc() {
   const navigate = useNavigate();
@@ -27,6 +30,12 @@ function RejectedDoc() {
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [printTrue, setPrintTrue] = useState(false);
   const [highlightedDocId, setHighlightedDocId] = useState(null);
+  const [blobUrl, setBlobUrl] = useState("");
+  const [contentType, setContentType] = useState("");
+  const [selectedDocFile, setSelectedDocFiles] = useState(null);
+  const [searchFileTerm, setSearchFileTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -122,7 +131,6 @@ function RejectedDoc() {
         return null;
       }
 
-      // Validate doc.id is not just a falsy value
       const documentId = doc.id.toString().trim();
       if (!documentId) {
         console.error("Document ID is empty or invalid", doc);
@@ -151,12 +159,10 @@ function RejectedDoc() {
         paths: Array.isArray(response.data) ? response.data : [],
       }));
 
-      return response.data; // Optional: return the data
+      return response.data;
     } catch (error) {
-      // More detailed error logging
       console.error("Error in fetchPaths:", error);
 
-      // More comprehensive error handling
       if (axios.isAxiosError(error)) {
         if (error.response) {
           console.error("Server responded with error:", {
@@ -168,49 +174,99 @@ function RejectedDoc() {
         }
       }
 
-      // Optional: more user-friendly error handling
       alert(
         `Failed to fetch document paths: ${error.message || "Unknown error"}`
       );
 
-      return null; // Explicitly return null on error
+      return null;
     }
   };
 
   const openFile = async (file) => {
-    const token = localStorage.getItem("tokenKey"); // Get the token from localStorage
-    const createdOnDate = new Date(file.createdOn); // Convert timestamp to Date object
-    const year = createdOnDate.getFullYear(); // Extract year
-    const month = String(createdOnDate.getMonth() + 1).padStart(2, "0"); // Extract month and pad with zero
-    const category = file.documentHeader.categoryMaster.name; // Get the category name
-    const fileName = file.docName; // The file name
+      const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+      const department = selectedDoc.employee.department.name.replace(
+        / /g,
+        "_"
+      );
+      const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+      const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
 
-    // Construct the URL based on the Spring Boot @GetMapping pattern
-    const fileUrl = `${API_HOST}/api/documents/${year}/${month}/${category}/${fileName}`;
+      const version = file.version;
+      const fileName = file.docName.replace(/ /g, "_");
+
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+        branch
+      )}/${encodeURIComponent(department)}/${encodeURIComponent(
+        year
+      )}/${encodeURIComponent(category)}/${encodeURIComponent(
+        version
+      )}/${encodeURIComponent(fileName)}`;
 
     try {
-      // Fetch the file using axios and pass the token in the headers
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob", // Fetch the file as a blob
+        responseType: "blob", 
       });
 
-      // Get the MIME type of the file from the response headers
-      const contentType = response.headers["content-type"];
+      let blob = new Blob([response.data], { type: response.headers["content-type"] });
+      let url = URL.createObjectURL(blob);
 
-      // Create a blob from the response
-      const blob = new Blob([response.data], { type: contentType });
-
-      // Generate a URL for the blob
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      // Open the blob in a new tab
-      window.open(blobUrl, "_blank");
+      setBlobUrl(url);
+      setContentType(response.headers["content-type"]);
+      setIsOpen(false);
+      setSearchFileTerm("");
+      setIsModalOpen(true);
     } catch (error) {
-      console.error("Error fetching file:", error);
-      alert("There was an error opening the file. Please try again.");
+      console.error("Error:", error);
+      alert("Failed to fetch or preview the file.");
     }
   };
+
+  const handleDownload = async (file) => {
+    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
+    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+    const version = file.version;
+    const fileName = file.docName.replace(/ /g, "_");
+
+    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+      branch
+    )}/${encodeURIComponent(department)}/${encodeURIComponent(
+      year
+    )}/${encodeURIComponent(category)}/${encodeURIComponent(
+      version
+    )}/${encodeURIComponent(fileName)}`;
+
+    const response = await apiClient.get(fileUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
+    });
+
+    const downloadBlob = new Blob([response.data], {
+      type: response.headers["content-type"],
+    });
+
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(downloadBlob);
+    link.download = file.docName; // download actual name with extension
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
+  const filteredDocFiles = useMemo(() => {
+    if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
+
+    return selectedDoc.paths.filter((file) => {
+      const name = file.docName.toLowerCase();
+      const version = String(file.version).toLowerCase();
+      const term = searchFileTerm.toLowerCase();
+      return name.includes(term) || version.includes(term);
+    });
+  }, [selectedDoc, searchFileTerm]);
+
 
   const fetchQRCode = async (documentId) => {
     try {
@@ -626,11 +682,22 @@ function RejectedDoc() {
 
                       {/* Attached Files */}
                       <div className="mt-6 text-center">
-                        <h2 className="text-lg font-semibold text-indigo-700">
-                          Attached Files
-                        </h2>
-                        {Array.isArray(selectedDoc.paths) &&
-                          selectedDoc.paths.length > 0 ? (
+                        <div className="mt-6 relative">
+                          <div className="flex justify-center">
+                            <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
+                          </div>
+                          <div className="absolute right-0 top-0">
+                            <input
+                              type="text"
+                              placeholder="Search Files..."
+                              value={searchFileTerm}
+                              onChange={(e) => setSearchFileTerm(e.target.value)}
+                              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+
+                        {selectedDoc && filteredDocFiles.length > 0 ? (
                           <>
                             <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
                               <h3 className="flex-1 text-left ml-2">File Name</h3>
@@ -641,12 +708,12 @@ function RejectedDoc() {
                             </div>
                             <ul
                               className={`space-y-4 ${printTrue === false &&
-                                selectedDoc.paths.length > 2
+                                filteredDocFiles.length > 2
                                 ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
                                 : ""
                                 }`}
                             >
-                              {selectedDoc.paths.map((file, index) => (
+                              {filteredDocFiles.map((file, index) => (
                                 <li
                                   key={index}
                                   className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
@@ -682,6 +749,15 @@ function RejectedDoc() {
               </div>
             )}
           </>
+          <FilePreviewModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onDownload={handleDownload}
+            fileType={contentType}
+            fileUrl={blobUrl}
+            fileName={selectedDocFile?.docName}
+            fileData={selectedDocFile}
+          />
           <div className="flex items-center mt-4">
             {/* Previous Button */}
             <button

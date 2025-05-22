@@ -1,9 +1,10 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import apiClient from "../API/apiClient";
 import { useLocation } from "react-router-dom";
 import Search from "./Search"; // Import the Search component
 import Popup from "../Components/Popup";
 import { useDropzone } from "react-dropzone";
+import FilePreviewModal from "../Components/FilePreviewModal";
 
 import {
   PencilIcon,
@@ -68,8 +69,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [viewFileTypeModel, setViewFileTypeModel] = useState(false);
   const [folderUpload, setFolderUpload] = useState(false);
   const [uploadController, setUploadController] = useState(null);
-
-
+  const [blobUrl, setBlobUrl] = useState("");
+  const [contentType, setContentType] = useState("");
+  const [selectedDocFile, setSelectedDocFiles] = useState(null);
+  const [searchFileTerm, setSearchFileTerm] = useState("");
   // Run this effect only when component mounts
   useEffect(() => {
     if (data) {
@@ -263,18 +266,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const openFile = async (file) => {
     try {
-      console.log("file: ", file); // Log the entire file object to inspect its structure
-
-      console.log("selectedDocs", selectedDoc);
-
       const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-      const department = selectedDoc.employee.department.name.replace(
-        / /g,
-        "_"
-      );
+      const department = selectedDoc.employee.department.name.replace(/ /g, "_");
       const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
       const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
-
       const version = file.version;
       const fileName = file.docName.replace(/ /g, "_");
 
@@ -286,42 +281,70 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         version
       )}/${encodeURIComponent(fileName)}`;
 
-
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
-      const contentType = response.headers["content-type"];
-      const blob = new Blob([response.data], { type: contentType });
-      const blobUrl = window.URL.createObjectURL(blob);
+      let blob = new Blob([response.data], { type: response.headers["content-type"] });
+      let url = URL.createObjectURL(blob);
 
-      // Open the file in a new tab
-      window.open(blobUrl, "_blank");
-
-      // Revoke the blob URL after use
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      setBlobUrl(url);
+      setContentType(response.headers["content-type"]);
+      setIsOpen(false);
+      setSearchFileTerm("");
+      setIsModalOpen(true);
     } catch (error) {
       console.error("Error:", error);
-
-      if (error.response) {
-        console.error("Error response:", error.response);
-        showPopup(`Error ${error.response.status}: Unable to fetch the file.`);
-      } else if (error.request) {
-        console.error("Error request:", error.request);
-        showPopup("No response from server. Please check your connection.");
-      } else if (
-        error.message === "Invalid file structure or missing required fields."
-      ) {
-        showPopup(
-          "Invalid file data. Please ensure all required fields are present."
-        );
-      } else {
-        console.error("Error message:", error.message);
-        showPopup("An unexpected error occurred.");
-      }
+      alert("Failed to fetch or preview the file.");
     }
   };
+
+  const handleDownload = async (file) => {
+    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
+    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+    const version = file.version;
+    const fileName = file.docName.replace(/ /g, "_");
+
+    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+      branch
+    )}/${encodeURIComponent(department)}/${encodeURIComponent(
+      year
+    )}/${encodeURIComponent(category)}/${encodeURIComponent(
+      version
+    )}/${encodeURIComponent(fileName)}`;
+
+    const response = await apiClient.get(fileUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
+    });
+
+    const downloadBlob = new Blob([response.data], {
+      type: response.headers["content-type"],
+    });
+
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(downloadBlob);
+    link.download = file.docName; // download actual name with extension
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
+ const filteredDocFiles = useMemo(() => {
+  if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
+  
+  return selectedDoc.paths.filter((file) => {
+    const name = file.docName.toLowerCase();
+    const version = String(file.version).toLowerCase();
+    const term = searchFileTerm.toLowerCase();
+    return name.includes(term) || version.includes(term);
+  });
+}, [selectedDoc, searchFileTerm]);
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -935,11 +958,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   //   setCurrentPage(1); // Reset to first page when new search results come in
   // };
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedDocuments = documents.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+
+
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
@@ -952,6 +972,17 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     );
   };
 
+  const filteredDocuments = documents.filter((doc) =>
+    doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.fileNo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
+  const paginatedDocuments = filteredDocuments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const filteredFiles = filesType.filter((file) =>
     file.filetype.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1199,6 +1230,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             );
           })}
 
+          <FilePreviewModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onDownload={handleDownload}
+            fileType={contentType}
+            fileUrl={blobUrl}
+            fileName={selectedDocFile?.docName}
+            fileData={selectedDocFile}
+          />
+
           <div className="flex justify-between items-center">
             {uploadedFilePath != 0 && (
               <div
@@ -1247,8 +1288,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               className="border rounded-r-lg p-1.5 outline-none"
               value={itemsPerPage}
               onChange={(e) => {
-                setItemsPerPage(Number(e.target.value)); // Update items per page
-                setCurrentPage(1); // Reset to the first page
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
               }}
             >
               {[5, 10, 15, 20].map((num) => (
@@ -1258,16 +1299,17 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               ))}
             </select>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center mb-4">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search by title, subject, or file no..."
               className="border rounded-l-md p-1 outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
+
         </div>
 
         <div className="overflow-x-auto bg-white">
@@ -1469,27 +1511,35 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
                       {/* Attached Files */}
                       <div className="mt-6 text-center">
-                        <h2 className="text-lg font-semibold text-indigo-700">
-                          Attached Files
-                        </h2>
-                        {Array.isArray(selectedDoc.paths) &&
-                          selectedDoc.paths.length > 0 ? (
+                        <div className="mt-6 relative">
+                          <div className="flex justify-center">
+                            <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
+                          </div>
+                          <div className="absolute right-0 top-0">
+                            <input
+                              type="text"
+                              placeholder="Search Files..."
+                              value={searchFileTerm}
+                              onChange={(e) => setSearchFileTerm(e.target.value)}
+                              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+
+                        {selectedDoc && filteredDocFiles.length > 0 ? (
                           <>
                             <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
                               <h3 className="flex-1 text-left ml-2">File Name</h3>
                               <h3 className="flex-1 text-center">Version</h3>
-                              <h3 className="text-right mr-10 no-print">
-                                Actions
-                              </h3>
+                              <h3 className="text-right mr-10 no-print">Actions</h3>
                             </div>
                             <ul
-                              className={`space-y-4 ${printTrue === false &&
-                                selectedDoc.paths.length > 2
-                                ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
-                                : ""
+                              className={`space-y-4 ${printTrue === false && filteredDocFiles.length > 2
+                                  ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
+                                  : ""
                                 }`}
                             >
-                              {selectedDoc.paths.map((file, index) => (
+                              {filteredDocFiles.map((file, index) => (
                                 <li
                                   key={index}
                                   className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
@@ -1503,7 +1553,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                                   </div>
                                   <div className="text-right">
                                     <button
-                                      onClick={() => openFile(file)}
+                                      onClick={() => {
+                                        setSelectedDocFiles(file);
+                                        openFile(file);
+                                      }}
                                       className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
                                     >
                                       Open

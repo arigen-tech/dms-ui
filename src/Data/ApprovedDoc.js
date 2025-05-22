@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useLocation } from 'react-router-dom';
 import {
@@ -13,6 +13,8 @@ import {
   PrinterIcon,
 } from "@heroicons/react/24/solid";
 import { API_HOST, DOCUMENTHEADER_API, UPLOADFILE_API } from "../API/apiConfig";
+import apiClient from "../API/apiClient";
+import FilePreviewModal from "../Components/FilePreviewModal";
 
 const ApprovedDoc = () => {
   const [formData, setFormData] = useState({
@@ -34,7 +36,11 @@ const ApprovedDoc = () => {
   const [printTrue, setPrintTrue] = useState(false);
 
   const [highlightedDocId, setHighlightedDocId] = useState(null);
-
+  const [blobUrl, setBlobUrl] = useState("");
+  const [contentType, setContentType] = useState("");
+  const [selectedDocFile, setSelectedDocFiles] = useState(null);
+  const [searchFileTerm, setSearchFileTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
@@ -224,16 +230,66 @@ const ApprovedDoc = () => {
         responseType: "blob",
       });
 
-      const blob = new Blob([response.data], {
-        type: response.headers["content-type"],
-      });
-      const blobUrl = window.URL.createObjectURL(blob);
+      let blob = new Blob([response.data], { type: response.headers["content-type"] });
+      let url = URL.createObjectURL(blob);
 
-      window.open(blobUrl, "_blank");
+      setBlobUrl(url);
+      setContentType(response.headers["content-type"]);
+      setIsOpen(false);
+      setSearchFileTerm("");
+      setIsModalOpen(true);
     } catch (error) {
-      console.error("Error fetching file:", error.message);
+      console.error("Error:", error);
+      alert("Failed to fetch or preview the file.");
     }
   };
+
+  const handleDownload = async (file) => {
+    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
+    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+    const version = file.version;
+    const fileName = file.docName.replace(/ /g, "_");
+
+    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+      branch
+    )}/${encodeURIComponent(department)}/${encodeURIComponent(
+      year
+    )}/${encodeURIComponent(category)}/${encodeURIComponent(
+      version
+    )}/${encodeURIComponent(fileName)}`;
+
+    const response = await apiClient.get(fileUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
+    });
+
+    const downloadBlob = new Blob([response.data], {
+      type: response.headers["content-type"],
+    });
+
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(downloadBlob);
+    link.download = file.docName; // download actual name with extension
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
+  const filteredDocFiles = useMemo(() => {
+    if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
+
+    return selectedDoc.paths.filter((file) => {
+      const name = file.docName.toLowerCase();
+      const version = String(file.version).toLowerCase();
+      const term = searchFileTerm.toLowerCase();
+      return name.includes(term) || version.includes(term);
+    });
+  }, [selectedDoc, searchFileTerm]);
+
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -322,7 +378,7 @@ const ApprovedDoc = () => {
       setError(""); // Clear any previous errors
     } catch (error) {
       setQrCodeUrl(null);
-      setError("Error displaying QR Code: " + error.message);
+      // setError("Error displaying QR Code: " + error.message);
     }
   };
 
@@ -548,8 +604,18 @@ const ApprovedDoc = () => {
               )}
             </tbody>
           </table>
+          <FilePreviewModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onDownload={handleDownload}
+            fileType={contentType}
+            fileUrl={blobUrl}
+            fileName={selectedDocFile?.docName}
+            fileData={selectedDocFile}
+          />
           <>
             {isOpen && selectedDoc && (
+
               <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
                 <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6 my-8 mx-4">
                   <div className="max-h-[80vh] overflow-y-auto">
@@ -652,11 +718,21 @@ const ApprovedDoc = () => {
 
                       {/* Attached Files */}
                       <div className="mt-6 text-center">
-                        <h2 className="text-lg font-semibold text-indigo-700">
-                          Attached Files
-                        </h2>
-                        {Array.isArray(selectedDoc.paths) &&
-                          selectedDoc.paths.length > 0 ? (
+                        <div className="mt-6 relative">
+                          <div className="flex justify-center">
+                            <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
+                          </div>
+                          <div className="absolute right-0 top-0">
+                            <input
+                              type="text"
+                              placeholder="Search Files..."
+                              value={searchFileTerm}
+                              onChange={(e) => setSearchFileTerm(e.target.value)}
+                              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                        {selectedDoc && filteredDocFiles.length > 0 ? (
                           <>
                             <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
                               <h3 className="flex-1 text-left ml-2">File Name</h3>
@@ -667,12 +743,12 @@ const ApprovedDoc = () => {
                             </div>
                             <ul
                               className={`space-y-4 ${printTrue === false &&
-                                selectedDoc.paths.length > 2
+                                filteredDocFiles.length > 2
                                 ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
                                 : ""
                                 }`}
                             >
-                              {selectedDoc.paths.map((file, index) => (
+                              {filteredDocFiles.map((file, index) => (
                                 <li
                                   key={index}
                                   className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"

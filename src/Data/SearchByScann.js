@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import apiClient from "../API/apiClient";
 import {
   API_HOST,
@@ -11,6 +11,8 @@ import { BsQrCode } from "react-icons/bs";
 import Popup from "../Components/Popup";
 import axios from "axios";
 import QrReader from "react-qr-reader";
+import FilePreviewModal from "../Components/FilePreviewModal";
+
 
 
 const SearchByScan = () => {
@@ -37,6 +39,12 @@ const SearchByScan = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
   const sanitizeString = (str) => str?.replace(/ /g, "_") || "";
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [blobUrl, setBlobUrl] = useState("");
+  const [contentType, setContentType] = useState("");
+  const [selectedDocFile, setSelectedDocFiles] = useState(null);
+  const [searchFileTerm, setSearchFileTerm] = useState("");
 
   const unauthorizedMessage = "You are not authorized to scan this QR code.";
   const invalidQrMessage = "Invalid QR Code.";
@@ -365,24 +373,68 @@ const SearchByScan = () => {
         responseType: "blob",
       });
 
-      const contentType = response.headers["content-type"];
-      const blob = new Blob([response.data], { type: contentType });
-      const blobUrl = window.URL.createObjectURL(blob);
+      let blob = new Blob([response.data], { type: response.headers["content-type"] });
+      let url = URL.createObjectURL(blob);
 
-      window.open(blobUrl, "_blank");
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      setBlobUrl(url);
+      setContentType(response.headers["content-type"]);
+      setIsOpen(false);
+      setSearchFileTerm("");
+      setIsModalOpen(true);
     } catch (error) {
       console.error("Error:", error);
-
-      if (error.response) {
-        showPopup(`Error ${error.response.status}: Unable to fetch the file.`);
-      } else if (error.request) {
-        showPopup("No response from server. Please check your connection.");
-      } else {
-        showPopup("An unexpected error occurred.");
-      }
+      alert("Failed to fetch or preview the file.");
     }
   };
+
+  const handleDownload = async (file) => {
+    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
+    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+    const version = file.version;
+    const fileName = file.docName.replace(/ /g, "_");
+
+    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+      branch
+    )}/${encodeURIComponent(department)}/${encodeURIComponent(
+      year
+    )}/${encodeURIComponent(category)}/${encodeURIComponent(
+      version
+    )}/${encodeURIComponent(fileName)}`;
+
+    const response = await apiClient.get(fileUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
+    });
+
+    const downloadBlob = new Blob([response.data], {
+      type: response.headers["content-type"],
+    });
+
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(downloadBlob);
+    link.download = file.docName; // download actual name with extension
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
+  const filteredDocFiles = useMemo(() => {
+  const files = headerData?.documentDetails || [];
+
+  if (!Array.isArray(files)) return [];
+
+  return files.filter((file) => {
+    const name = file.docName?.toLowerCase() || "";
+    const version = String(file.version).toLowerCase();
+    const term = searchFileTerm.toLowerCase();
+    return name.includes(term) || version.includes(term);
+  });
+}, [selectedDoc, headerData, searchFileTerm]);
+
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -543,11 +595,32 @@ const SearchByScan = () => {
                 </label>
               </div>
 
+              <FilePreviewModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onDownload={handleDownload}
+                fileType={contentType}
+                fileUrl={blobUrl}
+                fileName={selectedDocFile?.docName}
+                fileData={selectedDocFile}
+              />
+
               <div className="mt-6 text-center">
-                <h2 className="text-lg font-semibold text-indigo-700">
-                  Attached Files
-                </h2>
-                {headerData?.documentDetails?.length > 0 ? (
+                <div className="mt-6 relative">
+                  <div className="flex justify-center">
+                    <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
+                  </div>
+                  <div className="absolute right-0 top-0">
+                    <input
+                      type="text"
+                      placeholder="Search Files..."
+                      value={searchFileTerm}
+                      onChange={(e) => setSearchFileTerm(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+                {filteredDocFiles?.length > 0 ? (
                   <div className="overflow-x-auto mt-4">
                     <table className="table-auto w-full border-collapse border border-gray-300">
                       <thead>
@@ -567,7 +640,7 @@ const SearchByScan = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {headerData.documentDetails.map((file, index) => {
+                        {filteredDocFiles.map((file, index) => {
                           const displayName = file.docName.includes("_")
                             ? file.docName.split("_").slice(1).join("_")
                             : file.docName;
@@ -585,9 +658,11 @@ const SearchByScan = () => {
                               </td>
                               <td className="border border-gray-300 px-4 py-2">
                                 <button
-                                  onClick={() =>
+                                 
+                                  onClick={() => {
+                                    setSelectedDocFiles(file);
                                     openFile(file.docName, file.version)
-                                  }
+                                  }}
                                   className={`bg-indigo-500 text-white px-3 py-1 rounded shadow-md hover:bg-indigo-600 transition no-print ${loading ? "opacity-50" : ""
                                     }`}
                                   disabled={loading}

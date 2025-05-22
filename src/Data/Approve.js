@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useLocation } from 'react-router-dom';
 import {
@@ -11,6 +11,9 @@ import {
   EyeIcon,
 } from "@heroicons/react/24/solid";
 import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
+import FilePreviewModal from "../Components/FilePreviewModal";
+import apiClient from "../API/apiClient";
+
 
 const Approve = () => {
   const location = useLocation();
@@ -37,7 +40,10 @@ const Approve = () => {
   const [success, setSuccess] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [highlightedDocId, setHighlightedDocId] = useState(null);
-
+  const [blobUrl, setBlobUrl] = useState("");
+  const [contentType, setContentType] = useState("");
+  const [selectedDocFile, setSelectedDocFiles] = useState(null);
+  const [searchFileTerm, setSearchFileTerm] = useState("");
   const tokenKey = localStorage.getItem("tokenKey");
 
   const [userBranch, setUserBranch] = useState(null);
@@ -210,17 +216,64 @@ const Approve = () => {
         responseType: "blob",
       });
 
-      const blob = new Blob([response.data], {
-        type: response.headers["content-type"],
-      });
-      const blobUrl = window.URL.createObjectURL(blob);
+      let blob = new Blob([response.data], { type: response.headers["content-type"] });
+      let url = URL.createObjectURL(blob);
 
-      window.open(blobUrl, "_blank");
+      setBlobUrl(url);
+      setContentType(response.headers["content-type"]);
+      setIsOpen(false);
+      setSearchFileTerm("");
+      setIsModalOpen(true);
     } catch (error) {
-      console.error("Error fetching file:", error.message);
+      console.error("Error:", error);
+      alert("Failed to fetch or preview the file.");
     }
   };
 
+  const handleDownload = async (file) => {
+    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
+    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+    const version = file.version;
+    const fileName = file.docName.replace(/ /g, "_");
+
+    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+      branch
+    )}/${encodeURIComponent(department)}/${encodeURIComponent(
+      year
+    )}/${encodeURIComponent(category)}/${encodeURIComponent(
+      version
+    )}/${encodeURIComponent(fileName)}`;
+
+    const response = await apiClient.get(fileUrl, {
+      headers: { Authorization: `Bearer ${tokenKey}` },
+      responseType: "blob",
+    });
+
+    const downloadBlob = new Blob([response.data], {
+      type: response.headers["content-type"],
+    });
+
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(downloadBlob);
+    link.download = file.docName; // download actual name with extension
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
+  const filteredDocFiles = useMemo(() => {
+    if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
+
+    return selectedDoc.paths.filter((file) => {
+      const name = file.docName.toLowerCase();
+      const version = String(file.version).toLowerCase();
+      const term = searchFileTerm.toLowerCase();
+      return name.includes(term) || version.includes(term);
+    });
+  }, [selectedDoc, searchFileTerm]);
 
 
   const handleStatusChange = (doc, status) => {
@@ -376,7 +429,7 @@ const Approve = () => {
       setError(""); // Clear any previous errors
     } catch (error) {
       setQrCodeUrl(null);
-      setError("Error displaying QR Code: " + error.message);
+      // setError("Error displaying QR Code: " + error.message);
     }
   };
 
@@ -397,29 +450,20 @@ const Approve = () => {
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
-  const filteredDocuments = documents.filter((doc) =>
-    Object.entries(doc).some(([key, value]) => {
-      if (key === "categoryMaster" && value?.name) {
-        return value.name.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (key === "employee" && value) {
-        return (
-          value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          value.department?.name
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      return (
-        value &&
-        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    })
-  );
 
+
+  const filteredDocuments = documents.filter((doc) =>
+    doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.fileNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.categoryMaster.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.employee.department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.employee.branch.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   const totalItems = filteredDocuments.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -671,11 +715,21 @@ const Approve = () => {
 
                       {/* Attached Files */}
                       <div className="mt-6 text-center">
-                        <h2 className="text-lg font-semibold text-indigo-700">
-                          Attached Files
-                        </h2>
-                        {Array.isArray(selectedDoc.paths) &&
-                          selectedDoc.paths.length > 0 ? (
+                        <div className="mt-6 relative">
+                          <div className="flex justify-center">
+                            <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
+                          </div>
+                          <div className="absolute right-0 top-0">
+                            <input
+                              type="text"
+                              placeholder="Search Files..."
+                              value={searchFileTerm}
+                              onChange={(e) => setSearchFileTerm(e.target.value)}
+                              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                        {selectedDoc && filteredDocFiles.length > 0 ? (
                           <>
                             <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
                               <h3 className="flex-1 text-left ml-2">File Name</h3>
@@ -686,12 +740,12 @@ const Approve = () => {
                             </div>
                             <ul
                               className={`space-y-4 ${printTrue === false &&
-                                selectedDoc.paths.length > 2
+                                filteredDocFiles.length > 2
                                 ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
                                 : ""
                                 }`}
                             >
-                              {selectedDoc.paths.map((file, index) => (
+                              {filteredDocFiles.map((file, index) => (
                                 <li
                                   key={index}
                                   className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
@@ -705,7 +759,10 @@ const Approve = () => {
                                   </div>
                                   <div className="text-right">
                                     <button
-                                      onClick={() => openFile(file)}
+                                     onClick={() => {
+                                        setSelectedDocFiles(file);
+                                        openFile(file);
+                                      }}
                                       className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
                                     >
                                       Open
@@ -728,7 +785,15 @@ const Approve = () => {
             )}
           </>
         </div>
-
+        <FilePreviewModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onDownload={handleDownload}
+          fileType={contentType}
+          fileUrl={blobUrl}
+          fileName={selectedDocFile?.docName}
+          fileData={selectedDocFile}
+        />
         <div className="flex items-center mt-4">
           {/* Previous Button */}
           <button
