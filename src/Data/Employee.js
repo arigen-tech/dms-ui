@@ -847,8 +847,8 @@ const UserAddEmployee = () => {
 
                       <td className="border p-2">
                         <button
-                          onClick={() => handleEditEmployee(employee.id)}
-                          className="text-blue-600"
+                          onClick={() => handleEditEmployee(employee.id)} disabled={employee.active === false}
+                          className={`${employee.active === false ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                         </button>

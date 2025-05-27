@@ -480,8 +480,8 @@ const Role = () => {
                     {role.isActive === true ? "Active" : "Inactive"}
                   </td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditRole(role.id)} disabled={role.isActive === 0}
-                      className={`${role.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <button onClick={() => handleEditRole(role.id)} disabled={role.isActive === false}
+                      className={`${role.isActive === false ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>
