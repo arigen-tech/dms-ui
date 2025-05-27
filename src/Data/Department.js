@@ -441,7 +441,8 @@ const Department = () => {
                   <td className="border px-4 py-2">{formatDate(department.updatedOn)}</td>
                   <td className="border p-2">{department.isActive === 1 ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditDepartment(department.id)}>
+                    <button onClick={() => handleEditDepartment(department.id)} disabled={department.isActive === 0}
+                      className={`${department.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>

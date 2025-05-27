@@ -334,16 +334,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     URL.revokeObjectURL(link.href);
   };
 
- const filteredDocFiles = useMemo(() => {
-  if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
-  
-  return selectedDoc.paths.filter((file) => {
-    const name = file.docName.toLowerCase();
-    const version = String(file.version).toLowerCase();
-    const term = searchFileTerm.toLowerCase();
-    return name.includes(term) || version.includes(term);
-  });
-}, [selectedDoc, searchFileTerm]);
+  const filteredDocFiles = useMemo(() => {
+    if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
+
+    return selectedDoc.paths.filter((file) => {
+      const name = file.docName.toLowerCase();
+      const version = String(file.version).toLowerCase();
+      const term = searchFileTerm.toLowerCase();
+      return name.includes(term) || version.includes(term);
+    });
+  }, [selectedDoc, searchFileTerm]);
 
 
   const formatDate = (dateString) => {
@@ -1348,7 +1348,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   <td className="border p-2">{doc.approvalStatus}</td>
                   <td className="border p-2">{formatDate(doc.createdOn)}</td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditDocument(doc)}>
+                    <button onClick={() => handleEditDocument(doc)} disabled={doc.isActive === 0}
+                      className={`${doc.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1 sm:text-blue-50" />
                     </button>
                   </td>
@@ -1535,8 +1536,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                             </div>
                             <ul
                               className={`space-y-4 ${printTrue === false && filteredDocFiles.length > 2
-                                  ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
-                                  : ""
+                                ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
+                                : ""
                                 }`}
                             >
                               {filteredDocFiles.map((file, index) => (

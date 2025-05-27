@@ -415,7 +415,8 @@ const Branch = () => {
                   <td className="border p-2">{formatDate(branch.updatedOn)}</td>
                   <td className="border p-2">{branch.isActive ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2 text-center">
-                    <button onClick={() => handleEditBranch(branch.id)}>
+                    <button onClick={() => handleEditBranch(branch.id)} disabled={branch.isActive === 0}
+                      className={`${branch.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>

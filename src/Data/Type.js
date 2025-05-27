@@ -33,10 +33,10 @@ const Type = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-  
+
     // Allow only letters and spaces
     const regex = /^[A-Za-z\s]*$/;
-  
+
     if (regex.test(value) || value === "") {
       setFormData((prevData) => ({
         ...prevData,
@@ -58,7 +58,7 @@ const Type = () => {
         alert('Type added successfully!');
       } catch (error) {
         console.error('Error adding type:', error.response ? error.response.data : error.message);
-        alert('Failed to adding the type. Please try again.'); 
+        alert('Failed to adding the type. Please try again.');
       }
     }
   };
@@ -90,7 +90,7 @@ const Type = () => {
         alert('Type updated successfully!');
       } catch (error) {
         console.error('Error updating type:', error.response ? error.response.data : error.message);
-        alert('Failed to updating the type. Please try again.'); 
+        alert('Failed to updating the type. Please try again.');
       }
     }
   };
@@ -136,7 +136,7 @@ const Type = () => {
       console.error('No type selected for status toggle');
     }
   };
-  
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {
@@ -247,7 +247,8 @@ const Type = () => {
                   <td className="border px-4 py-2">{formatDate(type.updatedOn)}</td>
                   <td className="border p-2">{type.isActive === 1 ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditType(index)}>
+                    <button onClick={() => handleEditType(index)} disabled={type.isActive === 0}
+                      className={`${type.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>

@@ -186,7 +186,7 @@ const FilesType = () => {
         const updatedFilesTypes = filesType?.map(filesTypes =>
           filesTypes.id === updatedFilesType.id ? response.data : filesTypes
         );
- 
+
         setFilesType(updatedFilesTypes);
         setModalVisible(false);
         setFileTypeToToggle(null);
@@ -393,7 +393,8 @@ const FilesType = () => {
                   <td className="border p-2">{formatDate(fileType.updatedOn)}</td>
                   <td className="border p-2">{fileType.isActive ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2 text-center">
-                    <button onClick={() => handleEditFileType(fileType.id)}>
+                    <button onClick={() => handleEditFileType(fileType.id)} disabled={fileType.isActive === 0}
+                      className={`${fileType.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>

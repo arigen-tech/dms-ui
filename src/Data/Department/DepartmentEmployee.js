@@ -643,7 +643,8 @@ const DepartmentEmployee = () => {
                                 <td className="border p-2">
                                     <button
                                         onClick={() => handleEditEmployee(employee.id)}
-                                        className="text-blue-600"
+                                        disabled={employee.isActive === 0}
+                                        className={`${employee.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                                     </button>

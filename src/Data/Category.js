@@ -402,7 +402,8 @@ const Category = () => {
                   <td className="border p-2">{formatDate(category.updatedOn)}</td>
                   <td className="border p-2">{category.active === true ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditCategory(category.id)}>
+                    <button onClick={() => handleEditCategory(category.id)} disabled={category.isActive === 0}
+                      className={`${category.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>

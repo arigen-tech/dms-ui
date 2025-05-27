@@ -291,7 +291,8 @@ const Year = () => {
                   <td className="border px-4 py-2">{formatDate(year.updatedOn)}</td>
                   <td className="border p-2">{year.isActive === 1 ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditYear(index)}>
+                    <button onClick={() => handleEditYear(index)} disabled={year.isActive === 0}
+                      className={`${year.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>
