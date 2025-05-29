@@ -13,13 +13,15 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  const ogFileName = fileName.substring(fileName.indexOf('_') + 1);
+
   useEffect(() => {
     if (!isOpen || !fileType || !fileUrl) return;
 
     const loadPreview = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         // Categorize file type
         const isImage = fileType.startsWith("image/");
@@ -33,7 +35,7 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
         const isArchive = ["application/zip", "application/x-rar-compressed", "application/x-7z-compressed"].includes(fileType);
         const isExecutable = ["application/x-msdownload", "application/x-msi", "application/vnd.android.package-archive"].includes(fileType);
         const isBinaryDocument = ["application/msword"].includes(fileType); // Old .doc format
-        
+
         // Handle image files
         if (isImage) {
           if (fileType === "image/tiff" || fileType === "image/tif") {
@@ -117,12 +119,12 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
   const handleTiff = async () => {
     const res = await fetch(fileUrl);
     const buffer = await res.arrayBuffer();
-    
+
     try {
       const images = decode(new Uint8Array(buffer));
       if (images && images.length > 0) {
         setTotalPages(images.length);
-        const imageData = images[currentPage]; 
+        const imageData = images[currentPage];
         const canvas = document.createElement("canvas");
         canvas.width = imageData.width;
         canvas.height = imageData.height;
@@ -145,17 +147,17 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
     try {
       const res = await fetch(fileUrl);
       const text = await res.text();
-      
+
       // Simple SVG sanitization - more comprehensive sanitization recommended for production
       if (!text.includes("<svg")) {
         throw new Error("Invalid SVG file");
       }
-      
+
       // Create a data URL from the sanitized SVG
       const sanitized = text.replace(/script/gi, "removed"); // Very basic sanitization
       const encoded = encodeURIComponent(sanitized);
       const dataUrl = `data:image/svg+xml;charset=utf-8,${encoded}`;
-      
+
       setPreviewContent(dataUrl);
       setTypeToPreview("image/svg+xml");
     } catch (err) {
@@ -166,25 +168,25 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
   const handleExcel = async () => {
     const res = await fetch(fileUrl);
     const arrayBuffer = await res.arrayBuffer();
-    
+
     try {
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      
+
       if (workbook.SheetNames.length === 0) {
         throw new Error("No sheets found in Excel file");
       }
-      
+
       // Get all sheet names for the sheet selector
       const sheets = workbook.SheetNames;
       setTotalPages(sheets.length);
-      
+
       // Convert current sheet to HTML
       const currentSheet = sheets[currentPage];
-      const html = XLSX.utils.sheet_to_html(workbook.Sheets[currentSheet], { 
+      const html = XLSX.utils.sheet_to_html(workbook.Sheets[currentSheet], {
         id: "excel-preview-table",
         editable: false
       });
-      
+
       setPreviewContent(html);
       setTypeToPreview("excel/html");
     } catch (err) {
@@ -220,21 +222,21 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
     try {
       const res = await fetch(fileUrl);
       const text = await res.text();
-      
+
       const result = Papa.parse(text, {
         header: true,
         skipEmptyLines: true,
         dynamicTyping: true,
         delimitersToGuess: [',', '\t', '|', ';']
       });
-      
+
       if (result.errors && result.errors.length > 0) {
         console.warn("CSV parsing warnings:", result.errors);
       }
-      
+
       // Convert to HTML table
       let html = '<table class="w-full border-collapse">';
-      
+
       // Headers
       if (result.meta && result.meta.fields && result.meta.fields.length > 0) {
         html += '<thead><tr>';
@@ -243,7 +245,7 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
         });
         html += '</tr></thead>';
       }
-      
+
       // Data rows (limit to first 100 rows for performance)
       html += '<tbody>';
       const displayData = result.data.slice(0, 100);
@@ -255,12 +257,12 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
         html += '</tr>';
       });
       html += '</tbody></table>';
-      
+
       // Add note if data was truncated
       if (result.data.length > 100) {
         html += `<div class="text-sm text-gray-500 mt-2">Showing first 100 rows of ${result.data.length} total rows.</div>`;
       }
-      
+
       setPreviewContent(html);
       setTypeToPreview("csv/html");
     } catch (err) {
@@ -272,7 +274,7 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
     try {
       const res = await fetch(fileUrl);
       const text = await res.text();
-      
+
       // Format JSON and XML nicely
       if (fileType === "application/json") {
         try {
@@ -295,7 +297,7 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
         setTypeToPreview("xml/html");
         return;
       }
-      
+
       // Default text handling
       setPreviewContent(`<pre class="whitespace-pre-wrap font-mono text-sm">${text}</pre>`);
       setTypeToPreview("text/html");
@@ -333,12 +335,12 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
           setIsLoading(false);
         }
       };
-      
+
       reloadPage();
     }
-  }, [currentPage]); 
+  }, [currentPage]);
 
-  
+
   const handleDownloadClick = () => {
     if (fileData) {
       // If fileData is provided, pass it to the onDownload function
@@ -405,9 +407,8 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
               <button
                 onClick={prevPage}
                 disabled={currentPage === 0}
-                className={`px-3 py-1 rounded ${
-                  currentPage === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
+                className={`px-3 py-1 rounded ${currentPage === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
               >
                 Previous
               </button>
@@ -417,9 +418,8 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
               <button
                 onClick={nextPage}
                 disabled={currentPage === totalPages - 1}
-                className={`px-3 py-1 rounded ${
-                  currentPage === totalPages - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
+                className={`px-3 py-1 rounded ${currentPage === totalPages - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
               >
                 Next
               </button>
@@ -437,9 +437,9 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
     // Video preview
     if (typeToPreview.startsWith("video/")) {
       return (
-        <video 
-          src={previewContent} 
-          controls 
+        <video
+          src={previewContent}
+          controls
           className="w-full max-h-[60vh]"
           controlsList="nodownload"
         />
@@ -459,15 +459,14 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
             dangerouslySetInnerHTML={{ __html: previewContent }}
             className="max-h-[60vh] overflow-auto p-4 border rounded bg-white"
           />
-          
+
           {typeToPreview === "excel/html" && totalPages > 1 && (
             <div className="flex items-center justify-center space-x-4 mt-4">
               <button
                 onClick={prevPage}
                 disabled={currentPage === 0}
-                className={`px-3 py-1 rounded ${
-                  currentPage === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
+                className={`px-3 py-1 rounded ${currentPage === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
               >
                 Previous Sheet
               </button>
@@ -477,9 +476,8 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
               <button
                 onClick={nextPage}
                 disabled={currentPage === totalPages - 1}
-                className={`px-3 py-1 rounded ${
-                  currentPage === totalPages - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
+                className={`px-3 py-1 rounded ${currentPage === totalPages - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
               >
                 Next Sheet
               </button>
@@ -496,8 +494,8 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl w-11/12 max-w-4xl p-4 relative">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">{fileName || "File Preview"}</h2>
-          <button 
+          <h2 className="text-lg font-semibold">{ogFileName}</h2>
+          <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
             aria-label="Close"
