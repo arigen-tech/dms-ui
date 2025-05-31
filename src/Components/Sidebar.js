@@ -21,7 +21,8 @@ import {
   LockClosedIcon,
   UserCircleIcon,
   ShoppingCartIcon,
-  IdentificationIcon
+  IdentificationIcon,
+  ClockIcon
 } from "@heroicons/react/24/solid";
 import {
   RiFileUserFill,
@@ -464,6 +465,12 @@ function Sidebar() {
                       icon={RiInboxUnarchiveFill}
                       text="Data Archive Upload"
                     />
+                    <SidebarLink
+                      to="/retentionpolicy"
+                      icon={ClockIcon}
+                      text="RetentionPolicy"
+                    />
+
                   </div>
                 )}
               </div>

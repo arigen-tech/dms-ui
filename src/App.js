@@ -42,6 +42,7 @@ import Notification from "./Data/Notification";
 import ChatBotPopup from "./Components/ChatBotPopup";
 import IDCardGenerator from "./Components/IDCardGenerator";
 import FilesType from "./Pages/FilesTypes";
+import RetentionPolicypage from "./Pages/RetentionPolicypage";
 
 const protectedRoutes = [
   { path: "/dashboard", element: <Dashboard />, allowedRoles: [SYSTEM_ADMIN, USER, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
@@ -81,6 +82,8 @@ const protectedRoutes = [
   { path: "/scan", element: <Scanner />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] },
   { path: "/idcard", element: <IDCardGenerator />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
   { path: "/create-fileType", element: <FilesType />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/retentionpolicy", element: <RetentionPolicypage />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN] },
+
    
 ];
 
