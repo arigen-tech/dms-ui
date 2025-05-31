@@ -84,7 +84,7 @@ const FilesType = () => {
       } catch (error) {
         console.error('Error adding FileType:', error.response ? error.response.data : error.message);
 
-        showPopup('Failed to add the FileType. Please try again.!', "error");
+        showPopup(error.response.data, "error");
 
       }
     } else {
