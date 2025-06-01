@@ -93,9 +93,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           'Authorization': `Bearer ${token}`,
         },
       });
-      setFilesType(response.data.response);
+      setFilesType(response?.data?.response ?? []);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
+      setFilesType([]); // fallback
     }
   };
 
@@ -984,10 +985,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     currentPage * itemsPerPage
   );
 
-  const filteredFiles = filesType.filter((file) =>
-    file.filetype.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    file.extension.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredFiles = (filesType ?? []).filter((file) =>
+    file.filetype?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    file.extension?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
 
   return (
     <div {...getRootProps()} className="p-1">
