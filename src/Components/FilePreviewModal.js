@@ -10,10 +10,10 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
   const [typeToPreview, setTypeToPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  // Removed pagination state since we're removing Previous/Next buttons
 
-  const ogFileName = fileName.substring(fileName.indexOf('_') + 1);
+  // Fix: Add null check and provide fallback
+  const ogFileName = fileName ? fileName.substring(fileName.indexOf('_') + 1) : 'Unknown File';
 
   useEffect(() => {
     if (!isOpen || !fileType || !fileUrl) return;
@@ -39,6 +39,7 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
         // Handle image files
         if (isImage) {
           if (fileType === "image/tiff" || fileType === "image/tif") {
+            // For TIFF, just show the first page since we removed pagination
             await handleTiff();
           } else if (fileType === "image/svg+xml") {
             await handleSvg();
@@ -123,8 +124,8 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
     try {
       const images = decode(new Uint8Array(buffer));
       if (images && images.length > 0) {
-        setTotalPages(images.length);
-        const imageData = images[currentPage];
+        // Just show the first page since we removed pagination
+        const imageData = images[0];
         const canvas = document.createElement("canvas");
         canvas.width = imageData.width;
         canvas.height = imageData.height;
@@ -176,13 +177,9 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
         throw new Error("No sheets found in Excel file");
       }
 
-      // Get all sheet names for the sheet selector
-      const sheets = workbook.SheetNames;
-      setTotalPages(sheets.length);
-
-      // Convert current sheet to HTML
-      const currentSheet = sheets[currentPage];
-      const html = XLSX.utils.sheet_to_html(workbook.Sheets[currentSheet], {
+      // Just show the first sheet since we removed pagination
+      const firstSheet = workbook.SheetNames[0];
+      const html = XLSX.utils.sheet_to_html(workbook.Sheets[firstSheet], {
         id: "excel-preview-table",
         editable: false
       });
@@ -306,39 +303,9 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
     }
   };
 
-  const nextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  // Removed pagination functions since we removed Previous/Next buttons
 
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  useEffect(() => {
-    // When page changes, reload the preview for paginated content types
-    if (typeToPreview === "image/tiff" || typeToPreview === "excel/html") {
-      const reloadPage = async () => {
-        setIsLoading(true);
-        try {
-          if (typeToPreview === "image/tiff") {
-            await handleTiff();
-          } else if (typeToPreview === "excel/html") {
-            await handleExcel();
-          }
-        } catch (err) {
-          setError(`Failed to load page ${currentPage + 1}: ${err.message}`);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      reloadPage();
-    }
-  }, [currentPage]);
+  // Removed useEffect for page changes since we removed pagination
 
 
   const handleDownloadClick = () => {
@@ -402,29 +369,6 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
             alt="Preview"
             className="max-w-full max-h-[60vh] mx-auto object-contain"
           />
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-4 mt-4">
-              <button
-                onClick={prevPage}
-                disabled={currentPage === 0}
-                className={`px-3 py-1 rounded ${currentPage === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-              >
-                Previous
-              </button>
-              <span>
-                Page {currentPage + 1} of {totalPages}
-              </span>
-              <button
-                onClick={nextPage}
-                disabled={currentPage === totalPages - 1}
-                className={`px-3 py-1 rounded ${currentPage === totalPages - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-              >
-                Next
-              </button>
-            </div>
-          )}
         </div>
       );
     }
@@ -459,30 +403,6 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
             dangerouslySetInnerHTML={{ __html: previewContent }}
             className="max-h-[60vh] overflow-auto p-4 border rounded bg-white"
           />
-
-          {typeToPreview === "excel/html" && totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-4 mt-4">
-              <button
-                onClick={prevPage}
-                disabled={currentPage === 0}
-                className={`px-3 py-1 rounded ${currentPage === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-              >
-                Previous Sheet
-              </button>
-              <span>
-                Sheet {currentPage + 1} of {totalPages}
-              </span>
-              <button
-                onClick={nextPage}
-                disabled={currentPage === totalPages - 1}
-                className={`px-3 py-1 rounded ${currentPage === totalPages - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-              >
-                Next Sheet
-              </button>
-            </div>
-          )}
         </div>
       );
     }
