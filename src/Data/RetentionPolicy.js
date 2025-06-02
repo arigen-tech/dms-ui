@@ -98,9 +98,8 @@ const RetentionCheckAlert = ({ onClose, result }) => {
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center border-b p-4">
           <h3
-            className={`text-lg font-semibold ${
-              result.error ? "text-red-600" : result.partialSuccess ? "text-yellow-600" : "text-green-600"
-            }`}
+            className={`text-lg font-semibold ${result.error ? "text-red-600" : result.partialSuccess ? "text-yellow-600" : "text-green-600"
+              }`}
           >
             {result.error ? (
               <>
@@ -353,11 +352,10 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                           <td className="px-3 py-2">
                                             <div className="flex flex-col items-center">
                                               <span
-                                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                  isEligibleSoon
+                                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${isEligibleSoon
                                                     ? "bg-orange-100 text-orange-800"
                                                     : "bg-yellow-100 text-yellow-800"
-                                                }`}
+                                                  }`}
                                               >
                                                 {isEligibleSoon ? "🔥 Almost Ready!" : "⏳ Waiting"}
                                               </span>
@@ -447,13 +445,12 @@ const RetentionCheckAlert = ({ onClose, result }) => {
         <div className="border-t p-4 flex justify-end">
           <button
             onClick={handleClose}
-            className={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              result.error
+            className={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${result.error
                 ? "bg-red-100 text-red-700 hover:bg-red-200 focus:ring-red-500"
                 : result.partialSuccess
                   ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 focus:ring-yellow-500"
                   : "bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500"
-            }`}
+              }`}
           >
             Close
           </button>
@@ -1094,9 +1091,8 @@ const RetentionPolicy = () => {
               type="button"
               onClick={handleRunRetentionCheck}
               disabled={runCheckLoading}
-              className={`bg-green-600 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${
-                runCheckLoading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`bg-green-600 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${runCheckLoading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
             >
               {runCheckLoading ? (
                 <>
@@ -1188,8 +1184,10 @@ const RetentionPolicy = () => {
                   <td className="border p-2">{policy.department?.name || "All Departments"}</td>
                   <td className="border p-2">{policy.category?.name || "All Categories"}</td>
                   <td className="border p-2">{isPolicyActive(policy) ? "Active" : "Inactive"}</td>
+                
                   <td className="border p-2 text-center">
-                    <button onClick={() => handleEditPolicy(policy.id)}>
+                    <button onClick={() => handleEditPolicy(policy.id)} disabled={policy.isActive === 0}
+                      className={`${policy.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>
@@ -1215,9 +1213,8 @@ const RetentionPolicy = () => {
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            className={`px-3 py-1 rounded mr-3 ${
-              currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-            }`}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
           >
             <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
             Previous
@@ -1227,9 +1224,8 @@ const RetentionPolicy = () => {
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded mx-1 ${
-                currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-              }`}
+              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                }`}
             >
               {page}
             </button>
@@ -1240,9 +1236,8 @@ const RetentionPolicy = () => {
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded ml-3 ${
-              currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-            }`}
+            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              }`}
           >
             Next
             <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
