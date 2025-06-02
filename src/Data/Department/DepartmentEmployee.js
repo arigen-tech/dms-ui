@@ -599,72 +599,74 @@ const DepartmentEmployee = () => {
                         <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
                     </div>
                 </div>
-                <table className="w-full border-collapse border">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="border p-2 text-left">SR.</th>
-                            <th className="border p-2 text-left">Name</th>
-                            <th className="border p-2 text-left">Email</th>
-                            <th className="border p-2 text-left">Phone No.</th>
-                            <th className="border p-2 text-left">Branch</th>
-                            <th className="border p-2 text-left">Department</th>
-                            <th className="border p-2 text-left">Role</th>
-                            <th className="border p-2 text-left">Created Date</th>
-                            <th className="border p-2 text-left">Updated Date</th>
-                            <th className="border p-2 text-left">Created By</th>
-                            <th className="border p-2 text-left">Updated By</th>
-                            <th className="border p-2 text-left">Status</th>
-                            <th className="border p-2 text-left">Edit</th>
-                            <th className="border p-2 text-left">Access</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedEmployees.map((employee, index) => (
-                            <tr key={employee.id}>
-                                <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
-                                <td className="border p-2">{employee.name}</td>
-                                <td className="border p-2">{employee.email}</td>
-                                <td className="border p-2">{employee.mobile}</td>
-                                <td className="border p-2">
-                                    {employee.branch?.name || "N/A"}
-                                </td>
-                                <td className="border p-2">{employee.department?.name || "N/A"}</td>
-                                <td className="border p-2">{employee.role?.role || "No Role"}</td>
-                                <td className="border p-2">{formatDate(employee.createdOn)}</td>
-                                <td className="border p-2">{formatDate(employee.updatedOn)}</td>
-                                <td className="border p-2">
-                                    {employee.createdBy?.name || "Unknown"}
-                                </td>
-
-                                <td className="border p-2">
-                                    {employee.updatedBy?.name || "Unknown"}
-                                </td>
-                                <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
-                                <td className="border p-2">
-                                    <button
-                                        onClick={() => handleEditEmployee(employee.id)}
-                                        disabled={employee.isActive === 0}
-                                        className={`${employee.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
-                                    </button>
-                                </td>
-                                <td className="border p-2">
-                                    <button
-                                        onClick={() => handleToggleActive(employee)}
-                                        className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"}`}
-                                    >
-                                        {employee.active ? (
-                                            <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
-                                        ) : (
-                                            <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
-                                        )}
-                                    </button>
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="border p-2 text-left">SR.</th>
+                                <th className="border p-2 text-left">Name</th>
+                                <th className="border p-2 text-left">Email</th>
+                                <th className="border p-2 text-left">Phone No.</th>
+                                <th className="border p-2 text-left">Branch</th>
+                                <th className="border p-2 text-left">Department</th>
+                                <th className="border p-2 text-left">Role</th>
+                                <th className="border p-2 text-left">Created Date</th>
+                                <th className="border p-2 text-left">Updated Date</th>
+                                <th className="border p-2 text-left">Created By</th>
+                                <th className="border p-2 text-left">Updated By</th>
+                                <th className="border p-2 text-left">Status</th>
+                                <th className="border p-2 text-left">Edit</th>
+                                <th className="border p-2 text-left">Access</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {paginatedEmployees.map((employee, index) => (
+                                <tr key={employee.id}>
+                                    <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
+                                    <td className="border p-2">{employee.name}</td>
+                                    <td className="border p-2">{employee.email}</td>
+                                    <td className="border p-2">{employee.mobile}</td>
+                                    <td className="border p-2">
+                                        {employee.branch?.name || "N/A"}
+                                    </td>
+                                    <td className="border p-2">{employee.department?.name || "N/A"}</td>
+                                    <td className="border p-2">{employee.role?.role || "No Role"}</td>
+                                    <td className="border p-2">{formatDate(employee.createdOn)}</td>
+                                    <td className="border p-2">{formatDate(employee.updatedOn)}</td>
+                                    <td className="border p-2">
+                                        {employee.createdBy?.name || "Unknown"}
+                                    </td>
+
+                                    <td className="border p-2">
+                                        {employee.updatedBy?.name || "Unknown"}
+                                    </td>
+                                    <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
+                                    <td className="border p-2">
+                                        <button
+                                            onClick={() => handleEditEmployee(employee.id)}
+                                            disabled={employee.isActive === 0}
+                                            className={`${employee.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
+                                        </button>
+                                    </td>
+                                    <td className="border p-2">
+                                        <button
+                                            onClick={() => handleToggleActive(employee)}
+                                            className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"}`}
+                                        >
+                                            {employee.active ? (
+                                                <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
+                                            ) : (
+                                                <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
+                                            )}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
 
                 <div className="flex items-center mt-4">
                     {/* Previous Button */}

@@ -290,7 +290,7 @@ const Category = () => {
 
 
   return (
-    <div className="p-1">
+    <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">CATEGORIES</h1>
       <div className="bg-white p-3 rounded-lg shadow-sm">
         {/* Popup Messages */}
