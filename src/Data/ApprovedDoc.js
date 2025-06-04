@@ -34,7 +34,7 @@ const ApprovedDoc = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [printTrue, setPrintTrue] = useState(false);
-
+  const [isOpeningFile, setIsOpeningFile] = useState(false);
   const [highlightedDocId, setHighlightedDocId] = useState(null);
   const [blobUrl, setBlobUrl] = useState("");
   const [contentType, setContentType] = useState("");
@@ -199,6 +199,7 @@ const ApprovedDoc = () => {
 
   const openFile = async (file) => {
     try {
+      setIsOpeningFile(true); 
       if (!file) {
         throw new Error("File object is undefined.");
       }
@@ -241,6 +242,8 @@ const ApprovedDoc = () => {
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to fetch or preview the file.");
+    }finally {
+      setIsOpeningFile(false); 
     }
   };
 
@@ -762,11 +765,19 @@ const ApprovedDoc = () => {
                                   </div>
                                   <div className="text-right">
                                     <button
-                                      onClick={() => openFile(file)}
-                                      className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
-                                    >
-                                      Open
-                                    </button>
+                                        onClick={() => {
+                                          setSelectedDocFiles(file);
+                                          openFile(file);
+                                        }}
+                                        disabled={isOpeningFile}
+                                        className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
+                                          ${isOpeningFile 
+                                            ? 'opacity-50 cursor-not-allowed' 
+                                            : 'hover:bg-indigo-600'
+                                          }`}
+                                      >
+                                        {isOpeningFile ? 'Opening...' : 'Open'}
+                                      </button>
                                   </div>
                                 </li>
                               ))}
