@@ -10,6 +10,8 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
   const [typeToPreview, setTypeToPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false); // Add this state
+
   // Removed pagination state since we're removing Previous/Next buttons
 
   // Fix: Add null check and provide fallback
@@ -308,20 +310,26 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
   // Removed useEffect for page changes since we removed pagination
 
 
-  const handleDownloadClick = () => {
-    if (fileData) {
-      // If fileData is provided, pass it to the onDownload function
-      onDownload(fileData);
-    } else {
-      // Fallback to simple download if fileData is not available
-      // This might happen if you're just showing a preview without the full file metadata
-      const link = document.createElement("a");
-      link.href = fileUrl;
-      link.download = fileName || "download";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
+  const handleDownloadClick = async () => {
+    if (isDownloading) return;
+    
+    setIsDownloading(true);
+    try {
+      if (fileData) {
+        await onDownload(fileData);
+      } else {
+        const link = document.createElement("a");
+        link.href = fileUrl;
+        link.download = fileName || "download";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -345,9 +353,31 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
               <p className="text-center text-gray-600">{error || "This file can only be downloaded."}</p>
               <button
                 onClick={handleDownloadClick}
-                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                disabled={isDownloading}
+                className={`mt-4 px-4 py-2 rounded transition-all duration-300 flex items-center
+                  ${isDownloading 
+                    ? 'bg-blue-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
               >
-                Download Original
+                {isDownloading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download Original
+                  </>
+                )}
               </button>
             </>
           ) : (
@@ -434,14 +464,31 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
         <div className="mt-4 flex justify-end gap-3">
           <button
             onClick={handleDownloadClick}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center"
+            disabled={isDownloading}
+            className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center
+              ${isDownloading 
+                ? 'bg-blue-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700'
+              }`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Download Original
+            {isDownloading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Downloading...
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Original
+              </>
+            )}
           </button>
           <button
             onClick={onClose}

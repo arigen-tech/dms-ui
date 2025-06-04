@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/solid";
 import adminPhoto from "../Assets/profile.svg";
 import axios from "axios";
-import { API_HOST} from "../API/apiConfig";
+import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
 import { NotificationBell } from "../Data/Notification"
 
@@ -48,6 +48,7 @@ function Header({ toggleSidebar, userName }) {
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [targetRoleName, setTargetRoleName] = useState("");
   const [notifications, setNotifications] = useState([]);
+  const [isConfSwitch, setIsConfSwitch] = useState(false);
 
   // Handle logout functionality
   const handleLogout = () => {
@@ -153,6 +154,7 @@ function Header({ toggleSidebar, userName }) {
 
   const confirmRoleSwitch = async () => {
     try {
+      setIsConfSwitch(true);
       const employeeId = localStorage.getItem("userId");
       const response = await axios.put(
         `${API_HOST}/employee/${employeeId}/role/switch`,
@@ -175,6 +177,8 @@ function Header({ toggleSidebar, userName }) {
     } catch (error) {
       showPopup("Error switching role!", "error");
       setShowConfirmationPopup(false); // Close popup on error
+    } finally {
+      setIsConfSwitch(false);
     }
   };
 
@@ -242,8 +246,8 @@ function Header({ toggleSidebar, userName }) {
         </h2>
       </div>
       <div className="flex space-x-4 items-center mr-10">
-      <NotificationBell />
-      <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
+        <NotificationBell />
+        <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
         {/* Role Dropdown */}
         <div className="relative">
           <div
@@ -291,13 +295,13 @@ function Header({ toggleSidebar, userName }) {
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
               <DropdownMenu
                 items={[
-                  { 
-                    label: <span className="flex items-center text-blue-600 p-1 rounded transition duration-200 text-sm"><PencilIcon className="h-3 w-3 mr-2" /> Edit Profile</span>, 
-                    onClick: handleChangePassword 
+                  {
+                    label: <span className="flex items-center text-blue-600 p-1 rounded transition duration-200 text-sm"><PencilIcon className="h-3 w-3 mr-2" /> Edit Profile</span>,
+                    onClick: handleChangePassword
                   },
-                  { 
-                    label: <span className="flex items-center text-red-600 p-1 rounded transition duration-200 text-sm"><ArrowRightOnRectangleIcon className="h-3 w-3 mr-2" /> Logout</span>, 
-                    onClick: handleLogout 
+                  {
+                    label: <span className="flex items-center text-red-600 p-1 rounded transition duration-200 text-sm"><ArrowRightOnRectangleIcon className="h-3 w-3 mr-2" /> Logout</span>,
+                    onClick: handleLogout
                   },
                 ]}
                 onSelect={(item) => item.onClick && item.onClick()}
@@ -326,10 +330,17 @@ function Header({ toggleSidebar, userName }) {
                 </button>
                 <button
                   onClick={confirmRoleSwitch}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={isConfSwitch}
+                  className={`bg-indigo-500 text-white px-4 py-2 rounded transition duration-300 no-print
+                                          ${isConfSwitch
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-indigo-600'
+                    }`}
                 >
-                  Confirm
+                  {isConfSwitch ? 'Switching...' : 'Confirm'}
                 </button>
+
+
               </div>
             </div>
           </div>

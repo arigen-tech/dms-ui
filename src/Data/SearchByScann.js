@@ -45,7 +45,7 @@ const SearchByScan = () => {
   const [contentType, setContentType] = useState("");
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
-
+  const [isOpeningFile, setIsOpeningFile] = useState(false);
   const unauthorizedMessage = "You are not authorized to scan this QR code.";
   const invalidQrMessage = "Invalid QR Code.";
   // const uploadErrorMessage = "Failed to upload or read QR code from the image.";
@@ -343,6 +343,7 @@ const SearchByScan = () => {
 
   const openFile = async (docName, version) => {
     try {
+      setIsOpeningFile(true);
       console.log("docName:", docName);
       console.log("version:", version);
 
@@ -384,6 +385,8 @@ const SearchByScan = () => {
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to fetch or preview the file.");
+    } finally {
+      setIsOpeningFile(false);
     }
   };
 
@@ -422,17 +425,17 @@ const SearchByScan = () => {
   };
 
   const filteredDocFiles = useMemo(() => {
-  const files = headerData?.documentDetails || [];
+    const files = headerData?.documentDetails || [];
 
-  if (!Array.isArray(files)) return [];
+    if (!Array.isArray(files)) return [];
 
-  return files.filter((file) => {
-    const name = file.docName?.toLowerCase() || "";
-    const version = String(file.version).toLowerCase();
-    const term = searchFileTerm.toLowerCase();
-    return name.includes(term) || version.includes(term);
-  });
-}, [selectedDoc, headerData, searchFileTerm]);
+    return files.filter((file) => {
+      const name = file.docName?.toLowerCase() || "";
+      const version = String(file.version).toLowerCase();
+      const term = searchFileTerm.toLowerCase();
+      return name.includes(term) || version.includes(term);
+    });
+  }, [selectedDoc, headerData, searchFileTerm]);
 
 
 
@@ -658,17 +661,18 @@ const SearchByScan = () => {
                               </td>
                               <td className="border border-gray-300 px-4 py-2">
                                 <button
-                                 
                                   onClick={() => {
                                     setSelectedDocFiles(file);
-                                    openFile(file.docName, file.version)
+                                    openFile(file);
                                   }}
-                                  className={`bg-indigo-500 text-white px-3 py-1 rounded shadow-md hover:bg-indigo-600 transition no-print ${loading ? "opacity-50" : ""
+                                  disabled={isOpeningFile}
+                                  className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
+                                          ${isOpeningFile
+                                      ? 'opacity-50 cursor-not-allowed'
+                                      : 'hover:bg-indigo-600'
                                     }`}
-                                  disabled={loading}
-                                  aria-label={`Open ${displayName}`}
                                 >
-                                  {loading ? "Loading..." : "Open"}
+                                  {isOpeningFile ? 'Opening...' : 'Open'}
                                 </button>
                               </td>
                             </tr>

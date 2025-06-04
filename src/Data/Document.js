@@ -73,6 +73,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [contentType, setContentType] = useState("");
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
+  const [isOpeningFile, setIsOpeningFile] = useState(false); 
   // Run this effect only when component mounts
   useEffect(() => {
     if (data) {
@@ -267,6 +268,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const openFile = async (file) => {
     try {
+      setIsOpeningFile(true); 
+      
       const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
       const department = selectedDoc.employee.department.name.replace(/ /g, "_");
       const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
@@ -298,6 +301,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to fetch or preview the file.");
+    } finally {
+      setIsOpeningFile(false); 
     }
   };
 
@@ -1561,9 +1566,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                                           setSelectedDocFiles(file);
                                           openFile(file);
                                         }}
-                                        className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
+                                        disabled={isOpeningFile}
+                                        className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
+                                          ${isOpeningFile 
+                                            ? 'opacity-50 cursor-not-allowed' 
+                                            : 'hover:bg-indigo-600'
+                                          }`}
                                       >
-                                        Open
+                                        {isOpeningFile ? 'Opening...' : 'Open'}
                                       </button>
                                     </div>
                                   </li>
@@ -1599,7 +1609,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     type="text"
                     placeholder="Search file type..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => setSearchFileTerm(e.target.value)}
                     className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
 

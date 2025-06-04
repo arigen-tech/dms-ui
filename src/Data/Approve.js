@@ -45,7 +45,7 @@ const Approve = () => {
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
   const tokenKey = localStorage.getItem("tokenKey");
-
+  const [isOpeningFile, setIsOpeningFile] = useState(false);
   const [userBranch, setUserBranch] = useState(null);
 
   useEffect(() => {
@@ -185,6 +185,7 @@ const Approve = () => {
 
   const openFile = async (file) => {
     try {
+      setIsOpeningFile(true);
       if (!file) {
         throw new Error("File object is undefined.");
       }
@@ -224,9 +225,12 @@ const Approve = () => {
       setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
+
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to fetch or preview the file.");
+    } finally {
+      setIsOpeningFile(false);
     }
   };
 
@@ -759,13 +763,18 @@ const Approve = () => {
                                   </div>
                                   <div className="text-right">
                                     <button
-                                     onClick={() => {
+                                      onClick={() => {
                                         setSelectedDocFiles(file);
                                         openFile(file);
                                       }}
-                                      className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
+                                      disabled={isOpeningFile}
+                                      className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
+                                          ${isOpeningFile
+                                          ? 'opacity-50 cursor-not-allowed'
+                                          : 'hover:bg-indigo-600'
+                                        }`}
                                     >
-                                      Open
+                                      {isOpeningFile ? 'Opening...' : 'Open'}
                                     </button>
                                   </div>
                                 </li>

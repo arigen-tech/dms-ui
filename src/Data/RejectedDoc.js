@@ -35,6 +35,7 @@ function RejectedDoc() {
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isOpeningFile, setIsOpeningFile] = useState(false);
 
 
   const token = localStorage.getItem("tokenKey");
@@ -183,29 +184,30 @@ function RejectedDoc() {
   };
 
   const openFile = async (file) => {
-      const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-      const department = selectedDoc.employee.department.name.replace(
-        / /g,
-        "_"
-      );
-      const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-      const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+    setIsOpeningFile(true); 
+    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+    const department = selectedDoc.employee.department.name.replace(
+      / /g,
+      "_"
+    );
+    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
 
-      const version = file.version;
-      const fileName = file.docName.replace(/ /g, "_");
+    const version = file.version;
+    const fileName = file.docName.replace(/ /g, "_");
 
-      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch
-      )}/${encodeURIComponent(department)}/${encodeURIComponent(
-        year
-      )}/${encodeURIComponent(category)}/${encodeURIComponent(
-        version
-      )}/${encodeURIComponent(fileName)}`;
+    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+      branch
+    )}/${encodeURIComponent(department)}/${encodeURIComponent(
+      year
+    )}/${encodeURIComponent(category)}/${encodeURIComponent(
+      version
+    )}/${encodeURIComponent(fileName)}`;
 
     try {
       const response = await axios.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob", 
+        responseType: "blob",
       });
 
       let blob = new Blob([response.data], { type: response.headers["content-type"] });
@@ -220,6 +222,7 @@ function RejectedDoc() {
       console.error("Error:", error);
       alert("Failed to fetch or preview the file.");
     }
+    setIsOpeningFile(false); 
   };
 
   const handleDownload = async (file) => {
@@ -726,12 +729,21 @@ function RejectedDoc() {
                                     <strong>{file.version}</strong>
                                   </div>
                                   <div className="text-right">
+                                    
                                     <button
-                                      onClick={() => openFile(file)}
-                                      className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
-                                    >
-                                      Open
-                                    </button>
+                                        onClick={() => {
+                                          setSelectedDocFiles(file);
+                                          openFile(file);
+                                        }}
+                                        disabled={isOpeningFile}
+                                        className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
+                                          ${isOpeningFile 
+                                            ? 'opacity-50 cursor-not-allowed' 
+                                            : 'hover:bg-indigo-600'
+                                          }`}
+                                      >
+                                        {isOpeningFile ? 'Opening...' : 'Open'}
+                                      </button>
                                   </div>
                                 </li>
                               ))}
