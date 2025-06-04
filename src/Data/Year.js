@@ -19,6 +19,7 @@ const Year = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [yearToToggle, setYearToToggle] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
   useEffect(() => {
     // Fetch years from the server
@@ -109,6 +110,8 @@ const Year = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
+     setIsConfirmDisabled(true);
+
     if (yearToToggle) {
       try {
         const updatedYear = {
@@ -134,6 +137,7 @@ const Year = () => {
         );
         setYears(updatedYears);
         setModalVisible(false);
+         setIsConfirmDisabled(false);
         setYearToToggle(null);
         showPopup('Status Changed successfully!');
       } catch (error) {
@@ -374,11 +378,13 @@ const Year = () => {
                 Cancel
               </button>
               <button
-                onClick={confirmToggleActiveStatus}
-                className="bg-blue-500 text-white rounded-lg px-4 py-2"
-              >
-                Confirm
-              </button>
+                                onClick={confirmToggleActiveStatus}
+                                disabled={isConfirmDisabled}
+                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                            >
+                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+                            </button>
             </div>
           </div>
         </div>

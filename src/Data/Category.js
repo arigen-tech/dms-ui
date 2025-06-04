@@ -19,6 +19,7 @@ const Category = () => {
   const [message, setMessage] = useState(null); // For the success message
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
   const [popupMessage, setPopupMessage] = useState(null);
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -172,6 +173,8 @@ const Category = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
+     setIsConfirmDisabled(true);
+
     if (categoryToToggle) {
       try {
         const updatedCategory = {
@@ -200,6 +203,7 @@ const Category = () => {
           setCategories(updatedCategories);
           setModalVisible(false);
           setCategoryToToggle(null);
+           setIsConfirmDisabled(false);
 
           // Set success message
           showPopup('Category status changed successfully!', "success");
@@ -485,12 +489,14 @@ const Category = () => {
               >
                 Cancel
               </button>
-              <button
-                onClick={confirmToggleActiveStatus}
-                className="bg-blue-500 text-white rounded-lg px-4 py-2"
-              >
-                Confirm
-              </button>
+             <button
+                                onClick={confirmToggleActiveStatus}
+                                disabled={isConfirmDisabled}
+                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                            >
+                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+                            </button>
             </div>
           </div>
         </div>

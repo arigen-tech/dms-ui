@@ -32,6 +32,7 @@ const Branch = () => {
   const [message, setMessage] = useState(null); // For the success message
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
   const [popupMessage, setPopupMessage] = useState(null);
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -180,6 +181,8 @@ const Branch = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
+    setIsConfirmDisabled(true);
+
     if (branchToToggle) {
       try {
         const updatedBranch = {
@@ -207,6 +210,7 @@ const Branch = () => {
         setBranches(updatedBranches);
         setModalVisible(false);
         setBranchToToggle(null);
+        setIsConfirmDisabled(false);
 
         // Show success message
         showPopup('Status changed successfully!', "success");
@@ -495,7 +499,14 @@ const Branch = () => {
             <p className="mb-4">Are you sure you want to {branchToToggle.isActive ? 'deactivate' : 'activate'} this branch<strong>{branchToToggle.name}</strong>?</p>
             <div className="flex justify-end gap-4">
               <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">Cancel</button>
-              <button onClick={confirmToggleActiveStatus} className="bg-blue-500 text-white p-2 rounded-lg">Confirm</button>
+              <button
+                onClick={confirmToggleActiveStatus}
+                disabled={isConfirmDisabled}
+                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+              >
+                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+              </button>
             </div>
           </div>
         </div>

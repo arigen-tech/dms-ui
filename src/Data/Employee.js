@@ -56,6 +56,7 @@ const UserAddEmployee = () => {
     message: "",
     type: "default",
   });
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -455,6 +456,7 @@ const UserAddEmployee = () => {
   };
 
   const confirmToggleActive = async () => {
+    setIsConfirmDisabled(true); // Disable the button to prevent multiple clicks
     try {
       const newStatus = !employeeToToggle.active; // Toggle between true and false
 
@@ -508,6 +510,7 @@ const UserAddEmployee = () => {
       // Ensure modal is closed and state is cleared even if there was an error
       setModalVisible(false);
       setEmployeeToToggle(null);
+       setIsConfirmDisabled(false);
     }
   };
 
@@ -944,11 +947,13 @@ const UserAddEmployee = () => {
                 Cancel
               </button>
               <button
-                onClick={confirmToggleActive}
-                className="bg-blue-500 text-white rounded-md px-4 py-2"
-              >
-                Confirm
-              </button>
+                                onClick={confirmToggleActive}
+                                disabled={isConfirmDisabled}
+                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                            >
+                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+                            </button>
             </div>
           </div>
         </div>

@@ -32,6 +32,7 @@ const FilesType = () => {
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
   const token = localStorage.getItem('tokenKey');
 
@@ -164,6 +165,8 @@ const FilesType = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
+    setIsConfirmDisabled(true);
+
     if (fileTypeToToggle) {
       try {
         const updatedFilesType = {
@@ -190,6 +193,7 @@ const FilesType = () => {
         setFilesType(updatedFilesTypes);
         setModalVisible(false);
         setFileTypeToToggle(null);
+        setIsConfirmDisabled(false);
 
         fetchFilesType();
         showPopup('Status changed successfully!', "success");
@@ -473,7 +477,14 @@ const FilesType = () => {
             <p className="mb-4">Are you sure you want to {fileTypeToToggle.isActive ? 'deactivate' : 'activate'} this branch<strong>{fileTypeToToggle.name}</strong>?</p>
             <div className="flex justify-end gap-4">
               <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">Cancel</button>
-              <button onClick={confirmToggleActiveStatus} className="bg-blue-500 text-white p-2 rounded-lg">Confirm</button>
+              <button
+                onClick={confirmToggleActiveStatus}
+                disabled={isConfirmDisabled}
+                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+              >
+                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+              </button>
             </div>
           </div>
         </div>

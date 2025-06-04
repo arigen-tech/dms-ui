@@ -29,6 +29,7 @@ const Role = () => {
   const [editingRoleId, setEditingRoleId] = useState(null); // Define the state for editing role ID
   const [message, setMessage] = useState(null); // For the success message
   const [messageType, setMessageType] = useState("");
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false); // State to manage confirmation button state
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -212,6 +213,8 @@ const Role = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
+     setIsConfirmDisabled(true);
+
     if (roleToToggle) {
       try {
         // Prepare the updated role object
@@ -242,6 +245,7 @@ const Role = () => {
           setRoles(updatedRoles);
           setModalVisible(false); // Close the modal
           setRoleToToggle(null); // Reset the selected role
+          setIsConfirmDisabled(false); // Reset the confirmation button state
 
           // Set success message
           showPopup("Role status changed successfully!", "success");
@@ -571,9 +575,11 @@ const Role = () => {
               </button>
               <button
                 onClick={confirmToggleActiveStatus}
-                className="bg-blue-500 text-white rounded-lg px-4 py-2"
+                disabled={isConfirmDisabled}
+                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
-                Confirm
+                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
               </button>
             </div>
           </div>

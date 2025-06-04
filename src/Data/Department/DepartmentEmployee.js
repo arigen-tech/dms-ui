@@ -15,6 +15,8 @@ import Popup from '../../Components/Popup';
 
 
 
+
+
 const DepartmentEmployee = () => {
     const [employees, setEmployees] = useState([]);
     const [formData, setFormData] = useState({
@@ -37,6 +39,7 @@ const DepartmentEmployee = () => {
     //const [isSubmitting, setIsSubmitting] = useState(false);
     const [userBranch, setUserBranch] = useState(null);
     const [userDepartment, setUserDepartment] = useState(null);
+    const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
@@ -320,6 +323,8 @@ const DepartmentEmployee = () => {
     };
 
     const confirmToggleActive = async () => {
+         setIsConfirmDisabled(true);
+
         try {
             const newStatus = !employeeToToggle.active; // Toggle between true and false
 
@@ -372,6 +377,7 @@ const DepartmentEmployee = () => {
             // Ensure modal is closed and state is cleared even if there was an error
             setModalVisible(false);
             setEmployeeToToggle(null);
+             setIsConfirmDisabled(false);
         }
     };
 
@@ -737,11 +743,13 @@ const DepartmentEmployee = () => {
                             >
                                 Cancel
                             </button>
-                            <button
+                           <button
                                 onClick={confirmToggleActive}
-                                className="bg-blue-500 text-white rounded-md px-4 py-2"
+                                disabled={isConfirmDisabled}
+                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
                             >
-                                Confirm
+                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
                             </button>
                         </div>
                     </div>

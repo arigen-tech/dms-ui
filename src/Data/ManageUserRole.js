@@ -32,6 +32,7 @@ const ManageUserRole = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(false);
   const [currBranchId, setCurrBranchId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
   const token = localStorage.getItem("tokenKey");
   const [loading, setLoading] = useState(false);
@@ -249,6 +250,8 @@ const ManageUserRole = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
+     setIsConfirmDisabled(true);
+
     if (!roleToToggle) {
       showPopup("No role selected for status change.");
       return;
@@ -280,6 +283,7 @@ const ManageUserRole = () => {
         );
         setRoles(updatedRoles);
         setModalVisible(false);
+         setIsConfirmDisabled(false);
         setRoleToToggle(null);
         showPopup("Role status updated successfully!", "success"); // Change here
         fetchUsers();
@@ -626,12 +630,14 @@ const ManageUserRole = () => {
               >
                 Cancel
               </button>
-              <button
-                onClick={confirmToggleActiveStatus}
-                className="bg-blue-500 text-white hover:bg-blue-600 rounded-lg px-4 py-2 transition"
-              >
-                Confirm
-              </button>
+             <button
+                                onClick={confirmToggleActiveStatus}
+                                disabled={isConfirmDisabled}
+                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                            >
+                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+                            </button>
             </div>
           </div>
         </div>

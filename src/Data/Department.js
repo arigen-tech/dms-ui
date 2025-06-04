@@ -30,6 +30,7 @@ const Department = () => {
   const [message, setMessage] = useState(null); // For the success message
   const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -235,6 +236,7 @@ const Department = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
+    setIsConfirmDisabled(true); // Disable the confirm button to prevent multiple clicks
     if (toggleDepartment) {
       try {
         const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
@@ -259,6 +261,7 @@ const Department = () => {
         setDepartments(updatedDepartments);
         setModalVisible(false); // Close modal
         setToggleDepartment(null); // Clear the toggle department state
+        setIsConfirmDisabled(false); // Reset the confirm button state
 
         // Set success message
         showPopup('Status changed successfully!', "success");
@@ -526,11 +529,13 @@ const Department = () => {
                 Cancel
               </button>
               <button
-                onClick={confirmToggleActiveStatus}
-                className="bg-blue-500 text-white rounded-lg px-4 py-2"
-              >
-                Confirm
-              </button>
+                                onClick={confirmToggleActiveStatus}
+                                disabled={isConfirmDisabled}
+                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                            >
+                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+                            </button>
             </div>
           </div>
         </div>

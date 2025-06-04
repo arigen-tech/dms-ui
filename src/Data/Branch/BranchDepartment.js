@@ -32,6 +32,7 @@ const BranchDepartments = () => {
     const [userBranch, setUserBranch] = useState(null);
     const [toggleDepartment, setToggleDepartment] = useState(null);
     const [popupMessage, setPopupMessage] = useState(null);
+    const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
 
     // Retrieve token from localStorage
@@ -178,7 +179,10 @@ const BranchDepartments = () => {
         setModalVisible(true);
     };
 
-    const confirmToggleActiveStatus = async () => {
+    const confirmToggleActiveStatus = async () => { 
+        setIsConfirmDisabled(true);
+
+
         if (toggleDepartment) {
             try {
                 const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
@@ -202,6 +206,7 @@ const BranchDepartments = () => {
                 setDepartments(updatedDepartments);
                 setModalVisible(false);
                 setToggleDepartment(null);
+                 setIsConfirmDisabled(false);
                 showPopup('Status changed successfully!', "success");
             } catch (error) {
                 console.error('Error toggling department status:', error.response ? error.response.data : error.message);
@@ -461,11 +466,13 @@ const BranchDepartments = () => {
                             >
                                 Cancel
                             </button>
-                            <button
+                           <button
                                 onClick={confirmToggleActiveStatus}
-                                className="bg-blue-500 text-white rounded-lg px-4 py-2"
+                                disabled={isConfirmDisabled}
+                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
                             >
-                                Confirm
+                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
                             </button>
                         </div>
                     </div>
