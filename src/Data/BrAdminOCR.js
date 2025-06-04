@@ -277,7 +277,7 @@ const BrAdminOCR = () => {
   return (
     <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">Branch Admin OCR</h1>
-      <div className="bg-white p-3 rounded-lg shadow-sm">
+      <div className="bg-white p-4 rounded-lg shadow-sm">
         <div className="mb-4 flex flex-wrap gap-4">
           <div className="flex items-center gap-1">
             <label

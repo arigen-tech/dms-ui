@@ -992,632 +992,634 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
 
   return (
-    <div {...getRootProps()} className="p-1">
-      <input {...getInputProps()} />
-      <h1 className="text-xl mb-4 font-semibold">Upload Document</h1>
-      <div className="bg-white p-3 rounded-lg shadow-sm">
-        {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={() => setPopupMessage(null)}
-          />
-        )}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-3 gap-4">
-            {/* File No Input */}
-            <label className="block text-md font-medium text-gray-700">
-              File No.
-              <input
-                type="text"
-                placeholder="File No."
-                name="fileNo"
-                value={formData.fileNo}
-                onChange={(e) =>
-                  setFormData({ ...formData, fileNo: e.target.value })
-                }
-                disabled={fieldsDisabled}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
-
-            {/* Title Input */}
-            <label className="block text-md font-medium text-gray-700">
-              Title
-              <input
-                type="text"
-                placeholder="Title"
-                name="title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                disabled={fieldsDisabled}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
-
-            {/* Subject Input */}
-            <label className="block text-md font-medium text-gray-700">
-              Subject
-              <input
-                type="text"
-                placeholder="Subject"
-                name="subject"
-                value={formData.subject}
-                onChange={(e) =>
-                  setFormData({ ...formData, subject: e.target.value })
-                }
-                disabled={fieldsDisabled}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
-
-            {/* Category Select */}
-            <label className="block text-md font-medium text-gray-700">
-              Category
-              <select
-                name="category"
-                value={formData.category?.id || ""}
-                onChange={handleCategoryChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select category</option>
-                {categoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block text-md font-medium text-gray-700">
-              Year
-              <select
-                name="year"
-                value={formData.year?.id || ""}
-                onChange={handleYearChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Year</option>
-                {yearOptions.map((year) => (
-                  <option key={year.id} value={year.id}>
-                    {year.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {unsportFile === true && (
-              <button onClick={viewfiletype} className="bg-blue-600 text-white h-12 px-2 mt-7 rounded-md">
-                Show Supported File Types
-              </button>
-            )}
-          </div>
-          <div className=" mt-5 mb-5 grid grid-cols-3 gap-4">
-            <label className="block text-md font-medium text-gray-700">
-              Version
-              <input
-                type="text"
-                placeholder="Version"
-                name="version"
-                value={formData.version}
-                onChange={(e) =>
-                  setFormData({ ...formData, version: e.target.value })
-                }
-                disabled={fieldsDisabled}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
-
-            <label className="block text-md font-medium text-gray-700">
-              Folder Upload Enable
-              <div className="flex mt-4">
+    <div className="p-4">
+      <div {...getRootProps()} className="p-1">
+        <input {...getInputProps()} />
+        <h1 className="text-xl mb-4 font-semibold">Upload Document</h1>
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          {popupMessage && (
+            <Popup
+              message={popupMessage.message}
+              type={popupMessage.type}
+              onClose={() => setPopupMessage(null)}
+            />
+          )}
+          <div className="mb-4 bg-slate-100 p-4 rounded-lg">
+            <div className="grid grid-cols-3 gap-4">
+              {/* File No Input */}
+              <label className="block text-md font-medium text-gray-700">
+                File No.
                 <input
-                  type="checkbox"
-                  checked={folderUpload}
-                  onChange={() => setFolderUpload(!folderUpload)}
-                  className="mt-1 block w-5 h-5 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  type="text"
+                  placeholder="File No."
+                  name="fileNo"
+                  value={formData.fileNo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fileNo: e.target.value })
+                  }
+                  disabled={fieldsDisabled}
+                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="ml-3">{folderUpload ? "Enable" : "Disable"}</span>
-              </div>
-            </label>
+              </label>
 
-            <label className="block text-md font-medium text-gray-700">
-              Upload {folderUpload ? "Folders" : "Files"}
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept=""
-                multiple
-                onChange={handleFileChange}
-                webkitdirectory={folderUpload ? "true" : undefined}
-                className="bg-white mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
+              {/* Title Input */}
+              <label className="block text-md font-medium text-gray-700">
+                Title
+                <input
+                  type="text"
+                  placeholder="Title"
+                  name="title"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  disabled={fieldsDisabled}
+                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </label>
 
-            <button
-              onClick={handleUploadDocument}
-              disabled={!isUploadEnabled || isUploading}
-              className={`ml-2 text-white rounded-xl p-2 h-14 mt-6 flex items-center justify-center relative transition-all duration-300 ${isUploading ? "bg-blue-600 cursor-not-allowed" : isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
-                }`}
-            >
-              {isUploading ? (
-                <>
-                  <svg
-                    className="animate-spin h-5 w-5 mr-2 text-white"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    ></path>
-                  </svg>
-                  Uploading... {uploadProgress}%
-                </>
-              ) : (
-                "Upload"
-              )}
+              {/* Subject Input */}
+              <label className="block text-md font-medium text-gray-700">
+                Subject
+                <input
+                  type="text"
+                  placeholder="Subject"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={(e) =>
+                    setFormData({ ...formData, subject: e.target.value })
+                  }
+                  disabled={fieldsDisabled}
+                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </label>
 
-              {/* Progress Bar (Only visible when uploading) */}
-              {isUploading && (
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
-                  <div
-                    className="h-full bg-green-500 transition-all"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-              )}
-            </button>
-
-            {isUploading && (
-              <button onClick={handleCancelUpload} className="bg-red-500 text-white h-14 mt-6 px-4 py-2 rounded">
-                Cancel Upload
-              </button>
-            )}
-
-
-          </div>
-
-          {uploadedFilePath.map((file, index) => {
-            const displayName = uploadedFileNames[index];
-            const version = file.version;
-            return (
-              <li
-                key={index}
-                className="grid grid-cols-3 items-center gap-4 p-2 border rounded-md"
-              >
-                {/* File Name */}
-                <div className="text-left">
-                  <span className="block font-medium">
-                    <strong>{displayName}</strong>
-                  </span>
-                </div>
-                {/* Version */}
-                <div className="text-center">
-                  <label className="flex justify-center items-center gap-2">
-                    <span className="text-sm font-medium">
-                      <strong>Version:</strong>
-                    </span>
-                    <input
-                      type="text"
-                      value={version} // Display version
-                      onChange={(e) =>
-                        handleVersionChange(index, e.target.value.trim())
-                      }
-                      className="border rounded px-2 py-1 text-sm"
-                      disabled={!handleEditDocumentActive}
-                      placeholder="v1"
-                    />
-                  </label>
-                </div>
-                {/* Delete Button */}
-                <div className="text-right">
-                  <button
-                    onClick={() => handleDiscardFile(index)}
-                    className="bg-red-500 text-white hover:bg-red-800 rounded-2xl p-2 text-sm"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-
-          <FilePreviewModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onDownload={handleDownload}
-            fileType={contentType}
-            fileUrl={blobUrl}
-            fileName={selectedDocFile?.docName}
-            fileData={selectedDocFile}
-          />
-
-          <div className="flex justify-between items-center">
-            {uploadedFilePath != 0 && (
-              <div
-                className="text-red-800 cursor-pointer hover:underline"
-                onClick={handleDiscardAll}
-                aria-label="Discard All Files"
-              >
-                Discard All
-              </div>
-            )}
-
-            <div className="mt-3">
-              {editingDoc === null ? (
-                <button
-                  onClick={handleAddDocument}
-                  className="bg-blue-900 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm"
-                  aria-label="Add Document"
+              {/* Category Select */}
+              <label className="block text-md font-medium text-gray-700">
+                Category
+                <select
+                  name="category"
+                  value={formData.category?.id || ""}
+                  onChange={handleCategoryChange}
+                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <PlusCircleIcon className="h-5 w-5 mr-1" />
-                  Add Document
-                </button>
-              ) : (
-                <button
-                  onClick={handleSaveEdit}
-                  className="bg-blue-900 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm"
-                  aria-label="Update Document"
+                  <option value="">Select category</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-md font-medium text-gray-700">
+                Year
+                <select
+                  name="year"
+                  value={formData.year?.id || ""}
+                  onChange={handleYearChange}
+                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <CheckCircleIcon className="h-5 w-5 mr-1" />
-                  Update
+                  <option value="">Select Year</option>
+                  {yearOptions.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {unsportFile === true && (
+                <button onClick={viewfiletype} className="bg-blue-600 text-white h-12 px-2 mt-7 rounded-md">
+                  Show Supported File Types
                 </button>
               )}
             </div>
-          </div>
-        </div>
+            <div className=" mt-5 mb-5 grid grid-cols-3 gap-4">
+              <label className="block text-md font-medium text-gray-700">
+                Version
+                <input
+                  type="text"
+                  placeholder="Version"
+                  name="version"
+                  value={formData.version}
+                  onChange={(e) =>
+                    setFormData({ ...formData, version: e.target.value })
+                  }
+                  disabled={fieldsDisabled}
+                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </label>
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-          <div className="flex items-center bg-blue-500 rounded-lg">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
-              Show:
-            </label>
-            <select
-              id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none"
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-            >
-              {[5, 10, 15, 20].map((num) => (
-                <option key={num} value={num}>
-                  {num}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center mb-4">
-            <input
-              type="text"
-              placeholder="Search by title, subject, or file no..."
-              className="border rounded-l-md p-1 outline-none"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
-          </div>
+              <label className="block text-md font-medium text-gray-700">
+                Folder Upload Enable
+                <div className="flex mt-4">
+                  <input
+                    type="checkbox"
+                    checked={folderUpload}
+                    onChange={() => setFolderUpload(!folderUpload)}
+                    className="mt-1 block w-5 h-5 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="ml-3">{folderUpload ? "Enable" : "Disable"}</span>
+                </div>
+              </label>
 
-        </div>
+              <label className="block text-md font-medium text-gray-700">
+                Upload {folderUpload ? "Folders" : "Files"}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=""
+                  multiple
+                  onChange={handleFileChange}
+                  webkitdirectory={folderUpload ? "true" : undefined}
+                  className="bg-white mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </label>
 
-        <div className="overflow-x-auto bg-white">
-          <table className="w-full border-collapse border">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="border p-2 text-left">SR.</th>
-                <th className="border p-2 text-left">File No</th>
-                <th className="border p-2 text-left">Title</th>
-                <th className="border p-2 text-left">Subject</th>
-                <th className="border p-2 text-left">Category</th>
-                <th className="border p-2 text-left">File Year</th>
-                <th className="border p-2 text-left">Approval Status</th>
-                <th className="border p-2 text-left">Uploaded Date</th>
-                <th className="border p-2 text-left">Edit</th>
-                <th className="border p-2 text-left">View</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedDocuments.map((doc, index) => (
-                <tr key={doc.id}>
-                  <td className="border p-2">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </td>
-                  <td className="border p-2">{doc.fileNo}</td>
-                  <td className="border p-2">{doc.title}</td>
-                  <td className="border p-2">{doc.subject}</td>
-                  <td className="border p-2">
-                    {doc.categoryMaster
-                      ? doc.categoryMaster.name
-                      : "No Category"}
-                  </td>
-                  <td className="border p-2">
-                    {doc.yearMaster ? doc.yearMaster.name : "No year"}
-                  </td>
-                  <td className="border p-2">{doc.approvalStatus}</td>
-                  <td className="border p-2">{formatDate(doc.createdOn)}</td>
-                  <td className="border p-2">
-                    <button onClick={() => handleEditDocument(doc)} disabled={doc.isActive === 0}
-                      className={`${doc.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1 sm:text-blue-50" />
-                    </button>
-                  </td>
-                  <td className="border p-2">
-                    <button onClick={() => openModal(doc)}>
-                      <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="flex items-center mt-4">
-            {/* Previous Button */}
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              Previous
-            </button>
-
-            {/* Page Number Buttons */}
-            {getPageNumbers().map((page) => (
               <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                onClick={handleUploadDocument}
+                disabled={!isUploadEnabled || isUploading}
+                className={`ml-2 text-white rounded-xl p-2 h-14 mt-6 flex items-center justify-center relative transition-all duration-300 ${isUploading ? "bg-blue-600 cursor-not-allowed" : isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
                   }`}
               >
-                {page}
+                {isUploading ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      ></path>
+                    </svg>
+                    Uploading... {uploadProgress}%
+                  </>
+                ) : (
+                  "Upload"
+                )}
+
+                {/* Progress Bar (Only visible when uploading) */}
+                {isUploading && (
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
+                    <div
+                      className="h-full bg-green-500 transition-all"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                )}
               </button>
-            ))}
 
-            {/* Page Count Info */}
-            <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+              {isUploading && (
+                <button onClick={handleCancelUpload} className="bg-red-500 text-white h-14 mt-6 px-4 py-2 rounded">
+                  Cancel Upload
+                </button>
+              )}
 
-            {/* Next Button */}
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              Next
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
-            <div className="ml-4">
-              <span className="text-sm text-gray-700">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                {totalItems} entries
-              </span>
+
+            </div>
+
+            {uploadedFilePath.map((file, index) => {
+              const displayName = uploadedFileNames[index];
+              const version = file.version;
+              return (
+                <li
+                  key={index}
+                  className="grid grid-cols-3 items-center gap-4 p-2 border rounded-md"
+                >
+                  {/* File Name */}
+                  <div className="text-left">
+                    <span className="block font-medium">
+                      <strong>{displayName}</strong>
+                    </span>
+                  </div>
+                  {/* Version */}
+                  <div className="text-center">
+                    <label className="flex justify-center items-center gap-2">
+                      <span className="text-sm font-medium">
+                        <strong>Version:</strong>
+                      </span>
+                      <input
+                        type="text"
+                        value={version} // Display version
+                        onChange={(e) =>
+                          handleVersionChange(index, e.target.value.trim())
+                        }
+                        className="border rounded px-2 py-1 text-sm"
+                        disabled={!handleEditDocumentActive}
+                        placeholder="v1"
+                      />
+                    </label>
+                  </div>
+                  {/* Delete Button */}
+                  <div className="text-right">
+                    <button
+                      onClick={() => handleDiscardFile(index)}
+                      className="bg-red-500 text-white hover:bg-red-800 rounded-2xl p-2 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+
+            <FilePreviewModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onDownload={handleDownload}
+              fileType={contentType}
+              fileUrl={blobUrl}
+              fileName={selectedDocFile?.docName}
+              fileData={selectedDocFile}
+            />
+
+            <div className="flex justify-between items-center">
+              {uploadedFilePath != 0 && (
+                <div
+                  className="text-red-800 cursor-pointer hover:underline"
+                  onClick={handleDiscardAll}
+                  aria-label="Discard All Files"
+                >
+                  Discard All
+                </div>
+              )}
+
+              <div className="mt-3">
+                {editingDoc === null ? (
+                  <button
+                    onClick={handleAddDocument}
+                    className="bg-blue-900 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm"
+                    aria-label="Add Document"
+                  >
+                    <PlusCircleIcon className="h-5 w-5 mr-1" />
+                    Add Document
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSaveEdit}
+                    className="bg-blue-900 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm"
+                    aria-label="Update Document"
+                  >
+                    <CheckCircleIcon className="h-5 w-5 mr-1" />
+                    Update
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          <>
-            {isOpen && selectedDoc && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
-                <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6 my-8 mx-4">
-                  <div className="max-h-[80vh] overflow-y-auto">
-                    <button
-                      className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
-                      onClick={printPage}
-                    >
-                      <PrinterIcon className="h-6 w-6" />
-                    </button>
+          <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
+            <div className="flex items-center bg-blue-500 rounded-lg">
+              <label
+                htmlFor="itemsPerPage"
+                className="mr-2 ml-2 text-white text-sm"
+              >
+                Show:
+              </label>
+              <select
+                id="itemsPerPage"
+                className="border rounded-r-lg p-1.5 outline-none"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                {[5, 10, 15, 20].map((num) => (
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center mb-4">
+              <input
+                type="text"
+                placeholder="Search by title, subject, or file no..."
+                className="border rounded-l-md p-1 outline-none"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+            </div>
 
-                    {/* Close Button */}
-                    <button
-                      className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
-                      onClick={closeModal}
-                    >
-                      <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
-                    </button>
+          </div>
 
-                    {/* Modal Content */}
-                    <div className="flex flex-col h-full mt-8">
-                      {/* Header */}
-                      <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
-                            D
-                          </p>
-                          <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
-                            MS
-                          </p>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-                          <strong>Uploaded Date:</strong>{" "}
-                          {formatDate(selectedDoc?.createdOn)}
-                        </p>
-                      </div>
+          <div className="overflow-x-auto bg-white">
+            <table className="w-full border-collapse border">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="border p-2 text-left">SR.</th>
+                  <th className="border p-2 text-left">File No</th>
+                  <th className="border p-2 text-left">Title</th>
+                  <th className="border p-2 text-left">Subject</th>
+                  <th className="border p-2 text-left">Category</th>
+                  <th className="border p-2 text-left">File Year</th>
+                  <th className="border p-2 text-left">Approval Status</th>
+                  <th className="border p-2 text-left">Uploaded Date</th>
+                  <th className="border p-2 text-left">Edit</th>
+                  <th className="border p-2 text-left">View</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedDocuments.map((doc, index) => (
+                  <tr key={doc.id}>
+                    <td className="border p-2">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+                    <td className="border p-2">{doc.fileNo}</td>
+                    <td className="border p-2">{doc.title}</td>
+                    <td className="border p-2">{doc.subject}</td>
+                    <td className="border p-2">
+                      {doc.categoryMaster
+                        ? doc.categoryMaster.name
+                        : "No Category"}
+                    </td>
+                    <td className="border p-2">
+                      {doc.yearMaster ? doc.yearMaster.name : "No year"}
+                    </td>
+                    <td className="border p-2">{doc.approvalStatus}</td>
+                    <td className="border p-2">{formatDate(doc.createdOn)}</td>
+                    <td className="border p-2">
+                      <button onClick={() => handleEditDocument(doc)} disabled={doc.isActive === 0}
+                        className={`${doc.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1 sm:text-blue-50" />
+                      </button>
+                    </td>
+                    <td className="border p-2">
+                      <button onClick={() => openModal(doc)}>
+                        <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex items-center mt-4">
+              {/* Previous Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                  }`}
+              >
+                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+                Previous
+              </button>
 
-                      {/* Document Details */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="mt-6 text-left">
-                          {[
-                            {
-                              label: "Branch",
-                              value: selectedDoc?.employee?.branch?.name,
-                            },
-                            {
-                              label: "Department",
-                              value: selectedDoc?.employee?.department?.name,
-                            },
-                            { label: "File No.", value: selectedDoc?.fileNo },
-                            { label: "Title", value: selectedDoc?.title },
-                            { label: "Subject", value: selectedDoc?.subject },
-                            {
-                              label: "Category",
-                              value:
-                                selectedDoc?.categoryMaster?.name ||
-                                "No Category",
-                            },
-                            {
-                              label: "File Year",
-                              value: selectedDoc?.yearMaster?.name,
-                            },
-                            {
-                              label: "Status",
-                              value: selectedDoc?.approvalStatus,
-                            },
-                            {
-                              label: "Upload By",
-                              value: selectedDoc?.employee?.name,
-                            },
-                          ].map((item, idx) => (
-                            <p key={idx} className="text-md text-gray-700">
-                              <strong>{item.label} :-</strong>{" "}
-                              {item.value || "N/A"}
+              {/* Page Number Buttons */}
+              {getPageNumbers().map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+
+              {/* Next Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                  }`}
+              >
+                Next
+                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+              </button>
+              <div className="ml-4">
+                <span className="text-sm text-gray-700">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                  {totalItems} entries
+                </span>
+              </div>
+            </div>
+
+            <>
+              {isOpen && selectedDoc && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
+                  <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6 my-8 mx-4">
+                    <div className="max-h-[80vh] overflow-y-auto">
+                      <button
+                        className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
+                        onClick={printPage}
+                      >
+                        <PrinterIcon className="h-6 w-6" />
+                      </button>
+
+                      {/* Close Button */}
+                      <button
+                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
+                        onClick={closeModal}
+                      >
+                        <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
+                      </button>
+
+                      {/* Modal Content */}
+                      <div className="flex flex-col h-full mt-8">
+                        {/* Header */}
+                        <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
+                          <div className="flex items-center space-x-2">
+                            <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
+                              D
                             </p>
-                          ))}
-                        </div>
-                        <div className="items-center justify-center text-center">
-                          <p className="text-md text-gray-700 mt-3">
-                            <strong>QR Code:</strong>
+                            <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
+                              MS
+                            </p>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+                            <strong>Uploaded Date:</strong>{" "}
+                            {formatDate(selectedDoc?.createdOn)}
                           </p>
-                          {selectedDoc?.qrPath ? (
-                            <div className="mt-4">
-                              <img
-                                src={qrCodeUrl}
-                                alt="QR Code"
-                                className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
-                              />
-                              <button
-                                onClick={downloadQRCode}
-                                className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
-                              >
-                                Download
-                              </button>
+                        </div>
+
+                        {/* Document Details */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="mt-6 text-left">
+                            {[
+                              {
+                                label: "Branch",
+                                value: selectedDoc?.employee?.branch?.name,
+                              },
+                              {
+                                label: "Department",
+                                value: selectedDoc?.employee?.department?.name,
+                              },
+                              { label: "File No.", value: selectedDoc?.fileNo },
+                              { label: "Title", value: selectedDoc?.title },
+                              { label: "Subject", value: selectedDoc?.subject },
+                              {
+                                label: "Category",
+                                value:
+                                  selectedDoc?.categoryMaster?.name ||
+                                  "No Category",
+                              },
+                              {
+                                label: "File Year",
+                                value: selectedDoc?.yearMaster?.name,
+                              },
+                              {
+                                label: "Status",
+                                value: selectedDoc?.approvalStatus,
+                              },
+                              {
+                                label: "Upload By",
+                                value: selectedDoc?.employee?.name,
+                              },
+                            ].map((item, idx) => (
+                              <p key={idx} className="text-md text-gray-700">
+                                <strong>{item.label} :-</strong>{" "}
+                                {item.value || "N/A"}
+                              </p>
+                            ))}
+                          </div>
+                          <div className="items-center justify-center text-center">
+                            <p className="text-md text-gray-700 mt-3">
+                              <strong>QR Code:</strong>
+                            </p>
+                            {selectedDoc?.qrPath ? (
+                              <div className="mt-4">
+                                <img
+                                  src={qrCodeUrl}
+                                  alt="QR Code"
+                                  className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
+                                />
+                                <button
+                                  onClick={downloadQRCode}
+                                  className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                                >
+                                  Download
+                                </button>
+                              </div>
+                            ) : (
+                              <p className="text-gray-500">No QR code available</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Attached Files */}
+                        <div className="mt-6 text-center">
+                          <div className="mt-6 relative">
+                            <div className="flex justify-center">
+                              <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
                             </div>
+                            <div className="absolute right-0 top-0">
+                              <input
+                                type="text"
+                                placeholder="Search Files..."
+                                value={searchFileTerm}
+                                onChange={(e) => setSearchFileTerm(e.target.value)}
+                                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                            </div>
+                          </div>
+
+                          {selectedDoc && filteredDocFiles.length > 0 ? (
+                            <>
+                              <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
+                                <h3 className="flex-1 text-left ml-2">File Name</h3>
+                                <h3 className="flex-1 text-center">Version</h3>
+                                <h3 className="text-right mr-10 no-print">Actions</h3>
+                              </div>
+                              <ul
+                                className={`space-y-4 ${printTrue === false && filteredDocFiles.length > 2
+                                  ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
+                                  : ""
+                                  }`}
+                              >
+                                {filteredDocFiles.map((file, index) => (
+                                  <li
+                                    key={index}
+                                    className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
+                                  >
+                                    <div className="flex-1 text-left">
+                                      <strong>{index + 1}</strong>{" "}
+                                      {file.docName.split("_").slice(1).join("_")}
+                                    </div>
+                                    <div className="flex-1 text-center">
+                                      <strong>{file.version}</strong>
+                                    </div>
+                                    <div className="text-right">
+                                      <button
+                                        onClick={() => {
+                                          setSelectedDocFiles(file);
+                                          openFile(file);
+                                        }}
+                                        className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
+                                      >
+                                        Open
+                                      </button>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            </>
                           ) : (
-                            <p className="text-gray-500">No QR code available</p>
+                            <p className="text-sm text-gray-500 mt-2">
+                              No attached files available.
+                            </p>
                           )}
                         </div>
-                      </div>
-
-                      {/* Attached Files */}
-                      <div className="mt-6 text-center">
-                        <div className="mt-6 relative">
-                          <div className="flex justify-center">
-                            <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
-                          </div>
-                          <div className="absolute right-0 top-0">
-                            <input
-                              type="text"
-                              placeholder="Search Files..."
-                              value={searchFileTerm}
-                              onChange={(e) => setSearchFileTerm(e.target.value)}
-                              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                          </div>
-                        </div>
-
-                        {selectedDoc && filteredDocFiles.length > 0 ? (
-                          <>
-                            <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
-                              <h3 className="flex-1 text-left ml-2">File Name</h3>
-                              <h3 className="flex-1 text-center">Version</h3>
-                              <h3 className="text-right mr-10 no-print">Actions</h3>
-                            </div>
-                            <ul
-                              className={`space-y-4 ${printTrue === false && filteredDocFiles.length > 2
-                                ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
-                                : ""
-                                }`}
-                            >
-                              {filteredDocFiles.map((file, index) => (
-                                <li
-                                  key={index}
-                                  className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
-                                >
-                                  <div className="flex-1 text-left">
-                                    <strong>{index + 1}</strong>{" "}
-                                    {file.docName.split("_").slice(1).join("_")}
-                                  </div>
-                                  <div className="flex-1 text-center">
-                                    <strong>{file.version}</strong>
-                                  </div>
-                                  <div className="text-right">
-                                    <button
-                                      onClick={() => {
-                                        setSelectedDocFiles(file);
-                                        openFile(file);
-                                      }}
-                                      className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-300 no-print"
-                                    >
-                                      Open
-                                    </button>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          </>
-                        ) : (
-                          <p className="text-sm text-gray-500 mt-2">
-                            No attached files available.
-                          </p>
-                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {viewFileTypeModel === true && (
-              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 bg-white shadow-lg rounded-lg p-4 border border-gray-200 max-h-80 overflow-y-auto">
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-lg font-semibold">Supported File Types</h2>
-                  <button
-                    onClick={handlecloseFileType}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    ✖
-                  </button>
+              {viewFileTypeModel === true && (
+                <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 bg-white shadow-lg rounded-lg p-4 border border-gray-200 max-h-80 overflow-y-auto">
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-lg font-semibold">Supported File Types</h2>
+                    <button
+                      onClick={handlecloseFileType}
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      ✖
+                    </button>
+                  </div>
+
+                  {/* Search Input */}
+                  <input
+                    type="text"
+                    placeholder="Search file type..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+
+                  <ul className="space-y-2">
+                    {filteredFiles.length > 0 ? (
+                      filteredFiles.map((file) => (
+                        <li key={file.id} className="flex justify-between text-gray-700">
+                          <span>{file.filetype}</span>
+                          <span className="text-gray-500">{file.extension}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="text-gray-500">No matching file types found</li>
+                    )}
+                  </ul>
                 </div>
 
-                {/* Search Input */}
-                <input
-                  type="text"
-                  placeholder="Search file type..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-
-                <ul className="space-y-2">
-                  {filteredFiles.length > 0 ? (
-                    filteredFiles.map((file) => (
-                      <li key={file.id} className="flex justify-between text-gray-700">
-                        <span>{file.filetype}</span>
-                        <span className="text-gray-500">{file.extension}</span>
-                      </li>
-                    ))
-                  ) : (
-                    <li className="text-gray-500">No matching file types found</li>
-                  )}
-                </ul>
-              </div>
-
-            )}
-          </>
+              )}
+            </>
+          </div>
         </div>
       </div>
     </div>

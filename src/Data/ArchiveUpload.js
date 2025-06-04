@@ -295,7 +295,7 @@ const ArchiveUpload = () => {
   return (
     <div className="p-4">
       <h1 className="text-2xl mb-6 font-semibold text-gray-800">Upload Archive</h1>
-      <div className="bg-white p-6 rounded-xl shadow-md">
+      <div className="bg-white p-4 rounded-xl shadow-md">
         {popupMessage && (
           <Popup
             message={popupMessage.message}

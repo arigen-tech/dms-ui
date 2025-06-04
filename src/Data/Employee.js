@@ -598,9 +598,9 @@ const UserAddEmployee = () => {
   const role = localStorage.getItem("role");
 
   return (
-    <div className="p-1 max-w-screen-lg mx-auto">
+    <div className="p-4 max-w-screen-lg mx-auto">
       <h1 className="text-lg sm:text-xl mb-4 font-semibold">USERS</h1>
-      <div className="bg-white p-3 rounded-lg shadow-sm overflow-x-auto">
+      <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
         {error && <p className="text-red-500">{error}</p>}
         {/* Success Message */}
         {showPopup && (

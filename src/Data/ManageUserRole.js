@@ -330,9 +330,10 @@ const ManageUserRole = () => {
   };
 
   return (
+    <div className="p-4">
     <div className="p-1  max-w-screen-lg mx-auto">
       <h1 className="text-lg sm:text-xl mb-4 font-semibold">Manage Employee Roles</h1>
-      <div className="bg-white p-3 rounded-lg shadow-sm overflow-x-auto">
+      <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -635,6 +636,7 @@ const ManageUserRole = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

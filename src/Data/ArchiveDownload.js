@@ -1,4 +1,4 @@
-"use client"
+
 
 import React, { useState, useEffect } from "react"
 import axios from "axios"
@@ -218,40 +218,50 @@ const ArchiveDownload = () => {
     }
   }
 
-  const handleRetrieveArchived = async (archiveId) => {
-    setIsRetrievingArchived(true)
-    setRetrievingId(archiveId)
+ const handleRetrieveArchived = async (archiveId) => {
+    setIsRetrievingArchived(true);
+    setRetrievingId(archiveId);
     try {
-      const token = localStorage.getItem("tokenKey")
-      const response = await axios.get(`${API_HOST}/archive/retrieve/${archiveId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        responseType: "blob",
-      })
+        const token = localStorage.getItem("tokenKey");
+        const response = await axios.get(`${API_HOST}/archive/retrieve/${archiveId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            responseType: "blob",
+        });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement("a")
-      link.href = url
-      link.setAttribute("download", `archived_file_${archiveId}.zip`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-      showPopup("Archived file retrieved successfully", "success")
+        // Get the original filename from the content-disposition header
+        const contentDisposition = response.headers['content-disposition'];
+        let filename = `archived_file_${archiveId}`; // fallback name
+        
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
+        }
 
-      fetchArchivedFileStatus()
-      fetchPrimaryArchiveStatus()
-      fetchSecondaryArchiveStatus()
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", filename); // Use the original filename
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        showPopup("Archived file retrieved successfully", "success");
+
+        fetchArchivedFileStatus();
+        fetchPrimaryArchiveStatus();
+        fetchSecondaryArchiveStatus();
     } catch (error) {
-      console.error("Error retrieving archived file:", error)
-      showPopup("Failed to retrieve archived file", "error")
+        console.error("Error retrieving archived file:", error);
+        showPopup("Failed to retrieve archived file", "error");
     } finally {
-      setIsRetrievingArchived(false)
-      setRetrievingId(null)
+        setIsRetrievingArchived(false);
+        setRetrievingId(null);
     }
-  }
-
+};
   const groupedFileTypes = fileTypes.reduce((acc, curr) => {
     if (!acc[curr.filetype]) {
       acc[curr.filetype] = []
@@ -1430,9 +1440,10 @@ const ArchiveDownload = () => {
   }
 
   return (
+    <div className="p-4">
     <div className="flex flex-col space-y-4">
       <h2 className="text-2xl mb-6 font-semibold text-gray-800"> Archive Download</h2>
-      <div className="bg-white p-6 rounded-xl shadow-md w-full">
+      <div className="bg-white p-4 rounded-xl shadow-md w-full">
         {popupMessage && (
           <Popup message={popupMessage.message} type={popupMessage.type} onClose={() => setPopupMessage(null)} />
         )}
@@ -1568,6 +1579,7 @@ const ArchiveDownload = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   )
 }

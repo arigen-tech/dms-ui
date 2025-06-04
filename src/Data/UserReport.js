@@ -271,9 +271,9 @@ const UserReport = () => {
   };
 
   return (
-    <div className="p-1">
+    <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">User Reports</h1>
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 rounded-lg shadow-md">
         <form onSubmit={handleDownload}>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
             {role === "BRANCH ADMIN" ? (

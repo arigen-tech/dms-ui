@@ -340,7 +340,7 @@ const Role = () => {
 
 
   return (
-    <div className="p-1">
+    <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">ROLES</h1>
       {popupMessage && (
         <Popup

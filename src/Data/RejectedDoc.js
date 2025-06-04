@@ -455,9 +455,9 @@ function RejectedDoc() {
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="p-1 max-w-screen-lg mx-auto">
+    <div className="p-4 max-w-screen-lg mx-auto">
       <h1 className="text-xl mb-4 font-semibold">Rejected Documents</h1>
-      <div className="bg-white p-3 rounded-lg shadow-sm overflow-x-auto">
+      <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
