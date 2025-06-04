@@ -50,6 +50,7 @@ const BranchEmployee = () => {
         message: '',
         type: 'default'
     });
+    const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
 
     useEffect(() => {
@@ -370,6 +371,9 @@ const BranchEmployee = () => {
     };
 
     const confirmToggleActive = async () => {
+        // Disable the button immediately when clicked
+        setIsConfirmDisabled(true);
+
         try {
             const newStatus = !employeeToToggle.active; // Toggle between true and false
 
@@ -422,6 +426,8 @@ const BranchEmployee = () => {
             // Ensure modal is closed and state is cleared even if there was an error
             setModalVisible(false);
             setEmployeeToToggle(null);
+            // Re-enable the button when the operation is complete
+            setIsConfirmDisabled(false);
         }
     };
 
@@ -713,13 +719,10 @@ const BranchEmployee = () => {
                                                 {employee.updatedBy?.name || "Unknown"}
                                             </td>
                                             <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
-                                            <td className="border p-2">
-                                                <button
-                                                    onClick={() => handleEditEmployee(employee.id)}
-                                                    disabled={employee.isActive === 0}
-                                                    className={`${employee.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
 
-                                                >
+                                            <td className="border p-2 text-center">
+                                                <button onClick={() => handleEditEmployee(employee.id)} disabled={employee.active === false}
+                                                    className={`${employee.active === false ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                                     <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                                                 </button>
                                             </td>
@@ -814,9 +817,11 @@ const BranchEmployee = () => {
                             </button>
                             <button
                                 onClick={confirmToggleActive}
-                                className="bg-blue-500 text-white rounded-md px-4 py-2"
+                                disabled={isConfirmDisabled}
+                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
                             >
-                                Confirm
+                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
                             </button>
                         </div>
                     </div>
