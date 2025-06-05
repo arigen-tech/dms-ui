@@ -37,7 +37,7 @@ function Header({ toggleSidebar, userName }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownRoleOpen, setDropdownRoleOpen] = useState(false);
-  const [roleName, setRoleName] = useState(null);
+  const [roleName, setRoleName] = useState([]);;
   const [popupMessage, setPopupMessage] = useState(null);
   const [rol, setRole] = useState(null);
   const [imageSrc, setImageSrc] = useState(null);
@@ -260,15 +260,20 @@ function Header({ toggleSidebar, userName }) {
           {dropdownRoleOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
               <DropdownMenu
-                items={roleName.map((role) => ({
-                  label: <span className="flex items-center text-sm text-blue-600 p-0.5 rounded transition duration-200 m"><UserIcon className="h-3 w-3 mr-2" /> {role}</span>,
+                items={Array.isArray(roleName) ? roleName.map((role) => ({
+                  label: (
+                    <span className="flex items-center text-sm text-blue-600 p-0.5 rounded transition duration-200 m">
+                      <UserIcon className="h-3 w-3 mr-2" /> {role}
+                    </span>
+                  ),
                   onClick: () => {
                     handleRoleSwitch(role);
                     setDropdownRoleOpen(false);
                   },
-                }))}
+                })) : []}
+
                 onSelect={(item) => item.onClick && item.onClick()}
-                emptyMessage="No roles available"
+                emptyMessage="No Multiple roles available"
                 className="max-h-48 overflow-y-auto"
               />
             </div>
