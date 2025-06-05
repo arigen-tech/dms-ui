@@ -307,7 +307,7 @@ const Branch = () => {
 
   return (
     <div className="px-2">
-      <h1 className="text-lg mb-1 font-semibold">Branches</h1>
+      <h1 className="text-2xl mb-1 mb-2 font-semibold">Branches</h1>
       <div className="bg-white p-1 rounded-lg shadow-sm">
 
 
