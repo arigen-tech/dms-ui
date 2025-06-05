@@ -32,16 +32,16 @@ const Layout = ({ children }) => {
       )}
 
       {/* Main Content Container */}
-      <div className="flex flex-col flex-1 min-w-0 h-screen overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
         <Header toggleSidebar={toggleSidebar} />
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto">
           {/* Content Wrapper */}
-          <div className="h-full flex flex-col">
+          <div className="min-h-full flex flex-col"> {/* Added flex and flex-col */}
             {/* Main Content */}
-            <main className="flex-1 overflow-auto">
+            <main className="p-4 flex-1"> {/* Added flex-1 */}
               {children}
             </main>
 
