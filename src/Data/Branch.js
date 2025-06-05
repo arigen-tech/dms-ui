@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { BRANCH_API } from '../API/apiConfig';
 import Popup from '../Components/Popup';
+import LoadingComponent from '../Components/LoadingComponent';
 
 const tokenKey = 'tokenKey';
 
@@ -24,7 +25,7 @@ const Branch = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [editingIndex, setEditingIndex] = useState(null);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [branchToToggle, setBranchToToggle] = useState(null);
@@ -33,6 +34,7 @@ const Branch = () => {
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -42,6 +44,7 @@ const Branch = () => {
   }, []); // Adding an empty dependency array to avoid infinite loop
 
   const fetchBranches = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${BRANCH_API}/findAll`, {
         headers: {
@@ -51,6 +54,8 @@ const Branch = () => {
       setBranches(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -296,11 +301,15 @@ const Branch = () => {
     }
   };
 
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">Branches</h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+    <div className="px-2">
+      <h1 className="text-lg mb-1 font-semibold">Branches</h1>
+      <div className="bg-white p-1 rounded-lg shadow-sm">
+
 
         {/* Popup Messages */}
         {popupMessage && (
@@ -312,47 +321,56 @@ const Branch = () => {
         )}
 
         {/* Form Section */}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Name Input */}
-            <label className="block text-md font-medium text-gray-700">
-              Name
-              <input
-                type="text"
-                placeholder="Enter name"
-                name="name"
-                value={formData.name || ""}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
+        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+          <div className="flex gap-6">
+            <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Name Input */}
+              <label className="block text-md font-medium text-gray-700">
+                Name
+                <input
+                  type="text"
+                  placeholder="Enter name"
+                  name="name"
+                  value={formData.name || ""}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </label>
 
-            {/* Address Input */}
-            <label className="block text-md font-medium text-gray-700">
-              Address
-              <input
-                type="text"
-                placeholder="Enter address"
-                name="address"
-                value={formData.address || ""}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
-          </div>
+              {/* Address Input */}
+              <label className="block text-md font-medium text-gray-700">
+                Address
+                <input
+                  type="text"
+                  placeholder="Enter address"
+                  name="address"
+                  value={formData.address || ""}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </label>
+            </div>
 
-          <div className="mt-3 flex justify-start">
-            {editingBranchId === null ? (
-              <button onClick={handleAddBranch} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
-                <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Branch
-              </button>
-            ) : (
-              <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
-                <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
-              </button>
-            )}
+            <div className="w-1/5 flex items-end">
+              {editingBranchId === null ? (
+                <button
+                  onClick={handleAddBranch}
+                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
+                >
+                  <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Branch
+                </button>
+              ) : (
+                <button
+                  onClick={handleSaveEdit}
+                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
+                >
+                  <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                </button>
+              )}
+            </div>
           </div>
         </div>
+
 
         {/* Search and Items Per Page Section */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
