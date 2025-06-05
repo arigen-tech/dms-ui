@@ -328,7 +328,7 @@ const Department = () => {
         )}
         {/* Form Section */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
             {/* Name Field */}
             <div>
               <label htmlFor="name" className="block text-md font-medium text-gray-700 mb-1">
@@ -365,18 +365,19 @@ const Department = () => {
                 ))}
               </select>
             </div>
-          </div>
 
-          <div className="mt-3 flex justify-start">
-            {editingIndex === null ? (
-              <button onClick={handleAddDepartment} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
-                <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Department
-              </button>
-            ) : (
-              <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
-                <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
-              </button>
-            )}
+            {/* Button */}
+            <div className="flex justify-start">
+              {editingIndex === null ? (
+                <button onClick={handleAddDepartment} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
+                  <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Department
+                </button>
+              ) : (
+                <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
+                  <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
