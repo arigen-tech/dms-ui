@@ -226,7 +226,7 @@ function Header({ toggleSidebar, userName }) {
   }, [dropdownRoleOpen]);
 
   return (
-    <header className="bg-blue-800 text-white p-2 flex flex-col md:flex-row justify-between items-end shadow-inner relative">
+    <header className="bg-blue-800 text-white flex flex-col md:flex-row justify-between items-end shadow-inner relative">
       {popupMessage && (
         <Popup
           message={popupMessage.message}
@@ -234,20 +234,20 @@ function Header({ toggleSidebar, userName }) {
           onClose={handleClose}
         />
       )}
-      <div className="flex items-center w-full justify-between md:justify-start mb-1">
+      <div className="flex items-center w-full justify-between md:justify-start">
         <button
           onClick={toggleSidebar}
           className="text-gray-300 hover:text-white p-2 rounded-lg transition duration-200 mr-4"
         >
           <Bars3Icon className="h-7 w-7" />
         </button>
-        <h2 className="font-bold text-2xl mb-1.5">
+        <h3 className="font-bold text-lg mb-1.5">
           <span className="font-light">Document Management System</span>
-        </h2>
+        </h3>
       </div>
       <div className="flex space-x-4 items-center mr-10">
         <NotificationBell />
-        <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
+        <h1 className="text-2xl pb-1 mr-1 font-light">|</h1>
         {/* Role Dropdown */}
         <div className="relative">
           <div
@@ -285,17 +285,18 @@ function Header({ toggleSidebar, userName }) {
         {/* Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <div
-            className="flex items-center space-x-4 cursor-pointer"
+            className="flex items-center space-x-2 cursor-pointer"
             onClick={toggleDropdown}
           >
             <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
-            <span className="font-light text-sm mr-1">{UserName}</span>
+            <span className="font-light text-sm mr-1 flex-shrink-0 whitespace-nowrap">{UserName}</span>
             <img
               src={imageSrc || adminPhoto}
               alt="Profile"
               className="h-8 w-8 rounded-full"
             />
           </div>
+          
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
               <DropdownMenu
