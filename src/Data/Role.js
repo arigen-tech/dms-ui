@@ -213,7 +213,7 @@ const Role = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
-     setIsConfirmDisabled(true);
+    setIsConfirmDisabled(true);
 
     if (roleToToggle) {
       try {
@@ -344,74 +344,79 @@ const Role = () => {
 
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">ROLES</h1>
-      {popupMessage && (
-        <Popup
-          message={popupMessage.message}
-          type={popupMessage.type}
-          onClose={() => setPopupMessage(null)}
-        />
-      )}
-      <div className="bg-white p-3 rounded-lg shadow-sm">
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="flex flex-col">
+    <div className="px-2">
+      <h1 className="text-lg mb-1 font-semibold">Roles</h1>
+      <div className="bg-white p-1 rounded-lg shadow-sm">
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={() => setPopupMessage(null)}
+          />
+        )}
+        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+          <div className="flex gap-6">
+            <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <label
                 htmlFor="role"
-                className="mb-1 text-md font-medium text-gray-700"
+               
+                className="block text-md font-medium text-gray-700"
               >
                 Role <span className="text-red-800 text-xs">(Unique)</span>
+                <input
+                  type="text"
+                  id="role"
+                  name="role"
+                  placeholder="Enter Role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+
+
+                />
               </label>
-              <input
-                type="text"
-                id="role"
-                name="role"
-                placeholder="Enter Role"
-                value={formData.role}
-                onChange={handleInputChange}
-                className="p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex flex-col">
+
               <label
                 htmlFor="role"
-                className="mb-1 text-md font-medium text-gray-700"
+               className="block text-md font-medium text-gray-700"
               >
                 Role Code <span className="text-red-800 text-xs">(Unique)</span>
+                <input
+                  type="text"
+                  id="roleCode"
+                  maxLength={3}
+                  minLength={3}
+                  name="roleCode"
+                  placeholder="Enter Role Code"
+                  value={formData.roleCode}
+                  onChange={handleInputsChange}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </label>
-              <input
-                type="text"
-                id="roleCode"
-                maxLength={3}
-                minLength={3}
-                name="roleCode"
-                placeholder="Enter Role Code"
-                value={formData.roleCode}
-                onChange={handleInputsChange}
-                className="p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
+
+            </div>
+
+            <div className="w-1/5 flex items-end">
+
+              {editingRoleId === null ? (
+                <button
+                  onClick={handleAddRole}
+                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
+                >
+                  <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Role
+                </button>
+              ) : (
+                <button
+                  onClick={handleSaveEdit}
+                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
+                >
+                  <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                </button>
+              )}
             </div>
           </div>
-
-          <div className="mt-3 flex justify-start">
-            {editingRoleId === null ? (
-              <button
-                onClick={handleAddRole}
-                className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
-              >
-                <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Role
-              </button>
-            ) : (
-              <button
-                onClick={handleSaveEdit}
-                className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
-              >
-                <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
-              </button>
-            )}
-          </div>
         </div>
+
 
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
