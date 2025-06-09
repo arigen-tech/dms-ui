@@ -277,9 +277,9 @@ const FilesType = () => {
 
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">FileTypes</h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+    <div className="px-2">
+      <h1 className="text-lg mb-1 font-semibold">FileTypes</h1>
+      <div className="bg-white p-1 shadow-sm">
 
         {/* Popup Messages */}
         {popupMessage && (
@@ -290,50 +290,56 @@ const FilesType = () => {
           />
         )}
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Name Input */}
-            <label className="block text-md font-medium text-gray-700">
-              File Types
-              <input
-                type="text"
-                placeholder="Enter File Types"
-                name="filetype"
-                value={formData.filetype || ""}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
 
-            {/* Address Input */}
-            <label className="block text-md font-medium text-gray-700">
-              Extension
-              <input
-                type="extension"
-                placeholder="Enter extension"
-                name="extension"
-                value={formData.extension || ""}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </label>
-          </div>
 
-          <div className="mt-3 flex justify-start">
-            {editingFileTypeId === null ? (
-              <button onClick={handleAddFileType} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
-                <PlusCircleIcon className="h-5 w-5 mr-1" /> Add FileType
-              </button>
-            ) : (
-              <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
-                <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
-              </button>
-            )}
+        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+          <div className="flex gap-6">
+            <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <label htmlFor="name" className="block text-md font-medium text-gray-700">
+
+
+                File Types
+                <input
+                  type="text"
+                  placeholder="Enter File Types"
+                  name="filetype"
+                  value={formData.filetype || ""}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </label>
+
+              {/* Address Input */}
+              <label className="block text-md font-medium text-gray-700">
+                Extension
+                <input
+                  type="extension"
+                  placeholder="Enter extension"
+                  name="extension"
+                  value={formData.extension || ""}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </label>
+            </div>
+
+            <div className="w-1/5 flex items-end">
+              {editingFileTypeId === null ? (
+                <button onClick={handleAddFileType}
+                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center">
+                  <PlusCircleIcon className="h-5 w-5 mr-1" /> Add FileType
+                </button>
+              ) : (
+                <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center">
+                  <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Search and Items Per Page Section */}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mb-3 bg-slate-100 px-3 py-2 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label
