@@ -14,6 +14,7 @@ import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 import { useNavigate } from "react-router-dom";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import apiClient from "../API/apiClient";
+import LoadingComponent from '../Components/LoadingComponent';
 
 
 function RejectedDoc() {
@@ -215,7 +216,7 @@ function RejectedDoc() {
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      setIsOpen(false);
+      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
@@ -454,8 +455,9 @@ function RejectedDoc() {
     });
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+   if (loading) {
+     return <LoadingComponent />;
+   }
 
   return (
     <div className="p-4 max-w-screen-lg mx-auto">

@@ -13,6 +13,7 @@ import {
 import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import apiClient from "../API/apiClient";
+import LoadingComponent from '../Components/LoadingComponent';
 
 
 const Approve = () => {
@@ -222,7 +223,7 @@ const Approve = () => {
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      setIsOpen(false);
+      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
 
@@ -483,6 +484,10 @@ const Approve = () => {
       (_, i) => startPage + i
     );
   };
+
+    if (loading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="p-4">

@@ -15,6 +15,7 @@ import {
 import { API_HOST, DOCUMENTHEADER_API, UPLOADFILE_API } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
 import FilePreviewModal from "../Components/FilePreviewModal";
+import LoadingComponent from "../Components/LoadingComponent";
 
 const ApprovedDoc = () => {
   const [formData, setFormData] = useState({
@@ -236,7 +237,7 @@ const ApprovedDoc = () => {
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      setIsOpen(false);
+      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
@@ -475,8 +476,9 @@ const ApprovedDoc = () => {
     }, 1000);
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="p-4">

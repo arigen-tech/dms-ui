@@ -269,7 +269,6 @@ const UserAddEmployee = () => {
             message: "User authentication error. Please log in again.",
             type: "error",
           });
-          setIsSubmitting(false);
           return;
         }
 
@@ -330,6 +329,8 @@ const UserAddEmployee = () => {
           message: errorMessage,
           type: "error",
         });
+      }finally {
+        setIsSubmitting(false); 
       }
     }
   };
@@ -366,6 +367,8 @@ const UserAddEmployee = () => {
     const isDepartmentSelected = formData.department && formData.department.id;
 
     if (isFormDataValid && isBranchSelected && isDepartmentSelected) {
+      setIsSubmitting(true);
+
       try {
         const token = localStorage.getItem("tokenKey");
 
@@ -436,6 +439,8 @@ const UserAddEmployee = () => {
           message: errorMessage,
           type: "error",
         });
+      }finally {
+        setIsSubmitting(false); 
       }
     } else {
       const errorMessage =
@@ -510,7 +515,7 @@ const UserAddEmployee = () => {
       // Ensure modal is closed and state is cleared even if there was an error
       setModalVisible(false);
       setEmployeeToToggle(null);
-       setIsConfirmDisabled(false);
+      setIsConfirmDisabled(false);
     }
   };
 
@@ -720,7 +725,9 @@ const UserAddEmployee = () => {
             {editingIndex === null ? (
               <button
                 onClick={handleAddEmployee}
-                className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
+                disabled={isSubmitting}
+                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 <PlusCircleIcon className="h-5 w-5 mr-2" />
                 {isSubmitting ? "Submitting..." : "Add User"}
@@ -728,7 +735,9 @@ const UserAddEmployee = () => {
             ) : (
               <button
                 onClick={handleSaveEdit}
-                className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
+                disabled={isSubmitting}
+                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 <CheckCircleIcon className="h-5 w-5 mr-2" />
                 {isSubmitting ? "Submitting..." : "Update"}
@@ -947,13 +956,13 @@ const UserAddEmployee = () => {
                 Cancel
               </button>
               <button
-                                onClick={confirmToggleActive}
-                                disabled={isConfirmDisabled}
-                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                            >
-                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
-                            </button>
+                onClick={confirmToggleActive}
+                disabled={isConfirmDisabled}
+                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+              >
+                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+              </button>
             </div>
           </div>
         </div>

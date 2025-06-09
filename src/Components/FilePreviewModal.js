@@ -5,7 +5,7 @@ import Papa from "papaparse";
 import { marked } from "marked";
 import { decode } from "tiff";
 
-const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, fileName, fileData }) => {
+const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fileUrl, fileName, fileData }) => {
   const [previewContent, setPreviewContent] = useState(null);
   const [typeToPreview, setTypeToPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -441,7 +441,7 @@ const FilePreviewModal = ({ isOpen, onClose, onDownload, fileType, fileUrl, file
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className={`fixed inset-0 flex items-center justify-center z-[9000] bg-gray-800 bg-opacity-75 ${className}`}>
       <div className="bg-white rounded-xl shadow-xl w-11/12 max-w-4xl p-4 relative">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">{ogFileName}</h2>

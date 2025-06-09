@@ -5,6 +5,8 @@ import Search from "./Search"; // Import the Search component
 import Popup from "../Components/Popup";
 import { useDropzone } from "react-dropzone";
 import FilePreviewModal from "../Components/FilePreviewModal";
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 import {
   PencilIcon,
@@ -74,6 +76,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
   const [isOpeningFile, setIsOpeningFile] = useState(false); 
+    const [loading, setLoading] = useState(false);
+
   // Run this effect only when component mounts
   useEffect(() => {
     if (data) {
@@ -176,6 +180,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchDocuments = async () => {
     try {
+      setLoading(true);
       const response = await apiClient.get(
         `${DOCUMENTHEADER_API}/pending/employee/${UserId}`,
         {
@@ -198,6 +203,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         // Something happened in setting up the request
         console.error("Error setting up request:", error.message);
       }
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -295,7 +302,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      setIsOpen(false);
+      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
@@ -995,6 +1002,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     file.extension?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+
+    if (loading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="p-4">

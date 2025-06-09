@@ -5,6 +5,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaFilePdf, FaFileExcel } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
+import Popup from '../Components/Popup';
+
 
 const UserReport = () => {
   const initialFormData = {
@@ -32,6 +34,8 @@ const UserReport = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [popupMessage, setPopupMessage] = useState(null);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -46,7 +50,16 @@ const UserReport = () => {
 
   const role = localStorage.getItem("role");
 
-  
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+        window.location.reload();
+      }
+    });
+  };
 
   useEffect(() => {
     fetchBranches();
@@ -153,7 +166,7 @@ const UserReport = () => {
 
     const validationError = validateForm();
     if (validationError) {
-      showModalAlert(validationError, "error");
+      showPopup(validationError, "warning");
       return;
     }
 
@@ -233,7 +246,7 @@ const UserReport = () => {
       link.click();
       link.remove();
 
-      showModalAlert("Download successful!", "success"); 
+      showModalAlert("Download successful!", "success");
       resetForm();
     } catch (error) {
       showModalAlert("Failed to download file. Please try again.", "error");
@@ -252,7 +265,6 @@ const UserReport = () => {
   const validateForm = () => {
     if (!formData.branch) return "Branch is required.";
     if (!formData.department) return "Department is required.";
-    if (!formData.status) return "Status is required.";
     if (!fromDate) return "Start date is required.";
     if (!toDate) return "End date is required.";
     if (!selectedFormat) return "Document format is required.";
@@ -274,13 +286,20 @@ const UserReport = () => {
     <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">User Reports</h1>
       <div className="bg-white p-4 rounded-lg shadow-md">
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={popupMessage.onClose}
+          />
+        )}
         <form onSubmit={handleDownload}>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
             {role === "BRANCH ADMIN" ? (
               <>
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="branch">
-                    Branch
+                    Branch <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="branch"
@@ -296,7 +315,7 @@ const UserReport = () => {
 
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="department">
-                    Department
+                    Department <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="department"
@@ -317,7 +336,7 @@ const UserReport = () => {
               <>
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="branch">
-                    Branch
+                    Branch <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="branch"
@@ -333,7 +352,7 @@ const UserReport = () => {
 
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="department">
-                    Department
+                    Department <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="department"
@@ -353,7 +372,7 @@ const UserReport = () => {
               <>
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="branch">
-                    Branch
+                    Branch <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="branch"
@@ -373,7 +392,7 @@ const UserReport = () => {
 
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="department">
-                    Department
+                    Department <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="department"
@@ -406,7 +425,7 @@ const UserReport = () => {
                 onChange={handleInputChange}
                 className="p-2 border rounded-md outline-none"
               >
-                <option value="">Select Status</option>
+                <option value="">All</option>
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
               </select>
@@ -415,7 +434,7 @@ const UserReport = () => {
             {/* From Date Picker */}
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="fromDate">
-                From Date
+                From Date <span className="text-red-700">*</span>
               </label>
               <DatePicker
                 id="fromDate"
@@ -434,7 +453,7 @@ const UserReport = () => {
             {/* To Date Picker */}
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="toDate">
-                To Date
+                To Date <span className="text-red-700">*</span>
               </label>
               <DatePicker
                 id="toDate"
@@ -483,11 +502,10 @@ const UserReport = () => {
           <button
             onClick={handleDownload}
             disabled={isProcessing}
-            className={`px-4 py-2 rounded ${
-              isProcessing
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600"
-            } text-white`}
+            className={`px-4 py-2 rounded ${isProcessing
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-500 hover:bg-blue-600"
+              } text-white`}
           >
             {isProcessing ? "Processing..." : "Download"}
           </button>
@@ -496,9 +514,8 @@ const UserReport = () => {
       {showModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50 z-50">
           <div
-            className={`w-96 p-6 rounded-lg ${
-              modalType === "success" ? "bg-white" : "bg-white"
-            } text-gray-900 shadow-lg`}
+            className={`w-96 p-6 rounded-lg ${modalType === "success" ? "bg-white" : "bg-white"
+              } text-gray-900 shadow-lg`}
           >
             <h2 className="text-xl font-semibold mb-4">
               {modalType === "success" ? "Success!" : "Error"}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import apiClient from "../API/apiClient";
 import {
   API_HOST,
@@ -9,11 +9,8 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { BsQrCode } from "react-icons/bs";
 import Popup from "../Components/Popup";
-import axios from "axios";
-import QrReader from "react-qr-reader";
+import QrScanner from 'qr-scanner';
 import FilePreviewModal from "../Components/FilePreviewModal";
-
-
 
 const SearchByScan = () => {
   const navigate = useNavigate();
@@ -26,8 +23,6 @@ const SearchByScan = () => {
   const [loginBranchid, setLoginBranchid] = useState(null);
   const [loginDepartmentid, setLoginDepartmentid] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
-  const [stream, setStream] = useState(null);
-  const [responses, setResponses] = useState(null);
   const [error, setError] = useState(null);
   const token = localStorage.getItem("tokenKey");
   const userId = localStorage.getItem("userId");
@@ -35,22 +30,118 @@ const SearchByScan = () => {
   const [popupMessage, setPopupMessage] = useState(null);
   const location = useLocation();
   const [file, setFile] = useState(null);
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
-  const sanitizeString = (str) => str?.replace(/ /g, "_") || "";
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [blobUrl, setBlobUrl] = useState("");
   const [contentType, setContentType] = useState("");
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
   const [isOpeningFile, setIsOpeningFile] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState(null);
+
+  const videoRef = useRef(null);
+  const qrScannerRef = useRef(null);
+  const fileInputRef = useRef(null);
+
   const unauthorizedMessage = "You are not authorized to scan this QR code.";
   const invalidQrMessage = "Invalid QR Code.";
-  // const uploadErrorMessage = "Failed to upload or read QR code from the image.";
-  let actionByName;
-  let isUnauthorized = false;
+  const cameraErrorMessage = "Could not access camera. Please check permissions and try again.";
+
+  // Check camera permissions and get available cameras
+  const checkCameraPermissions = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      setAvailableCameras(videoDevices);
+      if (videoDevices.length > 0) {
+        setSelectedCamera(videoDevices[0].deviceId);
+        return true;
+      }
+      setError("No camera devices found");
+      return false;
+    } catch (err) {
+      console.error("Camera permission error:", err);
+      setError("Please allow camera access to scan QR codes");
+      return false;
+    }
+  };
+
+  // Clean up camera on unmount
+  useEffect(() => {
+    return () => {
+      if (qrScannerRef.current) {
+        qrScannerRef.current.stop();
+        qrScannerRef.current.destroy();
+        qrScannerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handle camera activation/deactivation
+  useEffect(() => {
+    const initCamera = async () => {
+      try {
+        if (cameraActive && videoRef.current && !qrScannerRef.current) {
+          qrScannerRef.current = new QrScanner(
+            videoRef.current,
+            result => {
+              if (result) {
+                setQrData(result.data);
+                stopCamera();
+              }
+            },
+            {
+              preferredCamera: selectedCamera || 'environment',
+              highlightScanRegion: true,
+              highlightCodeOutline: true,
+              maxScansPerSecond: 5,
+            }
+          );
+
+          await qrScannerRef.current.start();
+        }
+      } catch (err) {
+        console.error("Camera error:", err);
+        setError(cameraErrorMessage);
+        stopCamera();
+      }
+    };
+
+    initCamera();
+
+    return () => {
+      if (!cameraActive && qrScannerRef.current) {
+        stopCamera();
+      }
+    };
+  }, [cameraActive, selectedCamera]);
+
+  const stopCamera = () => {
+    if (qrScannerRef.current) {
+      qrScannerRef.current.stop();
+      qrScannerRef.current.destroy();
+      qrScannerRef.current = null;
+    }
+    setCameraActive(false);
+    setIsCameraLoading(false);
+  };
+
+  const handleToggleCamera = async () => {
+    if (cameraActive) {
+      stopCamera();
+    } else {
+      setIsCameraLoading(true);
+      setError(null);
+      try {
+        if (await checkCameraPermissions()) {
+          setCameraActive(true);
+        }
+      } finally {
+        setIsCameraLoading(false);
+      }
+    }
+  };
 
   const handleQrCheck = (qrParams) => {
     let isUnauthorized = false;
@@ -71,25 +162,6 @@ const SearchByScan = () => {
     }
     return false;
   };
-
-  useEffect(() => {
-    if (cameraActive && !stream) {
-      navigator.mediaDevices
-        .getUserMedia({ video: true })
-        .then((mediaStream) => {
-          setStream(mediaStream);
-        })
-        .catch((err) => {
-          setError("Error accessing camera: " + err.message);
-        });
-    }
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [cameraActive, stream]);
 
   useEffect(() => {
     fetchLoginUser();
@@ -179,11 +251,6 @@ const SearchByScan = () => {
     setPopupMessage({ message, type });
   };
 
-  const handleToggleCamera = () => {
-    setCameraActive((prev) => !prev);
-    setQrData(null);
-  };
-
   const fetchLoginUser = async () => {
     if (!userId || !token) {
       console.error("userId or token is missing");
@@ -241,7 +308,6 @@ const SearchByScan = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setHeaderData(response.data);
-      setResponses(response.data);
       console.log(response.data);
     } catch (err) {
       if (err.response) {
@@ -341,13 +407,12 @@ const SearchByScan = () => {
     }
   };
 
-  const openFile = async (docName, version) => {
+  const openFile = async (file) => {
     try {
       setIsOpeningFile(true);
-      console.log("docName:", docName);
-      console.log("version:", version);
+      console.log("Opening file:", file);
 
-      if (!docName) {
+      if (!file?.docName) {
         showPopup("Document name is missing. Please try again.");
         return;
       }
@@ -365,63 +430,66 @@ const SearchByScan = () => {
       )}/${encodeURIComponent(department)}/${encodeURIComponent(
         year
       )}/${encodeURIComponent(category)}/${encodeURIComponent(
-        version
-      )}/${encodeURIComponent(docName)}`;
-      const token = localStorage.getItem("tokenKey");
+        file.version
+      )}/${encodeURIComponent(file.docName)}`;
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
-      let blob = new Blob([response.data], { type: response.headers["content-type"] });
-      let url = URL.createObjectURL(blob);
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      setIsOpen(false);
-      setSearchFileTerm("");
+      setSelectedDocFiles(file);
       setIsModalOpen(true);
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to fetch or preview the file.");
+      showPopup("Failed to fetch or preview the file.", "error");
     } finally {
       setIsOpeningFile(false);
     }
   };
 
   const handleDownload = async (file) => {
-    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
-    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
-    const version = file.version;
-    const fileName = file.docName.replace(/ /g, "_");
+    try {
+      const branch = headerData.employee.branch.name.replace(/ /g, "_");
+      const department = headerData.employee.department.name.replace(/ /g, "_");
+      const year = headerData.yearMaster.name.replace(/ /g, "_");
+      const category = headerData.categoryMaster.name.replace(/ /g, "_");
+      const version = file.version;
+      const fileName = file.docName.replace(/ /g, "_");
 
-    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-      branch
-    )}/${encodeURIComponent(department)}/${encodeURIComponent(
-      year
-    )}/${encodeURIComponent(category)}/${encodeURIComponent(
-      version
-    )}/${encodeURIComponent(fileName)}`;
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+        branch
+      )}/${encodeURIComponent(department)}/${encodeURIComponent(
+        year
+      )}/${encodeURIComponent(category)}/${encodeURIComponent(
+        version
+      )}/${encodeURIComponent(fileName)}`;
 
-    const response = await apiClient.get(fileUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: "blob",
-    });
+      const response = await apiClient.get(fileUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob",
+      });
 
-    const downloadBlob = new Blob([response.data], {
-      type: response.headers["content-type"],
-    });
+      const downloadBlob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
 
-    const link = document.createElement("a");
-    link.href = window.URL.createObjectURL(downloadBlob);
-    link.download = file.docName; // download actual name with extension
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(downloadBlob);
+      link.download = file.docName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error("Download error:", error);
+      showPopup("Failed to download the file.", "error");
+    }
   };
 
   const filteredDocFiles = useMemo(() => {
@@ -435,9 +503,7 @@ const SearchByScan = () => {
       const term = searchFileTerm.toLowerCase();
       return name.includes(term) || version.includes(term);
     });
-  }, [selectedDoc, headerData, searchFileTerm]);
-
-
+  }, [headerData, searchFileTerm]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -449,151 +515,151 @@ const SearchByScan = () => {
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
-  if (headerData?.approvalStatus === "REJECTED") {
-    actionByName = "Rejected";
-  } else if (headerData?.approvalStatus === "APPROVED") {
-    actionByName = "Approved";
-  }
+  const actionByName = headerData?.approvalStatus === "REJECTED"
+    ? "Rejected"
+    : headerData?.approvalStatus === "APPROVED"
+      ? "Approved"
+      : null;
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">
+    <div className="p-1">
+      <h1 className="text-md mb-2 font-semibold">
         DOCUMENT SEARCH BY QR CODES
       </h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+      <div className="bg-white p-1 rounded-lg shadow-sm">
         {popupMessage && (
           <Popup
             message={popupMessage.message}
             type={popupMessage.type}
-            onClose={handlePopupClose} // Trigger refresh on close
+            onClose={handlePopupClose}
           />
         )}
 
         {headerData && (
           <>
-            <div className="mb-4 bg-slate-100 p-4 rounded-lg">
+            <div className="mb-2 bg-slate-100 p-1 rounded-lg">
               <div className="grid grid-cols-4 gap-4">
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   File No.
                   <input
                     disabled
                     value={headerData?.fileNo}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Title
                   <input
                     disabled
                     value={headerData?.title}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Subject
                   <input
                     disabled
                     value={headerData?.subject}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Category
                   <input
                     disabled
                     value={headerData?.categoryMaster?.name}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Uploaded Date
                   <input
                     disabled
                     value={formatDate(headerData?.createdOn)}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Uploded By
                   <input
                     disabled
                     value={headerData?.employee?.name}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Department
                   <input
                     disabled
                     value={headerData?.employee?.department?.name}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Branch
                   <input
                     disabled
                     value={headerData?.employee?.branch?.name}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Document Status
                   <input
                     disabled
                     value={headerData?.approvalStatus}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
 
                 {headerData?.approvalStatus !== "PENDING" && (
                   <>
-                    <label className="block text-md font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700">
                       {actionByName} Date
                       <input
                         disabled
                         value={formatDate(headerData?.approvalStatusOn)}
-                        className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </label>
 
-                    <label className="block text-md font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700">
                       {actionByName} By
                       <input
                         disabled
                         value={headerData?.employeeBy?.name}
-                        className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </label>
                   </>
                 )}
                 {headerData?.approvalStatus === "REJECTED" && (
                   <>
-                    <label className="block text-md font-medium text-gray-700">
-                      Rejected Resion
+                    <label className="block text-sm font-medium text-gray-700">
+                      Rejected Reason
                       <input
                         disabled
                         value={headerData?.rejectionReason}
-                        className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </label>
                   </>
                 )}
 
-                <label className="block text-md font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   Document Year
                   <input
                     disabled
                     value={headerData?.yearMaster?.name}
-                    className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
               </div>
@@ -608,10 +674,10 @@ const SearchByScan = () => {
                 fileData={selectedDocFile}
               />
 
-              <div className="mt-6 text-center">
-                <div className="mt-6 relative">
+              <div className="mt-3 text-center">
+                <div className="mt-3 relative">
                   <div className="flex justify-center">
-                    <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
+                    <h2 className="text-md font-semibold text-indigo-700">Attached Files</h2>
                   </div>
                   <div className="absolute right-0 top-0">
                     <input
@@ -619,72 +685,73 @@ const SearchByScan = () => {
                       placeholder="Search Files..."
                       value={searchFileTerm}
                       onChange={(e) => setSearchFileTerm(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="px-2 py-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
                 </div>
-                {filteredDocFiles?.length > 0 ? (
-                  <div className="overflow-x-auto mt-4">
-                    <table className="table-auto w-full border-collapse border border-gray-300">
-                      <thead>
-                        <tr className="bg-indigo-100">
-                          <th className="border border-gray-300 px-4 py-2 text-center">
-                            S.N.
-                          </th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">
-                            Document Name
-                          </th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">
-                            Version
-                          </th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">
-                            Action
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredDocFiles.map((file, index) => {
-                          const displayName = file.docName.includes("_")
-                            ? file.docName.split("_").slice(1).join("_")
-                            : file.docName;
 
-                          return (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="border border-gray-300 px-4 py-2">
-                                {index + 1}
-                              </td>
-                              <td className="border border-gray-300 px-4 py-2">
-                                {displayName}
-                              </td>
-                              <td className="border border-gray-300 px-4 py-2">
-                                {file.version}
-                              </td>
-                              <td className="border border-gray-300 px-4 py-2">
-                                <button
-                                  onClick={() => {
-                                    setSelectedDocFiles(file);
-                                    openFile(file);
-                                  }}
-                                  disabled={isOpeningFile}
-                                  className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
-                                          ${isOpeningFile
-                                      ? 'opacity-50 cursor-not-allowed'
-                                      : 'hover:bg-indigo-600'
-                                    }`}
-                                >
-                                  {isOpeningFile ? 'Opening...' : 'Open'}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                {filteredDocFiles?.length > 0 ? (
+                  <div className="mt-4 border border-gray-300 rounded-md overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full table-fixed text-sm">
+                        <thead className="bg-indigo-100">
+                          <tr>
+                            <th className="w-12 border px-2 py-1 text-center sticky top-0 bg-indigo-100 z-10">S.N.</th>
+                            <th className="border px-2 py-1 text-left w-1/2 sticky top-0 bg-indigo-100 z-10">Document Name</th>
+                            <th className="w-24 border px-2 py-1 text-center sticky top-0 bg-indigo-100 z-10">Version</th>
+                            <th className="w-28 border px-2 py-1 text-center sticky top-0 bg-indigo-100 z-10">Action</th>
+                          </tr>
+                        </thead>
+                      </table>
+
+                      {/* Scrollable tbody container */}
+                      <div className={`${filteredDocFiles.length > 5 ? "max-h-64 overflow-y-auto" : ""}`}>
+                        <table className="min-w-full table-fixed text-sm">
+                          <tbody>
+                            {filteredDocFiles.map((file, index) => {
+                              const displayName = file.docName?.includes("_")
+                                ? file.docName.split("_").slice(1).join("_")
+                                : file.docName;
+
+                              return (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="w-12 border px-2 py-1 text-center">
+                                    {index + 1}
+                                  </td>
+                                  <td
+                                    className="border px-2 py-1 w-1/2 break-words"
+                                    title={displayName}
+                                  >
+                                    <div className="truncate">{displayName}</div>
+                                  </td>
+                                  <td className="w-24 border px-2 py-1 text-center">
+                                    {file.version}
+                                  </td>
+                                  <td className="w-28 border px-2 py-1 text-center">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedDocFiles(file);
+                                        openFile(file);
+                                      }}
+                                      disabled={isOpeningFile}
+                                      className={`bg-indigo-500 text-white px-3 py-1 rounded-md transition duration-300 no-print ${isOpeningFile
+                                          ? "opacity-50 cursor-not-allowed"
+                                          : "hover:bg-indigo-600"
+                                        }`}
+                                    >
+                                      {isOpeningFile ? "Opening..." : "Open"}
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 mt-2">
-                    No attached files available.
-                  </p>
+                  <p className="text-sm text-gray-500 mt-2">No attached files available.</p>
                 )}
               </div>
             </div>
@@ -692,7 +759,7 @@ const SearchByScan = () => {
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          {responses === null && (
+          {!headerData && (
             <>
               <div className="w-72 h-[312px] items-center justify-center ">
                 <div className="p-6 max-w-lg mx-auto bg-white shadow-md rounded-md relative w-72 h-72">
@@ -712,12 +779,11 @@ const SearchByScan = () => {
                     onChange={handleFileChange}
                     className="hidden"
                     id="file-upload"
+                    ref={fileInputRef}
                   />
                   <div
-                    className="w-[60%] mt-2  h-full flex justify-center items-center border border-gray-300 rounded-lg overflow-hidden cursor-pointer"
-                    onClick={() =>
-                      document.getElementById("file-upload").click()
-                    }
+                    className="w-[60%] mt-2 h-full flex justify-center items-center border border-gray-300 rounded-lg overflow-hidden cursor-pointer"
+                    onClick={() => fileInputRef.current.click()}
                   >
                     {!file && (
                       <p className="flex gap-3 items-center justify-center text-gray-500">
@@ -733,30 +799,61 @@ const SearchByScan = () => {
                 {!cameraActive && (
                   <button
                     onClick={handleToggleCamera}
-                    className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition duration-200"
+                    disabled={isCameraLoading}
+                    className={`px-4 py-2 text-white font-semibold rounded-md transition duration-200
+                      ${isCameraLoading
+                        ? 'bg-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 hover:bg-blue-600'
+                      }`}
                   >
-                    Open Camera
+                    {isCameraLoading ? 'Loading...' : 'Open Camera'}
                   </button>
                 )}
 
                 {cameraActive && (
                   <div className="mt-4 flex flex-col items-center">
-                    <QrReader
-                      delay={300}
-                      onError={(err) => {
-                        console.error("QR Scan Error:", err);
-                        setError(err?.message || "Unknown error");
-                      }}
-                      onScan={(data) => {
-                        if (data) {
-                          setQrData(data);
-                        }
-                      }}
-                      style={{ width: "300px" }}
-                      className="border border-gray-300 rounded"
-                      facingMode="environment"
-                    />
+                    <div className="relative w-full max-w-xs">
+                      <video
+                        ref={videoRef}
+                        className="w-full h-auto border border-gray-300 rounded"
+                        playsInline
+                      />
+                      {error && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white">
+                          {error}
+                        </div>
+                      )}
+                      <button
+                        onClick={handleToggleCamera}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
+                        title="Close camera"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
+                    {availableCameras.length > 1 && (
+                      <div className="mt-2 w-full">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Camera
+                          <select
+                            value={selectedCamera}
+                            onChange={(e) => setSelectedCamera(e.target.value)}
+                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                          >
+                            {availableCameras.map((camera) => (
+                              <option key={camera.deviceId} value={camera.deviceId}>
+                                {camera.label || `Camera ${availableCameras.indexOf(camera) + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                    )}
+
+                    <p className="mt-2 text-sm text-gray-600">
+                      Point camera at QR code to scan
+                    </p>
                   </div>
                 )}
               </div>

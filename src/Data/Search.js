@@ -322,7 +322,7 @@ const Search = () => {
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      setIsOpen(false);
+      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {

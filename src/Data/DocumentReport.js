@@ -5,6 +5,8 @@ import "jspdf-autotable";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaFilePdf, FaFileExcel } from "react-icons/fa";
+import Popup from '../Components/Popup';
+
 
 const DocumentReport = () => {
   const initialFormData = {
@@ -30,6 +32,8 @@ const DocumentReport = () => {
   const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
   const [modalType, setModalType] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [popupMessage, setPopupMessage] = useState(null);
+
 
   // const match = contentDisposition.match(/filename="(.+)"/);
   // if (match && match[1]) {
@@ -38,6 +42,20 @@ const DocumentReport = () => {
 
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
+
+
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+        window.location.reload();
+      }
+    });
+  };
+
+
 
   useEffect(() => {
     fetchCategories();
@@ -158,7 +176,14 @@ const DocumentReport = () => {
 
   const handleDownload = async (e) => {
     e.preventDefault();
+    setIsProcessing(true);
     try {
+      const errorMsg = validateForm();
+      if (errorMsg) {
+        showPopup(errorMsg, "warning");
+        return;
+      }
+
       const token = localStorage.getItem("tokenKey");
 
       const formattedFromDate = new Date(fromDate);
@@ -179,13 +204,13 @@ const DocumentReport = () => {
         endDate: formattedToDate,
         docType: selectedFormat,
       };
-  
+
       // Choose API endpoint based on role
       const apiUrl =
         role === "USER"
           ? `${DOCUMENTHEADER_API}/export/ById`
           : `${DOCUMENTHEADER_API}/export`;
-  
+
       const response = await axios.post(apiUrl, requestBody, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -225,6 +250,8 @@ const DocumentReport = () => {
     } catch (error) {
       console.error("Error exporting documents:", error);
       showModalAlert("Failed to export documents. Please try again.", "error");
+    }finally {
+      setIsProcessing(false);
     }
   };
 
@@ -236,12 +263,12 @@ const DocumentReport = () => {
 
   const closeModal = () => {
     setShowModal(false);
+    resetFields();
   };
 
   const validateForm = () => {
     if (!searchCriteria.branch) return "Branch is required.";
     if (!searchCriteria.department) return "Department is required.";
-    if (!searchCriteria.status) return "Status is required.";
     if (!fromDate) return "Start date is required.";
     if (!toDate) return "End date is required.";
     if (!selectedFormat) return "Document format is required.";
@@ -262,12 +289,19 @@ const DocumentReport = () => {
     <div className="p-4">
       <h1 className="text-xl mb-4 font-semibold">Document Reports</h1>
       <div className="bg-white p-4 rounded-lg shadow-md">
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={popupMessage.onClose}
+          />
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
           {role === "BRANCH ADMIN" ? (
             <>
               <div className="flex flex-col">
                 <label className="mb-1" htmlFor="branch">
-                  Branch
+                  Branch <span className="text-red-700">*</span>
                 </label>
                 <select
                   id="branch"
@@ -283,7 +317,7 @@ const DocumentReport = () => {
 
               <div className="flex flex-col">
                 <label className="mb-1" htmlFor="department">
-                  Department
+                  Department <span className="text-red-700">*</span>
                 </label>
                 <select
                   id="department"
@@ -304,7 +338,7 @@ const DocumentReport = () => {
             <>
               <div className="flex flex-col">
                 <label className="mb-1" htmlFor="branch">
-                  Branch
+                  Branch <span className="text-red-700">*</span>
                 </label>
                 <select
                   id="branch"
@@ -320,7 +354,7 @@ const DocumentReport = () => {
 
               <div className="flex flex-col">
                 <label className="mb-1" htmlFor="department">
-                  Department
+                  Department <span className="text-red-700">*</span>
                 </label>
                 <select
                   id="department"
@@ -340,7 +374,7 @@ const DocumentReport = () => {
             <>
               <div className="flex flex-col">
                 <label className="mb-1" htmlFor="branch">
-                  Branch
+                  Branch <span className="text-red-700">*</span>
                 </label>
                 <select
                   id="branch"
@@ -360,7 +394,7 @@ const DocumentReport = () => {
 
               <div className="flex flex-col">
                 <label className="mb-1" htmlFor="department">
-                  Department
+                  Department <span className="text-red-700">*</span>
                 </label>
                 <select
                   id="department"
@@ -392,7 +426,7 @@ const DocumentReport = () => {
               onChange={handleInputChange}
               className="p-2 border rounded-md outline-none"
             >
-              <option value="">Select Category</option>
+              <option value="">All Category</option>
               {categoryOptions.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -412,7 +446,7 @@ const DocumentReport = () => {
               onChange={handleInputChange}
               className="p-2 border rounded-md outline-none"
             >
-              <option value="">Select Status</option>
+              <option value="">All Status</option>
               <option value="PENDING">PENDING</option>
               <option value="APPROVED">APPROVED</option>
               <option value="REJECTED">REJECTED</option>
@@ -421,7 +455,7 @@ const DocumentReport = () => {
 
           <div className="flex flex-col">
             <label className="mb-1" htmlFor="startDate">
-              Start Date
+              Start Date <span className="text-red-700">*</span>
             </label>
             <DatePicker
               id="startDate"
@@ -432,14 +466,14 @@ const DocumentReport = () => {
               endDate={toDate}
               dateFormat="dd-MM-yyyy"
               placeholderText="Start Date"
-              maxDate={new Date()} // Prevents selecting dates later than today
+              maxDate={new Date()}
               className="w-full px-3 py-2 border rounded-md"
             />
           </div>
 
           <div className="flex flex-col">
             <label className="mb-1" htmlFor="endDate">
-              End Date
+              End Date <span className="text-red-700">*</span>
             </label>
             <DatePicker
               id="endDate"
@@ -448,12 +482,14 @@ const DocumentReport = () => {
               selectsEnd
               startDate={fromDate}
               endDate={toDate}
+              minDate={fromDate}
               dateFormat="dd-MM-yyyy"
               placeholderText="End Date"
-              maxDate={new Date()} // Prevents selecting dates later than today
+              maxDate={new Date()}
               className="w-full px-3 py-2 border rounded-md"
             />
           </div>
+
         </div>
 
         <div className="format-selection space-y-4 grid grid-cols-12 mb-4">
@@ -489,22 +525,19 @@ const DocumentReport = () => {
         <button
           onClick={handleDownload}
           disabled={isProcessing}
-          className={`px-4 py-2 rounded ${
-            isProcessing
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600"
-          } text-white`}
+          className={`px-4 py-2 rounded ${isProcessing
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-500 hover:bg-blue-600"
+            } text-white`}
         >
           {isProcessing ? "Processing..." : "Download"}
         </button>
       </div>
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50 z-50">
           <div
-            className={`w-96 p-6 rounded-lg ${
-              modalType === "success" ? "bg-white" : "bg-white"
-            } text-gray-900 shadow-lg`}
+            className={`w-96 p-6 rounded-lg ${modalType === "success" ? "bg-white" : "bg-white"
+              } text-gray-900 shadow-lg`}
           >
             <h2 className="text-xl font-semibold mb-4">
               {modalType === "success" ? "Success!" : "Error"}
