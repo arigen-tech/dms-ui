@@ -110,7 +110,7 @@ const Year = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
-     setIsConfirmDisabled(true);
+    setIsConfirmDisabled(true);
 
     if (yearToToggle) {
       try {
@@ -137,7 +137,7 @@ const Year = () => {
         );
         setYears(updatedYears);
         setModalVisible(false);
-         setIsConfirmDisabled(false);
+        setIsConfirmDisabled(false);
         setYearToToggle(null);
         showPopup('Status Changed successfully!');
       } catch (error) {
@@ -196,9 +196,9 @@ const Year = () => {
 
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">YEARS</h1>
-      <div className="bg-white p-3 rounded-lg shadow-sm">
+    <div className="px-2">
+      <h1 className="text-lg mb-1 font-semibold">Years</h1>
+      <div className="bg-white p-1 shadow-sm">
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -206,35 +206,43 @@ const Year = () => {
             onClose={() => setPopupMessage(null)}
           />
         )}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-3 gap-4">
-            <input
-              type="number"
-              min="1900"
-              max="2099"
-              step="1"
-              placeholder="2016"
-              name="year"
-              value={formData.year}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
-            />
+        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+          <div className="flex gap-6">
+            <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <label htmlFor="name" className="block text-md font-medium text-gray-700">
+                <input
+                  type="number"
+                  min="1900"
+                  max="2099"
+                  step="1"
+                  placeholder="2016"
+                  name="year"
+                  value={formData.year}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
 
-          </div>
-          <div className="mt-3 flex justify-start">
-            {editingIndex === null ? (
-              <button onClick={handleAddYear} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
-                <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Year
-              </button>
-            ) : (
-              <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center">
-                <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
-              </button>
-            )}
+                />
+              </label>
+
+
+            </div>
+            <div className="w-1/5 flex items-end">
+              {editingIndex === null ? (
+                <button onClick={handleAddYear}
+                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center">
+                  <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Year
+                </button>
+              ) : (
+                <button onClick={handleSaveEdit}
+                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center">
+                  <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mb-3 bg-slate-100 px-3 py-2 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label
@@ -363,35 +371,37 @@ const Year = () => {
             </span>
           </div>
         </div>
-      </div>
+    </div>
 
-      {modalVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4">Confirm Status Change</h2>
-            <p>Are you sure you want to {yearToToggle?.isActive === 1 ? 'deactivate' : 'activate'} the year <strong>{yearToToggle.year}</strong>?</p>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setModalVisible(false)}
-                className="bg-gray-300 text-gray-800 rounded-lg px-4 py-2 mr-2"
-              >
-                Cancel
-              </button>
-              <button
-                                onClick={confirmToggleActiveStatus}
-                                disabled={isConfirmDisabled}
-                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                            >
-                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
-                            </button>
-            </div>
+        {
+    modalVisible && (
+      <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-xl font-semibold mb-4">Confirm Status Change</h2>
+          <p>Are you sure you want to {yearToToggle?.isActive === 1 ? 'deactivate' : 'activate'} the year <strong>{yearToToggle.year}</strong>?</p>
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={() => setModalVisible(false)}
+              className="bg-gray-300 text-gray-800 rounded-lg px-4 py-2 mr-2"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmToggleActiveStatus}
+              disabled={isConfirmDisabled}
+              className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+            >
+              {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    )
+  }
 
-    </div>
-  );
+      </div >
+      );
 };
 
 export default Year;
