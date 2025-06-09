@@ -330,51 +330,51 @@ const Department = () => {
         <div className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="flex gap-6">
             <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <label htmlFor="name" className="block text-md font-medium text-gray-700">
+              <label htmlFor="name" className="block text-md font-medium text-gray-700 flex-1">
                 Name
-              <input
-                type="text"
-                id="name"
-                name="name"
-                placeholder="Enter name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="Enter name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </label>
 
-            {/* Branch Selection */}
+              {/* Branch Selection */}
               <label htmlFor="branch" className="block text-md font-medium text-gray-700">
                 Branch
-              <select
-                id="branch"
-                name="branch"
-                value={formData.branch?.id || ''}
-                onChange={handleBranchChange}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                <select
+                  id="branch"
+                  name="branch"
+                  value={formData.branch?.id || ''}
+                  onChange={handleBranchChange}
+                  className="mt-1 block w-full mt-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
 
 
-              >
-                <option value="">Select Branch</option>
-                {branches.map(branch => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
+                >
+                  <option value="">Select Branch</option>
+                  {branches.map(branch => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
               </label>
 
             </div>
 
             {/* Button */}
-            <div className="w-1/5 flex items-end">
+            <div className=" flex items-center">
               {editingIndex === null ? (
                 <button onClick={handleAddDepartment} className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
                 >
                   <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Department
                 </button>
               ) : (
-                <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
+                <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 text-sm flex items-center justify-center"
                 >
                   <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
                 </button>
