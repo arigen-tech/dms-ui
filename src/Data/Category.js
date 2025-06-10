@@ -3,6 +3,8 @@ import { ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, PencilIcon, PlusCircleI
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Popup from '../Components/Popup';
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const tokenKey = 'tokenKey'; // Correct token key name
 
@@ -20,10 +22,14 @@ const Category = () => {
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+    setIsLoading(true);
+
         const response = await axios.get(`${CATEGORI_API}/findAll`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
@@ -34,10 +40,17 @@ const Category = () => {
 
       } catch (error) {
         console.error('Error fetching categories:', error);
+      } finally{
+      setIsLoading(false);
+
       }
     };
     fetchCategories();
   }, []);
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
