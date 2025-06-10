@@ -494,7 +494,7 @@ const Search = () => {
   userRole = localStorage.getItem('role');
   const renderSearchFields = () => {
     return (
-      <div className="grid grid-cols-3 gap-4 mb-4 bg-slate-100 p-4 rounded-lg">
+      <div className="grid grid-cols-3 gap-4 mb-4 bg-slate-100 px-1 rounded-lg">
         {userRole === 'ADMIN' ? (
           <>
             {/* Branch Select */}
@@ -788,9 +788,9 @@ const Search = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">Search Documents</h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
+      <div className="bg-white p-1 rounded-lg shadow-sm mb-4">
 
         {popupMessage && (
           <Popup
