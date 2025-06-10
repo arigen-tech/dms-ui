@@ -6,6 +6,8 @@ import {
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Popup from '../Components/Popup';
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const tokenKey = 'tokenKey';
 
@@ -20,6 +22,8 @@ const Year = () => {
   const [yearToToggle, setYearToToggle] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
     // Fetch years from the server
@@ -27,7 +31,9 @@ const Year = () => {
   }, []);
 
   const fetchYears = async () => {
+    setIsLoading(true);
     try {
+
       const token = localStorage.getItem(tokenKey);
       const response = await axios.get(`${YEAR_API}/findAll`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -35,8 +41,15 @@ const Year = () => {
       setYears(response.data);
     } catch (error) {
       console.error('Error fetching years:', error);
+    }finally{
+    setIsLoading(false);
+
     }
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

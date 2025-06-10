@@ -27,8 +27,8 @@ const Category = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
+      setIsLoading(true);
       try {
-    setIsLoading(true);
 
         const response = await axios.get(`${CATEGORI_API}/findAll`, {
           headers: {

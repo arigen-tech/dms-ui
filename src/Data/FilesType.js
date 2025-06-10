@@ -12,6 +12,8 @@ import {
 } from '@heroicons/react/24/solid';
 import { FILETYPE_API } from '../API/apiConfig';
 import Popup from '../Components/Popup';
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const tokenKey = 'tokenKey';
 
@@ -33,6 +35,7 @@ const FilesType = () => {
   const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const token = localStorage.getItem('tokenKey');
 
@@ -43,7 +46,9 @@ const FilesType = () => {
   console.log(filesType);
 
   const fetchFilesType = async () => {
+    setIsLoading(true);
     try {
+      
       const response = await axios.get(`${FILETYPE_API}/getAll`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -52,8 +57,15 @@ const FilesType = () => {
       setFilesType(response?.data?.response);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
+    }finally{
+      setIsLoading(false);
+
     }
   };
+  
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
