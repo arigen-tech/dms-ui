@@ -12,6 +12,8 @@ import {
 } from "@heroicons/react/24/solid";
 import axios from "axios";
 import Popup from "../Components/Popup";
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const tokenKey = "tokenKey"; // Updated token key
 
@@ -30,9 +32,12 @@ const Role = () => {
   const [message, setMessage] = useState(null); // For the success message
   const [messageType, setMessageType] = useState("");
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false); // State to manage confirmation button state
+  const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
     const fetchRoles = async () => {
+    setIsLoading(true);
       try {
         const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
         const response = await axios.get(`${ROLE_API}/findAll`, {
@@ -42,10 +47,19 @@ const Role = () => {
         console.log(response.data);
       } catch (error) {
         console.error("Error fetching roles:", error);
+      setIsLoading(false);
+
+      }finally{
+        setIsLoading(false);
       }
     };
     fetchRoles();
   }, []);
+
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   const showPopup = (message, type = "info") => {
     setPopupMessage({ message, type });
