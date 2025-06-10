@@ -490,9 +490,9 @@ const Approve = () => {
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">Pending Approval</h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+    <div className="px-1">
+      <h1 className="text-lg mb-1 font-semibold">Pending Approval</h1>
+      <div className="bg-white p-1 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
