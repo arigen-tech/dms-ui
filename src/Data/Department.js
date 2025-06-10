@@ -12,6 +12,8 @@ import {
 } from '@heroicons/react/24/solid';
 import { DEPAETMENT_API, BRANCH_API } from '../API/apiConfig';
 import Popup from '../Components/Popup';
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const Department = () => {
   const [branches, setBranches] = useState([]);
@@ -31,6 +33,7 @@ const Department = () => {
   const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -41,6 +44,7 @@ const Department = () => {
   }, []);
 
   const fetchBranches = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
         headers: {
@@ -51,7 +55,14 @@ const Department = () => {
     } catch (error) {
       console.error('Error fetching branches:', error);
     }
+    finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   const fetchDepartments = async () => {
     try {
@@ -351,7 +362,7 @@ const Department = () => {
                   name="branch"
                   value={formData.branch?.id || ''}
                   onChange={handleBranchChange}
-                  className="mt-1 block w-full  mt-3 py-3 px-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
 
 
                 >
