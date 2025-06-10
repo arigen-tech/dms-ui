@@ -351,13 +351,13 @@ const Department = () => {
                   name="branch"
                   value={formData.branch?.id || ''}
                   onChange={handleBranchChange}
-                  className="mt-1 block w-full mt-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full  mt-3 py-3 px-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
 
 
                 >
                   <option value="">Select Branch</option>
                   {branches.map(branch => (
-                    <option key={branch.id} value={branch.id}>
+                    <option key={branch.id} value={branch.id} >
                       {branch.name}
                     </option>
                   ))}
@@ -367,7 +367,7 @@ const Department = () => {
             </div>
 
             {/* Button */}
-            <div className=" flex items-center">
+            <div className=" flex items-end">
               {editingIndex === null ? (
                 <button onClick={handleAddDepartment} className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
                 >
