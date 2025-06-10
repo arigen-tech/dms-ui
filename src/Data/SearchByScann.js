@@ -1,82 +1,79 @@
-import { useEffect, useState, useMemo, useRef } from "react";
-import apiClient from "../API/apiClient";
-import {
-  API_HOST,
-  BRANCH_ADMIN,
-  DEPARTMENT_ADMIN,
-  USER,
-} from "../API/apiConfig";
-import { useLocation, useNavigate } from "react-router-dom";
-import { BsQrCode } from "react-icons/bs";
-import Popup from "../Components/Popup";
-import QrScanner from 'qr-scanner';
-import FilePreviewModal from "../Components/FilePreviewModal";
+"use client"
+
+import { useEffect, useState, useMemo, useRef } from "react"
+import apiClient from "../API/apiClient"
+import { API_HOST, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig"
+import { useLocation, useNavigate } from "react-router-dom"
+import { BsQrCode } from "react-icons/bs"
+import Popup from "../Components/Popup"
+import QrScanner from "qr-scanner"
+import FilePreviewModal from "../Components/FilePreviewModal"
 
 const SearchByScan = () => {
-  const navigate = useNavigate();
-  const [headerData, setHeaderData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [qrEmpid, setQrEmpid] = useState(null);
-  const [qrBranchid, setQrBranchid] = useState(null);
-  const [qrDepartmentid, setQrDepartmentid] = useState(null);
-  const [qrData, setQrData] = useState(null);
-  const [loginBranchid, setLoginBranchid] = useState(null);
-  const [loginDepartmentid, setLoginDepartmentid] = useState(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [error, setError] = useState(null);
-  const token = localStorage.getItem("tokenKey");
-  const userId = localStorage.getItem("userId");
-  const role = localStorage.getItem("role");
-  const [popupMessage, setPopupMessage] = useState(null);
-  const location = useLocation();
-  const [file, setFile] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [blobUrl, setBlobUrl] = useState("");
-  const [contentType, setContentType] = useState("");
-  const [selectedDocFile, setSelectedDocFiles] = useState(null);
-  const [searchFileTerm, setSearchFileTerm] = useState("");
-  const [isOpeningFile, setIsOpeningFile] = useState(false);
-  const [isCameraLoading, setIsCameraLoading] = useState(false);
-  const [availableCameras, setAvailableCameras] = useState([]);
-  const [selectedCamera, setSelectedCamera] = useState(null);
+  const navigate = useNavigate()
+  const [headerData, setHeaderData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [qrEmpid, setQrEmpid] = useState(null)
+  const [qrBranchid, setQrBranchid] = useState(null)
+  const [qrDepartmentid, setQrDepartmentid] = useState(null)
+  const [qrData, setQrData] = useState(null)
+  const [loginBranchid, setLoginBranchid] = useState(null)
+  const [loginDepartmentid, setLoginDepartmentid] = useState(null)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [error, setError] = useState(null)
+  const token = localStorage.getItem("tokenKey")
+  const userId = localStorage.getItem("userId")
+  const role = localStorage.getItem("role")
+  const [popupMessage, setPopupMessage] = useState(null)
+  const location = useLocation()
+  const [file, setFile] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [blobUrl, setBlobUrl] = useState("")
+  const [contentType, setContentType] = useState("")
+  const [selectedDocFile, setSelectedDocFiles] = useState(null)
+  const [searchFileTerm, setSearchFileTerm] = useState("")
+  const [isOpeningFile, setIsOpeningFile] = useState(false)
+  const [isCameraLoading, setIsCameraLoading] = useState(false)
+  const [availableCameras, setAvailableCameras] = useState([])
+  const [selectedCamera, setSelectedCamera] = useState(null)
 
-  const videoRef = useRef(null);
-  const qrScannerRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const videoRef = useRef(null)
+  const qrScannerRef = useRef(null)
+  const fileInputRef = useRef(null)
 
-  const unauthorizedMessage = "You are not authorized to scan this QR code.";
-  const invalidQrMessage = "Invalid QR Code.";
-  const cameraErrorMessage = "Could not access camera. Please check permissions and try again.";
+  const unauthorizedMessage = "You are not authorized to scan this QR code."
+  const invalidQrMessage = "Invalid QR Code."
+  const cameraErrorMessage = "Could not access camera. Please check permissions and try again."
 
   // Check camera permissions and get available cameras
   const checkCameraPermissions = async () => {
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      setAvailableCameras(videoDevices);
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter((device) => device.kind === "videoinput")
+      setAvailableCameras(videoDevices)
       if (videoDevices.length > 0) {
-        setSelectedCamera(videoDevices[0].deviceId);
-        return true;
+        setSelectedCamera(videoDevices[0].deviceId)
+        return true
       }
-      setError("No camera devices found");
-      return false;
+      setError("No camera devices found")
+      return false
     } catch (err) {
-      console.error("Camera permission error:", err);
-      setError("Please allow camera access to scan QR codes");
-      return false;
+      console.error("Camera permission error:", err)
+      setError("Please allow camera access to scan QR codes")
+      return false
     }
-  };
+  }
 
   // Clean up camera on unmount
   useEffect(() => {
     return () => {
       if (qrScannerRef.current) {
-        qrScannerRef.current.stop();
-        qrScannerRef.current.destroy();
-        qrScannerRef.current = null;
+        qrScannerRef.current.stop()
+        qrScannerRef.current.destroy()
+        qrScannerRef.current = null
       }
-    };
-  }, []);
+    }
+  }, [])
 
   // Handle camera activation/deactivation
   useEffect(() => {
@@ -85,455 +82,436 @@ const SearchByScan = () => {
         if (cameraActive && videoRef.current && !qrScannerRef.current) {
           qrScannerRef.current = new QrScanner(
             videoRef.current,
-            result => {
+            (result) => {
               if (result) {
-                setQrData(result.data);
-                stopCamera();
+                setQrData(result.data)
+                stopCamera()
               }
             },
             {
-              preferredCamera: selectedCamera || 'environment',
+              preferredCamera: selectedCamera || "environment",
               highlightScanRegion: true,
               highlightCodeOutline: true,
               maxScansPerSecond: 5,
-            }
-          );
+            },
+          )
 
-          await qrScannerRef.current.start();
+          await qrScannerRef.current.start()
         }
       } catch (err) {
-        console.error("Camera error:", err);
-        setError(cameraErrorMessage);
-        stopCamera();
+        console.error("Camera error:", err)
+        setError(cameraErrorMessage)
+        stopCamera()
       }
-    };
+    }
 
-    initCamera();
+    initCamera()
 
     return () => {
       if (!cameraActive && qrScannerRef.current) {
-        stopCamera();
+        stopCamera()
       }
-    };
-  }, [cameraActive, selectedCamera]);
+    }
+  }, [cameraActive, selectedCamera])
 
   const stopCamera = () => {
     if (qrScannerRef.current) {
-      qrScannerRef.current.stop();
-      qrScannerRef.current.destroy();
-      qrScannerRef.current = null;
+      qrScannerRef.current.stop()
+      qrScannerRef.current.destroy()
+      qrScannerRef.current = null
     }
-    setCameraActive(false);
-    setIsCameraLoading(false);
-  };
+    setCameraActive(false)
+    setIsCameraLoading(false)
+  }
 
   const handleToggleCamera = async () => {
     if (cameraActive) {
-      stopCamera();
+      stopCamera()
     } else {
-      setIsCameraLoading(true);
-      setError(null);
+      setIsCameraLoading(true)
+      setError(null)
       try {
         if (await checkCameraPermissions()) {
-          setCameraActive(true);
+          setCameraActive(true)
         }
       } finally {
-        setIsCameraLoading(false);
+        setIsCameraLoading(false)
       }
     }
-  };
+  }
 
   const handleQrCheck = (qrParams) => {
-    let isUnauthorized = false;
+    let isUnauthorized = false
 
     if (role === BRANCH_ADMIN) {
-      isUnauthorized = loginBranchid != qrParams.branchId;
+      isUnauthorized = loginBranchid != qrParams.branchId
     } else if (role === DEPARTMENT_ADMIN) {
-      isUnauthorized =
-        loginBranchid != qrParams.branchId ||
-        loginDepartmentid != qrParams.departmentId;
+      isUnauthorized = loginBranchid != qrParams.branchId || loginDepartmentid != qrParams.departmentId
     } else if (role === USER) {
-      isUnauthorized = userId != qrParams.empId;
+      isUnauthorized = userId != qrParams.empId
     }
 
     if (isUnauthorized) {
-      showPopup(unauthorizedMessage, "warning");
-      return true;
+      showPopup(unauthorizedMessage, "warning")
+      return true
     }
-    return false;
-  };
+    return false
+  }
 
   useEffect(() => {
-    fetchLoginUser();
-  }, [userId, token]);
+    fetchLoginUser()
+  }, [userId, token])
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const params = new URLSearchParams(location.search)
 
-    const branchId = params.get("b");
-    const departmentId = params.get("d");
-    const empId = params.get("e");
-    const id = params.get("id");
+    const branchId = params.get("b")
+    const departmentId = params.get("d")
+    const empId = params.get("e")
+    const id = params.get("id")
 
     if (!id && !branchId && !departmentId && !empId) {
-      return;
+      return
     }
 
     if ((!branchId || !departmentId || !empId) && id) {
-      showPopup(invalidQrMessage, "error");
-      return;
+      showPopup(invalidQrMessage, "error")
+      return
     }
     if (branchId && departmentId && empId) {
-      setQrBranchid(branchId);
-      setQrDepartmentid(departmentId);
-      setQrEmpid(empId);
+      setQrBranchid(branchId)
+      setQrDepartmentid(departmentId)
+      setQrEmpid(empId)
     }
 
     if (id) {
-      const qrParams = { branchId, departmentId, empId };
+      const qrParams = { branchId, departmentId, empId }
 
       if (!handleQrCheck(qrParams)) {
-        fetchDocument(id);
+        fetchDocument(id)
       }
     }
-  }, [location.search]);
+  }, [location.search])
 
   useEffect(() => {
-    if (!qrData) return;
+    if (!qrData) return
 
-    let params;
+    let params
     try {
-      const queryString = qrData.split("?")[1];
+      const queryString = qrData.split("?")[1]
       if (!queryString) {
-        console.log("No parameters provided in the QR code");
-        return;
+        console.log("No parameters provided in the QR code")
+        return
       }
 
-      params = new URLSearchParams(queryString);
+      params = new URLSearchParams(queryString)
     } catch (error) {
-      console.error("Invalid QR data format:", error);
-      return;
+      console.error("Invalid QR data format:", error)
+      return
     }
 
-    const branchId = params.get("b");
-    const departmentId = params.get("d");
-    const empId = params.get("e");
-    const id = params.get("id");
+    const branchId = params.get("b")
+    const departmentId = params.get("d")
+    const empId = params.get("e")
+    const id = params.get("id")
 
     if (!id && !branchId && !departmentId && !empId) {
-      console.log("No parameters provided in the QR code");
-      return;
+      console.log("No parameters provided in the QR code")
+      return
     }
 
     if ((!branchId || !departmentId || !empId) && id) {
-      showPopup(invalidQrMessage, "error");
-      return;
+      showPopup(invalidQrMessage, "error")
+      return
     }
 
     if (branchId && departmentId && empId) {
-      setQrBranchid(branchId);
-      setQrDepartmentid(departmentId);
-      setQrEmpid(empId);
+      setQrBranchid(branchId)
+      setQrDepartmentid(departmentId)
+      setQrEmpid(empId)
 
-      console.log("Extracted QR data:", { empId, branchId, departmentId });
+      console.log("Extracted QR data:", { empId, branchId, departmentId })
     }
 
     if (id) {
-      const qrParams = { branchId, departmentId, empId };
+      const qrParams = { branchId, departmentId, empId }
 
       if (!handleQrCheck(qrParams)) {
-        fetchDocument(id);
+        fetchDocument(id)
       }
     }
-  }, [qrData]);
+  }, [qrData])
 
   const showPopup = (message, type = "info") => {
-    setPopupMessage({ message, type });
-  };
+    setPopupMessage({ message, type })
+  }
 
   const fetchLoginUser = async () => {
     if (!userId || !token) {
-      console.error("userId or token is missing");
-      return;
+      console.error("userId or token is missing")
+      return
     }
 
     try {
-      const response = await apiClient.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
       if (response.status === 200) {
-        console.log("login user data", response.data);
-        const { branch, department } = response.data || {};
+        console.log("login user data", response.data)
+        const { branch, department } = response.data || {}
         if (branch && department) {
-          setLoginBranchid(branch.id);
-          setLoginDepartmentid(department.id);
+          setLoginBranchid(branch.id)
+          setLoginDepartmentid(department.id)
         } else {
-          console.error("Branch or Department data is missing in the response");
+          console.error("Branch or Department data is missing in the response")
         }
       } else {
-        console.error("Failed to fetch user data:", response.statusText);
+        console.error("Failed to fetch user data:", response.statusText)
       }
     } catch (error) {
-      console.error("Error during API call:", error);
+      console.error("Error during API call:", error)
       if (error.response) {
-        console.error("Server error:", error.response.data);
+        console.error("Server error:", error.response.data)
       } else if (error.request) {
-        console.error("No response received from the server:", error.request);
+        console.error("No response received from the server:", error.request)
       } else {
-        console.error("Request error:", error.message);
+        console.error("Request error:", error.message)
       }
     }
-  };
+  }
 
   const fetchDocument = async (id) => {
     if (!id) {
-      setError("No document ID found.");
-      return;
+      setError("No document ID found.")
+      return
     }
 
     if (!token) {
-      const currentUrl = window.location.href;
-      localStorage.setItem("redirectUrl", currentUrl);
+      const currentUrl = window.location.href
+      localStorage.setItem("redirectUrl", currentUrl)
 
-      navigate("/login");
-      return;
+      navigate("/login")
+      return
     }
 
     try {
       const response = await apiClient.get(`/api/documents/findBy/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
-      });
-      setHeaderData(response.data);
-      console.log(response.data);
+      })
+      setHeaderData(response.data)
+      console.log(response.data)
     } catch (err) {
       if (err.response) {
-        console.error("Error response from server:", err.response.data);
+        console.error("Error response from server:", err.response.data)
         const errorMessage =
           err.response.status === 404
             ? "Document not found. Please check the ID."
-            : `Server error: ${err.response.statusText} (${err.response.status})`;
-        setError(errorMessage);
+            : `Server error: ${err.response.statusText} (${err.response.status})`
+        setError(errorMessage)
       } else if (err.request) {
-        console.error("No response received:", err.request);
-        setError("No response from the server. Please try again later.");
+        console.error("No response received:", err.request)
+        setError("No response from the server. Please try again later.")
       } else {
-        console.error("Request error:", err.message);
-        setError("Error occurred while setting up the request.");
+        console.error("Request error:", err.message)
+        setError("Error occurred while setting up the request.")
       }
     }
-  };
+  }
 
   const handlePopupClose = () => {
-    setFile(null);
-    const imageElement = document.getElementById("uploaded-image");
+    setFile(null)
+    const imageElement = document.getElementById("uploaded-image")
     if (imageElement) {
-      imageElement.src = "";
-      imageElement.classList.add("hidden");
+      imageElement.src = ""
+      imageElement.classList.add("hidden")
     }
-    navigate("/searchByScan");
-  };
+    navigate("/searchByScan")
+  }
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+    const selectedFile = e.target.files[0]
 
     if (selectedFile) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const imageElement = document.getElementById("uploaded-image");
-        imageElement.src = e.target.result;
-        imageElement.classList.remove("hidden");
-      };
-      reader.readAsDataURL(selectedFile);
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const imageElement = document.getElementById("uploaded-image")
+        imageElement.src = e.target.result
+        imageElement.classList.remove("hidden")
+      }
+      reader.readAsDataURL(selectedFile)
 
-      setFile(selectedFile);
+      setFile(selectedFile)
       setTimeout(() => {
-        handleSubmit(selectedFile);
-      }, 2000);
+        handleSubmit(selectedFile)
+      }, 2000)
     }
-  };
+  }
 
   const handleSubmit = async (currentFile) => {
-    const fileToSubmit = currentFile || file;
+    const fileToSubmit = currentFile || file
 
     if (!fileToSubmit) {
-      showPopup("Please select a file", "warning");
-      return;
+      showPopup("Please select a file", "warning")
+      return
     }
 
-    const formData = new FormData();
-    formData.append("file", fileToSubmit);
+    const formData = new FormData()
+    formData.append("file", fileToSubmit)
 
     try {
       const response = await apiClient.post("/api/documents/read", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-      });
+      })
 
       if (response.status === 200) {
-        const qrContent = response.data.qrContent;
+        const qrContent = response.data.qrContent
 
         if (!qrContent) {
-          showPopup(invalidQrMessage, "error");
-          return;
+          showPopup(invalidQrMessage, "error")
+          return
         }
 
-        const fragment = qrContent.split("#")[1];
-        const params = new URLSearchParams(fragment.split("?")[1]);
-        const id = params.get("id");
+        const fragment = qrContent.split("#")[1]
+        const params = new URLSearchParams(fragment.split("?")[1])
+        const id = params.get("id")
 
         const qrParams = {
           branchId: params.get("b"),
           departmentId: params.get("d"),
           empId: params.get("e"),
-        };
+        }
 
-        setQrBranchid(qrParams.branchId || null);
-        setQrDepartmentid(qrParams.departmentId || null);
-        setQrEmpid(qrParams.empId || null);
+        setQrBranchid(qrParams.branchId || null)
+        setQrDepartmentid(qrParams.departmentId || null)
+        setQrEmpid(qrParams.empId || null)
 
         if (id) {
           if (!handleQrCheck(qrParams)) {
-            fetchDocument(id);
+            fetchDocument(id)
           }
         } else {
-          showPopup(invalidQrMessage, "error");
+          showPopup(invalidQrMessage, "error")
         }
       }
     } catch (error) {
-      showPopup(invalidQrMessage, "error");
+      showPopup(invalidQrMessage, "error")
     }
-  };
+  }
 
   const openFile = async (file) => {
     try {
-      setIsOpeningFile(true);
-      console.log("Opening file:", file);
+      setIsOpeningFile(true)
+      console.log("Opening file:", file)
 
       if (!file?.docName) {
-        showPopup("Document name is missing. Please try again.");
-        return;
+        showPopup("Document name is missing. Please try again.")
+        return
       }
 
-      const branch = headerData?.employee?.branch?.name.replace(/ /g, "_");
-      const department = headerData?.employee?.department?.name.replace(
-        / /g,
-        "_"
-      );
-      const year = headerData?.yearMaster?.name.replace(/ /g, "_");
-      const category = headerData?.categoryMaster?.name.replace(/ /g, "_");
+      const branch = headerData?.employee?.branch?.name.replace(/ /g, "_")
+      const department = headerData?.employee?.department?.name.replace(/ /g, "_")
+      const year = headerData?.yearMaster?.name.replace(/ /g, "_")
+      const category = headerData?.categoryMaster?.name.replace(/ /g, "_")
 
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch
+        branch,
       )}/${encodeURIComponent(department)}/${encodeURIComponent(
-        year
-      )}/${encodeURIComponent(category)}/${encodeURIComponent(
-        file.version
-      )}/${encodeURIComponent(file.docName)}`;
+        year,
+      )}/${encodeURIComponent(category)}/${encodeURIComponent(file.version)}/${encodeURIComponent(file.docName)}`
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
-      });
+      })
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
-      const url = URL.createObjectURL(blob);
+      const blob = new Blob([response.data], { type: response.headers["content-type"] })
+      const url = URL.createObjectURL(blob)
 
-      setBlobUrl(url);
-      setContentType(response.headers["content-type"]);
-      setSelectedDocFiles(file);
-      setIsModalOpen(true);
+      setBlobUrl(url)
+      setContentType(response.headers["content-type"])
+      setSelectedDocFiles(file)
+      setIsModalOpen(true)
     } catch (error) {
-      console.error("Error:", error);
-      showPopup("Failed to fetch or preview the file.", "error");
+      console.error("Error:", error)
+      showPopup("Failed to fetch or preview the file.", "error")
     } finally {
-      setIsOpeningFile(false);
+      setIsOpeningFile(false)
     }
-  };
+  }
 
   const handleDownload = async (file) => {
     try {
-      const branch = headerData.employee.branch.name.replace(/ /g, "_");
-      const department = headerData.employee.department.name.replace(/ /g, "_");
-      const year = headerData.yearMaster.name.replace(/ /g, "_");
-      const category = headerData.categoryMaster.name.replace(/ /g, "_");
-      const version = file.version;
-      const fileName = file.docName.replace(/ /g, "_");
+      const branch = headerData.employee.branch.name.replace(/ /g, "_")
+      const department = headerData.employee.department.name.replace(/ /g, "_")
+      const year = headerData.yearMaster.name.replace(/ /g, "_")
+      const category = headerData.categoryMaster.name.replace(/ /g, "_")
+      const version = file.version
+      const fileName = file.docName.replace(/ /g, "_")
 
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch
+        branch,
       )}/${encodeURIComponent(department)}/${encodeURIComponent(
-        year
-      )}/${encodeURIComponent(category)}/${encodeURIComponent(
-        version
-      )}/${encodeURIComponent(fileName)}`;
+        year,
+      )}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}`
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
-      });
+      })
 
       const downloadBlob = new Blob([response.data], {
         type: response.headers["content-type"],
-      });
+      })
 
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(downloadBlob);
-      link.download = file.docName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
+      const link = document.createElement("a")
+      link.href = window.URL.createObjectURL(downloadBlob)
+      link.download = file.docName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(link.href)
     } catch (error) {
-      console.error("Download error:", error);
-      showPopup("Failed to download the file.", "error");
+      console.error("Download error:", error)
+      showPopup("Failed to download the file.", "error")
     }
-  };
+  }
 
   const filteredDocFiles = useMemo(() => {
-    const files = headerData?.documentDetails || [];
+    const files = headerData?.documentDetails || []
 
-    if (!Array.isArray(files)) return [];
+    if (!Array.isArray(files)) return []
 
     return files.filter((file) => {
-      const name = file.docName?.toLowerCase() || "";
-      const version = String(file.version).toLowerCase();
-      const term = searchFileTerm.toLowerCase();
-      return name.includes(term) || version.includes(term);
-    });
-  }, [headerData, searchFileTerm]);
+      const name = file.docName?.toLowerCase() || ""
+      const version = String(file.version).toLowerCase()
+      const term = searchFileTerm.toLowerCase()
+      return name.includes(term) || version.includes(term)
+    })
+  }, [headerData, searchFileTerm])
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    const date = new Date(dateString)
     const options = {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-    };
-    return date.toLocaleString("en-GB", options).replace(",", "");
-  };
+    }
+    return date.toLocaleString("en-GB", options).replace(",", "")
+  }
 
-  const actionByName = headerData?.approvalStatus === "REJECTED"
-    ? "Rejected"
-    : headerData?.approvalStatus === "APPROVED"
-      ? "Approved"
-      : null;
+  const actionByName =
+    headerData?.approvalStatus === "REJECTED"
+      ? "Rejected"
+      : headerData?.approvalStatus === "APPROVED"
+        ? "Approved"
+        : null
 
   return (
     <div className="p-1">
-      <h1 className="text-md mb-2 font-semibold">
-        DOCUMENT SEARCH BY QR CODES
-      </h1>
+      <h1 className="text-md mb-2 font-semibold">DOCUMENT SEARCH BY QR CODES</h1>
       <div className="bg-white p-1 rounded-lg shadow-sm">
-        {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={handlePopupClose}
-          />
-        )}
+        {popupMessage && <Popup message={popupMessage.message} type={popupMessage.type} onClose={handlePopupClose} />}
 
         {headerData && (
           <>
@@ -692,63 +670,79 @@ const SearchByScan = () => {
 
                 {filteredDocFiles?.length > 0 ? (
                   <div className="mt-4 border border-gray-300 rounded-md overflow-hidden">
-                    <div className="overflow-x-auto">
+                    {/* Fixed Header */}
+                    <div className="bg-indigo-100 border-b border-gray-300">
                       <table className="min-w-full table-fixed text-sm">
-                        <thead className="bg-indigo-100">
+                        <thead>
                           <tr>
-                            <th className="w-12 border px-2 py-1 text-center sticky top-0 bg-indigo-100 z-10">S.N.</th>
-                            <th className="border px-2 py-1 text-left w-1/2 sticky top-0 bg-indigo-100 z-10">Document Name</th>
-                            <th className="w-24 border px-2 py-1 text-center sticky top-0 bg-indigo-100 z-10">Version</th>
-                            <th className="w-28 border px-2 py-1 text-center sticky top-0 bg-indigo-100 z-10">Action</th>
+                            <th className="w-12 border-r border-gray-300 px-2 py-2 text-center font-semibold">S.N.</th>
+                            <th className="border-r border-gray-300 px-2 py-2 text-left w-1/2 font-semibold">
+                              Document Name
+                            </th>
+                            <th className="w-24 border-r border-gray-300 px-2 py-2 text-center font-semibold">
+                              Version
+                            </th>
+                            <th className="w-28 px-2 py-2 text-center font-semibold">Action</th>
                           </tr>
                         </thead>
                       </table>
-
-                      {/* Scrollable tbody container */}
-                      <div className={`${filteredDocFiles.length > 5 ? "max-h-64 overflow-y-auto" : ""}`}>
-                        <table className="min-w-full table-fixed text-sm">
-                          <tbody>
-                            {filteredDocFiles.map((file, index) => {
-                              const displayName = file.docName?.includes("_")
-                                ? file.docName.split("_").slice(1).join("_")
-                                : file.docName;
-
-                              return (
-                                <tr key={index} className="hover:bg-gray-50">
-                                  <td className="w-12 border px-2 py-1 text-center">
-                                    {index + 1}
-                                  </td>
-                                  <td
-                                    className="border px-2 py-1 w-1/2 break-words"
-                                    title={displayName}
-                                  >
-                                    <div className="truncate">{displayName}</div>
-                                  </td>
-                                  <td className="w-24 border px-2 py-1 text-center">
-                                    {file.version}
-                                  </td>
-                                  <td className="w-28 border px-2 py-1 text-center">
-                                    <button
-                                      onClick={() => {
-                                        setSelectedDocFiles(file);
-                                        openFile(file);
-                                      }}
-                                      disabled={isOpeningFile}
-                                      className={`bg-indigo-500 text-white px-3 py-1 rounded-md transition duration-300 no-print ${isOpeningFile
-                                          ? "opacity-50 cursor-not-allowed"
-                                          : "hover:bg-indigo-600"
-                                        }`}
-                                    >
-                                      {isOpeningFile ? "Opening..." : "Open"}
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
                     </div>
+
+                    {/* Scrollable Body - Shows max 5 rows with scroll */}
+                    <div
+                      className="overflow-y-auto"
+                      style={{
+                        maxHeight: filteredDocFiles.length > 5 ? "200px" : "auto",
+                      }}
+                    >
+                      <table className="min-w-full table-fixed text-sm">
+                        <tbody>
+                          {filteredDocFiles.map((file, index) => {
+                            const displayName = file.docName?.includes("_")
+                              ? file.docName.split("_").slice(1).join("_")
+                              : file.docName
+
+                            return (
+                              <tr
+                                key={index}
+                                className={`hover:bg-gray-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                              >
+                                <td className="w-12 border-r border-gray-200 px-2 py-2 text-center">{index + 1}</td>
+                                <td
+                                  className="border-r border-gray-200 px-2 py-2 w-1/2 break-words"
+                                  title={displayName}
+                                >
+                                  <div className="truncate">{displayName}</div>
+                                </td>
+                                <td className="w-24 border-r border-gray-200 px-2 py-2 text-center">{file.version}</td>
+                                <td className="w-28 px-2 py-2 text-center">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedDocFiles(file)
+                                      openFile(file)
+                                    }}
+                                    disabled={isOpeningFile}
+                                    className={`bg-indigo-500 text-white px-3 py-1 rounded-md transition duration-300 text-xs no-print ${
+                                      isOpeningFile ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-600"
+                                    }`}
+                                  >
+                                    {isOpeningFile ? "Opening..." : "Open"}
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Show total count if more than 5 items */}
+                    {filteredDocFiles.length > 5 && (
+                      <div className="bg-gray-50 px-2 py-1 text-xs text-gray-600 text-center border-t border-gray-300">
+                        Showing {Math.min(5, filteredDocFiles.length)} of {filteredDocFiles.length} files (scroll to see
+                        more)
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500 mt-2">No attached files available.</p>
@@ -801,23 +795,16 @@ const SearchByScan = () => {
                     onClick={handleToggleCamera}
                     disabled={isCameraLoading}
                     className={`px-4 py-2 text-white font-semibold rounded-md transition duration-200
-                      ${isCameraLoading
-                        ? 'bg-gray-500 cursor-not-allowed'
-                        : 'bg-blue-500 hover:bg-blue-600'
-                      }`}
+                      ${isCameraLoading ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
                   >
-                    {isCameraLoading ? 'Loading...' : 'Open Camera'}
+                    {isCameraLoading ? "Loading..." : "Open Camera"}
                   </button>
                 )}
 
                 {cameraActive && (
                   <div className="mt-4 flex flex-col items-center">
                     <div className="relative w-full max-w-xs">
-                      <video
-                        ref={videoRef}
-                        className="w-full h-auto border border-gray-300 rounded"
-                        playsInline
-                      />
+                      <video ref={videoRef} className="w-full h-auto border border-gray-300 rounded" playsInline />
                       {error && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white">
                           {error}
@@ -851,9 +838,7 @@ const SearchByScan = () => {
                       </div>
                     )}
 
-                    <p className="mt-2 text-sm text-gray-600">
-                      Point camera at QR code to scan
-                    </p>
+                    <p className="mt-2 text-sm text-gray-600">Point camera at QR code to scan</p>
                   </div>
                 )}
               </div>
@@ -862,7 +847,7 @@ const SearchByScan = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SearchByScan;
+export default SearchByScan
