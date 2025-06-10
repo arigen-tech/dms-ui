@@ -96,13 +96,13 @@ export const NotificationBell = () => {
         className="relative p-3 text-gray-300 hover:text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110"
       >
         {unreadCount > 0 ? (
-          <BellAlertIcon className="h-7 w-7 text-red-700" />
+          <BellAlertIcon className="h-7 w-7 text-white" />
         ) : (
-          <BellIcon className="h-7 w-7 text-red-700" />
+          <BellIcon className="h-7 w-7 text-white" />
         )}
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
+          <span className="absolute top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -142,6 +142,14 @@ export const Notification = () => {
       .split("_")
       .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
       .join(" ")
+  }
+
+  // Function to get count for each filter
+  const getFilterCount = (filterType) => {
+    if (filterType === "all") {
+      return notifications.length
+    }
+    return notifications.filter((n) => n.type === filterType).length
   }
 
   const fetchNotifications = useCallback(async () => {
@@ -325,18 +333,30 @@ export const Notification = () => {
                           "DOCUMENT_APPROVAL",
                           "DOCUMENT_REJECTION",
                         ].includes(type)),
-                  ).map((filterType) => (
-                    <button
-                      key={filterType}
-                      onClick={() => setFilter(filterType)}
-                      className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 whitespace-nowrap flex-shrink-0 ${filter === filterType
-                          ? "bg-white text-blue-600 shadow-lg scale-105"
-                          : "bg-blue-950 text-white hover:bg-blue-950"
-                        }`}
-                    >
-                      {formatFilterLabel(filterType)}
-                    </button>
-                  ))}
+                  ).map((filterType) => {
+                    const count = getFilterCount(filterType)
+                    return (
+                      <button
+                        key={filterType}
+                        onClick={() => setFilter(filterType)}
+                        className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 whitespace-nowrap flex-shrink-0 flex items-center space-x-2 ${filter === filterType
+                            ? "bg-white text-blue-600 shadow-lg scale-105"
+                            : "bg-blue-950 text-white hover:bg-blue-950"
+                          }`}
+                      >
+                        <span>{formatFilterLabel(filterType)}</span>
+                        {count > 0 && (
+                          <span className={`px-2 py-1 text-xs mt-2 rounded-full font-bold ${
+                            filter === filterType 
+                              ? "bg-blue-600 text-white" 
+                              : "bg-blue-800 text-white"
+                          }`}>
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -464,4 +484,3 @@ export const Notification = () => {
 }
 
 export default Notification
-
