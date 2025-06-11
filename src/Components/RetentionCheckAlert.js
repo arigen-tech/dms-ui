@@ -80,6 +80,76 @@ const RetentionCheckAlert = ({ onClose, result }) => {
     onClose()
   }
 
+  // Helper function to format retention period
+  const formatRetentionPeriod = (value, unit, days) => {
+    if (!value && !days) return 'N/A';
+
+    // If we have both value and unit, use them directly
+    if (value && unit) {
+      unit = unit.toLowerCase();
+      switch (unit) {
+        case 'minutes':
+          return value === 1 ? '1 minute' : `${value} minutes`;
+        case 'hours':
+          return value === 1 ? '1 hour' : `${value} hours`;
+        case 'days':
+          return value === 1 ? '1 day' : `${value} days`;
+        case 'months':
+          return value === 1 ? '1 month' : `${value} months`;
+        default:
+          return `${value} ${unit}`;
+      }
+    }
+
+    // Fallback to days conversion if needed
+    if (days) {
+      // Convert days to appropriate unit based on size
+      if (days < 1) {
+        const minutes = Math.round(days * 24 * 60);
+        if (minutes < 60) {
+          return minutes === 1 ? '1 minute' : `${minutes} minutes`;
+        }
+        const hours = Math.round(days * 24);
+        return hours === 1 ? '1 hour' : `${hours} hours`;
+      }
+      return days === 1 ? '1 day' : `${days} days`;
+    }
+
+    return 'N/A';
+  };
+
+  // Helper function to get the most common branch from documents in a policy
+  const getPolicyBranch = (policyData) => {
+    // First try to get branch from policy data
+    if (policyData.branch && policyData.branch !== 'N/A') {
+      return policyData.branch
+    }
+
+    // If not available, get from documents
+    const allDocuments = [
+      ...(policyData.movedDocuments || []),
+      ...(policyData.notEligibleYet || [])
+    ]
+
+    if (allDocuments.length > 0) {
+      // Get the most common branch from documents
+      const branchCounts = {}
+      allDocuments.forEach(doc => {
+        if (doc.branch && doc.branch !== 'N/A') {
+          branchCounts[doc.branch] = (branchCounts[doc.branch] || 0) + 1
+        }
+      })
+
+      const mostCommonBranch = Object.keys(branchCounts).reduce((a, b) =>
+        branchCounts[a] > branchCounts[b] ? a : b, Object.keys(branchCounts)[0]
+      )
+
+      return mostCommonBranch || 'N/A'
+    }
+
+    return 'N/A'
+  }
+
   if (!isVisible) return null
 
   const policyResults = result.policyResults || {}
@@ -179,9 +249,15 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                         <div className="flex justify-between items-center">
                           <div>
                             <h5 className="font-medium text-gray-900">{policyData.policyName}</h5>
+
                             <p className="text-sm text-gray-600">
-                              Retention Period: {policyData.retentionPeriodDays} days | Department:{" "}
-                              {policyData.department} | Category: {policyData.category}
+                              Retention Period: {formatRetentionPeriod(
+                                policyData.retentionPeriodValue,
+                                policyData.retentionPeriodUnit,
+                                policyData.retentionPeriodDays
+                              )} |
+                              Department: {policyData.department} |
+                              Branch: {getPolicyBranch(policyData)}
                             </p>
                           </div>
                           <div className="flex items-center space-x-4">
@@ -223,9 +299,6 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                         Upload Date
                                       </th>
                                       <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
-                                        Days Since Upload
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
                                         Department
                                       </th>
                                       <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
@@ -241,10 +314,10 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                       <tr key={index} className="hover:bg-green-50">
                                         <td className="px-3 py-2 text-gray-900 font-medium">{doc.fileName}</td>
                                         <td className="px-3 py-2 text-gray-500">
-                                          {doc.uploadDate ? 
-                                            (Array.isArray(doc.uploadDate) ? 
-                                              new Date(doc.uploadDate[0], doc.uploadDate[1] - 1, doc.uploadDate[2], 
-                                                      doc.uploadDate[3] || 0, doc.uploadDate[4] || 0, doc.uploadDate[5] || 0)
+                                          {doc.uploadDate ?
+                                            (Array.isArray(doc.uploadDate) ?
+                                              new Date(doc.uploadDate[0], doc.uploadDate[1] - 1, doc.uploadDate[2],
+                                                doc.uploadDate[3] || 0, doc.uploadDate[4] || 0, doc.uploadDate[5] || 0)
                                                 .toLocaleDateString("en-GB", {
                                                   day: "2-digit",
                                                   month: "2-digit",
@@ -262,7 +335,6 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                             ) : 'N/A'
                                           }
                                         </td>
-                                        <td className="px-3 py-2 text-gray-500">{doc.daysSinceUpload || 'N/A'}</td>
                                         <td className="px-3 py-2 text-gray-500">{doc.department || 'N/A'}</td>
                                         <td className="px-3 py-2 text-gray-500">{doc.branch || 'N/A'}</td>
                                         <td className="px-3 py-2">
@@ -296,14 +368,17 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                       <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
                                         Upload Date
                                       </th>
-                                      {/* <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
-                                        Days Since Upload
-                                      </th> */}
                                       <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
                                         Live Countdown
                                       </th>
                                       <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
                                         Will Be Eligible At
+                                      </th>
+                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                        Department
+                                      </th>
+                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                        Branch
                                       </th>
                                       <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
                                         Status
@@ -325,8 +400,21 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                         uploadDate = new Date()
                                       }
 
-                                      // Calculate eligible date based on retention period (converted to milliseconds)
-                                      const retentionMs = policyData.retentionPeriodDays * 60 * 1000 // Convert minutes to milliseconds
+                                      // Calculate eligible date - assuming retention period is in minutes if it's a small number
+                                      let retentionMs
+                                      const retentionPeriod = policyData.retentionPeriodDays || policyData.retentionPeriod || 0
+
+                                      if (retentionPeriod <= 60) {
+                                        // Assume it's in minutes
+                                        retentionMs = retentionPeriod * 60 * 1000
+                                      } else if (retentionPeriod < 1440) {
+                                        // Assume it's in minutes
+                                        retentionMs = retentionPeriod * 60 * 1000
+                                      } else {
+                                        // Assume it's in days
+                                        retentionMs = retentionPeriod * 24 * 60 * 60 * 1000
+                                      }
+
                                       const eligibleDate = new Date(uploadDate.getTime() + retentionMs)
 
                                       const now = new Date()
@@ -351,9 +439,6 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                               minute: "2-digit",
                                             })}
                                           </td>
-                                          {/* <td className="px-3 py-2 text-gray-500 text-center">
-                                            <span className="font-medium">{doc.daysSinceUpload || 'N/A'}</span>
-                                          </td> */}
                                           <td className="px-3 py-2 text-center">
                                             <CountdownTimer
                                               targetDate={eligibleDate}
@@ -377,12 +462,14 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                               })}
                                             </div>
                                           </td>
+                                          <td className="px-3 py-2 text-gray-500">{doc.department || 'N/A'}</td>
+                                          <td className="px-3 py-2 text-gray-500">{doc.branch || 'N/A'}</td>
                                           <td className="px-3 py-2">
                                             <div className="flex flex-col items-center">
                                               <span
                                                 className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${isEligibleSoon
-                                                    ? "bg-orange-100 text-orange-800"
-                                                    : "bg-yellow-100 text-yellow-800"
+                                                  ? "bg-orange-100 text-orange-800"
+                                                  : "bg-yellow-100 text-yellow-800"
                                                   }`}
                                               >
                                                 {isEligibleSoon ? "Almost Ready!" : "Waiting"}
@@ -504,10 +591,10 @@ const RetentionCheckAlert = ({ onClose, result }) => {
           <button
             onClick={handleClose}
             className={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${result.error
-                ? "bg-red-100 text-red-700 hover:bg-red-200 focus:ring-red-500"
-                : hasErrors
-                  ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 focus:ring-yellow-500"
-                  : "bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500"
+              ? "bg-red-100 text-red-700 hover:bg-red-200 focus:ring-red-500"
+              : hasErrors
+                ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 focus:ring-yellow-500"
+                : "bg-green-100 text-green-700 hover::bg-green-200 focus:ring-green-500"
               }`}
           >
             Close
