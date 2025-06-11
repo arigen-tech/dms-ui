@@ -718,11 +718,16 @@ const ArchiveDownload = () => {
         setShowProgress(false)
         // Reset progress only after hiding the progress bar
         setStoreProgress(0)
-        if (response.data.success) {
-          showPopup(`Data Archived successfully! `, "success")
+        if (response.data && response.data.success) {
+          if (!response.data.response) {
+            showPopup("No new documents found for archival. All matching files may have already been archived.", "info");
+          } else {
+            showPopup("Data Archived successfully!", "success");
+          }
         } else {
-          showPopup(response.data.message || "Failed to Archive ", "error")
+          showPopup(response.data?.message || "Failed to archive", "error");
         }
+
       }, 1000)
     } catch (error) {
       if (progressInterval) {
@@ -1143,7 +1148,11 @@ const ArchiveDownload = () => {
               Filtered Archives ({currentData.length})
             </button>
           </div>
-          <p className="text-gray-500 text-center">No archived files match your criteria</p>
+          <p className="text-gray-500 text-center">
+            No archived files match your criteria.<br />
+            Try changing your filters or clearing the date range.
+          </p>
+
         </div>
       )
     }
