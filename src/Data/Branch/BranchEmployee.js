@@ -524,9 +524,9 @@ const BranchEmployee = () => {
     const role = localStorage.getItem("role");
 
     return (
-        <div className="p-4  max-w-screen-lg mx-auto">
-            <h1 className="text-xl mb-4 font-semibold">Branch Users</h1>
-            <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
+        <div className="px-2">
+            <h1 className="text-2xl mb-1 font-semibold">Branch Users</h1>
+            <div className="bg-white p-1 rounded-lg shadow-sm">
                 {showPopup && (
                     <Popup
                         message={popupConfig.message}
@@ -538,7 +538,7 @@ const BranchEmployee = () => {
                 {loading && <p className="text-blue-500">Loading...</p>}
 
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {/* Name Input */}
                         <label className="block text-md font-medium text-gray-700">
                             Name
