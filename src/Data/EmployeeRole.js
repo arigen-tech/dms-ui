@@ -172,9 +172,9 @@ const EmployeeRole = () => {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">Pending Users</h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+    <div className="px-2">
+      <h1 className="text-2xl mb-1 font-semibold">Pending Users</h1>
+      <div className="bg-white p-1 rounded-lg shadow-sm">
         {/* Search and Items Per Page Controls */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
