@@ -26,17 +26,16 @@ const LoginPage = () => {
   });
   const [captcha, setCaptcha] = useState([]);
   const [alertMessage, setAlertMessage] = useState("");
-  const [alertType, setAlertType] = useState("error"); // 'error' or 'success'
+  const [alertType, setAlertType] = useState("error");
   const navigate = useNavigate();
   const [isRotated, setIsRotated] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   
   // OTP Timer states
-  const [otpTimer, setOtpTimer] = useState(300); // 5 minutes in seconds
+  const [otpTimer, setOtpTimer] = useState(300);
   const [canResendOtp, setCanResendOtp] = useState(false);
-  const [resendTimer, setResendTimer] = useState(30); // 30 seconds before resend is allowed
+  const [resendTimer, setResendTimer] = useState(30);
 
-  // Keep existing constants
   const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const LENGTH = 5;
 
@@ -82,7 +81,6 @@ const LoginPage = () => {
     return () => clearInterval(interval);
   }, [isOtpRequested, resendTimer, canResendOtp]);
 
-  // Enhanced captcha generation function with better visual effects
   const generateCaptcha = () => {
     let captchaArray = [];
     const colors = ['#2563eb', '#dc2626', '#059669', '#7c3aed', '#ea580c'];
@@ -91,8 +89,8 @@ const LoginPage = () => {
       const character = CHARACTERS.charAt(
         Math.floor(Math.random() * CHARACTERS.length)
       );
-      const rotation = Math.floor(Math.random() * 30) - 15; // Increased rotation range
-      const fontSize = Math.floor(Math.random() * 8) + 18; // Random font sizes between 18-26px
+      const rotation = Math.floor(Math.random() * 30) - 15;
+      const fontSize = Math.floor(Math.random() * 8) + 18;
       const color = colors[Math.floor(Math.random() * colors.length)];
       const offsetY = Math.floor(Math.random() * 10) - 5;
       const skew = Math.floor(Math.random() * 20) - 10;
@@ -111,7 +109,6 @@ const LoginPage = () => {
     return captchaArray;
   };
 
-  // Format timer display
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -123,7 +120,6 @@ const LoginPage = () => {
     setAlertType(type);
   };
 
-  // New back button handler
   const handleBack = () => {
     setIsOtpRequested(false);
     setOtp("");
@@ -132,7 +128,6 @@ const LoginPage = () => {
     setResendTimer(30);
   };
 
-  // Existing functions with minor modifications
   const handleRefresh = () => {
     setCaptcha(generateCaptcha());
     setIsRotated(true);
@@ -145,8 +140,8 @@ const LoginPage = () => {
   };
 
   const handleOtpChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ''); // Only allow digits
-    if (value.length <= 6) { // Assuming OTP is 6 digits
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 6) {
       setOtp(value);
     }
   };
@@ -182,7 +177,7 @@ const LoginPage = () => {
           return;
         }
         setIsOtpRequested(true);
-        setOtpTimer(300); // Reset timer to 5 minutes
+        setOtpTimer(300);
         setCanResendOtp(false);
         setResendTimer(30);
         showAlert("OTP has been sent to your email.", "success");
@@ -207,7 +202,7 @@ const LoginPage = () => {
       });
 
       if (response.status === 200) {
-        setOtpTimer(300); // Reset timer to 5 minutes
+        setOtpTimer(300);
         setCanResendOtp(false);
         setResendTimer(30);
         showAlert("New OTP has been sent to your email.", "success");
@@ -248,11 +243,9 @@ const LoginPage = () => {
       if (response.status === 200) {
         const { token, roles, name, id } = response.data;
 
-        // Decode the token to get the expiration time
         const decodedToken = jwtDecode(token);
-        const expirationTime = decodedToken.exp; // `exp` is in seconds
+        const expirationTime = decodedToken.exp;
 
-        // Store values in localStorage
         localStorage.setItem("tokenKey", token);
         localStorage.setItem("token_expiration", expirationTime);
         localStorage.setItem("email", formData.username);
@@ -287,28 +280,28 @@ const LoginPage = () => {
       </div>
 
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 md:p-8">
-        {/* Logo and Title */}
-        <div className="w-full max-w-md text-center mb-2">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-3 md:p-4">
+        {/* Logo and Title - More compact */}
+        <div className="w-full max-w-md text-center mb-1">
           <img
             src={logo2}
             alt="AGT Document Management System"
-            className="mx-auto w-28 object-cover mb-4"
+            className="mx-auto w-20 object-cover mb-2"
           />
-          <h2 className="text-xl text-blue-800 font-semibold">
+          <h2 className="text-lg text-blue-800 font-semibold">
             Document Management System
           </h2>
         </div>
 
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-4">
           {isOtpRequested && (
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <button
                 onClick={handleBack}
-                className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
+                className="flex items-center text-blue-600 hover:text-blue-700 transition-colors text-sm"
               >
-                <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                Back to Login
+                <ArrowLeftIcon className="w-4 h-4 mr-1" />
+                Back
               </button>
               <div className="flex items-center text-sm text-gray-600">
                 <ClockIcon className="w-4 h-4 mr-1" />
@@ -317,14 +310,11 @@ const LoginPage = () => {
             </div>
           )}
 
-          <div className="mb-6 text-center">
-            <h2
-              className={`text-2xl font-bold ${isOtpRequested ? "text-gray-900" : "text-indigo-600"
-                }`}
-            >
+          <div className="mb-4 text-center">
+            <h2 className={`text-xl font-bold ${isOtpRequested ? "text-gray-900" : "text-indigo-600"}`}>
               {isOtpRequested ? "Enter OTP" : "Welcome Back"}
             </h2>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 mt-1 text-sm">
               {isOtpRequested
                 ? "Please enter the OTP sent to your email"
                 : "Please sign in to your account"}
@@ -332,7 +322,7 @@ const LoginPage = () => {
           </div>
 
           {alertMessage && (
-            <div className={`mb-4 p-3 rounded-md border ${
+            <div className={`mb-3 p-2 rounded-md border text-sm ${
               alertType === "success"
                 ? "bg-green-50 text-green-700 border-green-200"
                 : "bg-red-50 text-red-700 border-red-200"
@@ -341,82 +331,81 @@ const LoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-3">
             {!isOtpRequested ? (
               <>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     Username
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserIcon className="h-5 w-5 text-blue-600" />
+                      <UserIcon className="h-4 w-4 text-blue-600" />
                     </div>
                     <input
                       type="email"
                       name="username"
                       value={formData.username}
                       onChange={handleInputChange}
-                      className="pl-10 w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                       placeholder="Enter your username"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     Password
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <LockClosedIcon className="h-5 w-5 text-blue-600" />
+                      <LockClosedIcon className="h-4 w-4 text-blue-600" />
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="pl-10 w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                       placeholder="Enter your password"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 hover:bg-gray-100 p-1 rounded"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-gray-100 p-1 rounded"
                     >
                       {showPassword ? (
-                        <EyeSlashIcon className="w-5 h-5 text-blue-600" />
+                        <EyeSlashIcon className="w-4 h-4 text-blue-600" />
                       ) : (
-                        <EyeIcon className="w-5 h-5 text-blue-600" />
+                        <EyeIcon className="w-4 h-4 text-blue-600" />
                       )}
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     Captcha
                   </label>
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-1 p-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden">
-                      {/* Add some noise/lines for more authentic captcha look */}
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
                       <div className="absolute inset-0">
                         <svg className="w-full h-full opacity-20">
-                          <line x1="0" y1="20" x2="100%" y2="10" stroke="#6b7280" strokeWidth="1"/>
+                          <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1"/>
                           <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1"/>
                           <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1"/>
                         </svg>
                       </div>
-                      <div className="relative flex items-center justify-center space-x-1">
+                      <div className="relative flex items-center justify-center space-x-1 h-full">
                         {captcha.map((item, index) => (
                           <span
                             key={item.id}
                             style={{
                               display: "inline-block",
                               transform: `rotate(${item.rotation}deg) skew(${item.skew}deg) translateY(${item.offsetY}px)`,
-                              fontSize: `${item.fontSize}px`,
+                              fontSize: `${Math.min(item.fontSize, 16)}px`,
                               color: item.color,
                               fontWeight: Math.random() > 0.5 ? 'bold' : 'normal',
                               fontFamily: Math.random() > 0.5 ? 'serif' : 'sans-serif',
@@ -432,11 +421,11 @@ const LoginPage = () => {
                     <button
                       type="button"
                       onClick={handleRefresh}
-                      className="p-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                      className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
                       title="Refresh Captcha"
                     >
                       <ArrowPathIcon
-                        className={`w-5 h-5 ${isRotated ? "animate-spin" : ""}`}
+                        className={`w-4 h-4 ${isRotated ? "animate-spin" : ""}`}
                       />
                     </button>
                   </div>
@@ -446,7 +435,7 @@ const LoginPage = () => {
                     value={formData.captcha}
                     onChange={handleInputChange}
                     onPaste={handleCaptchaPaste}
-                    className="mt-2 w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                     placeholder="Enter captcha"
                     required
                   />
@@ -456,14 +445,14 @@ const LoginPage = () => {
                   type="button"
                   onClick={requestOtp}
                   disabled={isButtonDisabled}
-                  className="w-full py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
                 >
                   {isButtonDisabled ? "Requesting OTP..." : "Request OTP"}
                 </button>
               </>
             ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
+              <div className="space-y-3">
+                <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     Enter OTP
                   </label>
@@ -471,7 +460,7 @@ const LoginPage = () => {
                     type="text"
                     value={otp}
                     onChange={handleOtpChange}
-                    className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${
+                    className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${
                       otpTimer === 0 ? 'bg-gray-100' : ''
                     }`}
                     placeholder="Enter OTP"
@@ -481,11 +470,11 @@ const LoginPage = () => {
                   />
                 </div>
                 
-                <div className="flex space-x-3">
+                <div className="flex space-x-2">
                   <button
                     type="submit"
                     disabled={isButtonDisabled || otpTimer === 0}
-                    className={`flex-1 py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium`}
+                    className={`flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm`}
                   >
                     {isButtonDisabled ? "Logging in..." : otpTimer === 0 ? "OTP Expired" : "Login"}
                   </button>
@@ -494,7 +483,7 @@ const LoginPage = () => {
                     type="button"
                     onClick={resendOtp}
                     disabled={!canResendOtp || isButtonDisabled}
-                    className="px-4 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                    className="px-3 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
                   >
                     {!canResendOtp ? `Resend (${resendTimer}s)` : "Resend OTP"}
                   </button>
