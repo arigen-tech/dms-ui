@@ -262,9 +262,9 @@ const DpAdminOCR = () => {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">Department Admin OCR</h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+    <div className="px-2">
+      <h1 className="text-2xl mb-1 font-semibold">Department Admin OCR</h1>
+      <div className="bg-white p-1 rounded-lg shadow-sm">
         <div className="mb-4 flex flex-wrap gap-4">
           <div className="flex items-center gap-1">
             <label
@@ -314,13 +314,13 @@ const DpAdminOCR = () => {
             </select>
           </div>
         </div>
-        <div className="mb-4 flex flex-wrap gap-4">
+        <div className="mb-4 grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <label className="block text-md font-medium text-gray-700">
             Branch:
             <select
               value={filters.branch}
               onChange={(e) => handleFilterChange("branch", e.target.value)}
-              className="border p-2"
+              className="border p-2 w-full"
               disabled={true}
             >
               <option value="All">All Branches</option>
@@ -337,7 +337,7 @@ const DpAdminOCR = () => {
             <select
               value={filters.department}
               onChange={(e) => handleFilterChange("department", e.target.value)}
-              className="border p-2"
+              className="border p-2 w-full"
               disabled={true}
             >
               {departments.map((department) => (
@@ -353,7 +353,7 @@ const DpAdminOCR = () => {
             <select
               value={filters.year}
               onChange={(e) => handleFilterChange("year", e.target.value)}
-              className="border p-2"
+              className="border p-2 w-full"
             >
               {years.map((year) => (
                 <option key={year.name} value={year.name}>
@@ -368,7 +368,7 @@ const DpAdminOCR = () => {
             <select
               value={filters.category}
               onChange={(e) => handleFilterChange("category", e.target.value)}
-              className="border p-2"
+              className="border p-2 w-full"
             >
               {categories.map((category) => (
                 <option key={category.name} value={category.name}>
@@ -381,7 +381,7 @@ const DpAdminOCR = () => {
           <label className="block text-md font-medium text-gray-700">
             Status:
             <select
-              className="border p-2"
+              className="border p-2 w-full"
               onChange={(e) =>
                 handleFilterChange("approvalStatus", e.target.value)
               }
@@ -397,7 +397,7 @@ const DpAdminOCR = () => {
             Search:
             <input
               type="text"
-              className="border p-2"
+              className="border p-2 w-full"
               placeholder="Search..."
               onChange={(e) => handleFilterChange("search", e.target.value)}
             />
@@ -405,6 +405,8 @@ const DpAdminOCR = () => {
         </div>
 
         {/* Table */}
+        <div className="overflow-x-auto">
+
         <table className="w-full border-collapse border">
           <thead>
             <tr className="bg-slate-100">
@@ -459,6 +461,8 @@ const DpAdminOCR = () => {
             )}
           </tbody>
         </table>
+
+        </div>
 
         {/* Pagination */}
         <div className="flex items-center mt-4">

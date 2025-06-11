@@ -619,7 +619,6 @@ const UserAddEmployee = () => {
           />
         )}
 
-        {loading && <p className="text-blue-500">Loading...</p>}
 
         <div className="mb-4 bg-slate-100 p-6 rounded-lg shadow-md">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
