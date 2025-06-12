@@ -7,6 +7,8 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid";
 import Popup from '../Components/Popup';
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const EmployeeRole = () => {
   // State Management
@@ -21,6 +23,8 @@ const EmployeeRole = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [currRoleCode, setCurrRoleCode] = useState("");
   const [popupMessage, setPopupMessage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const token = localStorage.getItem("tokenKey");
 
@@ -34,17 +38,25 @@ const EmployeeRole = () => {
   };
 
   const fetchUsers = async () => {
+    setIsLoading(true);
+
     try {
+
       const response = await axios.get(`${API_HOST}/employee/pending-by-department`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(response.data);
     } catch (error) {
       showPopup("Error fetching users. Please try again.", "error");
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
   const fetchEmployees = async () => {
+    setIsLoading(true);
+
     try {
       const userId = localStorage.getItem("userId");
       const response = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
@@ -53,6 +65,9 @@ const EmployeeRole = () => {
       setCurrRoleCode(response.data.role.roleCode);
     } catch (error) {
       showPopup("Error fetching employee details.", "error");
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
@@ -118,6 +133,10 @@ const EmployeeRole = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   // Utility Functions
   const showPopup = (message, type = 'info') => {

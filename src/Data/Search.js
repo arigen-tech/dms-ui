@@ -176,6 +176,7 @@ const Search = () => {
   };
 
   const fetchDepartments = async (branchId) => {
+    setIsLoading(true);
     try {
       const token = localStorage.getItem('tokenKey');
       const response = await axios.get(
@@ -187,6 +188,8 @@ const Search = () => {
       setDepartmentOptions(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
+    }finally{
+      setIsLoading(false);
     }
   };
 
@@ -506,6 +509,11 @@ const Search = () => {
   const calculateTotalPages = () => {
     return Math.ceil(searchResults.length / itemsPerPage);
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
+
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
