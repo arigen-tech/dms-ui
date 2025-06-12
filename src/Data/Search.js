@@ -504,7 +504,7 @@ const Search = () => {
                 name="branch"
                 value={searchCriteria.branch}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Branch</option>
                 {branchOptions.map((branch) => (
@@ -522,7 +522,7 @@ const Search = () => {
                 name="department"
                 value={searchCriteria.department}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!searchCriteria.branch}
               >
                 <option value="">Select Department</option>
@@ -543,7 +543,7 @@ const Search = () => {
                 name="branch"
                 value={searchCriteria.branch}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={true}
               >
                 <option value={userBranch?.id}>{userBranch?.name}</option>
@@ -557,7 +557,7 @@ const Search = () => {
                 name="department"
                 value={searchCriteria.department}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Department</option>
                 {departmentOptions.length > 0 ? (
@@ -581,7 +581,7 @@ const Search = () => {
                 name="branch"
                 value={userBranch?.id || ''}
                 disabled
-                className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
               >
                 <option value={userBranch?.id}>{userBranch?.name}</option>
               </select>
@@ -594,7 +594,7 @@ const Search = () => {
                 name="department"
                 value={userDepartment?.id || ''}
                 disabled
-                className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
               >
                 <option value={userDepartment?.id}>{userDepartment?.name}</option>
               </select>
@@ -609,7 +609,7 @@ const Search = () => {
             name="category"
             value={searchCriteria.category}
             onChange={handleInputChange}
-            className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select Category</option>
             {categoryOptions.map((category) => (
@@ -626,7 +626,7 @@ const Search = () => {
             name="year"
             value={searchCriteria.year}
             onChange={handleInputChange}
-            className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select Year</option>
             {yearOptions.map((yearID) => (
@@ -646,7 +646,7 @@ const Search = () => {
             placeholder="File No."
             value={searchCriteria.fileNo}
             onChange={handleInputChange}
-            className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
           />
         </label>
 
@@ -659,7 +659,7 @@ const Search = () => {
             placeholder="Title"
             value={searchCriteria.title}
             onChange={handleInputChange}
-            className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
           />
         </label>
 
@@ -672,7 +672,7 @@ const Search = () => {
             placeholder="Subject"
             value={searchCriteria.subject}
             onChange={handleInputChange}
-            className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
           />
         </label>
 
@@ -685,7 +685,7 @@ const Search = () => {
             placeholder="Version"
             value={searchCriteria.version}
             onChange={handleInputChange}
-            className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
           />
         </label>
 

@@ -241,7 +241,7 @@ const Year = () => {
               <div className=" flex items-end">
                 {editingIndex === null ? (
                   <button onClick={handleAddYear}
-                    className="bg-blue-900 text-white rounded-2xl p-2  text-sm flex items-center justify-center">
+                    className="bg-blue-900 text-white rounded-2xl p-2 mb-1 text-sm flex items-center justify-center">
                     <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Year
                   </button>
                 ) : (

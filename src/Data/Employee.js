@@ -631,7 +631,7 @@ const UserAddEmployee = () => {
                 name="name"
                 value={formData.name || ""}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
 
@@ -644,7 +644,7 @@ const UserAddEmployee = () => {
                 name="email"
                 value={formData.email || ""}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
 
@@ -662,7 +662,7 @@ const UserAddEmployee = () => {
                 onInput={(e) => {
                   e.target.value = e.target.value.replace(/[^0-9]/g, ""); // Allow only numbers
                 }}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
 
@@ -674,7 +674,7 @@ const UserAddEmployee = () => {
                   name="branch"
                   value={formData.branch?.id || ""}
                   onChange={(e) => handleSelectChange(e, "branch")}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="" disabled>
                     Select Branch
@@ -686,7 +686,7 @@ const UserAddEmployee = () => {
                   ))}
                 </select>
               ) : (
-                <div className="mt-1 block w-full p-3 border rounded-md bg-gray-100">
+                <div className="mt-1 block w-full p-2 border rounded-md bg-gray-100">
                   {formData.branch?.name || "No Branch Selected"}
                 </div>
               )}
@@ -700,7 +700,7 @@ const UserAddEmployee = () => {
                   name="department"
                   value={formData.department?.id || ""}
                   onChange={(e) => handleSelectChange(e, "department")}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="" disabled>
                     Select Department
@@ -712,7 +712,7 @@ const UserAddEmployee = () => {
                   ))}
                 </select>
               ) : (
-                <div className="mt-1 block w-full p-3 border rounded-md bg-gray-100">
+                <div className="mt-1 block w-full p-2 border rounded-md bg-gray-100">
                   {formData.department?.name || "No Department Selected"}
                 </div>
               )}

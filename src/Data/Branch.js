@@ -355,16 +355,16 @@ const Branch = () => {
               {editingBranchId === null ? (
                 <button
                   onClick={handleAddBranch}
-                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
+                  className="bg-blue-900 text-white rounded-2xl p-2 mb-1 text-sm flex items-center justify-center"
                 >
-                  <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Branch
+                  <PlusCircleIcon className="h-4 w-4 mr-1" /> Add Branch
                 </button>
               ) : (
                 <button
                   onClick={handleSaveEdit}
-                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
+                  className="bg-blue-900 text-white rounded-2xl p-2 mb-1 text-sm flex items-center justify-center"
                 >
-                  <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                  <CheckCircleIcon className="h-4 w-4 mr-1" /> Update
                 </button>
               )}
             </div>

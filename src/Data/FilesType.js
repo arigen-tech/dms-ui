@@ -338,11 +338,11 @@ const FilesType = () => {
             <div className="w-1/5 flex items-end">
               {editingFileTypeId === null ? (
                 <button onClick={handleAddFileType}
-                  className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center">
+                  className="bg-blue-900 text-white rounded-2xl p-2 mb-1 text-sm flex items-center justify-center">
                   <PlusCircleIcon className="h-5 w-5 mr-1" /> Add FileType
                 </button>
               ) : (
-                <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center">
+                <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 mb-1 text-sm flex items-center justify-center">
                   <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
                 </button>
               )}
