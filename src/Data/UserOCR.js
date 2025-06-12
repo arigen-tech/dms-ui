@@ -258,6 +258,8 @@ const UserOCR = () => {
     });
   };
 
+ 
+
   const totalItems = filteredDocuments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
@@ -275,6 +277,10 @@ const UserOCR = () => {
       (_, i) => startPage + i
     );
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="px-2">

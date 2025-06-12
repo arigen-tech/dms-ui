@@ -10,6 +10,8 @@ import {
   API_OCR_HOST,
 } from "../API/apiConfig";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const AdminOCR = () => {
   const navigate = useNavigate();
@@ -31,8 +33,13 @@ const AdminOCR = () => {
     search: "",
   });
   const token = localStorage.getItem("tokenKey");
+  const [isLoading, setIsLoading] = useState(false);
+
+  
 
   const fetchDocuments = async () => {
+    setIsLoading(true);
+    
     try {
       const response = await axios.get(`${DOCUMENTHEADER_API}/getAll`, {
         headers: {
@@ -49,6 +56,9 @@ const AdminOCR = () => {
       setFilteredDocuments(sortedDocuments);
     } catch (error) {
       console.error("Fetch documents error:", error.message);
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
@@ -200,6 +210,10 @@ const AdminOCR = () => {
         console.error("Error:", error);
       });
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   // for test purpose
 
@@ -441,11 +455,11 @@ const AdminOCR = () => {
                   <td className="border p-2">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
-                  <td className="border p-2">{doc.title}</td>
-                  <td className="border p-2">{doc.fileNo}</td>
-                  <td className="border p-2">{doc.subject}</td>
-                  <td className="border p-2">{formatDate(doc.createdOn)}</td>
-                  <td className="border p-2">
+                  <td className="border p-1">{doc.title}</td>
+                  <td className="border p-1">{doc.fileNo}</td>
+                  <td className="border p-1">{doc.subject}</td>
+                  <td className="border p-1">{formatDate(doc.createdOn)}</td>
+                  <td className="border p-1">
                     {doc.categoryMaster ? doc.categoryMaster.name : ""}
                   </td>
                   <td className="border p-2">
@@ -520,6 +534,7 @@ const AdminOCR = () => {
             </span>
           </div>
         </div>
+
       </div>
     </div>
   );

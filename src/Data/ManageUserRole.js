@@ -10,6 +10,8 @@ import {
   PencilIcon,
 } from "@heroicons/react/24/solid";
 import Popup from "../Components/Popup";
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const ManageUserRole = () => {
   const [users, setUsers] = useState([]);
@@ -33,6 +35,7 @@ const ManageUserRole = () => {
   const [currBranchId, setCurrBranchId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+
 
   const token = localStorage.getItem("tokenKey");
   const [loading, setLoading] = useState(false);
@@ -152,6 +155,8 @@ const ManageUserRole = () => {
   }, [loginEmpRole, currBranchId]); // Dependency array ensures it reacts to changes
 
   const fetchAvailableRolesForUser = async (id) => {
+    setIsLoading(true);
+
     try {
       const rolesResponse = await axios.get(`${ROLE_API}/findAll`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -160,6 +165,9 @@ const ManageUserRole = () => {
       setAllRoles(rolesResponse.data);
     } catch (error) {
       console.error("Error fetching available roles for user:", error);
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
@@ -332,6 +340,10 @@ const ManageUserRole = () => {
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="px-2 ">
@@ -578,7 +590,6 @@ const ManageUserRole = () => {
                           } text-white px-4 py-2 rounded`}
                         disabled={isLoading} // Disable button when loading
                       >
-                        {isLoading ? "Adding..." : "Add Role"}
                       </button>
                     </div>
                   ) : (
