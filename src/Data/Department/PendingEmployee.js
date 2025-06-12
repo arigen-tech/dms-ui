@@ -8,6 +8,7 @@ import {
 } from "@heroicons/react/24/solid";
 import Popup from '../../Components/Popup';
 import { useLocation } from 'react-router-dom';
+import LoadingComponent from "../../Components/LoadingComponent";
 
 const EmployeeRole = () => {
   const [users, setUsers] = useState([]);
@@ -22,6 +23,8 @@ const EmployeeRole = () => {
   const [currRoleCode, setCurrRoleCode] = useState("");
   const [popupMessage, setPopupMessage] = useState(null);
   const [highlightedUserId, setHighlightedUserId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const location = useLocation();
 
   const token = localStorage.getItem("tokenKey");
@@ -67,6 +70,8 @@ const EmployeeRole = () => {
 
 
   const fetchUsers = async () => {
+    setIsLoading(true);
+
     try {
       const response = await axios.get(
         `${API_HOST}/employee/pending-by-department`,
@@ -79,11 +84,16 @@ const EmployeeRole = () => {
       setUsers(response.data);
     } catch (error) {
       showPopup("Error fetching users. Please try again.", "error");
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
   const fetchEmployees = async () => {
     try {
+    setIsLoading(true);
+
       const userId = localStorage.getItem("userId");
       const userResponse = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
@@ -96,6 +106,9 @@ const EmployeeRole = () => {
       setCurrRoleCode(userResponse.data.role.roleCode);
     } catch (error) {
       showPopup("Error fetching employee details.", "error");
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
@@ -106,6 +119,7 @@ const EmployeeRole = () => {
   }, [currRoleCode]);
 
   const fetchRoles = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get(
         `${API_HOST}/RoleMaster/findActiveRole`,
@@ -119,6 +133,8 @@ const EmployeeRole = () => {
       setRoles(filteredRoles);
     } catch (error) {
       showPopup("Error fetching roles. Please try again.", "error");
+    }finally{
+    setIsLoading(false);
     }
   };
 
@@ -218,6 +234,10 @@ const EmployeeRole = () => {
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="px-2">

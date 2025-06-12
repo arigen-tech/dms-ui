@@ -12,6 +12,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_HOST } from "../../API/apiConfig";
 import Popup from '../../Components/Popup';
+import LoadingComponent from "../../Components/LoadingComponent";
 
 
 
@@ -32,7 +33,7 @@ const DepartmentEmployee = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [modalVisible, setModalVisible] = useState(false);
     const [employeeToToggle, setEmployeeToToggle] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [Message, setMessage] = useState("");
@@ -60,7 +61,7 @@ const DepartmentEmployee = () => {
     }, [userBranch, userDepartment]);
 
     const fetchUserDetails = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError("");
         try {
             const userId = localStorage.getItem("userId");
@@ -89,13 +90,13 @@ const DepartmentEmployee = () => {
             console.error("Error fetching user details:", error.response || error);
             setError("Error fetching user details.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
 
     const fetchDepartmentEmployees = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError("");
         try {
             const token = localStorage.getItem("tokenKey");
@@ -112,7 +113,7 @@ const DepartmentEmployee = () => {
         } catch (error) {
             setError("Error fetching department employees.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -458,6 +459,10 @@ const DepartmentEmployee = () => {
         return pages;
     };
 
+    if (isLoading) {
+        return <LoadingComponent />;
+      }
+
 
 
     return (
@@ -472,7 +477,6 @@ const DepartmentEmployee = () => {
                     />
                 )}
 
-                {loading && <p className="text-blue-500">Loading...</p>}
 
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -485,7 +489,7 @@ const DepartmentEmployee = () => {
                                 name="name"
                                 value={formData.name || ""}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
 
@@ -498,7 +502,7 @@ const DepartmentEmployee = () => {
                                 name="email"
                                 value={formData.email || ""}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
 
@@ -517,7 +521,7 @@ const DepartmentEmployee = () => {
                                 onInput={(e) => {
                                     e.target.value = e.target.value.replace(/[^0-9]/g, ""); // Allow only numbers
                                 }}
-                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
 
@@ -529,7 +533,7 @@ const DepartmentEmployee = () => {
                                 name="branch"
                                 value={userBranch ? userBranch.name : "Loading..."}
                                 disabled
-                                className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100"
                             />
                         </label>
 
@@ -541,7 +545,7 @@ const DepartmentEmployee = () => {
                                 name="department"
                                 value={userDepartment ? userDepartment.name : "Loading..."}
                                 disabled
-                                className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100"
                             />
                         </label>
                     </div>

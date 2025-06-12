@@ -11,6 +11,7 @@ import {
   API_OCR_HOST,
 } from "../API/apiConfig";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
+import LoadingComponent from "../Components/LoadingComponent";
 
 const DpAdminOCR = () => {
   const navigate = useNavigate();
@@ -32,8 +33,11 @@ const DpAdminOCR = () => {
     search: "",
   });
   const token = localStorage.getItem("tokenKey");
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const fetchDocuments = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${DOCUMENTHEADER_API}/getAll`, {
         headers: {
@@ -50,6 +54,8 @@ const DpAdminOCR = () => {
       setFilteredDocuments(sortedDocuments);
     } catch (error) {
       console.error("Fetch documents error:", error.message);
+    }finally{
+      setIsLoading(false);
     }
   };
 
@@ -260,6 +266,9 @@ const DpAdminOCR = () => {
       (_, i) => startPage + i
     );
   };
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="px-2">
