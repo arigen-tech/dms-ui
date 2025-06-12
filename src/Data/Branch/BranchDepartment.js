@@ -297,7 +297,7 @@ const BranchDepartments = () => {
                                 name="name"
                                 value={formData.name}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
 
@@ -309,7 +309,7 @@ const BranchDepartments = () => {
                                 placeholder="Branch"
                                 value={userBranch ? userBranch.name : "Loading..."}
                                 disabled
-                                className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
                     </div>

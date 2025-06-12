@@ -555,7 +555,7 @@ const BranchEmployee = () => {
                                 name="name"
                                 value={formData.name || ""}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
 
@@ -568,7 +568,7 @@ const BranchEmployee = () => {
                                 name="email"
                                 value={formData.email || ""}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
 
@@ -586,7 +586,7 @@ const BranchEmployee = () => {
                                 onInput={(e) => {
                                     e.target.value = e.target.value.replace(/[^0-9]/g, ""); // Allow only numbers
                                 }}
-                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
 
@@ -599,7 +599,7 @@ const BranchEmployee = () => {
                                 name="branch"
                                 value={userBranch ? userBranch.name : "Loading..."}
                                 disabled
-                                className="mt-1 block w-full p-3 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
 
@@ -610,7 +610,7 @@ const BranchEmployee = () => {
                                 name="department"
                                 value={formData.department?.id || ""}
                                 onChange={handleSelectChange}
-                                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">Select Department</option>
                                 {departmentOptions.map((department) => (
