@@ -13,6 +13,7 @@ import {
 import { DEPAETMENT_API, EMPLOYEE_API } from '../../API/apiConfig';
 import { API_HOST } from "../../API/apiConfig";
 import Popup from '../../Components/Popup';
+import LoadingComponent from '../../Components/LoadingComponent';
 
 const BranchDepartments = () => {
     const [departments, setDepartments] = useState([]);
@@ -26,13 +27,13 @@ const BranchDepartments = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [modalVisible, setModalVisible] = useState(false);
 
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [userBranch, setUserBranch] = useState(null);
     const [toggleDepartment, setToggleDepartment] = useState(null);
     const [popupMessage, setPopupMessage] = useState(null);
-    const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
 
     // Retrieve token from localStorage
@@ -49,7 +50,7 @@ const BranchDepartments = () => {
     }, [userBranch]);
 
     const fetchUserBranch = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError("");
         try {
             const userId = localStorage.getItem("userId");
@@ -71,12 +72,16 @@ const BranchDepartments = () => {
             console.error("Error fetching user branch:", error);
             setError("Error fetching user branch.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
+    if (isLoading) {
+        return <LoadingComponent />;
+      }
+
     const fetchDepartments = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError('');
         try {
             const token = localStorage.getItem('tokenKey');
@@ -89,7 +94,7 @@ const BranchDepartments = () => {
         } catch (error) {
             setError('Error fetching departments.');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 

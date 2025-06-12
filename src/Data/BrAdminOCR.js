@@ -11,6 +11,7 @@ import {
   API_OCR_HOST,
 } from "../API/apiConfig";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
+import LoadingComponent from "../Components/LoadingComponent";
 
 const BrAdminOCR = () => {
   const navigate = useNavigate();
@@ -32,9 +33,13 @@ const BrAdminOCR = () => {
     category: "All",
     search: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+
   const token = localStorage.getItem("tokenKey");
 
   const fetchDocuments = async () => {
+    setIsLoading(true);
+
     try {
       const response = await axios.get(`${DOCUMENTHEADER_API}/getAll`, {
         headers: {
@@ -51,6 +56,9 @@ const BrAdminOCR = () => {
       setFilteredDocuments(sortedDocuments);
     } catch (error) {
       console.error("Fetch documents error:", error.message);
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
@@ -71,6 +79,7 @@ const BrAdminOCR = () => {
   //   };
 
   const fetchUser = async () => {
+    setIsLoading(true);
     try {
       const userId = localStorage.getItem("userId");
       const response = await axios.get(
@@ -87,6 +96,8 @@ const BrAdminOCR = () => {
       }));
     } catch (error) {
       console.error("Error fetching user branch:", error);
+    }finally{
+      setIsLoading(false);
     }
   };
 
@@ -204,6 +215,10 @@ const BrAdminOCR = () => {
       }
     }
   }, [filters.branch, branches]);
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   //   const handleFilterChange = (field, value) => {
   //     setFilters((prev) => ({ ...prev, [field]: value }));

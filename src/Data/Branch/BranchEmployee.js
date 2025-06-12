@@ -19,6 +19,8 @@ import {
 } from "../../API/apiConfig";
 import { API_HOST } from "../../API/apiConfig";
 import Popup from '../../Components/Popup';
+import LoadingComponent from '../../Components/LoadingComponent';
+
 
 const BranchEmployee = () => {
     const [employees, setEmployees] = useState([]);
@@ -36,7 +38,6 @@ const BranchEmployee = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [employeeToToggle, setEmployeeToToggle] = useState(null);
     const [departmentOptions, setDepartmentOptions] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [Message, setMessage] = useState("");
@@ -45,6 +46,8 @@ const BranchEmployee = () => {
 
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
     const [showPopup, setShowPopup] = useState(false);
     const [popupConfig, setPopupConfig] = useState({
         message: '',
@@ -65,7 +68,7 @@ const BranchEmployee = () => {
     }, [userBranch]);
 
     const fetchUserBranch = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError("");
         try {
             const userId = localStorage.getItem("userId");
@@ -87,12 +90,12 @@ const BranchEmployee = () => {
             console.error("Error fetching user branch:", error);
             setError("Error fetching user branch.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     const fetchEmployees = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError("");
         try {
             const token = localStorage.getItem("tokenKey");
@@ -108,12 +111,17 @@ const BranchEmployee = () => {
         } catch (error) {
             setError("Error fetching employees.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
+
     const fetchDepartments = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError("");
         try {
             const token = localStorage.getItem("tokenKey");
@@ -129,7 +137,7 @@ const BranchEmployee = () => {
         } catch (error) {
             setError("Error fetching departments.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -535,7 +543,6 @@ const BranchEmployee = () => {
                     />
                 )}
 
-                {loading && <p className="text-blue-500">Loading...</p>}
 
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
