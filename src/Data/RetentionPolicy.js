@@ -1,9 +1,8 @@
-"use client"
 
 import { useState, useEffect } from "react"
 import axios from "axios"
 import { PlusCircleIcon, PencilIcon, LockClosedIcon, LockOpenIcon ,ArrowLeftIcon,
-  ArrowRightIcon} from "@heroicons/react/24/solid"
+  ArrowRightIcon,MagnifyingGlassIcon} from "@heroicons/react/24/solid"
 import { API_HOST, DEPAETMENT_API, BRANCH_API } from "../API/apiConfig"
 import Popup from "../Components/Popup"
 
@@ -447,16 +446,16 @@ const RetentionPolicy = () => {
   };
   
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">Retention Policies</h1>
+    <div className="px-2">
+      <h1 className="text-2xl mb-1 font-semibold">Retention Policies</h1>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+      <div className="bg-white p-1 rounded-lg shadow-sm">
         {popupMessage && (
           <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
         )}
 
         {/* Policy Form */}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg">
+        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <label className="block text-md font-medium text-gray-700">
               Policy Type <span className="text-red-500">*</span>
@@ -464,7 +463,7 @@ const RetentionPolicy = () => {
                 name="policyType"
                 value={formData.policyType}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="FILE_RETENTION">File Retention Policy</option>
                 <option value="DATA_RETENTION">Data Retention Policy</option>
@@ -480,14 +479,14 @@ const RetentionPolicy = () => {
                   name="retentionPeriodValue"
                   value={formData.retentionPeriodValue}
                   onChange={handleInputChange}
-                  className="block w-2/3 p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="block w-2/3 p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   min="1"
                 />
                 <select
                   name="retentionPeriodUnit"
                   value={formData.retentionPeriodUnit}
                   onChange={handleInputChange}
-                  className="block w-1/3 p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="block w-1/3 p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="MINUTES">Minutes</option>
                   <option value="HOURS">Hours</option>
@@ -503,7 +502,7 @@ const RetentionPolicy = () => {
                 name="branchId"
                 value={formData.branchId}
                 onChange={handleBranchChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Branch</option>
                 {branches.map((branch) => (
@@ -520,7 +519,7 @@ const RetentionPolicy = () => {
                 name="departmentId"
                 value={formData.departmentId}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!formData.branchId}
               >
                 <option value="">All Departments</option>
@@ -538,7 +537,7 @@ const RetentionPolicy = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 rows="3"
               />
             </label>
@@ -574,8 +573,12 @@ const RetentionPolicy = () => {
 
         {/* Search and Filter */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
+            <label
+              htmlFor="itemsPerPage"
+              className="mr-2 ml-2 text-white text-sm"
+            >
               Show:
             </label>
             <select
@@ -583,8 +586,8 @@ const RetentionPolicy = () => {
               className="border rounded-r-lg p-1.5 outline-none w-full"
               value={itemsPerPage}
               onChange={(e) => {
-                setItemsPerPage(Number(e.target.value))
-                setCurrentPage(1)
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
               }}
             >
               {[5, 10, 15, 20].map((num) => (
@@ -595,17 +598,16 @@ const RetentionPolicy = () => {
             </select>
           </div>
 
+          {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
-              placeholder="Search policies..."
+              placeholder="Search..."
               className="border rounded-l-md p-1 outline-none w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <div className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5 flex items-center justify-center">
-              🔍
-            </div>
+            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
         </div>
 
