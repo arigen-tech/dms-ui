@@ -14,28 +14,28 @@ const Popup = ({
         return {
           icon: '✓',
           iconColor: 'text-green-600',
-          buttonColor: 'bg-green-600 hover:bg-green-700',
+          buttonColor: 'bg-blue-800 hover:bg-blue-900',
           titleColor: 'text-green-800'
         };
       case 'error':
         return {
           icon: '✘',
           iconColor: 'text-red-600',
-          buttonColor: 'bg-red-600 hover:bg-red-700',
+          buttonColor: 'bg-blue-800 hover:bg-blue-900',
           titleColor: 'text-red-800'
         };
       case 'warning':
         return {
           icon: '!',
           iconColor: 'text-yellow-600',
-          buttonColor: 'bg-yellow-600 hover:bg-yellow-700',
+          buttonColor: 'bg-blue-800 hover:bg-blue-900',
           titleColor: 'text-yellow-800'
         };
       default:
         return {
           icon: 'i',
           iconColor: 'text-blue-600',
-          buttonColor: 'bg-blue-600 hover:bg-blue-700',
+          buttonColor: 'bg-blue-800 hover:bg-blue-900',
           titleColor: 'text-blue-800'
         };
     }
