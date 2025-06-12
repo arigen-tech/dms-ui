@@ -1034,7 +1034,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     setFormData({ ...formData, fileNo: e.target.value })
                   }
                   disabled={fieldsDisabled}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
 
@@ -1050,7 +1050,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     setFormData({ ...formData, title: e.target.value })
                   }
                   disabled={fieldsDisabled}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
 
@@ -1066,7 +1066,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     setFormData({ ...formData, subject: e.target.value })
                   }
                   disabled={fieldsDisabled}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
 
@@ -1077,7 +1077,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   name="category"
                   value={formData.category?.id || ""}
                   onChange={handleCategoryChange}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select category</option>
                   {categoryOptions.map((category) => (
@@ -1094,7 +1094,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   name="year"
                   value={formData.year?.id || ""}
                   onChange={handleYearChange}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Year</option>
                   {yearOptions.map((year) => (
@@ -1122,7 +1122,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     setFormData({ ...formData, version: e.target.value })
                   }
                   disabled={fieldsDisabled}
-                  className="mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
 
@@ -1148,7 +1148,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   multiple
                   onChange={handleFileChange}
                   webkitdirectory={folderUpload ? "true" : undefined}
-                  className="bg-white mt-1 block w-full p-3 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
 

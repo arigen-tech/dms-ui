@@ -11,6 +11,8 @@ import {
   API_OCR_HOST,
 } from "../API/apiConfig";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const UserOCR = () => {
   const navigate = useNavigate();
@@ -33,9 +35,13 @@ const UserOCR = () => {
   });
   const token = localStorage.getItem("tokenKey");
   const userId = localStorage.getItem("userId");
+  const [isLoading, setIsLoading] = useState(false);
+
 
 
   const fetchDocuments = async () => {
+    setIsLoading(true);
+
     try {
       const response = await axios.get(`${DOCUMENTHEADER_API}/employee/${userId}`, {
         headers: {
@@ -52,10 +58,15 @@ const UserOCR = () => {
       setFilteredDocuments(sortedDocuments);
     } catch (error) {
       console.error("Fetch documents error:", error.message);
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
   const fetchUser = async () => {
+    setIsLoading(true);
+
     try {
       const response = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
@@ -75,6 +86,9 @@ const UserOCR = () => {
       }));
     } catch (error) {
       console.error("Error fetching user branch:", error);
+    }finally{
+    setIsLoading(false);
+
     }
   };
 

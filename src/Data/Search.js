@@ -13,6 +13,8 @@ import { DOCUMENTHEADER_API } from '../API/apiConfig';
 import { YEAR_API } from '../API/apiConfig';
 import Popup from '../Components/Popup';
 import FilePreviewModal from "../Components/FilePreviewModal";
+import LoadingComponent from '../Components/LoadingComponent';
+
 
 const Search = () => {
   const [searchCriteria, setSearchCriteria] = useState({
@@ -46,6 +48,8 @@ const Search = () => {
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
   const [isOpeningFile, setIsOpeningFile] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   // Pagination state
   const [itemsPerPage] = useState(5);
@@ -80,6 +84,8 @@ const Search = () => {
   }, [searchCriteria.branch]);
 
   const fetchUserDetails = async () => {
+    setIsLoading(true);
+
     try {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("tokenKey");
@@ -105,11 +111,16 @@ const Search = () => {
       }
     } catch (error) {
       console.error("Error fetching user details:", error);
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
   const fetchCategories = async () => {
+    setIsLoading(true);
     try {
+
       const token = localStorage.getItem('tokenKey');
       const response = await axios.get(
         `${API_HOST}/CategoryMaster/findAll`,
@@ -120,11 +131,16 @@ const Search = () => {
       setCategoryOptions(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
+    } finally{
+    setIsLoading(false);
+       
     }
   };
 
 
   const fetchYears = async () => {
+    setIsLoading(true);
+
     try {
       const token = localStorage.getItem('tokenKey');
       const response = await axios.get(`${YEAR_API}/findAll`, {
@@ -133,10 +149,15 @@ const Search = () => {
       setYearOptions(response.data); // Set fetched years
     } catch (error) {
       console.error('Error fetching years:', error);
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
   const fetchBranches = async () => {
+    setIsLoading(true);
+
     try {
       const token = localStorage.getItem('tokenKey');
       const response = await axios.get(
@@ -148,6 +169,9 @@ const Search = () => {
       setBranchOptions(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
+    }finally{
+    setIsLoading(false);
+
     }
   };
 

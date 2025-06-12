@@ -1,3 +1,6 @@
+import Popup from "../Components/LoadingComponent";
+import LoadingComponent from '../Components/LoadingComponent';
+
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -18,7 +21,6 @@ import {
   ROLE_API,
 } from "../API/apiConfig"; // Import your API URLs
 import { API_HOST } from "../API/apiConfig";
-import Popup from "../Components/Popup";
 
 const UserAddEmployee = () => {
   const [employees, setEmployees] = useState([]);
@@ -30,6 +32,7 @@ const UserAddEmployee = () => {
     branch: { id: "", name: "" }, // Ensure initial structure
     department: { id: "", name: "" }, // Ensure initial structure
   });
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
@@ -57,6 +60,8 @@ const UserAddEmployee = () => {
     type: "default",
   });
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
     fetchEmployees();
@@ -64,6 +69,8 @@ const UserAddEmployee = () => {
   }, []);
 
   const fetchEmployees = async () => {
+    setIsLoading(true);
+
     try {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("tokenKey");
@@ -137,8 +144,15 @@ const UserAddEmployee = () => {
     } catch (error) {
       console.error("Error fetching user details or employees:", error);
       setError("Could not fetch user details or employees");
+    } finally{
+    setIsLoading(false);
+
     }
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   // const fetchEmployees = async () => {
   //   setLoading(true);
