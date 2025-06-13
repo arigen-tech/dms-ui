@@ -3,6 +3,7 @@ import axios from 'axios';
 import { API_HOST } from '../API/apiConfig';
 import Popup from '../Components/Popup';
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
+import LoadingComponent from '../Components/LoadingComponent';
 
 const ArchiveUpload = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -14,6 +15,8 @@ const ArchiveUpload = () => {
   let [userRole, setUserRole] = useState(null);
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const initialFormData = {
     branchId: '',
@@ -33,6 +36,8 @@ const ArchiveUpload = () => {
   }, [archiveCriteria.branchId]);
 
   const fetchUserDetails = async () => {
+    setIsLoading(true);
+
     try {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("tokenKey");
@@ -61,10 +66,15 @@ const ArchiveUpload = () => {
     } catch (error) {
       console.error("Error fetching user details:", error);
       showPopup("Failed to fetch user details", "error");
+    }finally{
+    setIsLoading(false);
+
     }
   };
 
   const fetchBranches = async () => {
+    setIsLoading(true);
+
     try {
       const token = localStorage.getItem('tokenKey');
       const response = await axios.get(`${API_HOST}/branchmaster/findAll`, {
@@ -74,8 +84,14 @@ const ArchiveUpload = () => {
     } catch (error) {
       console.error('Error fetching branches:', error);
       showPopup('Failed to fetch branches', 'error');
+    }finally{
+    setIsLoading(false);
+
     }
   };
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   const fetchDepartments = async (branchId) => {
     try {
@@ -293,9 +309,11 @@ const ArchiveUpload = () => {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl mb-6 font-semibold text-gray-800">Upload Archive</h1>
-      <div className="bg-white p-4 rounded-xl shadow-md">
+    
+      <div className="px-2">
+      <h1 className="text-2xl mb-1 font-semibold">Upload Archive</h1>
+      <div className="bg-white p-1 rounded-lg shadow-sm">
+
         {popupMessage && (
           <Popup
             message={popupMessage.message}

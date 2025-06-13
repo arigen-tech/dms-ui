@@ -5,13 +5,14 @@ import { PlusCircleIcon, PencilIcon, LockClosedIcon, LockOpenIcon ,ArrowLeftIcon
   ArrowRightIcon,MagnifyingGlassIcon} from "@heroicons/react/24/solid"
 import { API_HOST, DEPAETMENT_API, BRANCH_API } from "../API/apiConfig"
 import Popup from "../Components/Popup"
+import LoadingComponent from "../Components/LoadingComponent"
 
 const RetentionPolicy = () => {
   const [policies, setPolicies] = useState([])
   const [branches, setBranches] = useState([])
   const [departments, setDepartments] = useState([])
   const [allDepartments, setAllDepartments] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [popupMessage, setPopupMessage] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
@@ -35,7 +36,7 @@ const RetentionPolicy = () => {
   // Modified useEffect to ensure proper loading order
   useEffect(() => {
     const fetchInitialData = async () => {
-      setLoading(true);
+      setIsLoading(true);
       try {
         // First load branches and departments
         await Promise.all([
@@ -49,12 +50,14 @@ const RetentionPolicy = () => {
         console.error("Error loading initial data:", error);
         showPopup("Failed to load initial data", "error");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     fetchInitialData();
   }, []);
+
+  
 
   // Add useEffect to update policy names when branches or departments change
   useEffect(() => {
@@ -444,6 +447,10 @@ const RetentionPolicy = () => {
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
   
   return (
     <div className="px-2">
