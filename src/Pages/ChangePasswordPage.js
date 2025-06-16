@@ -31,6 +31,7 @@ const ChangePasswordPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadMessage, setUploadMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   const token = localStorage.getItem("tokenKey");
 
@@ -52,6 +53,7 @@ const ChangePasswordPage = () => {
   }, []);
 
   const fetchEmployeeData = async () => {
+    setIsLoading(true);
     const userId = localStorage.getItem("userId");
     try {
       const response = await apiClient.get(
@@ -73,7 +75,8 @@ const ChangePasswordPage = () => {
       }
     } catch (error) {
       console.error("Error fetching employee data:", error);
-      setError("Failed to fetch employee data.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -123,6 +126,7 @@ const ChangePasswordPage = () => {
     try {
       await apiClient.post(`${API_HOST}/api/change-password`, changePasswordData);
       showPopup("Password Changed successfully!", "success");
+      setActiveForm(null);
     } catch (error) {
       if (error.response && error.response.data) {
         showPopup(`Failed to Changed Password`, "error");
@@ -171,6 +175,7 @@ const ChangePasswordPage = () => {
       localStorage.setItem("UserName", updatedEmployee.name);
 
       showPopup("Profile Updated successfully!", "success");
+      setActiveForm(null);
       console.log("Profile updated:", response.data);
     } catch (error) {
       console.error("Error updating profile:", error.response || error);
@@ -219,6 +224,7 @@ const ChangePasswordPage = () => {
         }
       );
       showPopup("Photo Update successfully!", "success");
+      setActiveForm(null);
       console.log("Upload response:", response.data);
   
       if (typeof fetchImageSrc === "function") {
@@ -286,41 +292,74 @@ const ChangePasswordPage = () => {
               <h2 className="text-xl font-bold text-center text-gray-900 mb-2">
                 Employee Profile
               </h2>
-              <div className="flex items-center justify-center mb-4">
-                {imageSrc || photo ? (
-                  <img
-                    src={photo || imageSrc} 
-                    alt="Profile"
-                    className="h-20 w-20 border-2 border-gray-400 rounded-full mb-2 object-cover"
-                  />
-                ) : (
-                  <UserCircleIcon className="h-20 w-20 text-rose-800 border-4 border-black rounded-full" />
-                )}
-              </div>
-              <p className="text-md text-gray-900 ml-20 my-2">
-                Name: <strong>{employee?.name}</strong>
-              </p>
-              <p className="text-md text-gray-900 ml-20 my-2">
-                Branch: <strong>{employee?.branch?.name || "All"}</strong>
-              </p>
-              {department && (
-                <p className="text-md text-gray-900 ml-20 my-2">
-                  Department:{" "}
-                  <strong>{employee?.department?.name || "All"}</strong>
-                </p>
+              
+              {isLoading ? (
+                <div className="animate-pulse">
+                  <div className="flex justify-center mb-4">
+                    <div className="h-20 w-20 rounded-full bg-gray-300"></div>
+                  </div>
+                  
+                  {[...Array(7)].map((_, index) => (
+                    <div key={index} className="flex items-center ml-20 my-2">
+                      <div className="h-4 w-24 bg-gray-300 rounded mr-2"></div>
+                      <div className="h-4 w-32 bg-gray-300 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center mb-4">
+                    {imageSrc || photo ? (
+                      <img
+                        src={photo || imageSrc} 
+                        alt="Profile"
+                        className="h-20 w-20 border-2 border-gray-400 rounded-full mb-2 object-cover"
+                      />
+                    ) : (
+                      <UserCircleIcon className="h-20 w-20 text-rose-800 border-4 border-black rounded-full" />
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-md text-gray-900 ml-20 flex items-center">
+                      <span className="w-24">Name:</span>
+                      <strong className="ml-2">{employee?.name}</strong>
+                    </p>
+                    
+                    <p className="text-md text-gray-900 ml-20 flex items-center">
+                      <span className="w-24">Branch:</span>
+                      <strong className="ml-2">{employee?.branch?.name || "All"}</strong>
+                    </p>
+                    
+                    {department && (
+                      <p className="text-md text-gray-900 ml-20 flex items-center">
+                        <span className="w-24">Department:</span>
+                        <strong className="ml-2">{employee?.department?.name || "All"}</strong>
+                      </p>
+                    )}
+                    
+                    <p className="text-md text-gray-900 ml-20 flex items-center">
+                      <span className="w-24">Role:</span>
+                      <strong className="ml-2">{employee?.role.role}</strong>
+                    </p>
+                    
+                    <p className="text-md text-gray-900 ml-20 flex items-center">
+                      <span className="w-24">Mobile:</span>
+                      <strong className="ml-2">{employee?.mobile}</strong>
+                    </p>
+                    
+                    <p className="text-md text-gray-900 ml-20 flex items-center">
+                      <span className="w-24">Joined Date:</span>
+                      <strong className="ml-2">{formatDate(employee?.createdOn)}</strong>
+                    </p>
+                    
+                    <p className="text-md text-gray-900 ml-20 flex items-center">
+                      <span className="w-24">Email:</span>
+                      <strong className="ml-2">{employee?.email}</strong>
+                    </p>
+                  </div>
+                </>
               )}
-              <p className="text-md text-gray-900 ml-20 my-2">
-                Role: <strong>{employee?.role.role}</strong>
-              </p>
-              <p className="text-md text-gray-900 ml-20 my-2">
-                Mobile: <strong>{employee?.mobile}</strong>
-              </p>
-              <p className="text-md text-gray-900 ml-20 my-2">
-                Joined Date: <strong>{formatDate(employee?.createdOn)}</strong>
-              </p>
-              <p className="text-md text-gray-900 ml-20 my-2">
-                Email: <strong>{employee?.email}</strong>
-              </p>
 
               <div className="flex flex-col space-y-4 my-5">
                 <button

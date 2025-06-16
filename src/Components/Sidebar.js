@@ -24,6 +24,8 @@ import {
   IdentificationIcon,
   ClockIcon
 } from "@heroicons/react/24/solid";
+import { SiArchiveofourown } from "react-icons/si";
+
 import {
   RiFileUserFill,
   RiInboxUnarchiveFill,
@@ -236,6 +238,8 @@ function Sidebar() {
           {role === SYSTEM_ADMIN && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
+              <SidebarLink to="/archivalDashboard" icon={SiArchiveofourown} text="Archival Dashboard" />
+
               <hr className="border-t border-blue-800 mt-1" />
               <div>
                 <SidebarLink
@@ -454,6 +458,7 @@ function Sidebar() {
                 {isArchiveOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
                     <hr className="border-t border-blue-800 mt-1" />
+
                     <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
