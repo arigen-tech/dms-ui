@@ -118,6 +118,68 @@ const RetentionCheckAlert = ({ onClose, result }) => {
     return 'N/A';
   };
 
+  // Helper function to calculate eligible date properly
+  const calculateEligibleDate = (uploadDate, policyData) => {
+    // Handle different date formats for uploadDate
+    let baseUploadDate
+    if (Array.isArray(uploadDate)) {
+      const [year, month, day, hour, minute, second] = uploadDate
+      baseUploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
+    } else if (typeof uploadDate === "string") {
+      baseUploadDate = new Date(uploadDate)
+    } else if (uploadDate) {
+      baseUploadDate = new Date(uploadDate)
+    } else {
+      baseUploadDate = new Date()
+    }
+
+    // Calculate retention period in milliseconds based on unit and value
+    let retentionMs = 0
+    
+    const retentionValue = policyData.retentionPeriodValue
+    const retentionUnit = policyData.retentionPeriodUnit
+    const retentionDays = policyData.retentionPeriodDays
+
+    if (retentionValue && retentionUnit) {
+      // Use the explicit value and unit
+      const unit = retentionUnit.toLowerCase()
+      switch (unit) {
+        case 'minutes':
+          retentionMs = retentionValue * 60 * 1000
+          break
+        case 'hours':
+          retentionMs = retentionValue * 60 * 60 * 1000
+          break
+        case 'days':
+          retentionMs = retentionValue * 24 * 60 * 60 * 1000
+          break
+        case 'months':
+          // Approximate 30 days per month
+          retentionMs = retentionValue * 30 * 24 * 60 * 60 * 1000
+          break
+        default:
+          // Default to days if unit is unknown
+          retentionMs = retentionValue * 24 * 60 * 60 * 1000
+      }
+    } else if (retentionDays) {
+      // Fallback to retention days
+      // If retentionDays is a small number, it might be in minutes
+      if (retentionDays < 1) {
+        // Treat as fraction of day (hours/minutes)
+        retentionMs = retentionDays * 24 * 60 * 60 * 1000
+      } else if (retentionDays < 100) {
+        // Could be minutes if it's a reasonable number
+        // Check if it makes sense as minutes vs days
+        retentionMs = retentionDays * 24 * 60 * 60 * 1000 // Assume days for now
+      } else {
+        // Definitely days
+        retentionMs = retentionDays * 24 * 60 * 60 * 1000
+      }
+    }
+
+    return new Date(baseUploadDate.getTime() + retentionMs)
+  }
+
   // Helper function to get the most common branch from documents in a policy
   const getPolicyBranch = (policyData) => {
     // First try to get branch from policy data
@@ -387,35 +449,7 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                   </thead>
                                   <tbody className="bg-white divide-y divide-gray-200">
                                     {policyData.notEligibleYet.map((doc, index) => {
-                                      // Handle different date formats for uploadDate
-                                      let uploadDate
-                                      if (Array.isArray(doc.uploadDate)) {
-                                        const [year, month, day, hour, minute, second] = doc.uploadDate
-                                        uploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
-                                      } else if (typeof doc.uploadDate === "string") {
-                                        uploadDate = new Date(doc.uploadDate)
-                                      } else if (doc.uploadDate) {
-                                        uploadDate = new Date(doc.uploadDate)
-                                      } else {
-                                        uploadDate = new Date()
-                                      }
-
-                                      // Calculate eligible date - assuming retention period is in minutes if it's a small number
-                                      let retentionMs
-                                      const retentionPeriod = policyData.retentionPeriodDays || policyData.retentionPeriod || 0
-
-                                      if (retentionPeriod <= 60) {
-                                        // Assume it's in minutes
-                                        retentionMs = retentionPeriod * 60 * 1000
-                                      } else if (retentionPeriod < 1440) {
-                                        // Assume it's in minutes
-                                        retentionMs = retentionPeriod * 60 * 1000
-                                      } else {
-                                        // Assume it's in days
-                                        retentionMs = retentionPeriod * 24 * 60 * 60 * 1000
-                                      }
-
-                                      const eligibleDate = new Date(uploadDate.getTime() + retentionMs)
+                                      const eligibleDate = calculateEligibleDate(doc.uploadDate, policyData)
 
                                       const now = new Date()
                                       const timeRemaining = eligibleDate.getTime() - now.getTime()
@@ -431,13 +465,27 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                                             </div>
                                           </td>
                                           <td className="px-3 py-2 text-gray-500">
-                                            {uploadDate.toLocaleDateString("en-GB", {
-                                              day: "2-digit",
-                                              month: "2-digit",
-                                              year: "numeric",
-                                              hour: "2-digit",
-                                              minute: "2-digit",
-                                            })}
+                                            {(() => {
+                                              let uploadDate
+                                              if (Array.isArray(doc.uploadDate)) {
+                                                const [year, month, day, hour, minute, second] = doc.uploadDate
+                                                uploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
+                                              } else if (typeof doc.uploadDate === "string") {
+                                                uploadDate = new Date(doc.uploadDate)
+                                              } else if (doc.uploadDate) {
+                                                uploadDate = new Date(doc.uploadDate)
+                                              } else {
+                                                uploadDate = new Date()
+                                              }
+
+                                              return uploadDate.toLocaleDateString("en-GB", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                              })
+                                            })()}
                                           </td>
                                           <td className="px-3 py-2 text-center">
                                             <CountdownTimer
