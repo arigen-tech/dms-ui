@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER, BRANCH_API } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
 import {
   BarChart,
@@ -42,11 +42,13 @@ import {
 import { IoDocumentLock } from "react-icons/io5";
 import { FaUserClock } from "react-icons/fa6";
 import Layout from "../Components/Layout";
+import axios from 'axios';
 
 
 
 function Dashboard() {
   const [chartData, setChartData] = useState([]);
+  const [barChartData, setBarChartData] = useState([]); // Separate state for bar chart
   const [branchId, setBranchId] = useState(null);
   const [branchesId, setBranchsId] = useState(null);
   const [departmentId, setDepartmentId] = useState(null);
@@ -55,6 +57,11 @@ function Dashboard() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isGrLoading, setIsGrLoading] = useState(true);
+  const [isBarChartLoading, setIsBarChartLoading] = useState(true); // Separate loading for bar chart
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [isBranchLoading, setIsBranchLoading] = useState(false);
+
   const [stats, setStats] = useState({
     branchUser: 0,
     totalUser: 0,
@@ -148,6 +155,30 @@ function Dashboard() {
   };
 
   useEffect(() => {
+    const role = localStorage.getItem("role");
+    if (role === SYSTEM_ADMIN) {
+      fetchBranches();
+    }
+  }, []);
+
+  const fetchBranches = async () => {
+    setIsBranchLoading(true);
+    try {
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      setBranches(response.data);
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+    } finally {
+      setIsBranchLoading(false);
+    }
+  };
+
+  useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
         setLoading(true);
@@ -185,6 +216,7 @@ function Dashboard() {
     fetchDashboardStats();
   }, [navigate]);
 
+  // Fetch data for all charts except bar chart
   useEffect(() => {
     const fetchMonthlySummary = async () => {
       try {
@@ -204,6 +236,8 @@ function Dashboard() {
         const endDate = `${selectedYear}-12-31 23:59:59`;
 
         let summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
+
+        // Default URL based on role (no branch filtering here)
         switch (role) {
           case SYSTEM_ADMIN:
             summaryUrl = `${baseUrl}/monthly-total`;
@@ -258,6 +292,88 @@ function Dashboard() {
 
     fetchMonthlySummary();
   }, [navigate, selectedYear, branchesId, departmentId]);
+
+  // Separate fetch for bar chart with branch filtering
+  useEffect(() => {
+    const fetchBarChartData = async () => {
+      try {
+        setIsBarChartLoading(true);
+
+        const employeeId = localStorage.getItem("userId");
+        const token = localStorage.getItem("tokenKey");
+        const role = localStorage.getItem("role");
+
+        if (!token || !employeeId) {
+          throw new Error("Unauthorized: Token or Employee ID missing.");
+        }
+
+        const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+        const baseUrl = `${API_HOST}/api/documents`;
+        const startDate = `${selectedYear}-01-01 00:00:00`;
+        const endDate = `${selectedYear}-12-31 23:59:59`;
+
+        let summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
+
+        // Apply branch filtering logic for bar chart
+        if (selectedBranch === 'all') {
+          switch (role) {
+            case SYSTEM_ADMIN:
+              summaryUrl = `${baseUrl}/monthly-total`;
+              break;
+            case BRANCH_ADMIN:
+              summaryUrl = `${baseUrl}/branch/${branchesId}`;
+              break;
+            case DEPARTMENT_ADMIN:
+              summaryUrl = departmentId
+                ? `${baseUrl}/department/${departmentId}`
+                : `${baseUrl}/branch/${branchesId}`;
+              break;
+            case USER:
+              summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
+              break;
+            default:
+              throw new Error("Invalid role.");
+          }
+        } else {
+          // Filter by selected branch for bar chart
+          summaryUrl = `${baseUrl}/branch/${selectedBranch}`;
+        }
+
+        const response = await apiClient.get(summaryUrl, {
+          ...authHeader,
+          params: { startDate, endDate },
+        });
+
+        const {
+          months,
+          approvedDocuments,
+          rejectedDocuments,
+          pendingDocuments,
+        } = response.data;
+
+        const mappedData = months.map((month, index) => ({
+          name: month,
+          ApprovedDocuments: approvedDocuments[index],
+          RejectedDocuments: rejectedDocuments[index],
+          PendingDocuments: pendingDocuments[index],
+        }));
+
+        setBarChartData(mappedData);
+      } catch (error) {
+        console.error("Error fetching bar chart data:", error);
+        const isUnauthorized =
+          error.response?.status === 401 ||
+          error.message === "Unauthorized: Token or Employee ID missing.";
+        if (isUnauthorized) {
+          navigate("/login");
+        }
+      } finally {
+        setIsBarChartLoading(false);
+      }
+    };
+
+    fetchBarChartData();
+  }, [navigate, selectedYear, branchesId, departmentId, selectedBranch]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -582,46 +698,93 @@ function Dashboard() {
           )}
         </div>
 
-<div className="mb-4">
-  <label className="mr-2 font-semibold text-gray-700">Select Year:</label>
-  <div className="relative w-40">
-    <input
-      list="year-options"
-      type="text"
-      inputMode="numeric"
-      pattern="\d{4}"
-      placeholder="YYYY"
-      value={selectedYear || ""}
-      onChange={(e) => {
-        const val = e.target.value;
-        // Only allow 4-digit numbers
-        if (/^\d{0,4}$/.test(val)) {
-          setSelectedYear(val ? Number(val) : "");
-        }
-      }}
-      className="w-full border border-gray-300 rounded px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-    />
-    <datalist id="year-options">
-      {years.map((year) => (
-        <option key={year} value={year} />
-      ))}
-    </datalist>
-    <span className="absolute right-2 top-2 text-gray-400 pointer-events-none">📅</span>
-  </div>
-</div>
+        <div className="mb-4">
+          <label className="mr-2 font-semibold text-gray-700">Select Year:</label>
+          <div className="relative w-40">
+            <input
+              list="year-options"
+              type="text"
+              inputMode="numeric"
+              pattern="\d{4}"
+              placeholder="YYYY"
+              value={selectedYear || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Only allow 4-digit numbers
+                if (/^\d{0,4}$/.test(val)) {
+                  setSelectedYear(val ? Number(val) : "");
+                }
+              }}
+              className="w-full border border-gray-300 rounded px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            <datalist id="year-options">
+              {years.map((year) => (
+                <option key={year} value={year} />
+              ))}
+            </datalist>
+            <span className="absolute right-2 top-2 text-gray-400 pointer-events-none">📅</span>
+          </div>
+        </div>
 
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Bar Chart */}
-          {/* Bar Chart */}
+
+          {/* Bar Chart - Only affected by branch filter */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
-            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">📊 Monthly Document Stats {selectedYear}</h3>
-            {isGrLoading ? (
+            <div className="mb-4">
+              <h3 className="flex text-lg font-bold text-gray-800 border-b pb-2 mb-3">
+                📊 Monthly Document Stats {selectedYear}
+                
+              
+
+              {/* Branch Filter Dropdown - Only show for SYSTEM_ADMIN */}
+              {role === SYSTEM_ADMIN && (
+                <div className=" items-center gap-2">
+                  {/* <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Branch:
+                  </label> */}
+                  <div className="relative">
+                    <select
+                      value={selectedBranch}
+                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      disabled={isBranchLoading}
+                      className="appearance-none bg-white border ml-3 border-gray-300 rounded-lg px-2 py-1 pr-8 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-w-[150px] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="all" className="font-medium">
+                        🌐 All Branches
+                      </option>
+                      {branches.map((branch) => (
+                        <option key={branch.id} value={branch.id} className="font-medium">
+                          🏢 {branch.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Custom dropdown arrow */}
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+
+                    {/* Loading indicator */}
+                    {isBranchLoading && (
+                      <div className="absolute inset-y-0 right-8 flex items-center pr-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              </h3>
+            </div>
+
+            {isBarChartLoading ? (
               <SkeletonBox />
             ) : (
               <div style={{ width: '100%', height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 30 }}>
+                  <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 20, bottom: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <XAxis
                       dataKey="name"
@@ -689,7 +852,7 @@ function Dashboard() {
             )}
           </div>
 
-          {/* Line Chart */}
+          {/* Line Chart - Not affected by branch filter */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
             <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">📈 Page Document Stats {selectedYear}</h3>
             {isGrLoading ? (
