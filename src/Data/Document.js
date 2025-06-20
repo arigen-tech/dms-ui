@@ -75,10 +75,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [contentType, setContentType] = useState("");
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
-  const [isOpeningFile, setIsOpeningFile] = useState(false); 
-    const [loading, setLoading] = useState(false);
+  const [isOpeningFile, setIsOpeningFile] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [bProcess, setBProcess] = useState(false);
 
-  // Run this effect only when component mounts
+  console.log("formData", formData);
   useEffect(() => {
     if (data) {
       handleEditDocument(data);
@@ -101,7 +102,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       setFilesType(response?.data?.response ?? []);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
-      setFilesType([]); // fallback
+      setFilesType([]); 
     }
   };
 
@@ -203,7 +204,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         // Something happened in setting up the request
         console.error("Error setting up request:", error.message);
       }
-    }finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -275,8 +276,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const openFile = async (file) => {
     try {
-      setIsOpeningFile(true); 
-      
+      setIsOpeningFile(true);
+
       const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
       const department = selectedDoc.employee.department.name.replace(/ /g, "_");
       const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
@@ -309,7 +310,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       console.error("Error:", error);
       alert("Failed to fetch or preview the file.");
     } finally {
-      setIsOpeningFile(false); 
+      setIsOpeningFile(false);
     }
   };
 
@@ -587,6 +588,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     };
 
     try {
+      setBProcess(true);
+
       const response = await fetch(`${API_HOST}/api/documents/update`, {
         method: "PUT",
         headers: {
@@ -609,6 +612,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     } catch (error) {
       console.error("Error updating document:", error);
       showPopup(`Document update failed: ${error.message}`, "error");
+    } finally {
+      setBProcess(false);
     }
   };
 
@@ -700,7 +705,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       filePaths: versionedFilePaths, // Versioned file paths
     };
 
+    console.log("Payload to be sent:", payload);
+
     try {
+      setBProcess(true);
       // Send the payload to the backend
       const response = await fetch(`${API_HOST}/api/documents/save`, {
         method: "POST",
@@ -738,6 +746,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     } catch (error) {
       console.error("Error saving document:", error);
       showPopup(`Document save failed`, "error");
+    } finally {
+      setBProcess(false);
     }
   };
 
@@ -789,6 +799,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return null;
     }
   };
+
+  const handleDiscardAddingFile = (indexToRemove) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      uploadedFilePaths: prevData.uploadedFilePaths.filter((_, index) => index !== indexToRemove),
+    }));
+  };
+
 
   const handleDiscardFile = (index) => {
     if (index < 0 || index >= uploadedFileNames.length) {
@@ -1003,7 +1021,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   );
 
 
-    if (loading) {
+  if (loading) {
     return <LoadingComponent />;
   }
 
@@ -1178,10 +1196,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                       ></path>
                     </svg>
-                    Uploading... {uploadProgress}%
+                    Addings... {uploadProgress}%
                   </>
                 ) : (
-                  "Upload"
+                  "Add Files"
                 )}
 
                 {/* Progress Bar (Only visible when uploading) */}
@@ -1197,57 +1215,94 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
               {isUploading && (
                 <button onClick={handleCancelUpload} className="bg-red-500 text-white h-14 mt-6 px-4 py-2 rounded">
-                  Cancel Upload
+                  Cancel Add Files
                 </button>
               )}
 
 
             </div>
 
-            {uploadedFilePath.map((file, index) => {
-              const displayName = uploadedFileNames[index];
-              const version = file.version;
-              return (
-                <li
-                  key={index}
-                  className="grid grid-cols-3 items-center gap-4 p-2 border rounded-md"
-                >
-                  {/* File Name */}
-                  <div className="text-left">
-                    <span className="block font-medium">
-                      <strong>{displayName}</strong>
-                    </span>
-                  </div>
-                  {/* Version */}
-                  <div className="text-center">
-                    <label className="flex justify-center items-center gap-2">
-                      <span className="text-sm font-medium">
-                        <strong>Version:</strong>
+            {editingDoc === null ? (
+              formData?.uploadedFilePaths?.map((file, index) => {
+                const displayName = uploadedFileNames[index];
+                const version = file.version;
+
+                return (
+                  <li key={index} className="grid grid-cols-3 items-center gap-4 p-2 border rounded-md">
+                    <div className="text-left">
+                      <span className="block font-medium">
+                        <strong>{displayName}</strong>
                       </span>
-                      <input
-                        type="text"
-                        value={version} // Display version
-                        onChange={(e) =>
-                          handleVersionChange(index, e.target.value.trim())
-                        }
-                        className="border rounded px-2 py-1 text-sm"
-                        disabled={!handleEditDocumentActive}
-                        placeholder="v1"
-                      />
-                    </label>
-                  </div>
-                  {/* Delete Button */}
-                  <div className="text-right">
-                    <button
-                      onClick={() => handleDiscardFile(index)}
-                      className="bg-red-500 text-white hover:bg-red-800 rounded-2xl p-2 text-sm"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
+                    </div>
+
+                    <div className="text-center">
+                      <label className="flex justify-center items-center gap-2">
+                        <span className="text-sm font-medium">
+                          <strong>Version:</strong>
+                        </span>
+                        <input
+                          type="text"
+                          value={version}
+                          onChange={(e) => handleVersionChange(index, e.target.value.trim())}
+                          className="border rounded px-2 py-1 text-sm"
+                          disabled={!handleEditDocumentActive}
+                          placeholder="v1"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="text-right">
+                      <button
+                        onClick={() => handleDiscardAddingFile(index)}
+                        className="bg-red-500 text-white hover:bg-red-800 rounded-2xl p-2 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                );
+              })
+            ) : (
+              uploadedFilePath?.map((file, index) => {
+                const displayName = uploadedFileNames[index];
+                const version = file.version;
+
+                return (
+                  <li key={index} className="grid grid-cols-3 items-center gap-4 p-2 border rounded-md">
+                    <div className="text-left">
+                      <span className="block font-medium">
+                        <strong>{displayName}</strong>
+                      </span>
+                    </div>
+
+                    <div className="text-center">
+                      <label className="flex justify-center items-center gap-2">
+                        <span className="text-sm font-medium">
+                          <strong>Version:</strong>
+                        </span>
+                        <input
+                          type="text"
+                          value={version}
+                          onChange={(e) => handleVersionChange(index, e.target.value.trim())}
+                          className="border rounded px-2 py-1 text-sm"
+                          disabled={!handleEditDocumentActive}
+                          placeholder="v1"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="text-right">
+                      <button
+                        onClick={() => handleDiscardFile(index)}
+                        className="bg-red-500 text-white hover:bg-red-800 rounded-2xl p-2 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                );
+              })
+            )}
 
             <FilePreviewModal
               isOpen={isModalOpen}
@@ -1272,22 +1327,29 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
               <div className="mt-3">
                 {editingDoc === null ? (
+
                   <button
                     onClick={handleAddDocument}
-                    className="bg-blue-900 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm"
-                    aria-label="Add Document"
+                    disabled={bProcess}
+                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"
+                      } text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
+                    aria-label="Upload Document"
                   >
                     <PlusCircleIcon className="h-5 w-5 mr-1" />
-                    Add Document
+                    {bProcess ? "Uploading..." : "Upload Document"}
                   </button>
+
                 ) : (
                   <button
                     onClick={handleSaveEdit}
-                    className="bg-blue-900 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm"
+                    disabled={bProcess}
+
+                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"
+                      } text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
                     aria-label="Update Document"
                   >
                     <CheckCircleIcon className="h-5 w-5 mr-1" />
-                    Update
+                    {bProcess ? "Updating..." : "Update Document"}
                   </button>
                 )}
               </div>
@@ -1579,8 +1641,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                                         }}
                                         disabled={isOpeningFile}
                                         className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
-                                          ${isOpeningFile 
-                                            ? 'opacity-50 cursor-not-allowed' 
+                                          ${isOpeningFile
+                                            ? 'opacity-50 cursor-not-allowed'
                                             : 'hover:bg-indigo-600'
                                           }`}
                                       >
