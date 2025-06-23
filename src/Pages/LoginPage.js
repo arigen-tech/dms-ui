@@ -7,10 +7,12 @@ import {
   EyeSlashIcon,
   ArrowLeftIcon,
   ClockIcon,
+  DevicePhoneMobileIcon,
+  EnvelopeIcon,
 } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { LOGIN_API, LOGIN_API_verify } from "../API/apiConfig";
+import { LOGIN_API, LOGIN_API_verify, FORGATE_PASS_API, VERIFY_FORGATE_OTP, RESET_PASS_API } from "../API/apiConfig";
 import image from "../Assets/image.png";
 import logo2 from "../Assets/logo2.jpg";
 import { jwtDecode } from "jwt-decode";
@@ -18,12 +20,24 @@ import { jwtDecode } from "jwt-decode";
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isOtpRequested, setIsOtpRequested] = useState(false);
+  const [currentView, setCurrentView] = useState("login"); 
   const [otp, setOtp] = useState("");
   const [formData, setFormData] = useState({
     username: "",
     password: "",
     captcha: "",
   });
+  
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    identifier: "",
+    identifierType: "email", 
+    otp: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const [captcha, setCaptcha] = useState([]);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("error");
@@ -31,7 +45,6 @@ const LoginPage = () => {
   const [isRotated, setIsRotated] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   
-  // OTP Timer states
   const [otpTimer, setOtpTimer] = useState(300);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
@@ -50,10 +63,9 @@ const LoginPage = () => {
     return () => clearTimeout(timer);
   }, [alertMessage]);
 
-  // OTP Timer Effect
   useEffect(() => {
     let interval = null;
-    if (isOtpRequested && otpTimer > 0) {
+    if ((isOtpRequested || currentView === "forgot-otp" || currentView === "reset-password") && otpTimer > 0) {
       interval = setInterval(() => {
         setOtpTimer(timer => timer - 1);
       }, 1000);
@@ -63,12 +75,11 @@ const LoginPage = () => {
       clearInterval(interval);
     }
     return () => clearInterval(interval);
-  }, [isOtpRequested, otpTimer]);
+  }, [isOtpRequested, currentView, otpTimer]);
 
-  // Resend Timer Effect
   useEffect(() => {
     let interval = null;
-    if (isOtpRequested && resendTimer > 0 && !canResendOtp) {
+    if ((isOtpRequested || currentView === "forgot-otp" || currentView === "reset-password") && resendTimer > 0 && !canResendOtp) {
       interval = setInterval(() => {
         setResendTimer(timer => {
           if (timer === 1) {
@@ -79,7 +90,7 @@ const LoginPage = () => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isOtpRequested, resendTimer, canResendOtp]);
+  }, [isOtpRequested, currentView, resendTimer, canResendOtp]);
 
   const generateCaptcha = () => {
     let captchaArray = [];
@@ -120,12 +131,36 @@ const LoginPage = () => {
     setAlertType(type);
   };
 
-  const handleBack = () => {
+  const resetToLogin = () => {
+    setCurrentView("login");
     setIsOtpRequested(false);
     setOtp("");
+    setForgotPasswordData({
+      identifier: "",
+      identifierType: "email",
+      otp: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
     setOtpTimer(300);
     setCanResendOtp(false);
     setResendTimer(30);
+  };
+
+  const handleBack = () => {
+    if (currentView === "forgot-password") {
+      resetToLogin();
+    } else if (currentView === "forgot-otp") {
+      setCurrentView("forgot-password");
+    } else if (currentView === "reset-password") {
+      setCurrentView("forgot-otp");
+    } else {
+      setIsOtpRequested(false);
+      setOtp("");
+      setOtpTimer(300);
+      setCanResendOtp(false);
+      setResendTimer(30);
+    }
   };
 
   const handleRefresh = () => {
@@ -139,6 +174,11 @@ const LoginPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleForgotPasswordChange = (e) => {
+    const { name, value } = e.target;
+    setForgotPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleOtpChange = (e) => {
     const value = e.target.value.replace(/\D/g, '');
     if (value.length <= 6) {
@@ -146,10 +186,148 @@ const LoginPage = () => {
     }
   };
 
+  const handleForgotOtpChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 6) {
+      setForgotPasswordData(prev => ({ ...prev, otp: value }));
+    }
+  };
+
   const handleCaptchaPaste = (e) => {
     e.preventDefault();
   };
 
+ 
+  const initiateForgotPassword = async () => {
+    if (!forgotPasswordData.identifier) {
+      showAlert("Please enter your email or mobile number.");
+      return;
+    }
+
+    setIsButtonDisabled(true);
+
+    try {
+      const response = await axios.post(`${FORGATE_PASS_API}`, {
+        identifier: forgotPasswordData.identifier,
+      });
+
+      if (response.status === 200) {
+        setCurrentView("forgot-otp");
+        setOtpTimer(300);
+        setCanResendOtp(false);
+        setResendTimer(30);
+        showAlert("OTP sent to your registered mobile number.", "success");
+      }
+    } catch (error) {
+      showAlert(
+        error.response?.data?.message || "Failed to send OTP. Please try again."
+      );
+    } finally {
+      setIsButtonDisabled(false);
+    }
+  };
+
+  const verifyForgotPasswordOtp = async () => {
+    if (!forgotPasswordData.otp) {
+      showAlert("Please enter the OTP.");
+      return;
+    }
+
+    if (otpTimer === 0) {
+      showAlert("OTP has expired. Please request a new one.");
+      return;
+    }
+
+    setIsButtonDisabled(true);
+
+    try {
+      const response = await axios.post(`${VERIFY_FORGATE_OTP}`, {
+        identifier: forgotPasswordData.identifier,
+        otp: forgotPasswordData.otp,
+      });
+
+      if (response.status === 200) {
+        setCurrentView("reset-password");
+        showAlert("OTP verified successfully. You can now reset your password.", "success");
+      }
+    } catch (error) {
+      showAlert(
+        error.response?.data?.message || "Invalid OTP. Please try again."
+      );
+    } finally {
+      setIsButtonDisabled(false);
+    }
+  };
+
+  const resetPassword = async () => {
+    if (!forgotPasswordData.newPassword || !forgotPasswordData.confirmPassword) {
+      showAlert("Please fill in both password fields.");
+      return;
+    }
+
+    if (forgotPasswordData.newPassword !== forgotPasswordData.confirmPassword) {
+      showAlert("Passwords do not match.");
+      return;
+    }
+
+    if (forgotPasswordData.newPassword.length < 6) {
+      showAlert("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (otpTimer === 0) {
+      showAlert("OTP has expired. Please start the process again.");
+      return;
+    }
+
+    setIsButtonDisabled(true);
+
+    try {
+      const response = await axios.post(`${RESET_PASS_API}`, {
+        identifier: forgotPasswordData.identifier,
+        otp: forgotPasswordData.otp,
+        newPassword: forgotPasswordData.newPassword,
+        confirmPassword: forgotPasswordData.confirmPassword,
+      });
+
+      if (response.status === 200) {
+        showAlert("Password reset successfully. You can now login with your new password.", "success");
+        setTimeout(() => {
+          resetToLogin();
+        }, 2000);
+      }
+    } catch (error) {
+      showAlert(
+        error.response?.data?.message || "Failed to reset password. Please try again."
+      );
+    } finally {
+      setIsButtonDisabled(false);
+    }
+  };
+
+  const resendForgotPasswordOtp = async () => {
+    if (!canResendOtp) return;
+    
+    setIsButtonDisabled(true);
+    try {
+      const response = await axios.post(`${FORGATE_PASS_API}`, {
+        identifier: forgotPasswordData.identifier,
+      });
+
+      if (response.status === 200) {
+        setOtpTimer(300);
+        setCanResendOtp(false);
+        setResendTimer(30);
+        showAlert("New OTP has been sent to your mobile number.", "success");
+      }
+    } catch (error) {
+      showAlert("Failed to resend OTP. Please try again.");
+    } finally {
+      setIsButtonDisabled(false);
+    }
+  };
+
+  // Existing login functions
   const requestOtp = async () => {
     if (!formData.username || !formData.password || !formData.captcha) {
       showAlert("Please fill in all fields before requesting OTP.");
@@ -180,7 +358,7 @@ const LoginPage = () => {
         setOtpTimer(300);
         setCanResendOtp(false);
         setResendTimer(30);
-        showAlert("OTP has been sent to your email.", "success");
+        showAlert("OTP has been sent to your mobile no.", "success");
       }
     } catch (error) {
       showAlert(
@@ -205,7 +383,7 @@ const LoginPage = () => {
         setOtpTimer(300);
         setCanResendOtp(false);
         setResendTimer(30);
-        showAlert("New OTP has been sent to your email.", "success");
+        showAlert("New OTP has been sent to your mobile no.", "success");
       }
     } catch (error) {
       showAlert("Failed to resend OTP. Please try again.");
@@ -268,6 +446,34 @@ const LoginPage = () => {
     }
   };
 
+  const getViewTitle = () => {
+    switch (currentView) {
+      case "forgot-password":
+        return "Forgot Password";
+      case "forgot-otp":
+        return "Verify OTP";
+      case "reset-password":
+        return "Reset Password";
+      default:
+        return isOtpRequested ? "Enter OTP" : "Welcome Back";
+    }
+  };
+
+  const getViewSubtitle = () => {
+    switch (currentView) {
+      case "forgot-password":
+        return "Enter your email or mobile number to reset password";
+      case "forgot-otp":
+        return "Please enter the OTP sent to your mobile number";
+      case "reset-password":
+        return "Create a new password for your account";
+      default:
+        return isOtpRequested
+          ? "Please enter the OTP sent to your mobile no."
+          : "Please sign in to your account";
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Left side - Image */}
@@ -294,7 +500,7 @@ const LoginPage = () => {
         </div>
 
         <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-4">
-          {isOtpRequested && (
+          {(isOtpRequested || currentView !== "login") && (
             <div className="flex items-center justify-between mb-3">
               <button
                 onClick={handleBack}
@@ -303,21 +509,23 @@ const LoginPage = () => {
                 <ArrowLeftIcon className="w-4 h-4 mr-1" />
                 Back
               </button>
-              <div className="flex items-center text-sm text-gray-600">
-                <ClockIcon className="w-4 h-4 mr-1" />
-                {formatTime(otpTimer)}
-              </div>
+              {(currentView === "forgot-otp" || currentView === "reset-password" || isOtpRequested) && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <ClockIcon className="w-4 h-4 mr-1" />
+                  {formatTime(otpTimer)}
+                </div>
+              )}
             </div>
           )}
 
           <div className="mb-4 text-center">
-            <h2 className={`text-xl font-bold ${isOtpRequested ? "text-gray-900" : "text-indigo-600"}`}>
-              {isOtpRequested ? "Enter OTP" : "Welcome Back"}
+            <h2 className={`text-xl font-bold ${
+              currentView === "login" && !isOtpRequested ? "text-indigo-600" : "text-gray-900"
+            }`}>
+              {getViewTitle()}
             </h2>
             <p className="text-gray-600 mt-1 text-sm">
-              {isOtpRequested
-                ? "Please enter the OTP sent to your email"
-                : "Please sign in to your account"}
+              {getViewSubtitle()}
             </p>
           </div>
 
@@ -331,166 +539,404 @@ const LoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-3">
-            {!isOtpRequested ? (
-              <>
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Username
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserIcon className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <input
-                      type="email"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                      placeholder="Enter your username"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <LockClosedIcon className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                      placeholder="Enter your password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-gray-100 p-1 rounded"
-                    >
-                      {showPassword ? (
-                        <EyeSlashIcon className="w-4 h-4 text-blue-600" />
-                      ) : (
-                        <EyeIcon className="w-4 h-4 text-blue-600" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Captcha
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
-                      <div className="absolute inset-0">
-                        <svg className="w-full h-full opacity-20">
-                          <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1"/>
-                          <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1"/>
-                          <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1"/>
-                        </svg>
-                      </div>
-                      <div className="relative flex items-center justify-center space-x-1 h-full">
-                        {captcha.map((item, index) => (
-                          <span
-                            key={item.id}
-                            style={{
-                              display: "inline-block",
-                              transform: `rotate(${item.rotation}deg) skew(${item.skew}deg) translateY(${item.offsetY}px)`,
-                              fontSize: `${Math.min(item.fontSize, 16)}px`,
-                              color: item.color,
-                              fontWeight: Math.random() > 0.5 ? 'bold' : 'normal',
-                              fontFamily: Math.random() > 0.5 ? 'serif' : 'sans-serif',
-                              textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
-                            }}
-                            className="mx-1 select-none"
-                          >
-                            {item.character}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRefresh}
-                      className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-                      title="Refresh Captcha"
-                    >
-                      <ArrowPathIcon
-                        className={`w-4 h-4 ${isRotated ? "animate-spin" : ""}`}
-                      />
-                    </button>
+          {/* Login Form */}
+          {currentView === "login" && !isOtpRequested && (
+            <form onSubmit={handleLogin} className="space-y-3">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Username
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserIcon className="h-4 w-4 text-blue-600" />
                   </div>
                   <input
-                    type="text"
-                    name="captcha"
-                    value={formData.captcha}
+                    type="email"
+                    name="username"
+                    value={formData.username}
                     onChange={handleInputChange}
-                    onPaste={handleCaptchaPaste}
-                    className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    placeholder="Enter captcha"
+                    className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    placeholder="Enter your username"
                     required
                   />
                 </div>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={requestOtp}
-                  disabled={isButtonDisabled}
-                  className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
-                >
-                  {isButtonDisabled ? "Requesting OTP..." : "Request OTP"}
-                </button>
-              </>
-            ) : (
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Enter OTP
-                  </label>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <LockClosedIcon className="h-4 w-4 text-blue-600" />
+                  </div>
                   <input
-                    type="text"
-                    value={otp}
-                    onChange={handleOtpChange}
-                    className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${
-                      otpTimer === 0 ? 'bg-gray-100' : ''
-                    }`}
-                    placeholder="Enter OTP"
-                    maxLength="6"
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    placeholder="Enter your password"
                     required
-                    disabled={otpTimer === 0}
                   />
-                </div>
-                
-                <div className="flex space-x-2">
-                  <button
-                    type="submit"
-                    disabled={isButtonDisabled || otpTimer === 0}
-                    className={`flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm`}
-                  >
-                    {isButtonDisabled ? "Logging in..." : otpTimer === 0 ? "OTP Expired" : "Login"}
-                  </button>
-                  
                   <button
                     type="button"
-                    onClick={resendOtp}
-                    disabled={!canResendOtp || isButtonDisabled}
-                    className="px-3 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-gray-100 p-1 rounded"
                   >
-                    {!canResendOtp ? `Resend (${resendTimer}s)` : "Resend OTP"}
+                    {showPassword ? (
+                      <EyeSlashIcon className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      <EyeIcon className="w-4 h-4 text-blue-600" />
+                    )}
                   </button>
                 </div>
               </div>
-            )}
-          </form>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Captcha
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
+                    <div className="absolute inset-0">
+                      <svg className="w-full h-full opacity-20">
+                        <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1"/>
+                        <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1"/>
+                        <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                    <div className="relative flex items-center justify-center space-x-1 h-full">
+                      {captcha.map((item, index) => (
+                        <span
+                          key={item.id}
+                          style={{
+                            display: "inline-block",
+                            transform: `rotate(${item.rotation}deg) skew(${item.skew}deg) translateY(${item.offsetY}px)`,
+                            fontSize: `${Math.min(item.fontSize, 16)}px`,
+                            color: item.color,
+                            fontWeight: Math.random() > 0.5 ? 'bold' : 'normal',
+                            fontFamily: Math.random() > 0.5 ? 'serif' : 'sans-serif',
+                            textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+                          }}
+                          className="mx-1 select-none"
+                        >
+                          {item.character}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRefresh}
+                    className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                    title="Refresh Captcha"
+                  >
+                    <ArrowPathIcon
+                      className={`w-4 h-4 ${isRotated ? "animate-spin" : ""}`}
+                    />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  name="captcha"
+                  value={formData.captcha}
+                  onChange={handleInputChange}
+                  onPaste={handleCaptchaPaste}
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  placeholder="Enter captcha"
+                  required
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={requestOtp}
+                disabled={isButtonDisabled}
+                className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+              >
+                {isButtonDisabled ? "Requesting OTP..." : "Request OTP"}
+              </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setCurrentView("forgot-password")}
+                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Login OTP Verification */}
+          {currentView === "login" && isOtpRequested && (
+            <form onSubmit={handleLogin} className="space-y-3">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Enter OTP
+                </label>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={handleOtpChange}
+                  className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${
+                    otpTimer === 0 ? 'bg-gray-100' : ''
+                  }`}
+                  placeholder="Enter OTP"
+                  maxLength="6"
+                  required
+                  disabled={otpTimer === 0}
+                />
+              </div>
+              
+              <div className="flex space-x-2">
+                <button
+                  type="submit"
+                  disabled={isButtonDisabled || otpTimer === 0}
+                  className={`flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm`}
+                >
+                  {isButtonDisabled ? "Logging in..." : otpTimer === 0 ? "OTP Expired" : "Login"}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={resendOtp}
+                  disabled={!canResendOtp || isButtonDisabled}
+                  className="px-3 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+                >
+                  {!canResendOtp ? `Resend (${resendTimer}s)` : "Resend OTP"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Forgot Password Form */}
+          {currentView === "forgot-password" && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Reset password using
+                </label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="identifierType"
+                      value="email"
+                      checked={forgotPasswordData.identifierType === "email"}
+                      onChange={handleForgotPasswordChange}
+                      className="mr-2 text-blue-600 focus:ring-blue-500"
+                    />
+                    <EnvelopeIcon className="w-4 h-4 mr-1 text-blue-600" />
+                    <span className="text-sm">Email</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="identifierType"
+                      value="mobile"
+                      checked={forgotPasswordData.identifierType === "mobile"}
+                      onChange={handleForgotPasswordChange}
+                      className="mr-2 text-blue-600 focus:ring-blue-500"
+                    />
+                    <DevicePhoneMobileIcon className="w-4 h-4 mr-1 text-blue-600" />
+                    <span className="text-sm">Mobile</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {forgotPasswordData.identifierType === "email" ? "Email Address" : "Mobile Number"}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    {forgotPasswordData.identifierType === "email" ? (
+                      <EnvelopeIcon className="h-4 w-4 text-blue-600" />
+                    ) : (
+                      <DevicePhoneMobileIcon className="h-4 w-4 text-blue-600" />
+                    )}
+                  </div>
+                  <input
+                    type={forgotPasswordData.identifierType === "email" ? "email" : "tel"}
+                    name="identifier"
+                    value={forgotPasswordData.identifier}
+                    onChange={handleForgotPasswordChange}
+                    className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    placeholder={
+                      forgotPasswordData.identifierType === "email"
+                        ? "Enter your email address"
+                        : "Enter your mobile number"
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={initiateForgotPassword}
+                disabled={isButtonDisabled}
+                className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+              >
+                {isButtonDisabled ? "Sending OTP..." : "Send OTP"}
+              </button>
+            </div>
+          )}
+
+          {/* Forgot Password OTP Verification */}
+          {currentView === "forgot-otp" && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Enter OTP
+                </label>
+                <input
+                  type="text"
+                  value={forgotPasswordData.otp}
+                  onChange={handleForgotOtpChange}
+                  className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${
+                    otpTimer === 0 ? 'bg-gray-100' : ''
+                  }`}
+                  placeholder="Enter OTP"
+                  maxLength="6"
+                  required
+                  disabled={otpTimer === 0}
+                />
+              </div>
+              
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={verifyForgotPasswordOtp}
+                  disabled={isButtonDisabled || otpTimer === 0}
+                  className={`flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm`}
+                >
+                  {isButtonDisabled ? "Verifying..." : otpTimer === 0 ? "OTP Expired" : "Verify OTP"}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={resendForgotPasswordOtp}
+                  disabled={!canResendOtp || isButtonDisabled}
+                  className="px-3 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm whitespace-nowrap"
+                >
+                  {!canResendOtp ? `Resend (${resendTimer}s)` : "Resend"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Reset Password Form */}
+          {currentView === "reset-password" && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  New Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <LockClosedIcon className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    name="newPassword"
+                    value={forgotPasswordData.newPassword}
+                    onChange={handleForgotPasswordChange}
+                    className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    placeholder="Enter new password"
+                    required
+                    minLength="6"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-gray-100 p-1 rounded"
+                  >
+                    {showNewPassword ? (
+                      <EyeSlashIcon className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      <EyeIcon className="w-4 h-4 text-blue-600" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <LockClosedIcon className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={forgotPasswordData.confirmPassword}
+                    onChange={handleForgotPasswordChange}
+                    className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    placeholder="Confirm new password"
+                    required
+                    minLength="6"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-gray-100 p-1 rounded"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeSlashIcon className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      <EyeIcon className="w-4 h-4 text-blue-600" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {forgotPasswordData.newPassword && (
+                <div className="text-xs text-gray-600 space-y-1">
+                  <p className={forgotPasswordData.newPassword.length >= 6 ? "text-green-600" : "text-red-600"}>
+                    • At least 6 characters
+                  </p>
+                  {forgotPasswordData.confirmPassword && (
+                    <p className={forgotPasswordData.newPassword === forgotPasswordData.confirmPassword ? "text-green-600" : "text-red-600"}>
+                      • Passwords match
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={resetPassword}
+                disabled={isButtonDisabled || otpTimer === 0}
+                className={`w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm`}
+              >
+                {isButtonDisabled ? "Resetting Password..." : otpTimer === 0 ? "Session Expired" : "Reset Password"}
+              </button>
+
+              {otpTimer > 0 && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={resendForgotPasswordOtp}
+                    disabled={!canResendOtp || isButtonDisabled}
+                    className="text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {!canResendOtp ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-4 text-center text-xs text-gray-500">
+          <p>© 2024 AGT Document Management System. All rights reserved.</p>
         </div>
       </div>
     </div>

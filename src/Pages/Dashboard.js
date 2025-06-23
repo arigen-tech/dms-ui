@@ -49,6 +49,7 @@ import axios from 'axios';
 function Dashboard() {
   const [chartData, setChartData] = useState([]);
   const [barChartData, setBarChartData] = useState([]); // Separate state for bar chart
+  const [topOffice, setTopOffice] = useState([]);
   const [branchId, setBranchId] = useState(null);
   const [branchesId, setBranchsId] = useState(null);
   const [departmentId, setDepartmentId] = useState(null);
@@ -57,7 +58,12 @@ function Dashboard() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isGrLoading, setIsGrLoading] = useState(true);
-  const [isBarChartLoading, setIsBarChartLoading] = useState(true); // Separate loading for bar chart
+  const [isBarChartLoading, setIsBarChartLoading] = useState(true);
+  const [isGraphChartLoading, setIsGraphChartLoading] = useState(true);
+const [selectedStatus, setSelectedStatus] = useState("all");
+const [selectedLineStatus, setSelectedLineStatus] = useState("all");
+  
+  // Separate loading for bar chart
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [isBranchLoading, setIsBranchLoading] = useState(false);
@@ -215,6 +221,7 @@ function Dashboard() {
     // Call only on first render
     fetchDashboardStats();
   }, [navigate]);
+
 
   // Fetch data for all charts except bar chart
   useEffect(() => {
@@ -374,6 +381,86 @@ function Dashboard() {
 
     fetchBarChartData();
   }, [navigate, selectedYear, branchesId, departmentId, selectedBranch]);
+
+
+  useEffect(() => {
+  // debugger;
+
+  const fetchTopBranchSummary = async () => {
+    try {
+      setIsGraphChartLoading(true);
+
+      const employeeId = localStorage.getItem("userId");
+      const token = localStorage.getItem("tokenKey");
+      const role = localStorage.getItem("role");
+
+      if (!token || !employeeId) {
+        throw new Error("Unauthorized: Token or Employee ID missing.");
+      }
+
+      const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+      const baseUrl = `${API_HOST}/api/documents`;
+      const startDate = `${selectedYear}-01-01 00:00:00`;
+      const endDate = `${selectedYear}-12-31 23:59:59`;
+
+      const response = await apiClient.get(
+        `${baseUrl}/top-branches-summary`,
+        {
+          ...authHeader,
+          params: { startDate, endDate },
+        }
+      );
+
+      const {
+        branches,
+        approvedDocuments,
+        rejectedDocuments,
+        pendingDocuments,
+      } = response.data;
+
+      // Map and filter data based on selectedLineStatus
+      let mappedData = branches.map((branch, index) => ({
+        name: branch,
+        ApprovedDocuments: approvedDocuments[index],
+        RejectedDocuments: rejectedDocuments[index],
+        PendingDocuments: pendingDocuments[index],
+      }));
+
+      if (selectedLineStatus === "approved") {
+        mappedData = mappedData.map(d => ({
+          name: d.name,
+          ApprovedDocuments: d.ApprovedDocuments,
+        }));
+      } else if (selectedLineStatus === "rejected") {
+        mappedData = mappedData.map(d => ({
+          name: d.name,
+          RejectedDocuments: d.RejectedDocuments,
+        }));
+      } else if (selectedLineStatus === "pending") {
+        mappedData = mappedData.map(d => ({
+          name: d.name,
+          PendingDocuments: d.PendingDocuments,
+        }));
+      }
+      setTopOffice(mappedData);
+    } catch (error) {
+      console.error("Error fetching top branch summary:", error);
+      const isUnauthorized =
+        error.response?.status === 401 ||
+        error.message === "Unauthorized: Token or Employee ID missing.";
+      if (isUnauthorized) {
+        navigate("/login");
+      }
+    } finally {
+      setIsGraphChartLoading(false);
+    }
+  };
+
+  if (selectedBranch === "top10" || selectedBranch === "all") {
+    fetchTopBranchSummary();
+  }
+}, [navigate, selectedYear, selectedBranch, selectedLineStatus]);
+
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -733,7 +820,7 @@ function Dashboard() {
           <div className="bg-white p-4 rounded-lg shadow-lg">
             <div className="mb-4">
               <h3 className="flex text-lg font-bold text-gray-800 border-b pb-2 mb-3">
-                📊 Monthly Document Stats {selectedYear}
+                📊 Monthly Documents Status {selectedYear}
                 
               
 
@@ -758,6 +845,7 @@ function Dashboard() {
                           🏢 {branch.name}
                         </option>
                       ))}
+                      <option value="top10">Top 10 Branches</option>
                     </select>
 
                     {/* Custom dropdown arrow */}
@@ -854,13 +942,28 @@ function Dashboard() {
 
           {/* Line Chart - Not affected by branch filter */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
-            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">📈 Page Document Stats {selectedYear}</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold text-gray-800 border-b pb-2">
+                📈 Top 10 Office {selectedYear}
+              </h3>
+              <select
+                value={selectedLineStatus}
+                onChange={e => setSelectedLineStatus(e.target.value)}
+                className="ml-4 border border-gray-300 rounded px-2 py-1 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{ minWidth: 120 }}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
             {isGrLoading ? (
               <SkeletonBox />
             ) : (
               <div style={{ width: '100%', height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 30 }}>
+                  <LineChart data={topOffice} margin={{ top: 10, right: 30, left: 20, bottom: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <XAxis
                       dataKey="name"
@@ -901,30 +1004,39 @@ function Dashboard() {
                       iconSize={12}
                       iconType="circle"
                     />
-                    <Line
-                      type="monotone"
-                      dataKey="ApprovedDocuments"
-                      stroke="#82ca9d"
-                      strokeWidth={3}
-                      dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
-                      activeDot={{ r: 8, strokeWidth: 0 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="RejectedDocuments"
-                      stroke="#FF0000"
-                      strokeWidth={3}
-                      dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
-                      activeDot={{ r: 8, strokeWidth: 0 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="PendingDocuments"
-                      stroke="#f0ad4e"
-                      strokeWidth={3}
-                      dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
-                      activeDot={{ r: 8, strokeWidth: 0 }}
-                    />
+                    {(selectedLineStatus === "all" || selectedLineStatus === "approved") && (
+                      <Line
+                        type="monotone"
+                        dataKey="ApprovedDocuments"
+                        stroke="#82ca9d"
+                        strokeWidth={3}
+                        dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
+                        activeDot={{ r: 8, strokeWidth: 0 }}
+                        name="Approved Documents"
+                      />
+                    )}
+                    {(selectedLineStatus === "all" || selectedLineStatus === "rejected") && (
+                      <Line
+                        type="monotone"
+                        dataKey="RejectedDocuments"
+                        stroke="#FF0000"
+                        strokeWidth={3}
+                        dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
+                        activeDot={{ r: 8, strokeWidth: 0 }}
+                        name="Rejected Documents"
+                      />
+                    )}
+                    {(selectedLineStatus === "all" || selectedLineStatus === "pending") && (
+                      <Line
+                        type="monotone"
+                        dataKey="PendingDocuments"
+                        stroke="#f0ad4e"
+                        strokeWidth={3}
+                        dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
+                        activeDot={{ r: 8, strokeWidth: 0 }}
+                        name="Pending Documents"
+                      />
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>

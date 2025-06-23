@@ -1,8 +1,8 @@
 //  export const API_HOST = 'https://103.133.215.182:8443/Dms';
 
 
-//  export const API_HOST = 'http://localhost:8080';
- export const API_HOST = 'http://52.66.126.151:8080/dms';
+ export const API_HOST = 'http://localhost:8080';
+//  export const API_HOST = 'http://52.66.126.151:8080/dms';
 
 //  export const API_HOST = 'http://192.168.1.12:8080';
 
@@ -24,6 +24,9 @@ export const HOME_API = `${API_HOST}/home`;
 export const LOGIN_API = `${API_HOST}/auth/login`;
 export const LOGIN_API_verify = `${API_HOST}/auth/verifyOtp`;
 export const LOGOUT_API = `${API_HOST}/logout`;
+export const FORGATE_PASS_API = `${API_HOST}/auth/forgot-password`;
+export const RESET_PASS_API = `${API_HOST}/auth/reset-password`;
+export const VERIFY_FORGATE_OTP = `${API_HOST}/auth/verify-forgot-password-otp`;
 export const REGISTER_API = `${API_HOST}/newRegister`;
 export const ROLE_API = `${API_HOST}/RoleMaster`;
 export const TYPE_API = `${API_HOST}/TypeMaster`;
