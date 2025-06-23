@@ -36,7 +36,7 @@ const ArchiveDownload = () => {
   const [userBranch, setUserBranch] = useState(null)
   const [userDepartment, setUserDepartment] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  
+
 
   const [fileTypes, setFileTypes] = useState([])
   const [selectedFileTypes, setSelectedFileTypes] = useState([])
@@ -206,85 +206,80 @@ const ArchiveDownload = () => {
 
   // Policy Status Check (NO file type filtering - processes ALL files)
   const handleRunRetentionCheck = async () => {
-    setRunCheckLoading(true)
-    try {
-      const token = localStorage.getItem("tokenKey")
-      const response = await axios.post(
-        `${API_HOST}/retention-policy/run-check`,
-        {}, // No file types - process all files
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+  setRunCheckLoading(true);
+  try {
+    const token = localStorage.getItem("tokenKey");
+    const response = await axios.post(
+      `${API_HOST}/retention-policy/run-check`,
+      {}, // No body needed
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      )
-
-      let processedCount = 0
-      let processedDocuments = []
-      let missingDocuments = []
-      let policyResults = {}
-
-      if (response.data && response.data.response) {
-        const result = response.data.response
-        processedCount = result.processedCount || 0
-        processedDocuments = result.processedDocuments || []
-        missingDocuments = result.missingDocuments || []
-        policyResults = result.policyResults || {}
       }
+    );
 
-      setRetentionAlert({
-        show: true,
-        result: {
-          processedCount,
-          error: null,
-          processedDocuments: processedDocuments,
-          missingDocuments: missingDocuments,
-          partialSuccess: missingDocuments.length > 0,
-          policyResults: policyResults,
-        },
-      })
+    // Extract the response data - note the structure is response.data.response
+    const apiResponse = response.data.response || {};
+    
+    // Create a properly structured result object
+    const result = {
+      success: apiResponse.success !== false, // default to true unless explicitly false
+      error: apiResponse.error || null,
+      processedCount: apiResponse.processedCount || 0,
+      processedDocuments: apiResponse.processedDocuments || [],
+      documentsWithPolicies: apiResponse.documentsWithPolicies || 0,
+      documentsWithoutPolicies: apiResponse.documentsWithoutPolicies || 0,
+      missingDocuments: apiResponse.missingDocuments || [],
+      errors: apiResponse.errors || [],
+      policyResults: apiResponse.policyResults || {},
+      manualTrigger: apiResponse.manualTrigger || true,
+      timestamp: apiResponse.timestamp || new Date().toISOString()
+    };
 
-      fetchArchivedFileStatus()
-    } catch (error) {
-      console.error("Error running retention policy check:", error)
+    setRetentionAlert({
+      show: true,
+      result: result
+    });
 
-      let errorMessage = "Failed to Policy Status policy check"
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error
-      } else if (error.message) {
-        errorMessage = error.message
-      }
+    fetchArchivedFileStatus(); // Refresh the archive status
+  } catch (error) {
+    console.error("Error running retention policy check:", error);
+    
+    const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        error.message || 
+                        "Failed to run policy status check";
 
-      let missingDocuments = []
-      if (error.response?.data?.response?.missingDocuments) {
-        missingDocuments = error.response.data.response.missingDocuments
-      }
-
-      setRetentionAlert({
-        show: true,
-        result: {
-          processedCount: 0,
-          error: errorMessage,
-          processedDocuments: [],
-          missingDocuments: missingDocuments,
-          partialSuccess: false,
-        },
-      })
-    } finally {
-      setRunCheckLoading(false)
-    }
+    setRetentionAlert({
+      show: true,
+      result: {
+        error: errorMessage,
+        success: false,
+        processedCount: 0,
+        processedDocuments: [],
+        documentsWithPolicies: 0,
+        documentsWithoutPolicies: 0,
+        missingDocuments: [],
+        errors: [errorMessage],
+        policyResults: {},
+        manualTrigger: true,
+        timestamp: new Date().toISOString()
+      },
+    });
+  } finally {
+    setRunCheckLoading(false);
   }
+};
 
   const handleRetrieveArchived = async (archiveName) => {
     setIsRetrievingArchived(true);
-    setRetrievingId(archiveName); // ✅ use archiveName
+    setRetrievingId(archiveName);
 
     try {
       const token = localStorage.getItem("tokenKey");
-      const encodedName = encodeURIComponent(archiveName); // ✅ always encode URL parameters
+      const encodedName = encodeURIComponent(archiveName);
       const response = await axios.get(`${API_HOST}/archive/retrieve/${encodedName}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
@@ -364,7 +359,7 @@ const ArchiveDownload = () => {
   }
 
   const fetchUserDetails = async () => {
-    
+
     try {
       const userId = localStorage.getItem("userId")
       const token = localStorage.getItem("tokenKey")
