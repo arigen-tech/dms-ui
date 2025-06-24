@@ -119,66 +119,65 @@ const RetentionCheckAlert = ({ onClose, result }) => {
   };
 
   // Helper function to calculate eligible date properly
-  const calculateEligibleDate = (uploadDate, policyData) => {
-    // Handle different date formats for uploadDate
-    let baseUploadDate
-    if (Array.isArray(uploadDate)) {
-      const [year, month, day, hour, minute, second] = uploadDate
-      baseUploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
-    } else if (typeof uploadDate === "string") {
-      baseUploadDate = new Date(uploadDate)
-    } else if (uploadDate) {
-      baseUploadDate = new Date(uploadDate)
+ const calculateEligibleDate = (uploadDate, policyData) => {
+  let baseUploadDate;
+  
+  // Handle different date formats
+  if (typeof uploadDate === "string") {
+    // Handle "2025-06-24 13:46:40.63" format
+    if (uploadDate.includes(' ')) {
+      const [datePart, timePart] = uploadDate.split(' ');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [time, ms] = timePart.split('.');
+      const [hour, minute, second] = time.split(':').map(Number);
+      
+      baseUploadDate = new Date(year, month - 1, day, hour, minute, second);
     } else {
-      baseUploadDate = new Date()
+      // Try to parse as ISO string
+      baseUploadDate = new Date(uploadDate);
     }
-
-    // Calculate retention period in milliseconds based on unit and value
-    let retentionMs = 0
-    
-    const retentionValue = policyData.retentionPeriodValue
-    const retentionUnit = policyData.retentionPeriodUnit
-    const retentionDays = policyData.retentionPeriodDays
-
-    if (retentionValue && retentionUnit) {
-      // Use the explicit value and unit
-      const unit = retentionUnit.toLowerCase()
-      switch (unit) {
-        case 'minutes':
-          retentionMs = retentionValue * 60 * 1000
-          break
-        case 'hours':
-          retentionMs = retentionValue * 60 * 60 * 1000
-          break
-        case 'days':
-          retentionMs = retentionValue * 24 * 60 * 60 * 1000
-          break
-        case 'months':
-          // Approximate 30 days per month
-          retentionMs = retentionValue * 30 * 24 * 60 * 60 * 1000
-          break
-        default:
-          // Default to days if unit is unknown
-          retentionMs = retentionValue * 24 * 60 * 60 * 1000
-      }
-    } else if (retentionDays) {
-      // Fallback to retention days
-      // If retentionDays is a small number, it might be in minutes
-      if (retentionDays < 1) {
-        // Treat as fraction of day (hours/minutes)
-        retentionMs = retentionDays * 24 * 60 * 60 * 1000
-      } else if (retentionDays < 100) {
-        // Could be minutes if it's a reasonable number
-        // Check if it makes sense as minutes vs days
-        retentionMs = retentionDays * 24 * 60 * 60 * 1000 // Assume days for now
-      } else {
-        // Definitely days
-        retentionMs = retentionDays * 24 * 60 * 60 * 1000
-      }
-    }
-
-    return new Date(baseUploadDate.getTime() + retentionMs)
+  } else if (Array.isArray(uploadDate)) {
+    // Handle array format
+    const [year, month, day, hour, minute, second] = uploadDate;
+    baseUploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+  } else if (uploadDate) {
+    // Handle Date object or timestamp
+    baseUploadDate = new Date(uploadDate);
+  } else {
+    baseUploadDate = new Date();
   }
+
+  // Rest of your existing calculation logic...
+  let retentionMs = 0;
+  
+  const retentionValue = policyData.retentionPeriodValue;
+  const retentionUnit = policyData.retentionPeriodUnit;
+  const retentionDays = policyData.retentionPeriodDays;
+
+  if (retentionValue && retentionUnit) {
+    const unit = retentionUnit.toLowerCase();
+    switch (unit) {
+      case 'minutes':
+        retentionMs = retentionValue * 60 * 1000;
+        break;
+      case 'hours':
+        retentionMs = retentionValue * 60 * 60 * 1000;
+        break;
+      case 'days':
+        retentionMs = retentionValue * 24 * 60 * 60 * 1000;
+        break;
+      case 'months':
+        retentionMs = retentionValue * 30 * 24 * 60 * 60 * 1000;
+        break;
+      default:
+        retentionMs = retentionValue * 24 * 60 * 60 * 1000;
+    }
+  } else if (retentionDays) {
+    retentionMs = retentionDays * 24 * 60 * 60 * 1000;
+  }
+
+  return new Date(baseUploadDate.getTime() + retentionMs);
+}
 
   // Helper function to get the most common branch from documents in a policy
   const getPolicyBranch = (policyData) => {

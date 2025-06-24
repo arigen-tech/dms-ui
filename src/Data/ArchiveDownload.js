@@ -206,72 +206,90 @@ const ArchiveDownload = () => {
 
   // Policy Status Check (NO file type filtering - processes ALL files)
   const handleRunRetentionCheck = async () => {
-  setRunCheckLoading(true);
-  try {
-    const token = localStorage.getItem("tokenKey");
-    const response = await axios.post(
-      `${API_HOST}/retention-policy/run-check`,
-      {}, // No body needed
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+    setRunCheckLoading(true);
+    try {
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.post(
+        `${API_HOST}/retention-policy/run-check`,
+        {}, // No body needed
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Transform the API response to match what RetentionCheckAlert expects
+      const apiResponse = response.data.response || {};
+
+      // Convert policyResults object to array if needed
+      const policyResults = {};
+      if (apiResponse.policyResults) {
+        Object.entries(apiResponse.policyResults).forEach(([key, policy]) => {
+          policyResults[key] = {
+            ...policy,
+            policyName: `Policy ${key}`,
+            movedCount: policy.movedDocuments?.length || 0,
+            notEligibleCount: policy.notEligibleYet?.length || 0,
+            totalDocumentsForPolicy: (policy.movedDocuments?.length || 0) + (policy.notEligibleYet?.length || 0)
+          };
+        });
       }
-    );
 
-    // Extract the response data - note the structure is response.data.response
-    const apiResponse = response.data.response || {};
-    
-    // Create a properly structured result object
-    const result = {
-      success: apiResponse.success !== false, // default to true unless explicitly false
-      error: apiResponse.error || null,
-      processedCount: apiResponse.processedCount || 0,
-      processedDocuments: apiResponse.processedDocuments || [],
-      documentsWithPolicies: apiResponse.documentsWithPolicies || 0,
-      documentsWithoutPolicies: apiResponse.documentsWithoutPolicies || 0,
-      missingDocuments: apiResponse.missingDocuments || [],
-      errors: apiResponse.errors || [],
-      policyResults: apiResponse.policyResults || {},
-      manualTrigger: apiResponse.manualTrigger || true,
-      timestamp: apiResponse.timestamp || new Date().toISOString()
-    };
+      // Convert timestamp to Date object
+      const timestamp = apiResponse.timestamp
+        ? new Date(apiResponse.timestamp)
+        : new Date();
 
-    setRetentionAlert({
-      show: true,
-      result: result
-    });
+      const result = {
+        success: apiResponse.success !== false,
+        error: apiResponse.error || null,
+        processedCount: apiResponse.processedCount || 0,
+        processedDocuments: apiResponse.processedDocuments || [],
+        documentsWithPolicies: apiResponse.documentsWithPolicies || 0,
+        documentsWithoutPolicies: apiResponse.documentsWithoutPolicies || 0,
+        missingDocuments: apiResponse.missingDocuments || [],
+        errors: apiResponse.errors || [],
+        policyResults: policyResults,
+        manualTrigger: apiResponse.manualTrigger || true,
+        timestamp: timestamp.toISOString()
+      };
 
-    fetchArchivedFileStatus(); // Refresh the archive status
-  } catch (error) {
-    console.error("Error running retention policy check:", error);
-    
-    const errorMessage = error.response?.data?.message || 
-                        error.response?.data?.error || 
-                        error.message || 
-                        "Failed to run policy status check";
+      setRetentionAlert({
+        show: true,
+        result: result
+      });
 
-    setRetentionAlert({
-      show: true,
-      result: {
-        error: errorMessage,
-        success: false,
-        processedCount: 0,
-        processedDocuments: [],
-        documentsWithPolicies: 0,
-        documentsWithoutPolicies: 0,
-        missingDocuments: [],
-        errors: [errorMessage],
-        policyResults: {},
-        manualTrigger: true,
-        timestamp: new Date().toISOString()
-      },
-    });
-  } finally {
-    setRunCheckLoading(false);
-  }
-};
+      fetchArchivedFileStatus(); // Refresh the archive status
+    } catch (error) {
+      console.error("Error running retention policy check:", error);
+
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to run policy status check";
+
+      setRetentionAlert({
+        show: true,
+        result: {
+          error: errorMessage,
+          success: false,
+          processedCount: 0,
+          processedDocuments: [],
+          documentsWithPolicies: 0,
+          documentsWithoutPolicies: 0,
+          missingDocuments: [],
+          errors: [errorMessage],
+          policyResults: {},
+          manualTrigger: true,
+          timestamp: new Date().toISOString()
+        },
+      });
+    } finally {
+      setRunCheckLoading(false);
+    }
+  };
 
   const handleRetrieveArchived = async (archiveName) => {
     setIsRetrievingArchived(true);
@@ -1109,15 +1127,15 @@ const ArchiveDownload = () => {
   }
 
   const renderArchiveStatusTabs = () => {
-    const currentData = filteredArchivedFiles
+    const currentData = filteredArchivedFiles;
 
     // Group archives by name before applying search and pagination
     const groupedData = groupArchivesByName(currentData);
 
     // Apply search filtering on grouped data
     const filteredData = groupedData.filter((archive) => {
-      if (!searchTerm) return true
-      const searchLower = searchTerm.toLowerCase()
+      if (!searchTerm) return true;
+      const searchLower = searchTerm.toLowerCase();
 
       return (
         (archive.name && archive.name.toLowerCase().includes(searchLower)) ||
@@ -1125,18 +1143,69 @@ const ArchiveDownload = () => {
         (archive.departmentName && archive.departmentName.toLowerCase().includes(searchLower)) ||
         (archive.storageType && archive.storageType.toLowerCase().includes(searchLower)) ||
         formatArchiveDate(archive.archiveDate).toLowerCase().includes(searchLower)
-      )
-    })
+      );
+    });
 
-    const totalItems = filteredData.length
-    const totalPages = Math.ceil(totalItems / itemsPerPage)
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    const paginatedData = filteredData.slice(startIndex, endIndex)
+    const totalItems = filteredData.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
 
-    // FIXED: Show total count for Admin
-    const totalArchivedCount =
-      userRole === "ADMIN" ? archivedFileStatus.length : getFilteredDataByRole(archivedFileStatus).length
+    // Function to determine status display
+    const getStatusDisplay = (archive) => {
+      // Check if archive has a status property
+      if (archive.status) {
+        switch (archive.status.toUpperCase()) {
+          case 'SCHEDULED':
+          case 'SCHEDULING':
+            return (
+              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                SCHEDULED
+              </span>
+            );
+          case 'ARCHIVED':
+            return (
+              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                ARCHIVED
+              </span>
+            );
+          case 'FAILED':
+            return (
+              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                FAILED
+              </span>
+            );
+          default:
+            return (
+              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                {archive.status || 'UNKNOWN'}
+              </span>
+            );
+        }
+      }
+
+      // Fallback for archives without explicit status
+      if (archive.archiveDate) {
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            ARCHIVED
+          </span>
+        );
+      }
+
+      return (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+          UNKNOWN
+        </span>
+      );
+    };
+
+    // Function to determine if archive can be retrieved
+    const canRetrieveArchive = (archive) => {
+      return archive.status === 'ARCHIVED' ||
+        (!archive.status && archive.archiveDate); // Fallback for older archives
+    };
 
     if (currentData.length === 0) {
       return (
@@ -1144,8 +1213,7 @@ const ArchiveDownload = () => {
           <div className="flex space-x-1 mb-4">
             <button
               onClick={() => setActiveTab("all")}
-              className={`px-4 py-2 rounded-lg font-medium ${activeTab === "all" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+              className={`px-4 py-2 rounded-lg font-medium ${activeTab === "all" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
             >
               Filtered Archives ({currentData.length})
             </button>
@@ -1154,9 +1222,8 @@ const ArchiveDownload = () => {
             No archived files match your criteria.<br />
             Try changing your filters or clearing the date range.
           </p>
-
         </div>
-      )
+      );
     }
 
     return (
@@ -1164,38 +1231,17 @@ const ArchiveDownload = () => {
         {(userRole === "ADMIN" || userRole === "BRANCH ADMIN" || userRole === "DEPARTMENT ADMIN") && (
           <div className="bg-white p-2 rounded-xl shadow-md w-full mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl mb-1 font-semibold">
-                Archive Management
-                {/* {userRole === "ADMIN" && (
-                  // <span className="text-sm text-blue-600 ml-2">(Total: {totalArchivedCount} files)</span>
-                )} */}
-              </h3>
+              <h3 className="text-2xl mb-1 font-semibold">Archive Management</h3>
               <div className="flex items-center gap-4">
-                <div className="text-sm text-gray-600">
-
-                </div>
                 {renderRunRetentionCheck()}
               </div>
             </div>
 
-            {/* <div className="flex space-x-1 mb-4">
-              <button
-                onClick={() => setActiveTab("all")}
-                className={`px-4 py-2 rounded-lg font-medium ${activeTab === "all" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-              >
-                All Archives ({currentData.length})
-              </button>
-            </div> */}
-
             {/* Search and Items Per Page Controls */}
             <div className="mb-3 bg-slate-100 p-1 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-              {/* Items Per Page (50%) */}
+              {/* Items Per Page */}
               <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-                <label
-                  htmlFor="itemsPerPage"
-                  className="mr-2 ml-2 text-white text-sm"
-                >
+                <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
                   Show:
                 </label>
                 <select
@@ -1215,7 +1261,7 @@ const ArchiveDownload = () => {
                 </select>
               </div>
 
-              {/* Search Input (Remaining Space) */}
+              {/* Search Input */}
               <div className="flex items-center w-full md:w-auto flex-1">
                 <input
                   type="text"
@@ -1235,7 +1281,6 @@ const ArchiveDownload = () => {
                     <th className="border p-2 text-left">SR.</th>
                     <th className="border p-2 text-left">Archive Name</th>
                     <th className="border p-2 text-left">Files Count</th>
-                    {/* <th className="border p-2 text-left">Total Size</th> */}
                     <th className="border p-2 text-left">Branch</th>
                     <th className="border p-2 text-left">Department</th>
                     <th className="border p-2 text-left">Archive Date</th>
@@ -1251,25 +1296,27 @@ const ArchiveDownload = () => {
                         {archive.displayName}
                       </td>
                       <td className="border p-2">{archive.fileCount}</td>
-                      {/* <td className="border p-2">{(archive.totalSize / 1024).toFixed(2)} KB</td> */}
                       <td className="border p-2">{archive.branchName || archive.branch?.name}</td>
                       <td className="border p-2">{archive.departmentName || archive.department?.name}</td>
                       <td className="border p-2">{formatArchiveDate(archive.archiveDate)}</td>
                       <td className="border p-2">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          ARCHIVED
-                        </span>
+                        {getStatusDisplay(archive)}
                       </td>
                       <td className="border p-2">
-                        <button
-                          onClick={() => handleRetrieveArchived(archive.name)} // ✅ use archive.name from your API
-                          disabled={isRetrievingArchived}
-                          className="text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
-                          title="Download as ZIP with folder structure"
-                        >
-                          {isRetrievingArchived && archive.name === retrievingId ? "Retrieving..." : "Retrieve"}
-                        </button>
-
+                        {canRetrieveArchive(archive) ? (
+                          <button
+                            onClick={() => handleRetrieveArchived(archive.name)}
+                            disabled={isRetrievingArchived}
+                            className="text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
+                            title="Download as ZIP with folder structure"
+                          >
+                            {isRetrievingArchived && archive.name === retrievingId ? "Retrieving..." : "Retrieve"}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400" title="Only archived files can be retrieved">
+                            Retrieve
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -1283,20 +1330,18 @@ const ArchiveDownload = () => {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                  }`}
+                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
               >
                 <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
                 Previous
               </button>
 
               {/* Page Number Buttons */}
-              {getPageNumbers().map((page) => (
+              {getPageNumbers(totalPages, currentPage).map((page) => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                    }`}
+                  className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"}`}
                 >
                   {page}
                 </button>
@@ -1309,8 +1354,7 @@ const ArchiveDownload = () => {
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                  }`}
+                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
               >
                 Next
                 <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
@@ -1326,8 +1370,8 @@ const ArchiveDownload = () => {
           </div>
         )}
       </>
-    )
-  }
+    );
+  };
 
   // FIXED: Close dropdown when clicking outside
   useEffect(() => {
