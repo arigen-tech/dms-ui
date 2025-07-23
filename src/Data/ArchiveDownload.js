@@ -211,7 +211,7 @@ const ArchiveDownload = () => {
       const token = localStorage.getItem("tokenKey");
       const response = await axios.post(
         `${API_HOST}/retention-policy/run-check`,
-        {}, // No body needed
+        {}, 
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -1,8 +1,10 @@
 
 import { useState, useEffect } from "react"
 import axios from "axios"
-import { PlusCircleIcon, PencilIcon, LockClosedIcon, LockOpenIcon ,ArrowLeftIcon,
-  ArrowRightIcon,MagnifyingGlassIcon} from "@heroicons/react/24/solid"
+import {
+  PlusCircleIcon, PencilIcon, LockClosedIcon, LockOpenIcon, ArrowLeftIcon,
+  ArrowRightIcon, MagnifyingGlassIcon
+} from "@heroicons/react/24/solid"
 import { API_HOST, DEPAETMENT_API, BRANCH_API } from "../API/apiConfig"
 import Popup from "../Components/Popup"
 import LoadingComponent from "../Components/LoadingComponent"
@@ -57,19 +59,19 @@ const RetentionPolicy = () => {
     fetchInitialData();
   }, []);
 
-  
+
 
   // Add useEffect to update policy names when branches or departments change
   useEffect(() => {
-    if (branches.length && allDepartments.length && policies.length) {
-      const updatedPolicies = policies.map((policy) => ({
-        ...policy,
-        branchName: getBranchNameById(policy.branchId),
-        departmentName: getDepartmentNameById(policy.departmentId),
-      }));
-      setPolicies(updatedPolicies);
-    }
-  }, [branches, allDepartments, policies]);
+  if (branches.length && allDepartments.length && policies.length) {
+    const updatedPolicies = policies.map((policy) => ({
+      ...policy,
+      branchName: getBranchNameById(policy.branchId),
+      departmentName: getDepartmentNameById(policy.departmentId),
+    }));
+    setPolicies(updatedPolicies);
+  }
+}, [branches, allDepartments]); // Remove 'policies' from dependency
 
 
   useEffect(() => {
@@ -87,10 +89,10 @@ const RetentionPolicy = () => {
   };
 
   const getDepartmentNameById = (departmentId) => {
-  if (!departmentId || departmentId === null) return "All Departments";
-  const department = allDepartments.find((dept) => dept.id == departmentId);
-  return department?.name || "Unknown Department";
-};
+    if (!departmentId || departmentId === null) return "All Departments";
+    const department = allDepartments.find((dept) => dept.id == departmentId);
+    return department?.name || "Unknown Department";
+  };
 
 
 
@@ -441,7 +443,7 @@ const RetentionPolicy = () => {
   const paginatedPolicies = sortedPolicies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
 
-   const getPageNumbers = () => {
+  const getPageNumbers = () => {
     const maxPageNumbers = 5; // Number of page buttons to show
     const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
@@ -451,7 +453,7 @@ const RetentionPolicy = () => {
   if (isLoading) {
     return <LoadingComponent />;
   }
-  
+
   return (
     <div className="px-2">
       <h1 className="text-2xl mb-1 font-semibold">Retention Policies</h1>
