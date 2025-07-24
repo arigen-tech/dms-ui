@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER, BRANCH_API } from "../API/apiConfig";
+import React, { useState, useEffect, useMemo } from "react";
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER, BRANCH_API, EMPLOYEE_API, DOCUMENTHEADER_API } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
 import {
   BarChart,
@@ -60,9 +60,9 @@ function Dashboard() {
   const [isGrLoading, setIsGrLoading] = useState(true);
   const [isBarChartLoading, setIsBarChartLoading] = useState(true);
   const [isGraphChartLoading, setIsGraphChartLoading] = useState(true);
-const [selectedStatus, setSelectedStatus] = useState("all");
-const [selectedLineStatus, setSelectedLineStatus] = useState("all");
-  
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedLineStatus, setSelectedLineStatus] = useState("all");
+
   // Separate loading for bar chart
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('all');
@@ -103,9 +103,53 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i); // e.g., [2025, 2024, ..., 2016]
+
+  const [employeesStatusData, setEmployeesStatusData] = useState([]);
+  const [topTenFileType, setTopTenFileType] = useState([]);
+
   useEffect(() => {
     fetchUserDetails();
+    fetchEmployeesStatus();
+    fetchTopTenFileType();
   }, []);
+
+
+  const fetchEmployeesStatus = async () => {
+    try {
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(
+        `${EMPLOYEE_API}/status-count-by-year`
+        ,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setEmployeesStatusData(response.data);
+    } catch (error) {
+      console.error("Error fetching employees status:", error);
+    }
+  };
+
+  const fetchTopTenFileType = async () => {
+    try {
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(
+        `${DOCUMENTHEADER_API}/top-file-types`
+        ,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setTopTenFileType(response.data);
+    } catch (error) {
+      console.error("Error fetching TopTenFileType:", error);
+    }
+  };
+
 
 
 
@@ -384,82 +428,82 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
 
 
   useEffect(() => {
-  // debugger;
+    // debugger;
 
-  const fetchTopBranchSummary = async () => {
-    try {
-      setIsGraphChartLoading(true);
+    const fetchTopBranchSummary = async () => {
+      try {
+        setIsGraphChartLoading(true);
 
-      const employeeId = localStorage.getItem("userId");
-      const token = localStorage.getItem("tokenKey");
-      const role = localStorage.getItem("role");
+        const employeeId = localStorage.getItem("userId");
+        const token = localStorage.getItem("tokenKey");
+        const role = localStorage.getItem("role");
 
-      if (!token || !employeeId) {
-        throw new Error("Unauthorized: Token or Employee ID missing.");
-      }
-
-      const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-      const baseUrl = `${API_HOST}/api/documents`;
-      const startDate = `${selectedYear}-01-01 00:00:00`;
-      const endDate = `${selectedYear}-12-31 23:59:59`;
-
-      const response = await apiClient.get(
-        `${baseUrl}/top-branches-summary`,
-        {
-          ...authHeader,
-          params: { startDate, endDate },
+        if (!token || !employeeId) {
+          throw new Error("Unauthorized: Token or Employee ID missing.");
         }
-      );
 
-      const {
-        branches,
-        approvedDocuments,
-        rejectedDocuments,
-        pendingDocuments,
-      } = response.data;
+        const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+        const baseUrl = `${API_HOST}/api/documents`;
+        const startDate = `${selectedYear}-01-01 00:00:00`;
+        const endDate = `${selectedYear}-12-31 23:59:59`;
 
-      // Map and filter data based on selectedLineStatus
-      let mappedData = branches.map((branch, index) => ({
-        name: branch,
-        ApprovedDocuments: approvedDocuments[index],
-        RejectedDocuments: rejectedDocuments[index],
-        PendingDocuments: pendingDocuments[index],
-      }));
+        const response = await apiClient.get(
+          `${baseUrl}/top-branches-summary`,
+          {
+            ...authHeader,
+            params: { startDate, endDate },
+          }
+        );
 
-      if (selectedLineStatus === "approved") {
-        mappedData = mappedData.map(d => ({
-          name: d.name,
-          ApprovedDocuments: d.ApprovedDocuments,
+        const {
+          branches,
+          approvedDocuments,
+          rejectedDocuments,
+          pendingDocuments,
+        } = response.data;
+
+        // Map and filter data based on selectedLineStatus
+        let mappedData = branches.map((branch, index) => ({
+          name: branch,
+          ApprovedDocuments: approvedDocuments[index],
+          RejectedDocuments: rejectedDocuments[index],
+          PendingDocuments: pendingDocuments[index],
         }));
-      } else if (selectedLineStatus === "rejected") {
-        mappedData = mappedData.map(d => ({
-          name: d.name,
-          RejectedDocuments: d.RejectedDocuments,
-        }));
-      } else if (selectedLineStatus === "pending") {
-        mappedData = mappedData.map(d => ({
-          name: d.name,
-          PendingDocuments: d.PendingDocuments,
-        }));
+
+        if (selectedLineStatus === "approved") {
+          mappedData = mappedData.map(d => ({
+            name: d.name,
+            ApprovedDocuments: d.ApprovedDocuments,
+          }));
+        } else if (selectedLineStatus === "rejected") {
+          mappedData = mappedData.map(d => ({
+            name: d.name,
+            RejectedDocuments: d.RejectedDocuments,
+          }));
+        } else if (selectedLineStatus === "pending") {
+          mappedData = mappedData.map(d => ({
+            name: d.name,
+            PendingDocuments: d.PendingDocuments,
+          }));
+        }
+        setTopOffice(mappedData);
+      } catch (error) {
+        console.error("Error fetching top branch summary:", error);
+        const isUnauthorized =
+          error.response?.status === 401 ||
+          error.message === "Unauthorized: Token or Employee ID missing.";
+        if (isUnauthorized) {
+          navigate("/login");
+        }
+      } finally {
+        setIsGraphChartLoading(false);
       }
-      setTopOffice(mappedData);
-    } catch (error) {
-      console.error("Error fetching top branch summary:", error);
-      const isUnauthorized =
-        error.response?.status === 401 ||
-        error.message === "Unauthorized: Token or Employee ID missing.";
-      if (isUnauthorized) {
-        navigate("/login");
-      }
-    } finally {
-      setIsGraphChartLoading(false);
+    };
+
+    if (selectedBranch === "top10" || selectedBranch === "all") {
+      fetchTopBranchSummary();
     }
-  };
-
-  if (selectedBranch === "top10" || selectedBranch === "all") {
-    fetchTopBranchSummary();
-  }
-}, [navigate, selectedYear, selectedBranch, selectedLineStatus]);
+  }, [navigate, selectedYear, selectedBranch, selectedLineStatus]);
 
 
   const toggleSidebar = () => {
@@ -498,11 +542,28 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
   );
   const COLORS = ["#82ca9d", "#FF0000", "#f0ad4e"];
 
-  const pieChartData = [
-    { name: "Approved", value: totalApprovedDocuments },
-    { name: "Rejected", value: totalRejectedDocuments },
-    { name: "Pending", value: totalPendingDocuments },
-  ];
+  const yearData = useMemo(() => {
+    return employeesStatusData.find((item) => item.year === Number(selectedYear));
+  }, [employeesStatusData, selectedYear]);
+
+  const pieChartData = useMemo(() => {
+    if (!yearData) return [];
+
+    return [
+      { name: 'Active', value: yearData.activeCount },
+      { name: 'Inactive', value: yearData.inactiveCount },
+      { name: 'Pending', value: yearData.pendingCount },
+    ];
+  }, [yearData]);
+
+  const chartsData = topTenFileType
+    .filter(item => item.year === selectedYear)
+    .map(item => ({
+      name: item.fileType,
+      FileCount: item.fileCount
+    }));
+
+
 
   const totalDocsbyBranch = (stats.totalRejectedStatusDocById + stats.totalApprovedStatusDocById + stats.totalPendingDocumentsById);
   const totalDocsbyDep = (stats.totalRejectedStatusDocByDepartmentId + stats.totalApprovedStatusDocByDepartmentId + stats.totalPendingDocumentsByDepartmentId);
@@ -533,12 +594,12 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
                 />
               </Link>
 
-              <Link to="/idcard" className="block">
+              {/* <Link to="/idcard" className="block">
                 <StatBlock
                   title="Generate I'D Card"
                   Icon={IdentificationIcon}
                 />
-              </Link>
+              </Link> */}
 
               <Link to="/create-branch" className="block">
                 <StatBlock
@@ -638,12 +699,12 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
                 />
               </Link>
 
-              <Link to="/idcard" className="block">
+              {/* <Link to="/idcard" className="block">
                 <StatBlock
                   title="Generate I'D Card"
                   Icon={IdentificationIcon}
                 />
-              </Link>
+              </Link> */}
 
               <Link to="/create-departments" className="block">
                 <StatBlock
@@ -703,12 +764,12 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
                 />
               </Link>
 
-              <Link to="/idcard" className="block">
+              {/* <Link to="/idcard" className="block">
                 <StatBlock
                   title="Generate I'D Card"
                   Icon={IdentificationIcon}
                 />
-              </Link>
+              </Link> */}
 
               <StatBlock
                 title="Total Documents"
@@ -821,49 +882,49 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
             <div className="mb-4">
               <h3 className="flex text-lg font-bold text-gray-800 border-b pb-2 mb-3">
                 📊 Monthly Documents Status {selectedYear}
-                
-              
 
-              {/* Branch Filter Dropdown - Only show for SYSTEM_ADMIN */}
-              {role === SYSTEM_ADMIN && (
-                <div className=" items-center gap-2">
-                  {/* <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+
+
+                {/* Branch Filter Dropdown - Only show for SYSTEM_ADMIN */}
+                {role === SYSTEM_ADMIN && (
+                  <div className=" items-center gap-2">
+                    {/* <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
                     Branch:
                   </label> */}
-                  <div className="relative">
-                    <select
-                      value={selectedBranch}
-                      onChange={(e) => setSelectedBranch(e.target.value)}
-                      disabled={isBranchLoading}
-                      className="appearance-none bg-white border ml-3 border-gray-300 rounded-lg px-2 py-1 pr-8 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-w-[150px] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="all" className="font-medium">
-                        🌐 All Branches
-                      </option>
-                      {branches.map((branch) => (
-                        <option key={branch.id} value={branch.id} className="font-medium">
-                          🏢 {branch.name}
+                    <div className="relative">
+                      <select
+                        value={selectedBranch}
+                        onChange={(e) => setSelectedBranch(e.target.value)}
+                        disabled={isBranchLoading}
+                        className="appearance-none bg-white border ml-3 border-gray-300 rounded-lg px-2 py-1 pr-8 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-w-[150px] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="all" className="font-medium">
+                          🌐 All Branches
                         </option>
-                      ))}
-                      <option value="top10">Top 10 Branches</option>
-                    </select>
+                        {branches.map((branch) => (
+                          <option key={branch.id} value={branch.id} className="font-medium">
+                            🏢 {branch.name}
+                          </option>
+                        ))}
+                        <option value="top10">Top 10 Branches</option>
+                      </select>
 
-                    {/* Custom dropdown arrow */}
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-
-                    {/* Loading indicator */}
-                    {isBranchLoading && (
-                      <div className="absolute inset-y-0 right-8 flex items-center pr-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                      {/* Custom dropdown arrow */}
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                       </div>
-                    )}
+
+                      {/* Loading indicator */}
+                      {isBranchLoading && (
+                        <div className="absolute inset-y-0 right-8 flex items-center pr-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               </h3>
             </div>
 
@@ -1045,13 +1106,19 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
 
           {/* Polar Chart */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
-            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">🌀 Polar Document Stats {selectedYear}</h3>
+            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">
+              🌀 Top 10 File Types {selectedYear}
+            </h3>
             {isGrLoading ? (
               <SkeletonBox />
             ) : (
               <div style={{ width: '100%', height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart outerRadius="70%" data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                  <RadarChart
+                    outerRadius="70%"
+                    data={chartsData}
+                    margin={{ top: 10, right: 30, left: 20, bottom: 10 }}
+                  >
                     <PolarGrid stroke="#e0e0e0" />
                     <PolarAngleAxis
                       dataKey="name"
@@ -1069,26 +1136,10 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
                       }}
                     />
                     <Radar
-                      name="Approved Documents"
-                      dataKey="ApprovedDocuments"
-                      stroke="#82ca9d"
-                      fill="#82ca9d"
-                      fillOpacity={0.6}
-                      strokeWidth={2}
-                    />
-                    <Radar
-                      name="Rejected Documents"
-                      dataKey="RejectedDocuments"
-                      stroke="#FF0000"
-                      fill="#FF0000"
-                      fillOpacity={0.6}
-                      strokeWidth={2}
-                    />
-                    <Radar
-                      name="Pending Documents"
-                      dataKey="PendingDocuments"
-                      stroke="#f0ad4e"
-                      fill="#f0ad4e"
+                      name="File Count"
+                      dataKey="FileCount"
+                      stroke="#3182ce"
+                      fill="#3182ce"
                       fillOpacity={0.6}
                       strokeWidth={2}
                     />
@@ -1114,58 +1165,71 @@ const [selectedLineStatus, setSelectedLineStatus] = useState("all");
             )}
           </div>
 
+
           {/* Pie Chart */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
-            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">🎯 Document Status Distribution {selectedYear}</h3>
+            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">
+              🎯 Users Status {selectedYear}
+            </h3>
+
             {isGrLoading ? (
               <SkeletonBox />
+            ) : pieChartData.length === 0 ? (
+              <p className="text-gray-500">No data available for {selectedYear}</p>
             ) : (
-              <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
-                    <Pie
-                      data={pieChartData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={90}
-                      innerRadius={40}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
-                    >
-                      {pieChartData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                          stroke="#fff"
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => [`${value} documents`, 'Count']}
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '2px solid #2d3748',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                        fontWeight: 'bold'
-                      }}
-                    />
-                    <Legend
-                      wrapperStyle={{
-                        paddingTop: '15px',
-                        fontWeight: 'bold'
-                      }}
-                      iconSize={12}
-                      iconType="circle"
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <>
+                <div style={{ width: '100%', height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                      <Pie
+                        data={pieChartData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        innerRadius={40}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {pieChartData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                            stroke="#fff"
+                            strokeWidth={2}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [`${value} users`, 'Count']}
+                        contentStyle={{
+                          backgroundColor: '#fff',
+                          border: '2px solid #2d3748',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          fontWeight: 'bold',
+                        }}
+                      />
+                      <Legend
+                        wrapperStyle={{
+                          paddingTop: '15px',
+                          fontWeight: 'bold',
+                        }}
+                        iconSize={12}
+                        iconType="circle"
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* <div className="mt-4 text-center text-gray-800 font-semibold text-base">
+                  Total Users in {selectedYear}: <span className="text-indigo-600">{yearData.totalCount}</span>
+                </div> */}
+              </>
             )}
           </div>
+
         </div>
       </div>
     </Layout>

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Calendar, Clock, Archive, FileText, CheckCircle , Building, Users, Filter, RefreshCw } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Calendar, Clock, Archive, FileText, CheckCircle, Building, Users, Filter, RefreshCw } from 'lucide-react';
 import Layout from "../Components/Layout";
 import {
     ArrowLeftIcon,
@@ -8,30 +8,38 @@ import {
     ArchiveBoxIcon
 } from '@heroicons/react/24/solid';
 import ArchiveBoxCheachMarkIcon from '../Assets/ArchiveBoxCheachMarkIcon.png';
+import axios from "axios";
+import { API_HOST } from "../API/apiConfig";
 
 
-const generateSampleData = () => {
 
-    const branches = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata'];
-    const departments = ['HR', 'Finance', 'IT', 'Operations', 'Legal', 'Marketing'];
-    const statuses = ['Scheduled', 'Archived', 'Failed'];
+// const generateSampleData = () => {
 
-    return Array.from({ length: 50 }, (_, i) => ({
-        id: `ARC-${String(i + 1).padStart(4, '0')}`,
-        title: `Document Set ${i + 1}`,
-        branch: branches[Math.floor(Math.random() * branches.length)],
-        department: departments[Math.floor(Math.random() * departments.length)],
-        status: statuses[Math.floor(Math.random() * statuses.length)],
-        scheduledDate: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000),
-        archivedDate: Math.random() > 0.5 ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000) : null,
-        priority: Math.random() > 0.7 ? 'High' : Math.random() > 0.4 ? 'Medium' : 'Low',
-        size: `${(Math.random() * 500 + 10).toFixed(1)} MB`,
-        documentsCount: Math.floor(Math.random() * 1000) + 10
-    }));
-};
+//     const branches = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata'];
+//     const departments = ['HR', 'Finance', 'IT', 'Operations', 'Legal', 'Marketing'];
+//     const statuses = ['Scheduled', 'Archived', 'Failed'];
+
+//     return Array.from({ length: 50 }, (_, i) => ({
+//         id: `ARC-${String(i + 1).padStart(4, '0')}`,
+//         title: `Document Set ${i + 1}`,
+//         branch: branches[Math.floor(Math.random() * branches.length)],
+//         department: departments[Math.floor(Math.random() * departments.length)],
+//         status: statuses[Math.floor(Math.random() * statuses.length)],
+//         scheduledDate: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000),
+//         archivedDate: Math.random() > 0.5 ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000) : null,
+//         priority: Math.random() > 0.7 ? 'High' : Math.random() > 0.4 ? 'Medium' : 'Low',
+//         size: `${(Math.random() * 500 + 10).toFixed(1)} MB`,
+//         documentsCount: Math.floor(Math.random() * 1000) + 10
+//     }));
+// };
+
+
+
 
 const ArchivalDashboard = () => {
-    const [data] = useState(generateSampleData());
+    const [data, setNewData] = useState([]);
+
+    // const [data] = useState(generateSampleData());
     const [searchTerm, setSearchTerm] = useState('');
     const [itemsPerPage, setItemsPerPage] = useState(5);
 
@@ -46,6 +54,64 @@ const ArchivalDashboard = () => {
     const departments = [...new Set(data.map(item => item.department))];
     const statuses = [...new Set(data.map(item => item.status))];
 
+    const transformRetentionData = (data) => {
+        const groupedData = data.reduce((acc, item) => {
+            if (!acc[item.name]) acc[item.name] = [];
+            acc[item.name].push(item);
+            return acc;
+        }, {});
+
+        const result = Object.entries(groupedData).map(([name, items], index) => {
+            const first = items[0];
+
+            // Convert date arrays to ISO strings safely
+            const getDateIsoString = (dateArray) => {
+                if (
+                    Array.isArray(dateArray) &&
+                    dateArray.length >= 7 &&
+                    dateArray.every((val) => val !== null && val !== undefined)
+                ) {
+                    try {
+                        return new Date(
+                            ...dateArray.slice(0, 6),
+                            Math.floor(dateArray[6] / 1000000)
+                        ).toISOString();
+                    } catch {
+                        return null;
+                    }
+                }
+                return null;
+            };
+
+            return {
+                id: `ARC-${(index + 1).toString().padStart(4, "0")}`,
+                title: name,
+                branch: first.branchName ?? "Unknown",
+                department: first.departmentName ?? "Unknown",
+                status: first.status ?? "null",
+                scheduledDate: getDateIsoString(first.lastAccessed),
+                archivedDate: getDateIsoString(first.archiveDate),
+                documentsCount: items.length,
+            };
+        });
+
+        return result;
+    };
+
+
+    useEffect(() => {
+        const fetchRetentionData = async () => {
+            const token = localStorage.getItem("tokenKey");
+            const response = await axios.get(`${API_HOST}/archive-reference/all`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const transformed = transformRetentionData(response.data.response);
+            setNewData(transformed);
+        };
+
+        fetchRetentionData();
+    }, []);
 
 
     // Filter and sort data
@@ -105,10 +171,10 @@ const ArchivalDashboard = () => {
     // Statistics
     const stats = useMemo(() => {
         const total = filteredAndSortedData.length;
-        const scheduled = filteredAndSortedData.filter(item => item.status === 'Scheduled').length;
+        const scheduled = filteredAndSortedData.filter(item => item.status === 'SCHEDULING').length;
         const inProgress = filteredAndSortedData.filter(item => item.status === 'In Progress').length;
-        const archived = filteredAndSortedData.filter(item => item.status === 'Archived').length;
-        const failed = filteredAndSortedData.filter(item => item.status === 'Failed').length;
+        const archived = filteredAndSortedData.filter(item => item.status === 'ARCHIVED').length;
+        const failed = filteredAndSortedData.filter(item => item.status === 'FAILED').length;
 
         return { total, scheduled, inProgress, archived, failed };
     }, [filteredAndSortedData]);
@@ -291,17 +357,33 @@ const ArchivalDashboard = () => {
                                             </td>
 
                                             <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                                {item.scheduledDate.toLocaleDateString()} {item.scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </td>
-                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                                {item.archivedDate ? (
+                                                {item.scheduledDate ? (
                                                     <>
-                                                        {item.archivedDate.toLocaleDateString()} {item.archivedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        {new Date(item.scheduledDate).toLocaleDateString()}{" "}
+                                                        {new Date(item.scheduledDate).toLocaleTimeString([], {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}
                                                     </>
                                                 ) : (
                                                     <span className="text-gray-400">-</span>
                                                 )}
                                             </td>
+
+                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                {item.archivedDate ? (
+                                                    <>
+                                                        {new Date(item.archivedDate).toLocaleDateString()}{" "}
+                                                        {new Date(item.archivedDate).toLocaleTimeString([], {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-gray-400">-</span>
+                                                )}
+                                            </td>
+
 
                                             <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                                                 {item.documentsCount.toLocaleString()}
