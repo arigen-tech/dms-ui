@@ -68,13 +68,12 @@ const ArchivalDashboard = () => {
             const getDateIsoString = (dateArray) => {
                 if (
                     Array.isArray(dateArray) &&
-                    dateArray.length >= 7 &&
+                    dateArray.length >= 6 &&
                     dateArray.every((val) => val !== null && val !== undefined)
                 ) {
                     try {
                         return new Date(
-                            ...dateArray.slice(0, 6),
-                            Math.floor(dateArray[6] / 1000000)
+                            ...dateArray.slice(0, 6) // [year, month, day, hour, minute, second]
                         ).toISOString();
                     } catch {
                         return null;
@@ -98,20 +97,24 @@ const ArchivalDashboard = () => {
         return result;
     };
 
-
     useEffect(() => {
         const fetchRetentionData = async () => {
-            const token = localStorage.getItem("tokenKey");
-            const response = await axios.get(`${API_HOST}/archive-reference/all`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            try {
+                const token = localStorage.getItem("tokenKey");
+                const response = await axios.get(`${API_HOST}/archive-reference/all`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
 
-            const transformed = transformRetentionData(response.data.response);
-            setNewData(transformed);
+                const transformed = transformRetentionData(response.data.response);
+                setNewData(transformed);
+            } catch (error) {
+                console.error("Error fetching retention data:", error);
+            }
         };
 
         fetchRetentionData();
     }, []);
+
 
 
     // Filter and sort data
