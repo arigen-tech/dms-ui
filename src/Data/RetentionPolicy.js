@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import axios from "axios"
 import {
@@ -59,20 +58,18 @@ const RetentionPolicy = () => {
     fetchInitialData();
   }, []);
 
-
-
-  // Add useEffect to update policy names when branches or departments change
+  // Fixed useEffect to update policy names when branches or departments change
   useEffect(() => {
-  if (branches.length && allDepartments.length && policies.length) {
-    const updatedPolicies = policies.map((policy) => ({
-      ...policy,
-      branchName: getBranchNameById(policy.branchId),
-      departmentName: getDepartmentNameById(policy.departmentId),
-    }));
-    setPolicies(updatedPolicies);
-  }
-}, [branches, allDepartments]); // Remove 'policies' from dependency
-
+    if (branches.length && allDepartments.length && policies.length) {
+      setPolicies(prevPolicies => 
+        prevPolicies.map((policy) => ({
+          ...policy,
+          branchName: getBranchNameById(policy.branchId),
+          departmentName: getDepartmentNameById(policy.departmentId),
+        }))
+      );
+    }
+  }, [branches, allDepartments]); // Removed 'policies' from dependency to avoid infinite loop
 
   useEffect(() => {
     if (selectedBranch) {
@@ -94,9 +91,7 @@ const RetentionPolicy = () => {
     return department?.name || "Unknown Department";
   };
 
-
-
-  // Modified fetchPolicies to not set names immediately
+  // Modified fetchPolicies to set names immediately if data is available
   const fetchPolicies = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
@@ -119,10 +114,9 @@ const RetentionPolicy = () => {
         updatedOn: Array.isArray(policy.updatedOn)
           ? convertArrayToDate(policy.updatedOn)
           : policy.updatedOn,
-        // Set names if branches/departments are already loaded, otherwise will be set by useEffect
-        branchName: "",
-        departmentName: "",
-
+        // Set names immediately if branches/departments are already loaded
+        branchName: branches.length ? getBranchNameById(policy.branchId) : "",
+        departmentName: allDepartments.length ? getDepartmentNameById(policy.departmentId) : "",
       }));
 
       setPolicies(normalizedPolicies);
@@ -425,12 +419,16 @@ const RetentionPolicy = () => {
     }
   }
 
+  // Enhanced filtered policies with better name handling
   const filteredPolicies = policies.filter((policy) => {
     const searchLower = searchTerm.toLowerCase()
+    const branchName = policy.branchName || getBranchNameById(policy.branchId)
+    const departmentName = policy.departmentName || getDepartmentNameById(policy.departmentId)
+    
     return (
       (policy.policyType || "").toLowerCase().includes(searchLower) ||
-      (policy.branchName || "").toLowerCase().includes(searchLower) ||
-      (policy.departmentName || "").toLowerCase().includes(searchLower)
+      branchName.toLowerCase().includes(searchLower) ||
+      departmentName.toLowerCase().includes(searchLower)
     )
   })
 
@@ -441,7 +439,6 @@ const RetentionPolicy = () => {
   const totalItems = sortedPolicies.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   const paginatedPolicies = sortedPolicies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5; // Number of page buttons to show
@@ -651,8 +648,8 @@ const RetentionPolicy = () => {
                     </span>
                   </td>
                   <td className="border p-2">{formatRetentionPeriod(policy)}</td>
-                  <td className="border p-2">{policy.branchName}</td>
-                  <td className="border p-2">{policy.departmentName}</td>
+                  <td className="border p-2">{policy.branchName || getBranchNameById(policy.branchId)}</td>
+                  <td className="border p-2">{policy.departmentName || getDepartmentNameById(policy.departmentId)}</td>
                   <td className="border p-2">{policy.description || "-"}</td>
                   <td className="border p-2">
                     <span
