@@ -11,47 +11,70 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
   ClockIcon,
-} from "@heroicons/react/24/solid"
+} from "@heroicons/react/24/solid";
 
 const CountdownTimer = ({ targetDate, onComplete }) => {
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [isEligible, setIsEligible] = useState(false);
 
   useEffect(() => {
+    if (!targetDate) {
+      setIsEligible(true);
+      return;
+    }
+
     const timer = setInterval(() => {
-      // Handle different date formats - could be Date object, array, or string
-      let targetTime
+      let targetTime;
       if (Array.isArray(targetDate)) {
-        // Handle Java LocalDateTime array format [year, month, day, hour, minute, second, nano]
-        const [year, month, day, hour, minute, second] = targetDate
-        // Note: month in JS Date is 0-indexed, but Java's LocalDateTime is 1-indexed
-        targetTime = new Date(year, month - 1, day, hour, minute, second).getTime()
+        // Handle Java LocalDateTime array format [year, month, day, hour, minute, second]
+        const [year, month, day, hour, minute, second] = targetDate;
+        targetTime = new Date(year, month - 1, day, hour, minute, second).getTime();
       } else if (typeof targetDate === "string") {
-        targetTime = new Date(targetDate).getTime()
+        // Handle "2025-07-25 14:11:21.433" format
+        if (targetDate.includes(' ')) {
+          const [datePart, timePart] = targetDate.split(' ');
+          const [year, month, day] = datePart.split('-').map(Number);
+          const [time, ms] = timePart.split('.');
+          const [hour, minute, second] = time.split(':').map(Number);
+          targetTime = new Date(year, month - 1, day, hour, minute, second).getTime();
+        } else {
+          targetTime = new Date(targetDate).getTime();
+        }
       } else if (targetDate instanceof Date) {
-        targetTime = targetDate.getTime()
+        targetTime = targetDate.getTime();
       } else {
-        console.error("Unsupported date format:", targetDate)
-        return
+        console.error("Unsupported date format:", targetDate);
+        return;
       }
 
-      const now = new Date().getTime()
-      const difference = targetTime - now
+      const now = new Date().getTime();
+      const difference = targetTime - now;
 
-      if (difference > 0) {
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000)
-
-        setTimeLeft({ hours, minutes, seconds })
+      if (difference <= 0) {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        setIsEligible(true);
+        if (onComplete) onComplete();
+        clearInterval(timer);
       } else {
-        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 })
-        if (onComplete) onComplete()
-        clearInterval(timer)
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+        setTimeLeft({ hours, minutes, seconds });
       }
-    }, 1000)
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [targetDate, onComplete])
+    return () => clearInterval(timer);
+  }, [targetDate, onComplete]);
+
+  if (isEligible) {
+    return (
+      <div className="flex items-center space-x-1 text-sm">
+        <div className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">
+          Ready!
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center space-x-1 text-sm">
@@ -65,26 +88,24 @@ const CountdownTimer = ({ targetDate, onComplete }) => {
         {String(timeLeft.seconds).padStart(2, "0")}s
       </div>
     </div>
-  )
-}
+  );
+};
 
 const RetentionCheckAlert = ({ onClose, result }) => {
-  const [isVisible, setIsVisible] = useState(true)
-  const [showDetails, setShowDetails] = useState(false)
-  const [showMissingFiles, setShowMissingFiles] = useState(false)
-  const [showNotEligible, setShowNotEligible] = useState(false)
-  const [selectedPolicy, setSelectedPolicy] = useState(null)
+  const [isVisible, setIsVisible] = useState(true);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showMissingFiles, setShowMissingFiles] = useState(false);
+  const [showNotEligible, setShowNotEligible] = useState(false);
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
 
   const handleClose = () => {
-    setIsVisible(false)
-    onClose()
-  }
+    setIsVisible(false);
+    onClose();
+  };
 
-  // Helper function to format retention period
   const formatRetentionPeriod = (value, unit, days) => {
     if (!value && !days) return 'N/A';
 
-    // If we have both value and unit, use them directly
     if (value && unit) {
       unit = unit.toLowerCase();
       switch (unit) {
@@ -101,9 +122,7 @@ const RetentionCheckAlert = ({ onClose, result }) => {
       }
     }
 
-    // Fallback to days conversion if needed
     if (days) {
-      // Convert days to appropriate unit based on size
       if (days < 1) {
         const minutes = Math.round(days * 24 * 60);
         if (minutes < 60) {
@@ -118,113 +137,102 @@ const RetentionCheckAlert = ({ onClose, result }) => {
     return 'N/A';
   };
 
-  // Helper function to calculate eligible date properly
- const calculateEligibleDate = (uploadDate, policyData) => {
-  let baseUploadDate;
-  
-  // Handle different date formats
-  if (typeof uploadDate === "string") {
-    // Handle "2025-06-24 13:46:40.63" format
-    if (uploadDate.includes(' ')) {
-      const [datePart, timePart] = uploadDate.split(' ');
-      const [year, month, day] = datePart.split('-').map(Number);
-      const [time, ms] = timePart.split('.');
-      const [hour, minute, second] = time.split(':').map(Number);
-      
-      baseUploadDate = new Date(year, month - 1, day, hour, minute, second);
-    } else {
-      // Try to parse as ISO string
+  const calculateEligibleDate = (uploadDate, policyData) => {
+    let baseUploadDate;
+    
+    if (typeof uploadDate === "string") {
+      if (uploadDate.includes(' ')) {
+        const [datePart, timePart] = uploadDate.split(' ');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [time, ms] = timePart.split('.');
+        const [hour, minute, second] = time.split(':').map(Number);
+        
+        baseUploadDate = new Date(year, month - 1, day, hour, minute, second);
+      } else {
+        baseUploadDate = new Date(uploadDate);
+      }
+    } else if (Array.isArray(uploadDate)) {
+      const [year, month, day, hour, minute, second] = uploadDate;
+      baseUploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+    } else if (uploadDate) {
       baseUploadDate = new Date(uploadDate);
+    } else {
+      baseUploadDate = new Date();
     }
-  } else if (Array.isArray(uploadDate)) {
-    // Handle array format
-    const [year, month, day, hour, minute, second] = uploadDate;
-    baseUploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
-  } else if (uploadDate) {
-    // Handle Date object or timestamp
-    baseUploadDate = new Date(uploadDate);
-  } else {
-    baseUploadDate = new Date();
-  }
 
-  // Rest of your existing calculation logic...
-  let retentionMs = 0;
-  
-  const retentionValue = policyData.retentionPeriodValue;
-  const retentionUnit = policyData.retentionPeriodUnit;
-  const retentionDays = policyData.retentionPeriodDays;
+    // Default to 1 day retention if no policy data
+    let retentionMs = 24 * 60 * 60 * 1000;
+    
+    if (policyData) {
+      const retentionValue = policyData.retentionPeriodValue;
+      const retentionUnit = policyData.retentionPeriodUnit;
+      const retentionDays = policyData.retentionPeriodDays;
 
-  if (retentionValue && retentionUnit) {
-    const unit = retentionUnit.toLowerCase();
-    switch (unit) {
-      case 'minutes':
-        retentionMs = retentionValue * 60 * 1000;
-        break;
-      case 'hours':
-        retentionMs = retentionValue * 60 * 60 * 1000;
-        break;
-      case 'days':
-        retentionMs = retentionValue * 24 * 60 * 60 * 1000;
-        break;
-      case 'months':
-        retentionMs = retentionValue * 30 * 24 * 60 * 60 * 1000;
-        break;
-      default:
-        retentionMs = retentionValue * 24 * 60 * 60 * 1000;
+      if (retentionValue && retentionUnit) {
+        const unit = retentionUnit.toLowerCase();
+        switch (unit) {
+          case 'minutes':
+            retentionMs = retentionValue * 60 * 1000;
+            break;
+          case 'hours':
+            retentionMs = retentionValue * 60 * 60 * 1000;
+            break;
+          case 'days':
+            retentionMs = retentionValue * 24 * 60 * 60 * 1000;
+            break;
+          case 'months':
+            retentionMs = retentionValue * 30 * 24 * 60 * 60 * 1000;
+            break;
+          default:
+            retentionMs = retentionValue * 24 * 60 * 60 * 1000;
+        }
+      } else if (retentionDays) {
+        retentionMs = retentionDays * 24 * 60 * 60 * 1000;
+      }
     }
-  } else if (retentionDays) {
-    retentionMs = retentionDays * 24 * 60 * 60 * 1000;
-  }
 
-  return new Date(baseUploadDate.getTime() + retentionMs);
-}
+    return new Date(baseUploadDate.getTime() + retentionMs);
+  };
 
-  // Helper function to get the most common branch from documents in a policy
   const getPolicyBranch = (policyData) => {
-    // First try to get branch from policy data
     if (policyData.branch && policyData.branch !== 'N/A') {
-      return policyData.branch
+      return policyData.branch;
     }
 
-    // If not available, get from documents
     const allDocuments = [
       ...(policyData.movedDocuments || []),
       ...(policyData.notEligibleYet || [])
-    ]
+    ];
 
     if (allDocuments.length > 0) {
-      // Get the most common branch from documents
-      const branchCounts = {}
+      const branchCounts = {};
       allDocuments.forEach(doc => {
         if (doc.branch && doc.branch !== 'N/A') {
-          branchCounts[doc.branch] = (branchCounts[doc.branch] || 0) + 1
+          branchCounts[doc.branch] = (branchCounts[doc.branch] || 0) + 1;
         }
-      })
+      });
 
       const mostCommonBranch = Object.keys(branchCounts).reduce((a, b) =>
         branchCounts[a] > branchCounts[b] ? a : b, Object.keys(branchCounts)[0]
-      )
+      );
 
-      return mostCommonBranch || 'N/A'
+      return mostCommonBranch || 'N/A';
     }
 
-    return 'N/A'
-  }
+    return 'N/A';
+  };
 
-  if (!isVisible) return null
+  if (!isVisible) return null;
 
-  const policyResults = result.policyResults || {}
-  const totalPoliciesApplied = Object.keys(policyResults).length
-  const hasErrors = result.errors && result.errors.length > 0
+  const policyResults = result.policyResults || {};
+  const totalPoliciesApplied = Object.keys(policyResults).length;
+  const hasErrors = result.errors && result.errors.length > 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center border-b p-4">
-          <h3
-            className={`text-lg font-semibold ${result.error ? "text-red-600" : hasErrors ? "text-yellow-600" : result.success ? "text-green-600" : "text-blue-600"
-              }`}
-          >
+          <h3 className={`text-lg font-semibold ${result.error ? "text-red-600" : hasErrors ? "text-yellow-600" : result.success ? "text-green-600" : "text-blue-600"}`}>
             {result.error ? (
               <>
                 <ExclamationTriangleIcon className="h-5 w-5 inline mr-2" />
@@ -279,267 +287,269 @@ const RetentionCheckAlert = ({ onClose, result }) => {
                 </div>
               </div>
 
-              {/* Error Messages */}
-              {/* {hasErrors && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-medium text-yellow-800 mb-2 flex items-center">
-                    <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                    Processing Warnings ({result.errors.length})
-                  </h4>
-                  <div className="max-h-32 overflow-y-auto">
-                    <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
-                      {result.errors.map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )} */}
-
               {/* Policy Results */}
               {totalPoliciesApplied > 0 && (
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-gray-800">Policy-wise Results</h4>
 
-                  {Object.entries(policyResults).map(([policyName, policyData]) => (
-                    <div key={policyName} className="border rounded-lg overflow-hidden">
-                      <div
-                        className="bg-gray-50 p-4 border-b cursor-pointer hover:bg-gray-100"
-                        onClick={() => setSelectedPolicy(selectedPolicy === policyName ? null : policyName)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h5 className="font-medium text-gray-900">{policyData.policyName}</h5>
+                  {Object.entries(policyResults).map(([policyName, policyData]) => {
+                    // Add default values for unknown policy
+                    const processedPolicyData = policyName === "unknown" ? {
+                      ...policyData,
+                      retentionPeriodValue: 1,
+                      retentionPeriodUnit: "days",
+                      retentionPeriodDays: 1,
+                      policyName: "Default Policy",
+                      department: policyData.department || "N/A",
+                      branch: getPolicyBranch(policyData)
+                    } : policyData;
 
-                            <p className="text-sm text-gray-600">
-                              Retention Period: {formatRetentionPeriod(
-                                policyData.retentionPeriodValue,
-                                policyData.retentionPeriodUnit,
-                                policyData.retentionPeriodDays
-                              )} |
-                              Department: {policyData.department} |
-                              Branch: {getPolicyBranch(policyData)}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <div className="text-right">
-                              <div className="text-lg font-bold text-green-600">{policyData.movedCount || 0}</div>
-                              <div className="text-xs text-gray-500">Archived</div>
+                    return (
+                      <div key={policyName} className="border rounded-lg overflow-hidden">
+                        <div
+                          className="bg-gray-50 p-4 border-b cursor-pointer hover:bg-gray-100"
+                          onClick={() => setSelectedPolicy(selectedPolicy === policyName ? null : policyName)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h5 className="font-medium text-gray-900">{processedPolicyData.policyName}</h5>
+                              <p className="text-sm text-gray-600">
+                                Retention Period: {formatRetentionPeriod(
+                                  processedPolicyData.retentionPeriodValue,
+                                  processedPolicyData.retentionPeriodUnit,
+                                  processedPolicyData.retentionPeriodDays
+                                )} |
+                                Department: {processedPolicyData.department} |
+                                Branch: {getPolicyBranch(processedPolicyData)}
+                              </p>
                             </div>
-                            <div className="text-right">
-                              <div className="text-lg font-bold text-yellow-600">{policyData.notEligibleCount || 0}</div>
-                              <div className="text-xs text-gray-500">Waiting</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-lg font-bold text-blue-600">
-                                {policyData.totalDocumentsForPolicy || 0}
+                            <div className="flex items-center space-x-4">
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-green-600">{processedPolicyData.movedCount || 0}</div>
+                                <div className="text-xs text-gray-500">Archived</div>
                               </div>
-                              <div className="text-xs text-gray-500">Total</div>
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-yellow-600">{processedPolicyData.notEligibleCount || 0}</div>
+                                <div className="text-xs text-gray-500">Waiting</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-blue-600">
+                                  {processedPolicyData.totalDocumentsForPolicy || 0}
+                                </div>
+                                <div className="text-xs text-gray-500">Total</div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      {selectedPolicy === policyName && (
-                        <div className="p-4 space-y-4">
-                          {/* Archived Documents */}
-                          {policyData.movedDocuments && policyData.movedDocuments.length > 0 && (
-                            <div>
-                              <h6 className="font-medium text-green-700 mb-2 flex items-center">
-                                <CheckCircleIcon className="h-4 w-4 mr-2" />
-                                Documents Archived ({policyData.movedDocuments.length})
-                              </h6>
-                              <div className="max-h-40 overflow-y-auto bg-green-50 rounded-lg">
-                                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                                  <thead className="bg-green-100">
-                                    <tr>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
-                                        File Name
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
-                                        Upload Date
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
-                                        Department
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
-                                        Branch
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
-                                        Status
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {policyData.movedDocuments.map((doc, index) => (
-                                      <tr key={index} className="hover:bg-green-50">
-                                        <td className="px-3 py-2 text-gray-900 font-medium">{doc.fileName}</td>
-                                        <td className="px-3 py-2 text-gray-500">
-                                          {doc.uploadDate ?
-                                            (Array.isArray(doc.uploadDate) ?
-                                              new Date(doc.uploadDate[0], doc.uploadDate[1] - 1, doc.uploadDate[2],
-                                                doc.uploadDate[3] || 0, doc.uploadDate[4] || 0, doc.uploadDate[5] || 0)
-                                                .toLocaleDateString("en-GB", {
+                        {selectedPolicy === policyName && (
+                          <div className="p-4 space-y-4">
+                            {/* Archived Documents */}
+                            {processedPolicyData.movedDocuments && processedPolicyData.movedDocuments.length > 0 && (
+                              <div>
+                                <h6 className="font-medium text-green-700 mb-2 flex items-center">
+                                  <CheckCircleIcon className="h-4 w-4 mr-2" />
+                                  Documents Archived ({processedPolicyData.movedDocuments.length})
+                                </h6>
+                                <div className="max-h-40 overflow-y-auto bg-green-50 rounded-lg">
+                                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                                    <thead className="bg-green-100">
+                                      <tr>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
+                                          File Name
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
+                                          Upload Date
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
+                                          Department
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
+                                          Branch
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-green-700 uppercase">
+                                          Status
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                      {processedPolicyData.movedDocuments.map((doc, index) => (
+                                        <tr key={index} className="hover:bg-green-50">
+                                          <td className="px-3 py-2 text-gray-900 font-medium">{doc.fileName}</td>
+                                          <td className="px-3 py-2 text-gray-500">
+                                            {doc.uploadDate ?
+                                              (Array.isArray(doc.uploadDate) ?
+                                                new Date(doc.uploadDate[0], doc.uploadDate[1] - 1, doc.uploadDate[2],
+                                                  doc.uploadDate[3] || 0, doc.uploadDate[4] || 0, doc.uploadDate[5] || 0)
+                                                  .toLocaleDateString("en-GB", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                  }) :
+                                                new Date(doc.uploadDate).toLocaleDateString("en-GB", {
                                                   day: "2-digit",
                                                   month: "2-digit",
                                                   year: "numeric",
                                                   hour: "2-digit",
                                                   minute: "2-digit",
-                                                }) :
-                                              new Date(doc.uploadDate).toLocaleDateString("en-GB", {
-                                                day: "2-digit",
-                                                month: "2-digit",
-                                                year: "numeric",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                              })
-                                            ) : 'N/A'
-                                          }
-                                        </td>
-                                        <td className="px-3 py-2 text-gray-500">{doc.department || 'N/A'}</td>
-                                        <td className="px-3 py-2 text-gray-500">{doc.branch || 'N/A'}</td>
-                                        <td className="px-3 py-2">
-                                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                            Archived
-                                          </span>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Not Eligible Documents with Timer */}
-                          {policyData.notEligibleYet && policyData.notEligibleYet.length > 0 && (
-                            <div>
-                              <h6 className="font-medium text-yellow-700 mb-2 flex items-center">
-                                <ClockIcon className="h-4 w-4 mr-2" />
-                                Documents Waiting for Retention Period ({policyData.notEligibleYet.length})
-                                <span className="ml-2 text-sm text-gray-500">- Live countdown to eligibility</span>
-                              </h6>
-                              <div className="max-h-60 overflow-y-auto bg-yellow-50 rounded-lg">
-                                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                                  <thead className="bg-yellow-100">
-                                    <tr>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
-                                        File Name
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
-                                        Upload Date
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
-                                        Live Countdown
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
-                                        Will Be Eligible At
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
-                                        Department
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
-                                        Branch
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
-                                        Status
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {policyData.notEligibleYet.map((doc, index) => {
-                                      const eligibleDate = calculateEligibleDate(doc.uploadDate, policyData)
-
-                                      const now = new Date()
-                                      const timeRemaining = eligibleDate.getTime() - now.getTime()
-                                      const isEligibleSoon = timeRemaining <= 24 * 60 * 60 * 1000 // 24 hours
-
-                                      return (
-                                        <tr key={index} className="hover:bg-yellow-50">
-                                          <td className="px-3 py-2 text-gray-900 font-medium">
-                                            <div className="flex items-center">
-                                              <span className="truncate max-w-xs" title={doc.fileName}>
-                                                {doc.fileName}
-                                              </span>
-                                            </div>
-                                          </td>
-                                          <td className="px-3 py-2 text-gray-500">
-                                            {(() => {
-                                              let uploadDate
-                                              if (Array.isArray(doc.uploadDate)) {
-                                                const [year, month, day, hour, minute, second] = doc.uploadDate
-                                                uploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
-                                              } else if (typeof doc.uploadDate === "string") {
-                                                uploadDate = new Date(doc.uploadDate)
-                                              } else if (doc.uploadDate) {
-                                                uploadDate = new Date(doc.uploadDate)
-                                              } else {
-                                                uploadDate = new Date()
-                                              }
-
-                                              return uploadDate.toLocaleDateString("en-GB", {
-                                                day: "2-digit",
-                                                month: "2-digit",
-                                                year: "numeric",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                              })
-                                            })()}
-                                          </td>
-                                          <td className="px-3 py-2 text-center">
-                                            <CountdownTimer
-                                              targetDate={eligibleDate}
-                                              onComplete={() => {
-                                                console.log(`Document ${doc.fileName} is now eligible for retention!`)
-                                              }}
-                                            />
-                                          </td>
-                                          <td className="px-3 py-2 text-gray-500 text-center">
-                                            <div className="text-sm">
-                                              {eligibleDate.toLocaleDateString("en-GB", {
-                                                day: "2-digit",
-                                                month: "2-digit",
-                                                year: "numeric",
-                                              })}
-                                            </div>
-                                            <div className="text-xs text-gray-400">
-                                              {eligibleDate.toLocaleTimeString("en-GB", {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                              })}
-                                            </div>
+                                                })
+                                              ) : 'N/A'
+                                            }
                                           </td>
                                           <td className="px-3 py-2 text-gray-500">{doc.department || 'N/A'}</td>
                                           <td className="px-3 py-2 text-gray-500">{doc.branch || 'N/A'}</td>
                                           <td className="px-3 py-2">
-                                            <div className="flex flex-col items-center">
-                                              <span
-                                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${isEligibleSoon
-                                                  ? "bg-orange-100 text-orange-800"
-                                                  : "bg-yellow-100 text-yellow-800"
-                                                  }`}
-                                              >
-                                                {isEligibleSoon ? "Almost Ready!" : "Waiting"}
-                                              </span>
-                                              {isEligibleSoon && (
-                                                <div className="mt-1 text-xs text-orange-600 font-medium animate-pulse">
-                                                  Eligible very soon!
-                                                </div>
-                                              )}
-                                            </div>
+                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                              Archived
+                                            </span>
                                           </td>
                                         </tr>
-                                      )
-                                    })}
-                                  </tbody>
-                                </table>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                            )}
+
+                            {/* Not Eligible Documents with Timer */}
+                            {processedPolicyData.notEligibleYet && processedPolicyData.notEligibleYet.length > 0 && (
+                              <div>
+                                <h6 className="font-medium text-yellow-700 mb-2 flex items-center">
+                                  <ClockIcon className="h-4 w-4 mr-2" />
+                                  Documents Waiting for Retention Period ({processedPolicyData.notEligibleYet.length})
+                                  <span className="ml-2 text-sm text-gray-500">- Live countdown to eligibility</span>
+                                </h6>
+                                <div className="max-h-60 overflow-y-auto bg-yellow-50 rounded-lg">
+                                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                                    <thead className="bg-yellow-100">
+                                      <tr>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                          File Name
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                          Upload Date
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                          Live Countdown
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                          Will Be Eligible At
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                          Department
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                          Branch
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-xs font-medium text-yellow-700 uppercase">
+                                          Status
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                      {processedPolicyData.notEligibleYet.map((doc, index) => {
+                                        const eligibleDate = calculateEligibleDate(doc.uploadDate, processedPolicyData);
+                                        const now = new Date();
+                                        const timeRemaining = eligibleDate.getTime() - now.getTime();
+                                        const isEligibleSoon = timeRemaining <= 24 * 60 * 60 * 1000; // 24 hours
+
+                                        return (
+                                          <tr key={index} className="hover:bg-yellow-50">
+                                            <td className="px-3 py-2 text-gray-900 font-medium">
+                                              <div className="flex items-center">
+                                                <span className="truncate max-w-xs" title={doc.fileName}>
+                                                  {doc.fileName}
+                                                </span>
+                                              </div>
+                                            </td>
+                                            <td className="px-3 py-2 text-gray-500">
+                                              {(() => {
+                                                let uploadDate;
+                                                if (Array.isArray(doc.uploadDate)) {
+                                                  const [year, month, day, hour, minute, second] = doc.uploadDate;
+                                                  uploadDate = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+                                                } else if (typeof doc.uploadDate === "string") {
+                                                  if (doc.uploadDate.includes(' ')) {
+                                                    const [datePart, timePart] = doc.uploadDate.split(' ');
+                                                    const [year, month, day] = datePart.split('-').map(Number);
+                                                    const [time, ms] = timePart.split('.');
+                                                    const [hour, minute, second] = time.split(':').map(Number);
+                                                    uploadDate = new Date(year, month - 1, day, hour, minute, second);
+                                                  } else {
+                                                    uploadDate = new Date(doc.uploadDate);
+                                                  }
+                                                } else if (doc.uploadDate) {
+                                                  uploadDate = new Date(doc.uploadDate);
+                                                } else {
+                                                  uploadDate = new Date();
+                                                }
+
+                                                return uploadDate.toLocaleDateString("en-GB", {
+                                                  day: "2-digit",
+                                                  month: "2-digit",
+                                                  year: "numeric",
+                                                  hour: "2-digit",
+                                                  minute: "2-digit",
+                                                });
+                                              })()}
+                                            </td>
+                                            <td className="px-3 py-2 text-center">
+                                              <CountdownTimer
+                                                targetDate={eligibleDate}
+                                                onComplete={() => {
+                                                  console.log(`Document ${doc.fileName} is now eligible for retention!`);
+                                                }}
+                                              />
+                                            </td>
+                                            <td className="px-3 py-2 text-gray-500 text-center">
+                                              <div className="text-sm">
+                                                {eligibleDate.toLocaleDateString("en-GB", {
+                                                  day: "2-digit",
+                                                  month: "2-digit",
+                                                  year: "numeric",
+                                                })}
+                                              </div>
+                                              <div className="text-xs text-gray-400">
+                                                {eligibleDate.toLocaleTimeString("en-GB", {
+                                                  hour: "2-digit",
+                                                  minute: "2-digit",
+                                                })}
+                                              </div>
+                                            </td>
+                                            <td className="px-3 py-2 text-gray-500">{doc.department || 'N/A'}</td>
+                                            <td className="px-3 py-2 text-gray-500">{doc.branch || 'N/A'}</td>
+                                            <td className="px-3 py-2">
+                                              <div className="flex flex-col items-center">
+                                                <span
+                                                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${isEligibleSoon
+                                                    ? "bg-orange-100 text-orange-800"
+                                                    : "bg-yellow-100 text-yellow-800"
+                                                    }`}
+                                                >
+                                                  {isEligibleSoon ? "Almost Ready!" : "Waiting"}
+                                                </span>
+                                                {isEligibleSoon && (
+                                                  <div className="mt-1 text-xs text-orange-600 font-medium animate-pulse">
+                                                    Eligible very soon!
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -649,7 +659,7 @@ const RetentionCheckAlert = ({ onClose, result }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default RetentionCheckAlert;
