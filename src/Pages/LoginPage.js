@@ -20,31 +20,31 @@ import { jwtDecode } from "jwt-decode";
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isOtpRequested, setIsOtpRequested] = useState(false);
-  const [currentView, setCurrentView] = useState("login"); 
+  const [currentView, setCurrentView] = useState("login");
   const [otp, setOtp] = useState("");
   const [formData, setFormData] = useState({
     username: "",
     password: "",
     captcha: "",
   });
-  
+
   const [forgotPasswordData, setForgotPasswordData] = useState({
     identifier: "",
-    identifierType: "email", 
+    identifierType: "email",
     otp: "",
     newPassword: "",
     confirmPassword: "",
   });
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const [captcha, setCaptcha] = useState([]);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("error");
   const navigate = useNavigate();
   const [isRotated, setIsRotated] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
-  
+
   const [otpTimer, setOtpTimer] = useState(300);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
@@ -95,7 +95,7 @@ const LoginPage = () => {
   const generateCaptcha = () => {
     let captchaArray = [];
     const colors = ['#2563eb', '#dc2626', '#059669', '#7c3aed', '#ea580c'];
-    
+
     for (let i = 0; i < LENGTH; i++) {
       const character = CHARACTERS.charAt(
         Math.floor(Math.random() * CHARACTERS.length)
@@ -106,14 +106,14 @@ const LoginPage = () => {
       const offsetY = Math.floor(Math.random() * 10) - 5;
       const skew = Math.floor(Math.random() * 20) - 10;
 
-      captchaArray.push({ 
-        character, 
-        rotation, 
-        fontSize, 
-        color, 
-        offsetY, 
+      captchaArray.push({
+        character,
+        rotation,
+        fontSize,
+        color,
+        offsetY,
         skew,
-        id: i 
+        id: i
       });
     }
 
@@ -176,18 +176,26 @@ const LoginPage = () => {
 
   const handleForgotPasswordChange = (e) => {
     const { name, value } = e.target;
+
     setForgotPasswordData((prev) => {
-      // If changing identifierType, reset identifier field
       if (name === "identifierType") {
         return {
           ...prev,
           identifierType: value,
-          identifier: "",
+          identifier: "", // reset input on switch
         };
       }
+
+      // Allow only digits for mobile input
+      if (name === "identifier" && prev.identifierType === "mobile") {
+        const numericValue = value.replace(/\D/g, ""); // Remove non-digits
+        return { ...prev, [name]: numericValue };
+      }
+
       return { ...prev, [name]: value };
     });
   };
+
 
   const handleOtpChange = (e) => {
     const value = e.target.value.replace(/\D/g, '');
@@ -207,10 +215,26 @@ const LoginPage = () => {
     e.preventDefault();
   };
 
- 
+
   const initiateForgotPassword = async () => {
-    if (!forgotPasswordData.identifier) {
+    const { identifier, identifierType } = forgotPasswordData;
+
+    if (!identifier) {
       showAlert("Please enter your email or mobile number.");
+      return;
+    }
+
+    // Manual validation
+    if (
+      identifierType === "email" &&
+      !/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(identifier)
+    ) {
+      showAlert("Please enter a valid Gmail address.");
+      return;
+    }
+
+    if (identifierType === "mobile" && !/^\d{10}$/.test(identifier)) {
+      showAlert("Please enter a valid 10-digit mobile number.");
       return;
     }
 
@@ -218,9 +242,10 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(`${FORGATE_PASS_API}`, {
-        identifier: forgotPasswordData.identifier,
+        identifier,
       });
 
+      // If backend returns success, show OTP sent
       if (response.status === 200) {
         setCurrentView("forgot-otp");
         setOtpTimer(300);
@@ -229,13 +254,24 @@ const LoginPage = () => {
         showAlert("OTP sent to your registered mobile number.", "success");
       }
     } catch (error) {
-      showAlert(
-        error.response?.data?.message || "Failed to send OTP. Please try again."
-      );
+      // Get status code
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
+
+      // Custom messages from backend
+      if (status === 404) {
+        showAlert(message || "User not registered with this email or mobile.");
+      } else if (status === 403) {
+        showAlert(message || "Your account is inactive. Please contact admin.");
+      } else {
+        showAlert("Failed to send OTP. Please try again.");
+      }
     } finally {
       setIsButtonDisabled(false);
     }
   };
+
+
 
   const verifyForgotPasswordOtp = async () => {
     if (!forgotPasswordData.otp) {
@@ -317,7 +353,7 @@ const LoginPage = () => {
 
   const resendForgotPasswordOtp = async () => {
     if (!canResendOtp) return;
-    
+
     setIsButtonDisabled(true);
     try {
       const response = await axios.post(`${FORGATE_PASS_API}`, {
@@ -381,7 +417,7 @@ const LoginPage = () => {
 
   const resendOtp = async () => {
     if (!canResendOtp) return;
-    
+
     setIsButtonDisabled(true);
     try {
       const response = await axios.post(LOGIN_API, {
@@ -415,7 +451,7 @@ const LoginPage = () => {
       return;
     }
 
-    if (otp.length < 4) { 
+    if (otp.length < 4) {
       showAlert("Please enter a valid OTP.");
       return;
     }
@@ -529,9 +565,8 @@ const LoginPage = () => {
           )}
 
           <div className="mb-4 text-center">
-            <h2 className={`text-xl font-bold ${
-              currentView === "login" && !isOtpRequested ? "text-indigo-600" : "text-gray-900"
-            }`}>
+            <h2 className={`text-xl font-bold ${currentView === "login" && !isOtpRequested ? "text-indigo-600" : "text-gray-900"
+              }`}>
               {getViewTitle()}
             </h2>
             <p className="text-gray-600 mt-1 text-sm">
@@ -540,11 +575,10 @@ const LoginPage = () => {
           </div>
 
           {alertMessage && (
-            <div className={`mb-3 p-2 rounded-md border text-sm ${
-              alertType === "success"
-                ? "bg-green-50 text-green-700 border-green-200"
-                : "bg-red-50 text-red-700 border-red-200"
-            }`}>
+            <div className={`mb-3 p-2 rounded-md border text-sm ${alertType === "success"
+              ? "bg-green-50 text-green-700 border-green-200"
+              : "bg-red-50 text-red-700 border-red-200"
+              }`}>
               {alertMessage}
             </div>
           )}
@@ -611,9 +645,9 @@ const LoginPage = () => {
                   <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
                     <div className="absolute inset-0">
                       <svg className="w-full h-full opacity-20">
-                        <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1"/>
-                        <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1"/>
-                        <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1"/>
+                        <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1" />
+                        <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1" />
+                        <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1" />
                       </svg>
                     </div>
                     <div className="relative flex items-center justify-center space-x-1 h-full">
@@ -691,16 +725,15 @@ const LoginPage = () => {
                   type="text"
                   value={otp}
                   onChange={handleOtpChange}
-                  className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${
-                    otpTimer === 0 ? 'bg-gray-100' : ''
-                  }`}
+                  className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${otpTimer === 0 ? 'bg-gray-100' : ''
+                    }`}
                   placeholder="Enter OTP"
                   maxLength="6"
                   required
                   disabled={otpTimer === 0}
                 />
               </div>
-              
+
               <div className="flex space-x-2">
                 <button
                   type="submit"
@@ -709,7 +742,7 @@ const LoginPage = () => {
                 >
                   {isButtonDisabled ? "Logging in..." : otpTimer === 0 ? "OTP Expired" : "Login"}
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={resendOtp}
@@ -777,11 +810,24 @@ const LoginPage = () => {
                     className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                     placeholder={
                       forgotPasswordData.identifierType === "email"
-                        ? "Enter your email address"
-                        : "Enter your mobile number"
+                        ? "Enter your Gmail address"
+                        : "Enter your 10-digit mobile number"
+                    }
+                    inputMode={forgotPasswordData.identifierType === "email" ? "email" : "numeric"}
+                    maxLength={forgotPasswordData.identifierType === "mobile" ? 10 : undefined}
+                    pattern={
+                      forgotPasswordData.identifierType === "email"
+                        ? "^[a-zA-Z0-9._%+-]+@gmail\\.com$"
+                        : "^[0-9]{10}$"
+                    }
+                    title={
+                      forgotPasswordData.identifierType === "email"
+                        ? "Please enter a valid Gmail address (e.g. example@gmail.com)"
+                        : "Please enter a valid 10-digit mobile number"
                     }
                     required
                   />
+
                 </div>
               </div>
 
@@ -807,16 +853,15 @@ const LoginPage = () => {
                   type="text"
                   value={forgotPasswordData.otp}
                   onChange={handleForgotOtpChange}
-                  className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${
-                    otpTimer === 0 ? 'bg-gray-100' : ''
-                  }`}
+                  className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${otpTimer === 0 ? 'bg-gray-100' : ''
+                    }`}
                   placeholder="Enter OTP"
                   maxLength="6"
                   required
                   disabled={otpTimer === 0}
                 />
               </div>
-              
+
               <div className="flex space-x-2">
                 <button
                   type="button"
@@ -826,7 +871,7 @@ const LoginPage = () => {
                 >
                   {isButtonDisabled ? "Verifying..." : otpTimer === 0 ? "OTP Expired" : "Verify OTP"}
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={resendForgotPasswordOtp}
