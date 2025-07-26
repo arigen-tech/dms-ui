@@ -176,7 +176,17 @@ const LoginPage = () => {
 
   const handleForgotPasswordChange = (e) => {
     const { name, value } = e.target;
-    setForgotPasswordData((prev) => ({ ...prev, [name]: value }));
+    setForgotPasswordData((prev) => {
+      // If changing identifierType, reset identifier field
+      if (name === "identifierType") {
+        return {
+          ...prev,
+          identifierType: value,
+          identifier: "",
+        };
+      }
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleOtpChange = (e) => {
@@ -455,7 +465,7 @@ const LoginPage = () => {
       case "reset-password":
         return "Reset Password";
       default:
-        return isOtpRequested ? "Enter OTP" : "Welcome Back";
+        return isOtpRequested ? "Enter OTP" : "";
     }
   };
 
