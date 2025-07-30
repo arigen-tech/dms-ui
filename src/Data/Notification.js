@@ -9,7 +9,7 @@ import {
   ExclamationTriangleIcon,
   AdjustmentsHorizontalIcon,
   ArrowLeftIcon,
-} from "@heroicons/react/24/outline"
+} from "@heroicons/react/24/solid"
 import { BellAlertIcon } from "@heroicons/react/24/solid"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"

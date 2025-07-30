@@ -822,7 +822,7 @@ const Search = () => {
   return (
     <div className="p-1">
       <h1 className="text-xl mb-4 font-semibold">Search Documents</h1>
-      <div className="bg-white p-1 rounded-lg shadow-sm mb-4">
+      <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
 
         {popupMessage && (
           <Popup

@@ -291,7 +291,7 @@ const FilesType = () => {
   return (
     <div className="px-2">
       <h1 className="text-lg mb-1 font-semibold">FileTypes</h1>
-      <div className="bg-white p-1 shadow-sm">
+      <div className="bg-white p-4 rounded-lg shadow-sm">
 
         {/* Popup Messages */}
         {popupMessage && (

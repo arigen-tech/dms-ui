@@ -510,7 +510,7 @@ const SearchByScan = () => {
   return (
     <div className="p-1">
       <h1 className="text-md mb-2 font-semibold">DOCUMENT SEARCH BY QR CODES</h1>
-      <div className="bg-white p-1 rounded-lg shadow-sm">
+      <div className="bg-white p-4 rounded-lg shadow-sm">
         {popupMessage && <Popup message={popupMessage.message} type={popupMessage.type} onClose={handlePopupClose} />}
 
         {headerData && (

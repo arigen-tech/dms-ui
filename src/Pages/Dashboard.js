@@ -512,7 +512,7 @@ function Dashboard() {
 
   function StatBlock({ title, value, Icon }) {
     return (
-      <div className="bg-gray-50 p-3 rounded-r-lg shadow flex items-center justify-between border-l-4 border-blue-50">
+      <div className="p-3 rounded-lg shadow flex items-center justify-between border-l-4 border-blue-50">
         <div>
           <h3 className="text-md font-semibold text-gray-700">{title}</h3>
           {loading ? (
@@ -580,271 +580,195 @@ function Dashboard() {
         <h2 className="text-xl mb-4 font-semibold">DASHBOARD</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {role === SYSTEM_ADMIN && (
-            <>
-              <Link to="/users" className="block">
+        {role === SYSTEM_ADMIN && (
+          <>
+            <Link to="/users" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                 <StatBlock title="Total Users" value={stats.totalUser} Icon={UsersIcon} />
-              </Link>
+              </div>
+            </Link>
 
-              <Link to="/userRoleAssing" className="block">
-                <StatBlock
-                  title="Total Pending Users"
-                  value={stats.totalNullEmployeeType}
-                  Icon={FaUserClock}
-                />
-              </Link>
+            <Link to="/userRoleAssing" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Total Pending Users" value={stats.totalNullEmployeeType} Icon={FaUserClock} />
+              </div>
+            </Link>
 
-              {/* <Link to="/idcard" className="block">
-                <StatBlock
-                  title="Generate I'D Card"
-                  Icon={IdentificationIcon}
-                />
-              </Link> */}
+            <Link to="/create-branch" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Total Branches" value={stats.totalBranches} Icon={KeyIcon} />
+              </div>
+            </Link>
 
-              <Link to="/create-branch" className="block">
-                <StatBlock
-                  title="Total Branches"
-                  value={stats.totalBranches}
-                  Icon={KeyIcon}
-                />
-              </Link>
+            <Link to="/create-department" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Total Departments" value={stats.totalDepartment} Icon={ComputerDesktopIcon} />
+              </div>
+            </Link>
 
-              <Link to="/create-department" className="block">
-                <StatBlock
-                  title="Total Departments"
-                  value={stats.totalDepartment}
-                  Icon={ComputerDesktopIcon}
-                />
-              </Link>
+            <Link to="/create-role" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Total Roles" value={stats.totalRoles} Icon={UserCircleIcon} />
+              </div>
+            </Link>
 
-              <Link to="/create-role" className="block">
-                <StatBlock
-                  title="Total Roles"
-                  value={stats.totalRoles}
-                  Icon={UserCircleIcon}
-                />
-              </Link>
+            <Link to="/create-category" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Total Categories" value={stats.totalCategories} Icon={ShoppingCartIcon} />
+              </div>
+            </Link>
 
-              <Link to="/create-category" className="block">
-                <StatBlock
-                  title="Total Categories"
-                  value={stats.totalCategories}
-                  Icon={ShoppingCartIcon}
-                />
-              </Link>
+            <Link to="/create-year" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Total Year" value={stats.annualYear} Icon={CalendarDaysIcon} />
+              </div>
+            </Link>
 
-              <Link to="/create-year" className="block">
-                <StatBlock
-                  title="Total Year"
-                  value={stats.annualYear}
-                  Icon={CalendarDaysIcon}
-                />
-              </Link>
+            <Link to="/create-fileType" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Total Files Types" value={stats.totalFilesType} Icon={GiFiles} />
+              </div>
+            </Link>
 
-              <Link to="/create-fileType" className="block">
-                <StatBlock
-                  title="Total Files Types"
-                  value={stats.totalFilesType}
-                  Icon={GiFiles}
-                />
-              </Link>
+            <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <StatBlock title="Total Documents" value={stats.totalDocument} Icon={DocumentIcon} />
+            </div>
 
-              <StatBlock
-                title="Total Documents"
-                value={stats.totalDocument}
-                Icon={DocumentIcon}
-              />
+            <Link to="/approve-documents" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Pending Documents" value={stats.totalPendingDocuments} Icon={IoDocumentLock} />
+              </div>
+            </Link>
 
-              <Link to="/approve-documents" className="block">
-                <StatBlock
-                  title="Pending Documents"
-                  value={stats.totalPendingDocuments}
-                  Icon={IoDocumentLock}
-                />
-              </Link>
+            <Link to="/total-approved" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Approved Documents" value={stats.totalApprovedDocuments} Icon={DocumentCheckIcon} />
+              </div>
+            </Link>
 
-              <Link to="/total-approved" className="block">
-                <StatBlock
-                  title="Approved Documents"
-                  value={stats.totalApprovedDocuments}
-                  Icon={DocumentCheckIcon}
-                />
-              </Link>
+            <Link to="/total-rejected" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Rejected Documents" value={stats.totalRejectedDocuments} Icon={DocumentMinusIcon} />
+              </div>
+            </Link>
+          </>
+        )}
 
-              <Link to="/total-rejected" className="block">
-                <StatBlock
-                  title="Rejected Documents"
-                  value={stats.totalRejectedDocuments}
-                  Icon={DocumentMinusIcon}
-                />
-              </Link>
-            </>
-          )}
+        {role === BRANCH_ADMIN && (
+          <>
+            <Link to="/branchusers" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Branch Users" value={stats.branchUser} Icon={UsersIcon} />
+              </div>
+            </Link>
 
-          {role === BRANCH_ADMIN && (
-            <>
-              <Link to="/branchusers" className="block">
-                <StatBlock
-                  title="Branch Users"
-                  value={stats.branchUser}
-                  Icon={UsersIcon}
-                />
-              </Link>
+            <Link to="/userRoleAssing" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Pending Users" value={stats.nullRoleEmployeeCountForBranch} Icon={FaUserClock} />
+              </div>
+            </Link>
 
-              <Link to="/userRoleAssing" className="block">
-                <StatBlock
-                  title="Pending Users"
-                  value={stats.nullRoleEmployeeCountForBranch}
-                  Icon={FaUserClock}
-                />
-              </Link>
+            <Link to="/create-departments" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Total Departments" value={stats.departmentCountForBranch} Icon={ComputerDesktopIcon} />
+              </div>
+            </Link>
 
-              {/* <Link to="/idcard" className="block">
-                <StatBlock
-                  title="Generate I'D Card"
-                  Icon={IdentificationIcon}
-                />
-              </Link> */}
+            <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <StatBlock title="Total Documents" value={totalDocsbyBranch} Icon={DocumentIcon} />
+            </div>
 
-              <Link to="/create-departments" className="block">
-                <StatBlock
-                  title="Total Departments"
-                  value={stats.departmentCountForBranch}
-                  Icon={ComputerDesktopIcon}
-                />
-              </Link>
+            <Link to="/approve-documents" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Pending Documents" value={stats.totalPendingDocumentsById} Icon={IoDocumentLock} />
+              </div>
+            </Link>
 
-              <StatBlock
-                title="Total Documents"
-                value={totalDocsbyBranch}
-                Icon={DocumentIcon}
-              />
+            <Link to="/total-approved" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Approved Documents" value={stats.totalApprovedStatusDocById} Icon={DocumentCheckIcon} />
+              </div>
+            </Link>
 
-              <Link to="/approve-documents" className="block">
-                <StatBlock
-                  title="Pending Documents"
-                  value={stats.totalPendingDocumentsById}
-                  Icon={IoDocumentLock}
-                />
-              </Link>
+            <Link to="/total-rejected" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Rejected Documents" value={stats.totalRejectedStatusDocById} Icon={DocumentMinusIcon} />
+              </div>
+            </Link>
+          </>
+        )}
 
-              <Link to="/total-approved" className="block">
-                <StatBlock
-                  title="Approved Documents"
-                  value={stats.totalApprovedStatusDocById}
-                  Icon={DocumentCheckIcon}
-                />
-              </Link>
+        {role === DEPARTMENT_ADMIN && (
+          <>
+            <Link to="/Departmentusers" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Department Users" value={stats.departmentUser} Icon={UsersIcon} />
+              </div>
+            </Link>
 
-              <Link to="/total-rejected" className="block">
-                <StatBlock
-                  title="Rejected Documents"
-                  value={stats.totalRejectedStatusDocById}
-                  Icon={DocumentMinusIcon}
-                />
-              </Link>
-            </>
-          )}
+            <Link to="/PendingRole" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Pending Users" value={stats.nullRoleEmployeeCountForDepartment} Icon={FaUserClock} />
+              </div>
+            </Link>
 
-          {role === DEPARTMENT_ADMIN && (
-            <>
-              <Link to="/Departmentusers" className="block">
-                <StatBlock
-                  title="Department Users"
-                  value={stats.departmentUser}
-                  Icon={UsersIcon}
-                />
-              </Link>
+            <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <StatBlock title="Total Documents" value={totalDocsbyDep} Icon={DocumentIcon} />
+            </div>
 
-              <Link to="/PendingRole" className="block">
-                <StatBlock
-                  title="Pending Users"
-                  value={stats.nullRoleEmployeeCountForDepartment}
-                  Icon={FaUserClock}
-                />
-              </Link>
+            <Link to="/approve-documents" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Pending Documents" value={stats.totalPendingDocumentsByDepartmentId} Icon={IoDocumentLock} />
+              </div>
+            </Link>
 
-              {/* <Link to="/idcard" className="block">
-                <StatBlock
-                  title="Generate I'D Card"
-                  Icon={IdentificationIcon}
-                />
-              </Link> */}
+            <Link to="/total-approved" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Approved Documents" value={stats.totalApprovedStatusDocByDepartmentId} Icon={DocumentCheckIcon} />
+              </div>
+            </Link>
 
-              <StatBlock
-                title="Total Documents"
-                value={totalDocsbyDep}
-                Icon={DocumentIcon}
-              />
-              <Link to="/approve-documents" className="block">
-                <StatBlock
-                  title="Pending Documents"
-                  value={stats.totalPendingDocumentsByDepartmentId}
-                  Icon={IoDocumentLock}
-                />
-              </Link>
+            <Link to="/total-rejected" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Rejected Documents" value={stats.totalRejectedStatusDocByDepartmentId} Icon={DocumentMinusIcon} />
+              </div>
+            </Link>
+          </>
+        )}
 
-              <Link to="/total-approved" className="block">
-                <StatBlock
-                  title="Approved Documents"
-                  value={stats.totalApprovedStatusDocByDepartmentId}
-                  Icon={DocumentCheckIcon}
-                />
-              </Link>
+        {role === USER && (
+          <>
+            <Link to="/users" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Create User" value={stats.createdByCount} Icon={UsersIcon} />
+              </div>
+            </Link>
 
-              <Link to="/total-rejected" className="block">
-                <StatBlock
-                  title="Rejected Documents"
-                  value={stats.totalRejectedStatusDocByDepartmentId}
-                  Icon={DocumentMinusIcon}
-                />
-              </Link>
-            </>
-          )}
+            <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <StatBlock title="Total Documents" value={totalDocsbyUser} Icon={DocumentIcon} />
+            </div>
 
-          {role === USER && (
-            <>
+            <Link to="/all-documents" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Pending Documents" value={stats.pendingDocsbyid} Icon={IoDocumentLock} />
+              </div>
+            </Link>
 
-              <Link to="/users" className="block">
-                <StatBlock
-                  title="Create User"
-                  value={stats.createdByCount}
-                  Icon={UsersIcon}
-                />
-              </Link>
+            <Link to="/approvedDocs" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Approved Documents" value={stats.approvedDocsbyid} Icon={DocumentCheckIcon} />
+              </div>
+            </Link>
 
-              <StatBlock
-                title="Total Documents"
-                value={totalDocsbyUser}
-                Icon={DocumentIcon}
-              />
+            <Link to="/rejectedDocs" className="block">
+              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <StatBlock title="Rejected Documents" value={stats.rejectedDocsbyid} Icon={DocumentMinusIcon} />
+              </div>
+            </Link>
+          </>
+        )}
+      </div>
 
-              <Link to="/all-documents" className="block">
-                <StatBlock
-                  title="Pending Documents"
-                  value={stats.pendingDocsbyid}
-                  Icon={IoDocumentLock}
-                />
-              </Link>
-
-              <Link to="/approvedDocs" className="block">
-                <StatBlock
-                  title="Approved Documents"
-                  value={stats.approvedDocsbyid}
-                  Icon={DocumentCheckIcon}
-                />
-              </Link>
-
-              <Link to="/rejectedDocs" className="block">
-                <StatBlock
-                  title="Rejected Documents"
-                  value={stats.rejectedDocsbyid}
-                  Icon={DocumentMinusIcon}
-                />
-              </Link>
-            </>
-          )}
-        </div>
 
         <div className="mb-4">
           <label className="mr-2 font-semibold text-gray-700">Select Year:</label>

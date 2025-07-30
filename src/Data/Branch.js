@@ -308,7 +308,7 @@ const Branch = () => {
   return (
     <div className="px-2">
       <h1 className="text-2xl mb-1 font-semibold">Branches</h1>
-      <div className="bg-white p-1 rounded-lg shadow-sm">
+      <div className="bg-white p-4 rounded-lg shadow-sm">
 
 
         {/* Popup Messages */}

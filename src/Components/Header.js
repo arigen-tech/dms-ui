@@ -242,27 +242,27 @@ function Header({ toggleSidebar, userName }) {
           <Bars3Icon className="h-7 w-7" />
         </button>
         <h3 className="font-bold text-lg mb-1.5">
-          <span className="font-light">Document Management System</span>
+          Document Management System
         </h3>
       </div>
       <div className="flex space-x-4 items-center mr-10">
         <NotificationBell />
-        <h1 className="text-2xl pb-1 mr-1 font-light">|</h1>
+        <h1 className="text-3xl pb-1 mr-1">|</h1>
         {/* Role Dropdown */}
         <div className="relative">
           <div
             className="flex items-center space-x-2 cursor-pointer"
             onClick={toggleDropdownRole}
           >
-            <UserIcon className="h-5 w-5 text-gray-300" />
-            <span className="font-light text-sm mr-1">{role || "Role"}</span>
+            <UserIcon className="h-5 w-5 text-white-300" />
+            <span className="font-bold text-sm mr-1">{role || "Role"}</span>
           </div>
           {dropdownRoleOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
               <DropdownMenu
                 items={Array.isArray(roleName) ? roleName.map((role) => ({
                   label: (
-                    <span className="flex items-center text-sm text-blue-600 p-0.5 rounded transition duration-200 m">
+                    <span className="flex items-center text-sm text-gray-800 p-0.5 rounded transition duration-200 m">
                       <UserIcon className="h-3 w-3 mr-2" /> {role}
                     </span>
                   ),
@@ -288,8 +288,8 @@ function Header({ toggleSidebar, userName }) {
             className="flex items-center space-x-2 cursor-pointer"
             onClick={toggleDropdown}
           >
-            <h1 className="text-3xl pb-2 mr-1 font-light">|</h1>
-            <span className="font-light text-sm mr-1 flex-shrink-0 whitespace-nowrap">{UserName}</span>
+            <h1 className="text-3xl pb-2 mr-1">|</h1>
+            <span className="font-bold text-sm mr-1 flex-shrink-0 whitespace-nowrap">{UserName}</span>
             <img
               src={imageSrc || adminPhoto}
               alt="Profile"
@@ -302,11 +302,11 @@ function Header({ toggleSidebar, userName }) {
               <DropdownMenu
                 items={[
                   {
-                    label: <span className="flex items-center text-blue-600 p-1 rounded transition duration-200 text-sm"><PencilIcon className="h-3 w-3 mr-2" /> Edit Profile</span>,
+                    label: <span className="flex items-center text-gray-800 p-1 transition duration-200 text-sm"><PencilIcon className="h-3 w-3 mr-2" /> Edit Profile</span>,
                     onClick: handleChangePassword
                   },
                   {
-                    label: <span className="flex items-center text-red-600 p-1 rounded transition duration-200 text-sm"><ArrowRightOnRectangleIcon className="h-3 w-3 mr-2" /> Logout</span>,
+                    label: <span className="flex items-center text-gray-800 p-1 transition duration-200 text-sm"><ArrowRightOnRectangleIcon className="h-3 w-3 mr-2" /> Logout</span>,
                     onClick: handleLogout
                   },
                 ]}

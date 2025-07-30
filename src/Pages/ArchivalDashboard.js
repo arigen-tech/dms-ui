@@ -193,52 +193,57 @@ const ArchivalDashboard = () => {
 
     return (
         <Layout>
-            <div className="bg-slate-100 p-3 -mt-6">
+            <div className="bg-slate-100 p-3">
 
                 <div className="max-w-7xl mx-auto">
-                    <h1 className="text-xl font-bold text-gray-900 mb-1">Archival Dashboard</h1>
+                    <h1 className="text-xl font-bold text-gray-900 mb-4">Archival Dashboard</h1>
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
-                        <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Total Records</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                                </div>
-                                <Archive className="h-8 w-8 text-gray-400" />
-                            </div>
+                    {/* Total Records */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50 transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-gray-300 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Total Records</p>
+                            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                         </div>
-
-                        <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Scheduled</p>
-                                    <p className="text-2xl font-bold text-yellow-600">{stats.scheduled}</p>
-                                </div>
-                                <Clock className="h-8 w-8 text-yellow-400" />
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Archived</p>
-                                    <p className="text-2xl font-bold text-green-600">{stats.archived}</p>
-                                </div>
-                                <img src={ArchiveBoxCheachMarkIcon} className='h-9 w-9' alt="icon" />
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Failed</p>
-                                    <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
-                                </div>
-                                <ArchiveBoxXMarkIcon className="h-8 w-8 text-red-400" />
-                            </div>
+                        <Archive className="h-8 w-8 text-gray-400" />
                         </div>
                     </div>
+
+                    {/* Scheduled */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50 transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-yellow-300 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Scheduled</p>
+                            <p className="text-2xl font-bold text-yellow-600">{stats.scheduled}</p>
+                        </div>
+                        <Clock className="h-8 w-8 text-yellow-400" />
+                        </div>
+                    </div>
+
+                    {/* Archived */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50 transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-green-300 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Archived</p>
+                            <p className="text-2xl font-bold text-green-600">{stats.archived}</p>
+                        </div>
+                        <img src={ArchiveBoxCheachMarkIcon} className="h-9 w-9" alt="icon" />
+                        </div>
+                    </div>
+
+                    {/* Failed */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50 transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-red-300 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Failed</p>
+                            <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
+                        </div>
+                        <ArchiveBoxXMarkIcon className="h-8 w-8 text-red-400" />
+                        </div>
+                    </div>
+                    </div>
+
 
 
                     <div className="bg-white rounded-lg shadow-sm p-3 mb-3">
@@ -307,7 +312,7 @@ const ArchivalDashboard = () => {
                     </div>
 
                     {/* Data Table */}
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-lg shadow-sm overflow-hidden p-4">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50">

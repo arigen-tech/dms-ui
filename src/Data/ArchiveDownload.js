@@ -1229,7 +1229,7 @@ const ArchiveDownload = () => {
     return (
       <>
         {(userRole === "ADMIN" || userRole === "BRANCH ADMIN" || userRole === "DEPARTMENT ADMIN") && (
-          <div className="bg-white p-2 rounded-xl shadow-md w-full mb-6">
+          <div className="bg-white p-4 rounded-xl shadow-md w-full mb-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-2xl mb-1 font-semibold">Archive Management</h3>
               <div className="flex items-center gap-4">
@@ -1391,7 +1391,7 @@ const ArchiveDownload = () => {
     <div className="px-2">
       <div className="flex flex-col space-y-4">
         <h2 className="text-2xl mb-1 font-semibold">Archive Download</h2>
-        <div className="bg-white p-1 rounded-lg shadow-sm">
+        <div className="bg-white p-4 rounded-lg shadow-sm">
           {popupMessage && (
             <Popup message={popupMessage.message} type={popupMessage.type} onClose={() => setPopupMessage(null)} />
           )}

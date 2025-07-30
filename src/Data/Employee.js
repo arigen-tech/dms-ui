@@ -622,7 +622,7 @@ const UserAddEmployee = () => {
   return (
     <div className="px-2">
       <h1 className="text-2xl mb-1 font-semibold">USERS</h1>
-      <div className="bg-white p-1 rounded-lg shadow-sm">
+      <div className="bg-white p-4 rounded-lg shadow-sm">
         {error && <p className="text-red-500">{error}</p>}
         {/* Success Message */}
         {showPopup && (
@@ -763,7 +763,7 @@ const UserAddEmployee = () => {
           <>
             <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
               {/* Items Per Page (50%) */}
-              <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
+              <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
                 <label
                   htmlFor="itemsPerPage"
                   className="mr-2 ml-2 text-white text-sm"

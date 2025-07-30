@@ -484,7 +484,7 @@ const ApprovedDoc = () => {
   return (
     <div className="px-1">
       <h1 className="text-xl mb-4 font-semibold">Approved Documents</h1>
-      <div className="bg-white p-1 rounded-lg shadow-sm">
+      <div className="bg-white p-4 rounded-lg shadow-sm">
         {error && <div className="text-red-500 mb-4">{error}</div>}
 
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">

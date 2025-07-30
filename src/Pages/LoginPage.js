@@ -521,14 +521,14 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen">
       {/* Left side - Image */}
-      <div className="max-w-0 lg:max-w-full lg:w-1/2">
-        <img
+      <div className="max-w-0 lg:max-w-full lg:w-1/2 loginLeft">
+        {/* <img
           src={image}
           alt="Login"
           className="w-full h-full object-cover"
-        />
+        /> */}
       </div>
 
       {/* Right side - Login Form */}
@@ -538,14 +538,14 @@ const LoginPage = () => {
           <img
             src={logo2}
             alt="AGT Document Management System"
-            className="mx-auto w-20 object-cover mb-2"
+            className="mx-auto w-86 object-cover mb-2"
           />
-          <h2 className="text-lg text-blue-800 font-semibold">
+          {/* <h2 className="text-lg text-blue-800 font-semibold">
             Document Management System
-          </h2>
+          </h2> */}
         </div>
 
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200 p-4">
+        <div className="w-full max-w-lg bg-gray-50 rounded-lg shadow-lg border border-gray-200 p-4">
           {(isOtpRequested || currentView !== "login") && (
             <div className="flex items-center justify-between mb-3">
               <button

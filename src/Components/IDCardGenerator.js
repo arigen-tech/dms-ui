@@ -326,7 +326,7 @@ const IDCardGenerator = () => {
         <Layout>
             <div className="p-4">
                 <h1 className="text-xl mb-4 font-semibold">I'D Cards</h1>
-                <div className="bg-white p-3 rounded-lg shadow-sm">
+                <div className="bg-white p-4 rounded-lg shadow-sm">
 
                     {popupMessage && (
                         <Popup

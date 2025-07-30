@@ -15,7 +15,14 @@
     --bgdashColor:#f4f5f7;
 }
 .bg-blue-800{
-    background-color:var(--primarycolor) !important;
+    /* background:linear-gradient(to right, #2563eb , #a855f7 , #ec4899) !important; */
+    background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
+
+}
+.bg-blue-verticle{
+    background: linear-gradient(183deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
+    width: 16rem;
+
 }
 .text-white {
     color:var(--textcolor) !important;
@@ -33,8 +40,13 @@
     background-color: var(--pagebg);
 
 }
-
-
+.bg-blue-950 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(145 169 249) !important;
+}
+td{
+    font-size: .8rem !important;
+}
 /* For DashBord */
 .border-blue-50{
    /* olor: var(--Dcolor); */
@@ -60,3 +72,40 @@
   }
   
 
+/* login-- */
+.loginLeft{
+    background: url(./Assets/image.png) no-repeat;
+    background-size: cover;
+    background-position: center centerD;
+}
+
+/* sidebar-- */
+
+.custom-scrollbar {
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 0px; /* Chrome, Safari, Edge */
+    background: transparent !important; /* No background */
+  }
+
+  .hover-scrollbar:hover {
+    scrollbar-width: thin;
+  }
+
+  .hover-scrollbar:hover::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .hover-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 100, 100, 0.5); /* Scroll thumb color */
+    border-radius: 6px;
+  }
+
+  .hover-scrollbar:hover::-webkit-scrollbar-track {
+    background: transparent !important; /* Still keep track invisible */
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent !important;
+  }

@@ -208,7 +208,7 @@ function Sidebar() {
   const SidebarLink = ({ to, icon: Icon, text, count }) => (
     <Link
       to={to}
-      className={`px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between ${isActive(
+      className={`px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between ${isActive(
         to
       )}`}
     >
@@ -217,7 +217,7 @@ function Sidebar() {
         <span>{text}</span>
       </div>
       {count > 0 && (
-        <span className="bg-blue-600 text-white rounded-2xl px-2 py-1 text-xs font-semibold">
+        <span className="bg-red-600 text-white rounded-2xl px-2 text-sm font-semibold">
           {count}
         </span>
       )}
@@ -227,20 +227,19 @@ function Sidebar() {
   const role = localStorage.getItem("role");
 
   return (
-    <div className="max-h-[100%] overflow-y-auto print:max-h-none print:overflow-auto h-screen flex flex-col justify-between bg-blue-800 text-white w-52 p-1 transition-all duration-300 hide-scrollbar">
+    <div className="max-h-[100%] overflow-y-auto print:max-h-none print:overflow-auto h-screen flex flex-col justify-between bg-blue-verticle text-white p-1 transition-all duration-300 overflow-hidden hover:overflow-y-auto custom-scrollbar hover-scrollbar">
       <div>
         <div className="flex items-center border-b border-t justify-center mb-2">
           <img className="flex w-30 h-30" src={logo3} alt="DMS" />
         </div>
         <nav className="flex flex-col space-y-1">
-          <hr className="border-t border-blue-800" />
 
           {role === SYSTEM_ADMIN && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
+
               <SidebarLink to="/archivalDashboard" icon={SiArchiveofourown} text="Archival Dashboard" />
 
-              <hr className="border-t border-blue-800 mt-1" />
               <div>
                 <SidebarLink
                   to="/users"
@@ -248,21 +247,18 @@ function Sidebar() {
                   text="Users"
                   count={counts.totalUser}
                 />
-                <hr className="border-t border-blue-800 mt-1" />
                 <SidebarLink
                   to="/userRoleAssing"
                   icon={FaUserClock}
-                  text="Total Pending Users"
+                  text="Pending Users"
                   count={counts.totalNullEmployeeType}
                 />
-                <hr className="border-t border-blue-800 mt-1" />
                 <SidebarLink
                   to="/manageUserRole"
                   icon={UserPlusIcon}
-                  text="Manage Users Roles"
+                  text="Manage Users"
                   count={manageUserRoleCont}
                 />
-                <hr className="border-t border-blue-800 mt-1" />
                 <SidebarLink
                   to="/idcard"
                   icon={IdentificationIcon}
@@ -270,7 +266,7 @@ function Sidebar() {
                 />
                 <button
                   onClick={handleCreateToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs flex items-center justify-between text-white hover:bg-blue-950 hover:text-white mt-2"
+                  className="w-full px-3 py-1 rounded-lg text-base flex items-center justify-between text-white hover:bg-blue-950 hover:text-white mt-2"
                 >
                   <div className="flex items-center">
                     <BuildingOfficeIcon className="h-5 w-5 mr-3" />
@@ -284,43 +280,37 @@ function Sidebar() {
                 </button>
                 {isCreateOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/create-branch"
                       icon={KeyIcon}
                       text="Branch"
                       count={counts.totalBranches}
                     />
-                    <hr className="border-t border-blue-800" />
-                    <SidebarLink
+                              <SidebarLink
                       to="/create-department"
                       icon={ComputerDesktopIcon}
                       text="Department"
                       count={counts.totalDepartment}
                     />
-                    <hr className="border-t border-blue-800" />
-                    <SidebarLink
+                              <SidebarLink
                       to="/create-role"
                       icon={UserCircleIcon}
                       text="Role"
                       count={counts.totalRoles}
                     />
-                    <hr className="border-t border-blue-800" />
-                    <SidebarLink
+                              <SidebarLink
                       to="/create-category"
                       icon={ShoppingCartIcon}
                       text="Category"
                       count={counts.totalCategories}
                     />
-                    <hr className="border-t border-blue-800" />
-                    <SidebarLink
+                              <SidebarLink
                       to="/create-year"
                       icon={CalendarDaysIcon}
                       text="Years"
                       count={counts.annualYear}
                     />
-                    <hr className="border-t border-blue-800" />
-                    <SidebarLink
+                              <SidebarLink
                       to="/create-fileType"
                       icon={GiFiles}
                       text="Files Types"
@@ -332,7 +322,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleDocumentToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <DocumentIcon className="h-5 w-5 mr-3" />
@@ -346,8 +336,7 @@ function Sidebar() {
                 </button>
                 {isDocumentOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/approve-documents"
                       icon={IoDocumentLock}
                       text="Pending Approvals"
@@ -382,7 +371,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleReportToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <DocumentChartBarIcon className="h-5 w-5 mr-3" />
@@ -396,8 +385,7 @@ function Sidebar() {
                 </button>
                 {isReportOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
@@ -416,7 +404,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleOCRToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <AiOutlineFileSearch className="h-5 w-5 mr-3" />O C R
@@ -429,8 +417,7 @@ function Sidebar() {
                 </button>
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/adminOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
@@ -443,7 +430,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleArchiveToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <RiArchiveStackFill className="h-5 w-5 mr-3" />
@@ -457,8 +444,7 @@ function Sidebar() {
                 </button>
                 {isArchiveOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-
+    
                     <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
@@ -502,7 +488,6 @@ function Sidebar() {
                 text="Manage Users Roles"
                 count={manageUserRoleContbranch}
               />
-              <hr className="border-t border-blue-800 mt-1" />
               <SidebarLink
                 to="/idcard"
                 icon={IdentificationIcon}
@@ -518,7 +503,7 @@ function Sidebar() {
                 {/* Document section */}
                 <button
                   onClick={handleDocumentToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <DocumentTextIcon className="h-5 w-5 mr-3" />
@@ -532,8 +517,7 @@ function Sidebar() {
                 </button>
                 {isDocumentOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/approve-documents"
                       icon={LockClosedIcon}
                       text="Pending Approvals"
@@ -566,7 +550,7 @@ function Sidebar() {
                 <div>
                   <button
                     onClick={handleReportToggle}
-                    className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                    className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                   >
                     <div className="flex items-center">
                       <DocumentChartBarIcon className="h-5 w-5 mr-3" />
@@ -580,8 +564,7 @@ function Sidebar() {
                   </button>
                   {isReportOpen && (
                     <div className="ml-2 flex flex-col space-y-1">
-                      <hr className="border-t border-blue-800 mt-1" />
-                      <SidebarLink
+                            <SidebarLink
                         to="/documentReport"
                         icon={DocumentTextIcon}
                         text="Document Report"
@@ -601,7 +584,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleOCRToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <AiOutlineFileSearch className="h-5 w-5 mr-3" />O C R
@@ -614,8 +597,7 @@ function Sidebar() {
                 </button>
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/brAdminOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
@@ -627,7 +609,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleArchiveToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <RiArchiveStackFill className="h-5 w-5 mr-3" />
@@ -641,8 +623,7 @@ function Sidebar() {
                 </button>
                 {isArchiveOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
                       text="Data Archive Download"
@@ -674,7 +655,6 @@ function Sidebar() {
                 text="Pending Users"
                 count={counts.nullRoleEmployeeCountForDepartment}
               />
-              <hr className="border-t border-blue-800 mt-1" />
               <SidebarLink
                 to="/idcard"
                 icon={IdentificationIcon}
@@ -684,7 +664,7 @@ function Sidebar() {
                 {/* Document section */}
                 <button
                   onClick={handleDocumentToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <DocumentTextIcon className="h-5 w-5 mr-3" />
@@ -698,8 +678,7 @@ function Sidebar() {
                 </button>
                 {isDocumentOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/approve-documents"
                       icon={IoDocumentLock}
                       text="Pending Approvals"
@@ -732,7 +711,7 @@ function Sidebar() {
                 <div>
                   <button
                     onClick={handleReportToggle}
-                    className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                    className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                   >
                     <div className="flex items-center">
                       <DocumentChartBarIcon className="h-5 w-5 mr-3" />
@@ -746,8 +725,7 @@ function Sidebar() {
                   </button>
                   {isReportOpen && (
                     <div className="ml-2 flex flex-col space-y-1">
-                      <hr className="border-t border-blue-800 mt-1" />
-                      <SidebarLink
+                            <SidebarLink
                         to="/documentReport"
                         icon={DocumentTextIcon}
                         text="Document Report"
@@ -767,7 +745,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleOCRToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <AiOutlineFileSearch className="h-5 w-5 mr-3" />O C R
@@ -780,8 +758,7 @@ function Sidebar() {
                 </button>
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/dpAdminOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
@@ -793,7 +770,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleArchiveToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <RiArchiveStackFill className="h-5 w-5 mr-3" />
@@ -807,8 +784,7 @@ function Sidebar() {
                 </button>
                 {isArchiveOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
                       text="Data Archive Download"
@@ -873,7 +849,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleReportToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <DocumentChartBarIcon className="h-5 w-5 mr-3" />
@@ -887,8 +863,7 @@ function Sidebar() {
                 </button>
                 {isReportOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
@@ -900,7 +875,7 @@ function Sidebar() {
               <div>
                 <button
                   onClick={handleOCRToggle}
-                  className="w-full px-3 py-1 rounded-lg text-xs font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
+                  className="w-full px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between text-white hover:bg-blue-950 hover:text-white"
                 >
                   <div className="flex items-center">
                     <AiOutlineFileSearch className="h-5 w-5 mr-3" />O C R
@@ -913,8 +888,7 @@ function Sidebar() {
                 </button>
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                    <hr className="border-t border-blue-800 mt-1" />
-                    <SidebarLink
+                        <SidebarLink
                       to="/userOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
@@ -925,7 +899,6 @@ function Sidebar() {
             </>
           )}
 
-          <hr className="border-t border-blue-800" />
         </nav>
       </div>
     </div>
