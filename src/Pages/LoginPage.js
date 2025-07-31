@@ -370,6 +370,7 @@ const LoginPage = () => {
       });
 
       if (response.status === 200) {
+        setForgotOtpDigits(Array(6).fill(""));
         setCurrentView("reset-password");
         showAlert("OTP verified successfully. You can now reset your password.", "success");
       }
@@ -382,57 +383,74 @@ const LoginPage = () => {
     }
   };
 
-  const resetPassword = async () => {
-    if (!forgotPasswordData.newPassword || !forgotPasswordData.confirmPassword) {
-      showAlert("Please fill in both password fields.");
-      return;
+const resetPassword = async () => {
+  const { newPassword, confirmPassword, identifier, otp } = forgotPasswordData;
+
+  // Basic field checks
+  if (!newPassword || !confirmPassword) {
+    showAlert("Please fill in both password fields.");
+    return;
+  }
+
+  // Password length check
+  if (newPassword.length < 8) {
+    showAlert("Password must be at least 8 characters long.");
+    return;
+  }
+
+  // Password match check
+  if (newPassword !== confirmPassword) {
+    showAlert("Passwords do not match.");
+    return;
+  }
+
+  // Expired session check
+  if (otpTimer === 0) {
+    showAlert("OTP has expired. Please start the process again.");
+    return;
+  }
+
+  setIsButtonDisabled(true);
+
+  try {
+    const response = await axios.post(`${RESET_PASS_API}`, {
+      identifier,
+      otp,
+      newPassword,
+      confirmPassword,
+    });
+
+    if (response.status === 200) {
+      showAlert("Password reset successfully. You can now login with your new password.", "success");
+      setTimeout(() => {
+        resetToLogin();
+      }, 2000);
     }
+  } catch (error) {
+    showAlert(
+      error.response?.data?.message || "Failed to reset password. Please try again."
+    );
+  } finally {
+    setIsButtonDisabled(false);
+  }
+};
 
-    if (forgotPasswordData.newPassword !== forgotPasswordData.confirmPassword) {
-      showAlert("Passwords do not match.");
-      return;
-    }
 
-    if (forgotPasswordData.newPassword.length < 6) {
-      showAlert("Password must be at least 6 characters long.");
-      return;
-    }
-
-    if (otpTimer === 0) {
-      showAlert("OTP has expired. Please start the process again.");
-      return;
-    }
-
-    setIsButtonDisabled(true);
-
-    try {
-      const response = await axios.post(`${RESET_PASS_API}`, {
-        identifier: forgotPasswordData.identifier,
-        otp: forgotPasswordData.otp,
-        newPassword: forgotPasswordData.newPassword,
-        confirmPassword: forgotPasswordData.confirmPassword,
-      });
-
-      if (response.status === 200) {
-        showAlert("Password reset successfully. You can now login with your new password.", "success");
-        setTimeout(() => {
-          resetToLogin();
-        }, 2000);
-      }
-    } catch (error) {
-      showAlert(
-        error.response?.data?.message || "Failed to reset password. Please try again."
-      );
-    } finally {
-      setIsButtonDisabled(false);
-    }
+  const clearOtpFields = () => {
+    setOtpDigits(Array(6).fill(""));
   };
+
+  const clearForgotOtpFields = () => {
+    setForgotOtpDigits(Array(6).fill(""));
+  };
+
 
   const resendForgotPasswordOtp = async () => {
     if (!canResendOtp) return;
 
     setIsButtonDisabled(true);
     try {
+      clearForgotOtpFields();
       const response = await axios.post(`${FORGATE_PASS_API}`, {
         identifier: forgotPasswordData.identifier,
       });
@@ -497,6 +515,7 @@ const LoginPage = () => {
 
     setIsButtonDisabled(true);
     try {
+      clearOtpFields();
       const response = await axios.post(LOGIN_API, {
         email: formData.username,
         password: formData.password,
@@ -518,6 +537,7 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
+    const otp = otpDigits.join("").trim();
     if (otpTimer === 0) {
       showAlert("OTP has expired. Please request a new one by clicking resend.");
       return;
@@ -528,8 +548,8 @@ const LoginPage = () => {
       return;
     }
 
-    if (otp.length < 4) {
-      showAlert("Please enter a valid OTP.");
+    if (otp.length < 6) {
+      showAlert("Please enter a valid 6-digit OTP.");
       return;
     }
 
@@ -542,6 +562,7 @@ const LoginPage = () => {
       });
 
       if (response.status === 200) {
+        setOtpDigits(Array(6).fill(""));
         const { token, roles, name, id } = response.data;
 
         const decodedToken = jwtDecode(token);
@@ -563,11 +584,12 @@ const LoginPage = () => {
         }
       }
     } catch (error) {
-      showAlert(error.response?.data?.message || "Invalid OTP.");
+      showAlert(error.response?.data?.message || "Invalid OTP. Please try again.");
     } finally {
       setIsButtonDisabled(false);
     }
   };
+
 
   const getViewTitle = () => {
     switch (currentView) {
@@ -1042,7 +1064,7 @@ const LoginPage = () => {
 
               {forgotPasswordData.newPassword && (
                 <div className="text-xs text-gray-600 space-y-1">
-                  <p className={forgotPasswordData.newPassword.length >= 6 ? "text-green-600" : "text-red-600"}>
+                  <p className={forgotPasswordData.newPassword.length >= 8 ? "text-green-600" : "text-red-600"}>
                     • At least 8 characters
                   </p>
                   {forgotPasswordData.confirmPassword && (
