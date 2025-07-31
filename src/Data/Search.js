@@ -83,6 +83,24 @@ const Search = () => {
     }
   }, [searchCriteria.branch]);
 
+
+  useEffect(() => {
+  const handleGlobalKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearch();
+    }
+  };
+
+  // Add event listener to the document
+  document.addEventListener('keydown', handleGlobalKeyDown);
+
+  // Cleanup function
+  return () => {
+    document.removeEventListener('keydown', handleGlobalKeyDown);
+  };
+}, [searchCriteria]); 
+
   const fetchUserDetails = async () => {
     setIsLoading(true);
 

@@ -24,8 +24,8 @@ const RetentionPolicy = () => {
 
   const [formData, setFormData] = useState({
     description: "",
-    retentionPeriodValue: 30,
-    retentionPeriodUnit: "DAYS",
+    retentionDate: "",
+    retentionTime: "",
     isActive: true,
     policyType: "FILE_RETENTION",
     departmentId: "",
@@ -92,7 +92,7 @@ const RetentionPolicy = () => {
   };
 
   // Modified fetchPolicies to set names immediately if data is available
-  const fetchPolicies = async () => {
+ const fetchPolicies = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
       const response = await axios.get(`${API_HOST}/retention-policy/findAll`, {
@@ -106,15 +106,14 @@ const RetentionPolicy = () => {
       const normalizedPolicies = policiesData.map((policy) => ({
         ...policy,
         isActive: policy.isActive === true || policy.isActive === 1,
-        retentionPeriodValue: policy.retentionPeriodValue || policy.retentionPeriodDays,
-        retentionPeriodUnit: policy.retentionPeriodUnit || "DAYS",
+        retentionDate: policy.retentionDate,
+        retentionTime: policy.retentionTime,
         createdOn: Array.isArray(policy.createdOn)
           ? convertArrayToDate(policy.createdOn)
           : policy.createdOn,
         updatedOn: Array.isArray(policy.updatedOn)
           ? convertArrayToDate(policy.updatedOn)
           : policy.updatedOn,
-        // Set names immediately if branches/departments are already loaded
         branchName: branches.length ? getBranchNameById(policy.branchId) : "",
         departmentName: allDepartments.length ? getDepartmentNameById(policy.departmentId) : "",
       }));
@@ -125,6 +124,23 @@ const RetentionPolicy = () => {
       showPopup("Failed to fetch retention policies", "error");
     }
   };
+
+  const formatDateTime = (dateArray, timeArray) => {
+    if (!dateArray || !timeArray) return "Invalid Date";
+
+    const [year, month, day] = dateArray;
+    const [hour = 0, minute = 0] = timeArray;
+
+    const date = new Date(year, month - 1, day, hour, minute);
+    return date.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
 
   const convertArrayToDate = (dateArray) => {
     if (!Array.isArray(dateArray) || dateArray.length < 6) return null
@@ -208,147 +224,138 @@ const RetentionPolicy = () => {
   }
 
   const handleAddPolicy = async () => {
-    // Validation
     if (!formData.branchId) {
-      showPopup("Please select a branch", "warning")
-      return
+      showPopup("Please select a branch", "warning");
+      return;
+    }
+    if (!formData.retentionDate) {
+      showPopup("Please select a retention date", "warning");
+      return;
     }
 
     try {
       const newPolicy = {
         policyType: formData.policyType,
         description: formData.description,
-        retentionPeriodValue: Number(formData.retentionPeriodValue),
-        retentionPeriodUnit: formData.retentionPeriodUnit,
+        retentionDate: formData.retentionDate,
+        retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:00", // ✅ updated here
         isActive: formData.isActive,
         departmentId: formData.departmentId || null,
         branchId: formData.branchId,
-      }
+      };
 
-      const token = localStorage.getItem("tokenKey")
-      const response = await axios.post(`${API_HOST}/retention-policy`, newPolicy, {
+
+      const token = localStorage.getItem("tokenKey");
+      await axios.post(`${API_HOST}/retention-policy`, newPolicy, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      })
+      });
 
-      // Refetch all policies to ensure we get the most up-to-date data
-      await fetchPolicies()
-
-      resetForm()
-      showPopup("Policy created successfully!", "success")
+      await fetchPolicies();
+      resetForm();
+      showPopup("Policy created successfully!", "success");
     } catch (error) {
-      console.error("Error creating policy:", error)
-      showPopup("Failed to create policy", "error")
+      console.error("Error creating policy:", error);
+      showPopup("Failed to create policy", "error");
     }
-  }
+  };
 
   const handleEditPolicy = async (policyId) => {
-    const policyToEdit = policies.find((policy) => policy.id === policyId)
-
+    const policyToEdit = policies.find((policy) => policy.id === policyId);
     if (policyToEdit) {
-      setEditId(policyId)
-
-      // Set form data with the policy values
+      setEditId(policyId);
       setFormData({
         description: policyToEdit.description || "",
-        retentionPeriodValue: policyToEdit.retentionPeriodValue || policyToEdit.retentionPeriodDays || 30,
-        retentionPeriodUnit: policyToEdit.retentionPeriodUnit || "DAYS",
+        retentionDate: policyToEdit.retentionDate || "",
+        retentionTime: policyToEdit.retentionTime || "",
         isActive: policyToEdit.isActive,
         policyType: policyToEdit.policyType || "FILE_RETENTION",
         departmentId: policyToEdit.departmentId || "",
         branchId: policyToEdit.branchId || "",
         id: policyToEdit.id,
-      })
-
-      // Set the selected branch and fetch its departments
+      });
       if (policyToEdit.branchId) {
-        setSelectedBranch(policyToEdit.branchId)
-        await fetchDepartments(policyToEdit.branchId)
+        setSelectedBranch(policyToEdit.branchId);
+        await fetchDepartments(policyToEdit.branchId);
       } else {
-        setDepartments([])
+        setDepartments([]);
       }
-
-      setIsEditing(true)
+      setIsEditing(true);
     }
-  }
+  };
 
   const handleSaveEdit = async () => {
-    if (!formData.policyType || editId === null || !formData.retentionPeriodValue || !formData.branchId) {
-      showPopup("Please fill in required fields", "warning")
-      return
+    if (!formData.policyType || editId === null || !formData.retentionDate || !formData.branchId) {
+      showPopup("Please fill in required fields", "warning");
+      return;
     }
 
     try {
-      const policyIndex = policies.findIndex((policy) => policy.id === editId)
+      const policyIndex = policies.findIndex((policy) => policy.id === editId);
       if (policyIndex === -1) {
-        showPopup("Policy not found!", "error")
-        return
+        showPopup("Policy not found!", "error");
+        return;
       }
 
       const updatedPolicy = {
         ...policies[policyIndex],
         policyType: formData.policyType,
         description: formData.description,
-        retentionPeriodValue: Number.parseInt(formData.retentionPeriodValue),
-        retentionPeriodUnit: formData.retentionPeriodUnit,
-        retentionPeriodDays:
-          formData.retentionPeriodUnit === "DAYS"
-            ? Number.parseInt(formData.retentionPeriodValue)
-            : calculateDaysEquivalent(formData.retentionPeriodValue, formData.retentionPeriodUnit),
+        retentionDate: formData.retentionDate,
+        retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:00", // ✅ updated here
         isActive: formData.isActive ? 1 : 0,
         departmentId: formData.departmentId || null,
         branchId: formData.branchId,
         updatedOn: new Date().toISOString(),
-      }
+      };
+
 
       await axios.put(`${API_HOST}/retention-policy/${updatedPolicy.id}`, updatedPolicy, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
           "Content-Type": "application/json",
         },
-      })
+      });
 
-      // Refetch all policies to ensure we get the correct data and display names
-      await fetchPolicies()
-
-      resetForm()
-      showPopup("Retention policy updated successfully!", "success")
+      await fetchPolicies();
+      resetForm();
+      showPopup("Retention policy updated successfully!", "success");
     } catch (error) {
-      console.error("Error updating policy:", error)
-      showPopup("Failed to update the retention policy", "error")
+      console.error("Error updating policy:", error);
+      showPopup("Failed to update the retention policy", "error");
     }
-  }
+  };
 
   const resetForm = () => {
     setFormData({
       description: "",
-      retentionPeriodValue: 30,
-      retentionPeriodUnit: "DAYS",
+      retentionDate: "",
+      retentionTime: "",
       isActive: true,
       policyType: "FILE_RETENTION",
       departmentId: "",
       branchId: "",
-    })
-    setEditId(null)
-    setIsEditing(false)
-    setSelectedBranch("")
-    setDepartments([])
-  }
+    });
+    setEditId(null);
+    setIsEditing(false);
+    setSelectedBranch("");
+    setDepartments([]);
+  };
 
   const handleToggleActiveStatus = (policy) => {
-    setPolicyToToggle(policy)
-    setModalVisible(true)
-  }
+    setPolicyToToggle(policy);
+    setModalVisible(true);
+  };
 
   const confirmToggleActiveStatus = async () => {
     if (policyToToggle) {
       try {
-        const newActiveStatus = !policyToToggle.isActive
-        const statusUpdateData = { isActive: newActiveStatus }
+        const newActiveStatus = !policyToToggle.isActive;
+        const statusUpdateData = { isActive: newActiveStatus };
 
-        const token = localStorage.getItem("tokenKey")
+        const token = localStorage.getItem("tokenKey");
         await axios.put(
           `${API_HOST}/retention-policy/updatestatus/${policyToToggle.id}`,
           statusUpdateData,
@@ -358,24 +365,23 @@ const RetentionPolicy = () => {
               Authorization: `Bearer ${token}`,
             },
           },
-        )
+        );
 
-        // Refetch policies to get updated data
-        await fetchPolicies()
+        await fetchPolicies();
+        setModalVisible(false);
+        setPolicyToToggle(null);
 
-        setModalVisible(false)
-        setPolicyToToggle(null)
-
-        const statusText = newActiveStatus ? "activated" : "deactivated"
-        showPopup(`Policy ${statusText} successfully!`, "success")
+        const statusText = newActiveStatus ? "activated" : "deactivated";
+        showPopup(`Policy ${statusText} successfully!`, "success");
       } catch (error) {
-        console.error("Error toggling policy status:", error)
-        showPopup("Failed to change the status", "error")
-        setModalVisible(false)
-        setPolicyToToggle(null)
+        console.error("Error toggling policy status:", error);
+        showPopup("Failed to change the status", "error");
+        setModalVisible(false);
+        setPolicyToToggle(null);
       }
     }
-  }
+  }; 
+
 
   const showPopup = (message, type = "info") => {
     setPopupMessage({
@@ -403,21 +409,28 @@ const RetentionPolicy = () => {
   }
 
   const formatRetentionPeriod = (policy) => {
-    const value = policy.retentionPeriodValue || policy.retentionPeriodDays
-    const unit = policy.retentionPeriodUnit || "DAYS"
+    if (!policy.retentionDate) return "Not set";
 
-    switch (unit) {
-      case "MINUTES":
-        return `${value} minute${value !== 1 ? "s" : ""}`
-      case "HOURS":
-        return `${value} hour${value !== 1 ? "s" : ""}`
-      case "MONTHS":
-        return `${value} month${value !== 1 ? "s" : ""}`
-      case "DAYS":
-      default:
-        return `${value} day${value !== 1 ? "s" : ""}`
+    const date = new Date(policy.retentionDate);
+    const formattedDate = date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    if (!policy.retentionTime) {
+      return formattedDate;
     }
-  }
+
+    const time = policy.retentionTime.length === 5 ? policy.retentionTime : `0${policy.retentionTime}`;
+    const formattedTime = new Date(`1970-01-01T${time}`).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    return `${formattedDate} at ${formattedTime}`;
+  };
 
   // Enhanced filtered policies with better name handling
   const filteredPolicies = policies.filter((policy) => {
@@ -476,31 +489,28 @@ const RetentionPolicy = () => {
               </select>
             </label>
 
-            <div className="block text-md font-medium text-gray-700">
-              <label>Retention Period <span className="text-red-500">*</span></label>
-              <div className="flex mt-1 gap-2">
-                <input
-                  type="number"
-                  placeholder="Value"
-                  name="retentionPeriodValue"
-                  value={formData.retentionPeriodValue}
-                  onChange={handleInputChange}
-                  className="block w-2/3 p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  min="1"
-                />
-                <select
-                  name="retentionPeriodUnit"
-                  value={formData.retentionPeriodUnit}
-                  onChange={handleInputChange}
-                  className="block w-1/3 p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="MINUTES">Minutes</option>
-                  <option value="HOURS">Hours</option>
-                  <option value="DAYS">Days</option>
-                  {/* <option value="MONTHS">Months</option> */}
-                </select>
-              </div>
-            </div>
+            <label className="block text-md font-medium text-gray-700">
+              Retention Date <span className="text-red-500">*</span>
+              <input
+                type="date"
+                name="retentionDate"
+                value={formData.retentionDate || ''}
+                onChange={handleInputChange}
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </label>
+
+            <label className="block text-md font-medium text-gray-700">
+              Retention Time
+              <input
+                type="time"
+                name="retentionTime"
+                value={formData.retentionTime || ''}
+                onChange={handleInputChange}
+                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
 
             <label className="block text-md font-medium text-gray-700">
               Branch <span className="text-red-500">*</span>
@@ -647,7 +657,10 @@ const RetentionPolicy = () => {
                       {policy.policyType === "FILE_RETENTION" ? "File Retention" : "Data Retention"}
                     </span>
                   </td>
-                  <td className="border p-2">{formatRetentionPeriod(policy)}</td>
+                  <td className="px-4 py-2 text-center text-gray-700">
+                    {formatDateTime(policy.retentionDate, policy.retentionTime)}
+                  </td>
+
                   <td className="border p-2">{policy.branchName || getBranchNameById(policy.branchId)}</td>
                   <td className="border p-2">{policy.departmentName || getDepartmentNameById(policy.departmentId)}</td>
                   <td className="border p-2">{policy.description || "-"}</td>

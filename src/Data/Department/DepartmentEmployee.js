@@ -324,7 +324,7 @@ const DepartmentEmployee = () => {
     };
 
     const confirmToggleActive = async () => {
-         setIsConfirmDisabled(true);
+        setIsConfirmDisabled(true);
 
         try {
             const newStatus = !employeeToToggle.active; // Toggle between true and false
@@ -378,7 +378,7 @@ const DepartmentEmployee = () => {
             // Ensure modal is closed and state is cleared even if there was an error
             setModalVisible(false);
             setEmployeeToToggle(null);
-             setIsConfirmDisabled(false);
+            setIsConfirmDisabled(false);
         }
     };
 
@@ -461,7 +461,7 @@ const DepartmentEmployee = () => {
 
     if (isLoading) {
         return <LoadingComponent />;
-      }
+    }
 
 
 
@@ -506,7 +506,7 @@ const DepartmentEmployee = () => {
                             />
                         </label>
 
-                        {/* Phone Input */}
+
                         {/* Phone Input */}
                         <label className="block text-md font-medium text-gray-700">
                             Phone
@@ -682,8 +682,8 @@ const DepartmentEmployee = () => {
                     {/* Previous Button */}
                     <button
                         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                        disabled={currentPage === 1 || totalPages === 0}
+                        className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
                             }`}
                     >
                         <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
@@ -747,7 +747,7 @@ const DepartmentEmployee = () => {
                             >
                                 Cancel
                             </button>
-                           <button
+                            <button
                                 onClick={confirmToggleActive}
                                 disabled={isConfirmDisabled}
                                 className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''

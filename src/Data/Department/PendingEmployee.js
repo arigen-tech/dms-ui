@@ -84,15 +84,15 @@ const EmployeeRole = () => {
       setUsers(response.data);
     } catch (error) {
       showPopup("Error fetching users. Please try again.", "error");
-    }finally{
-    setIsLoading(false);
+    } finally {
+      setIsLoading(false);
 
     }
   };
 
   const fetchEmployees = async () => {
     try {
-    setIsLoading(true);
+      setIsLoading(true);
 
       const userId = localStorage.getItem("userId");
       const userResponse = await axios.get(
@@ -106,8 +106,8 @@ const EmployeeRole = () => {
       setCurrRoleCode(userResponse.data.role.roleCode);
     } catch (error) {
       showPopup("Error fetching employee details.", "error");
-    }finally{
-    setIsLoading(false);
+    } finally {
+      setIsLoading(false);
 
     }
   };
@@ -133,8 +133,8 @@ const EmployeeRole = () => {
       setRoles(filteredRoles);
     } catch (error) {
       showPopup("Error fetching roles. Please try again.", "error");
-    }finally{
-    setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -348,8 +348,8 @@ const EmployeeRole = () => {
           {/* Previous Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+            disabled={currentPage === 1 || totalPages === 0}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
               }`}
           >
             <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
@@ -374,8 +374,8 @@ const EmployeeRole = () => {
           {/* Next Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+            disabled={currentPage === 1 || totalPages === 0}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
               }`}
           >
             Next

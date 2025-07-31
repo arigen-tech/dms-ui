@@ -119,6 +119,8 @@ export const Notification = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [clearingAll, setClearingAll] = useState(false);
+
   const navigate = useNavigate()
 
   const tokenKey = localStorage.getItem("tokenKey")
@@ -250,9 +252,34 @@ export const Notification = () => {
 
   const filteredNotifications = filter === "all" ? notifications : notifications.filter((n) => n.type === filter)
 
-  const clearAllNotifications = () => {
-    setNotifications([])
-  }
+  const clearAllNotifications = async () => {
+    if (notifications.length === 0) return;
+
+    setClearingAll(true);
+    try {
+      // Mark all current notifications as read on the server
+      const markAsReadPromises = notifications.map(notification =>
+        axios.put(`${API_HOST}/notifications/${notification.id}/read`, null, {
+          headers: { Authorization: `Bearer ${tokenKey}` },
+        })
+      );
+
+      // Wait for all notifications to be marked as read
+      await Promise.all(markAsReadPromises);
+
+      // Clear the local state
+      setNotifications([]);
+
+      console.log("All notifications cleared successfully");
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+      setError("Failed to clear all notifications");
+    } finally {
+      setClearingAll(false);
+    }
+  };
+
+
 
   const getNavigationButton = (notification) => {
     switch (notification.type) {

@@ -651,113 +651,103 @@ const ArchiveDownload = () => {
   }
 
   const handleStoreArchive = async () => {
-    const validationErrors = validateInputs()
+    const validationErrors = validateInputs();
     if (validationErrors.length > 0) {
-      showPopup(`\n${validationErrors.join("\n")}`, "warning")
-      return
+      showPopup(`\n${validationErrors.join("\n")}`, "warning");
+      return;
     }
 
-    setIsLoading(true)
-    setShowProgress(true)
-    setProgressType("store")
-    setStoreProgress(0)
-    setProgressMessage("Preparing to Archive...")
+    setIsLoading(true);
+    setShowProgress(true);
+    setProgressType("store");
+    setStoreProgress(0);
+    setProgressMessage("Preparing to Archive...");
 
     let progressInterval;
 
     try {
-      const token = localStorage.getItem("tokenKey")
-      const params = new URLSearchParams()
+      const token = localStorage.getItem("tokenKey");
+      const params = new URLSearchParams();
 
-      // Check if all branches selected
-      const isAllBranches = archiveCriteria.branchId === "all"
-
+      const isAllBranches = archiveCriteria.branchId === "all";
       if (isAllBranches) {
-        params.append("allDataRequest", "true")
+        params.append("allDataRequest", "true");
       } else if (archiveCriteria.branchId) {
-        params.append("branchId", archiveCriteria.branchId)
+        params.append("branchId", archiveCriteria.branchId);
       }
 
       if (userRole) {
-        params.append("userRole", userRole)
+        params.append("userRole", userRole);
       }
 
       if (archiveCriteria.departmentId && archiveCriteria.departmentId !== "all") {
-        params.append("departmentId", archiveCriteria.departmentId)
+        params.append("departmentId", archiveCriteria.departmentId);
       }
 
       if (fromDate) {
-        const formattedFromDate = fromDate.toISOString().split("T")[0]
-        params.append("fromDate", formattedFromDate)
+        params.append("fromDate", fromDate.toISOString().split("T")[0]);
       }
-
       if (toDate) {
-        const formattedToDate = toDate.toISOString().split("T")[0]
-        params.append("toDate", formattedToDate)
+        params.append("toDate", toDate.toISOString().split("T")[0]);
       }
 
-      // Only add file types if they are selected
       if (selectedFileTypes.length > 0) {
         selectedFileTypes.forEach((fileType) => {
-          params.append("fileTypes", fileType)
-        })
+          params.append("fileTypes", fileType);
+        });
       }
 
-      // Start progress simulation
       progressInterval = setInterval(() => {
         setStoreProgress((prev) => {
           if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
+            clearInterval(progressInterval);
+            return 90;
           }
-          return prev + Math.random() * 12
-        })
-      }, 250)
+          return prev + Math.random() * 12;
+        });
+      }, 250);
 
-      setProgressMessage("Storing archive to server...")
+      setProgressMessage("Storing archive to server...");
 
       const response = await axios.post(`${API_HOST}/archive/store`, params, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
-      })
+      });
 
-      // Clear interval and complete progress
-      if (progressInterval) {
-        clearInterval(progressInterval)
-      }
-      setStoreProgress(100)
-      setProgressMessage("Data Archived Successfully!")
+      if (progressInterval) clearInterval(progressInterval);
+      setStoreProgress(100);
+      setProgressMessage("Data Archived Successfully!");
 
       setTimeout(() => {
-        setShowProgress(false)
-        // Reset progress only after hiding the progress bar
-        setStoreProgress(0)
+        setShowProgress(false);
+        setStoreProgress(0);
+
         if (response.data && response.data.success) {
-          if (!response.data.response) {
-            showPopup("No new documents found for archival. All matching files may have already been archived.", "info");
-          } else {
-            showPopup("Data Archived successfully!", "success");
-          }
+          showPopup("Archive created successfully!", "success");
         } else {
           showPopup(response.data?.message || "Failed to archive", "error");
         }
+      }, 1000);
 
-      }, 1000)
     } catch (error) {
-      if (progressInterval) {
-        clearInterval(progressInterval)
+      if (progressInterval) clearInterval(progressInterval);
+      setShowProgress(false);
+      setStoreProgress(0);
+
+      let backendMessage = "Failed to archive";
+      if (error.response && error.response.data && error.response.data.message) {
+        backendMessage = error.response.data.message || "Unexpected error occurred while creating archive.";
       }
-      setShowProgress(false)
-      setStoreProgress(0) // Reset progress on error
-      console.error("Error storing archive:", error)
-      showPopup("Failed to Archive ", "error")
+      showPopup(backendMessage, "error");
+      console.error("Error storing archive:", error);
+
     } finally {
-      setIsLoading(false)
-      // Don't reset progress here - let it reset in the success timeout or error handling
+      setIsLoading(false);
     }
-  }
+  };
+
 
   const showPopup = (message, type = "info") => {
     setPopupMessage({ message, type })
@@ -1211,12 +1201,7 @@ const ArchiveDownload = () => {
       return (
         <div className="bg-white p-6 rounded-xl shadow-md w-full mb-6">
           <div className="flex space-x-1 mb-4">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`px-4 py-2 rounded-lg font-medium ${activeTab === "all" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-            >
-              Filtered Archives ({currentData.length})
-            </button>
+           
           </div>
           <p className="text-gray-500 text-center">
             No archived files match your criteria.<br />

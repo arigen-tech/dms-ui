@@ -32,8 +32,8 @@ const BranchDepartments = () => {
     const [userBranch, setUserBranch] = useState(null);
     const [toggleDepartment, setToggleDepartment] = useState(null);
     const [popupMessage, setPopupMessage] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
 
 
     // Retrieve token from localStorage
@@ -78,7 +78,7 @@ const BranchDepartments = () => {
 
     if (isLoading) {
         return <LoadingComponent />;
-      }
+    }
 
     const fetchDepartments = async () => {
         setIsLoading(true);
@@ -184,7 +184,7 @@ const BranchDepartments = () => {
         setModalVisible(true);
     };
 
-    const confirmToggleActiveStatus = async () => { 
+    const confirmToggleActiveStatus = async () => {
         setIsConfirmDisabled(true);
 
 
@@ -211,7 +211,7 @@ const BranchDepartments = () => {
                 setDepartments(updatedDepartments);
                 setModalVisible(false);
                 setToggleDepartment(null);
-                 setIsConfirmDisabled(false);
+                setIsConfirmDisabled(false);
                 showPopup('Status changed successfully!', "success");
             } catch (error) {
                 console.error('Error toggling department status:', error.response ? error.response.data : error.message);
@@ -389,8 +389,8 @@ const BranchDepartments = () => {
                                 <td className="border p-2">{formatDate(department.updatedOn)}</td>
                                 <td className="border p-2">{department.isActive === 1 ? 'Active' : 'Inactive'}</td>
                                 <td className="border p-2">
-                                    <button onClick={() => handleEditDepartment(department.id)}disabled={department.isActive === 0}
-    className={`${department.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <button onClick={() => handleEditDepartment(department.id)} disabled={department.isActive === 0}
+                                        className={`${department.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                         <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                                     </button>
                                 </td>
@@ -415,8 +415,8 @@ const BranchDepartments = () => {
                     {/* Previous Button */}
                     <button
                         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                        disabled={currentPage === 1 || totalPages === 0}
+                        className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
                             }`}
                     >
                         <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
@@ -471,7 +471,7 @@ const BranchDepartments = () => {
                             >
                                 Cancel
                             </button>
-                           <button
+                            <button
                                 onClick={confirmToggleActiveStatus}
                                 disabled={isConfirmDisabled}
                                 className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''

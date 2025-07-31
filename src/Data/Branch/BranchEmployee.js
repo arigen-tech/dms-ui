@@ -46,7 +46,7 @@ const BranchEmployee = () => {
 
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [showPopup, setShowPopup] = useState(false);
     const [popupConfig, setPopupConfig] = useState({
@@ -116,9 +116,9 @@ const BranchEmployee = () => {
     };
 
 
-  if (isLoading) {
-    return <LoadingComponent />;
-  }
+    if (isLoading) {
+        return <LoadingComponent />;
+    }
 
     const fetchDepartments = async () => {
         setIsLoading(true);
@@ -755,8 +755,8 @@ const BranchEmployee = () => {
                             {/* Previous Button */}
                             <button
                                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                disabled={currentPage === 1}
-                                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                                disabled={currentPage === 1 || totalPages === 0}
+                                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
                                     }`}
                             >
                                 <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
