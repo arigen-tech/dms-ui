@@ -211,7 +211,7 @@ const ArchiveDownload = () => {
       const token = localStorage.getItem("tokenKey");
       const response = await axios.post(
         `${API_HOST}/retention-policy/run-check`,
-        {}, 
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1201,7 +1201,7 @@ const ArchiveDownload = () => {
       return (
         <div className="bg-white p-6 rounded-xl shadow-md w-full mb-6">
           <div className="flex space-x-1 mb-4">
-           
+
           </div>
           <p className="text-gray-500 text-center">
             No archived files match your criteria.<br />
@@ -1314,19 +1314,21 @@ const ArchiveDownload = () => {
               {/* Previous Button */}
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                  }`}
               >
                 <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
                 Previous
               </button>
 
               {/* Page Number Buttons */}
-              {getPageNumbers(totalPages, currentPage).map((page) => (
+              {totalPages > 0 && getPageNumbers().map((page) => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"}`}
+                  className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                    }`}
                 >
                   {page}
                 </button>
@@ -1338,15 +1340,16 @@ const ArchiveDownload = () => {
               {/* Next Button */}
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                  }`}
               >
                 Next
                 <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
               </button>
               <div className="ml-4">
                 <span className="text-sm text-gray-700">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
                   {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
                   {totalItems} entries
                 </span>

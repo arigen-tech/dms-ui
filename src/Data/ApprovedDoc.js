@@ -201,7 +201,7 @@ const ApprovedDoc = () => {
 
   const openFile = async (file) => {
     try {
-      setIsOpeningFile(true); 
+      setIsOpeningFile(true);
       if (!file) {
         throw new Error("File object is undefined.");
       }
@@ -244,8 +244,8 @@ const ApprovedDoc = () => {
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to fetch or preview the file.");
-    }finally {
-      setIsOpeningFile(false); 
+    } finally {
+      setIsOpeningFile(false);
     }
   };
 
@@ -768,19 +768,19 @@ const ApprovedDoc = () => {
                                   </div>
                                   <div className="text-right">
                                     <button
-                                        onClick={() => {
-                                          setSelectedDocFiles(file);
-                                          openFile(file);
-                                        }}
-                                        disabled={isOpeningFile}
-                                        className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
-                                          ${isOpeningFile 
-                                            ? 'opacity-50 cursor-not-allowed' 
-                                            : 'hover:bg-indigo-600'
-                                          }`}
-                                      >
-                                        {isOpeningFile ? 'Opening...' : 'Open'}
-                                      </button>
+                                      onClick={() => {
+                                        setSelectedDocFiles(file);
+                                        openFile(file);
+                                      }}
+                                      disabled={isOpeningFile}
+                                      className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
+                                          ${isOpeningFile
+                                          ? 'opacity-50 cursor-not-allowed'
+                                          : 'hover:bg-indigo-600'
+                                        }`}
+                                    >
+                                      {isOpeningFile ? 'Opening...' : 'Open'}
+                                    </button>
                                   </div>
                                 </li>
                               ))}
@@ -798,12 +798,13 @@ const ApprovedDoc = () => {
               </div>
             )}
           </>
+          {/* Pagination Controls */}
           <div className="flex items-center mt-4">
             {/* Previous Button */}
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1|| totalPages === 0}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1|| totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              disabled={currentPage === 1 || totalPages === 0}
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
                 }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
@@ -811,7 +812,7 @@ const ApprovedDoc = () => {
             </button>
 
             {/* Page Number Buttons */}
-            {getPageNumbers().map((page) => (
+            {totalPages > 0 && getPageNumbers().map((page) => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
@@ -828,8 +829,8 @@ const ApprovedDoc = () => {
             {/* Next Button */}
             <button
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              disabled={currentPage === totalPages || totalPages === 0}
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
                 }`}
             >
               Next
@@ -837,7 +838,7 @@ const ApprovedDoc = () => {
             </button>
             <div className="ml-4">
               <span className="text-sm text-gray-700">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
                 {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
                 {totalItems} entries
               </span>

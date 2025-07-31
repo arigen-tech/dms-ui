@@ -488,7 +488,7 @@ const AdminOCR = () => {
         </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination Controls */}
         <div className="flex items-center mt-4">
           {/* Previous Button */}
           <button
@@ -502,7 +502,7 @@ const AdminOCR = () => {
           </button>
 
           {/* Page Number Buttons */}
-          {getPageNumbers().map((page) => (
+          {totalPages > 0 && getPageNumbers().map((page) => (
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
@@ -519,8 +519,8 @@ const AdminOCR = () => {
           {/* Next Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+            disabled={currentPage === totalPages || totalPages === 0}
+            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
               }`}
           >
             Next
@@ -528,7 +528,7 @@ const AdminOCR = () => {
           </button>
           <div className="ml-4">
             <span className="text-sm text-gray-700">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
               {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
               {totalItems} entries
             </span>
