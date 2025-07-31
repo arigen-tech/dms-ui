@@ -199,6 +199,11 @@ const ChangePasswordPage = () => {
       setPhoto(URL.createObjectURL(file));
     }
   };
+const handleNameChange = (e) => {
+  const value = e.target.value;
+  const onlyLetters = value.replace(/[^A-Za-z\s]/g, ""); 
+  setEmployee((prev) => ({ ...prev, name: onlyLetters }));
+};
 
   const handleFileUpload = async () => {
     if (!selectedFile) {
@@ -573,14 +578,17 @@ const ChangePasswordPage = () => {
                   Name
                 </label>
                 <input
-                  type="text"
-                  name="name"
-                  defaultValue={employee?.name}
-                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                  maxLength={25}
-                  minLength={3}
-                />
+  type="text"
+  name="name"
+  value={employee.name}
+  onChange={handleNameChange}
+  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+  required
+  maxLength={25}
+  minLength={3}
+/>
+
+
               </div>
 
               <div className="mb-4">

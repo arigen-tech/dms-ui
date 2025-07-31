@@ -240,7 +240,6 @@ const LoginPage = () => {
     }
   };
 
-  const getFullOtp = () => otpDigits.join("");
 
   useEffect(() => {
     setForgotPasswordData(prev => ({
@@ -370,7 +369,6 @@ const LoginPage = () => {
       });
 
       if (response.status === 200) {
-        setForgotOtpDigits(Array(6).fill(""));
         setCurrentView("reset-password");
         showAlert("OTP verified successfully. You can now reset your password.", "success");
       }
@@ -383,57 +381,58 @@ const LoginPage = () => {
     }
   };
 
-const resetPassword = async () => {
-  const { newPassword, confirmPassword, identifier, otp } = forgotPasswordData;
+  const resetPassword = async () => {
+    const { newPassword, confirmPassword, identifier, otp } = forgotPasswordData;
 
-  // Basic field checks
-  if (!newPassword || !confirmPassword) {
-    showAlert("Please fill in both password fields.");
-    return;
-  }
-
-  // Password length check
-  if (newPassword.length < 8) {
-    showAlert("Password must be at least 8 characters long.");
-    return;
-  }
-
-  // Password match check
-  if (newPassword !== confirmPassword) {
-    showAlert("Passwords do not match.");
-    return;
-  }
-
-  // Expired session check
-  if (otpTimer === 0) {
-    showAlert("OTP has expired. Please start the process again.");
-    return;
-  }
-
-  setIsButtonDisabled(true);
-
-  try {
-    const response = await axios.post(`${RESET_PASS_API}`, {
-      identifier,
-      otp,
-      newPassword,
-      confirmPassword,
-    });
-
-    if (response.status === 200) {
-      showAlert("Password reset successfully. You can now login with your new password.", "success");
-      setTimeout(() => {
-        resetToLogin();
-      }, 2000);
+    // Basic field checks
+    if (!newPassword || !confirmPassword) {
+      showAlert("Please fill in both password fields.");
+      return;
     }
-  } catch (error) {
-    showAlert(
-      error.response?.data?.message || "Failed to reset password. Please try again."
-    );
-  } finally {
-    setIsButtonDisabled(false);
-  }
-};
+
+    // Password length check
+    if (newPassword.length < 8) {
+      showAlert("Password must be at least 8 characters long.");
+      return;
+    }
+
+    // Password match check
+    if (newPassword !== confirmPassword) {
+      showAlert("Passwords do not match.");
+      return;
+    }
+
+    // Expired session check
+    if (otpTimer === 0) {
+      showAlert("OTP has expired. Please start the process again.");
+      return;
+    }
+
+    setIsButtonDisabled(true);
+
+    try {
+      const response = await axios.post(`${RESET_PASS_API}`, {
+        identifier,
+        otp,
+        newPassword,
+        confirmPassword,
+      });
+
+      if (response.status === 200) {
+        showAlert("Password reset successfully. You can now login with your new password.", "success");
+        setForgotOtpDigits(Array(6).fill(""));
+        setTimeout(() => {
+          resetToLogin();
+        }, 2000);
+      }
+    } catch (error) {
+      showAlert(
+        error.response?.data?.message || "Failed to reset password. Please try again."
+      );
+    } finally {
+      setIsButtonDisabled(false);
+    }
+  };
 
 
   const clearOtpFields = () => {
@@ -736,61 +735,67 @@ const resetPassword = async () => {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Captcha
-                </label>
-                <div className="flex items-center space-x-2">
-                  <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
-                    <div className="absolute inset-0">
-                      <svg className="w-full h-full opacity-20">
-                        <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1" />
-                        <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1" />
-                        <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1" />
-                      </svg>
-                    </div>
-                    <div className="relative flex items-center justify-center space-x-1 h-full">
-                      {captcha.map((item, index) => (
-                        <span
-                          key={item.id}
-                          style={{
-                            display: "inline-block",
-                            transform: `rotate(${item.rotation}deg) skew(${item.skew}deg) translateY(${item.offsetY}px)`,
-                            fontSize: `${Math.min(item.fontSize, 16)}px`,
-                            color: item.color,
-                            fontWeight: Math.random() > 0.5 ? 'bold' : 'normal',
-                            fontFamily: Math.random() > 0.5 ? 'serif' : 'sans-serif',
-                            textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
-                          }}
-                          className="mx-1 select-none"
-                        >
-                          {item.character}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRefresh}
-                    className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-                    title="Refresh Captcha"
-                  >
-                    <ArrowPathIcon
-                      className={`w-4 h-4 ${isRotated ? "animate-spin" : ""}`}
-                    />
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  name="captcha"
-                  value={formData.captcha}
-                  onChange={handleInputChange}
-                  onPaste={handleCaptchaPaste}
-                  className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                  placeholder="Enter captcha"
-                  required
-                />
-              </div>
+           <div className="space-y-1">
+  <label className="block text-sm font-medium text-gray-700">Captcha</label>
+
+  <div className="flex items-center space-x-2">
+    {/* CAPTCHA BOX */}
+    <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
+      {/* Noisy Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <svg className="w-full h-full opacity-20">
+          <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1" />
+          <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1" />
+          <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1" />
+        </svg>
+      </div>
+
+      {/* CAPTCHA CHARACTERS */}
+      <div className="relative flex justify-evenly items-center h-full z-10">
+        {captcha.map((item, index) => (
+          <span
+            key={item.id}
+            style={{
+              display: "inline-block",
+              transform: `rotate(${item.rotation}deg) skew(${item.skew}deg) translateY(${item.offsetY}px)`,
+              fontSize: `${Math.min(item.fontSize, 16)}px`,
+              color: item.color,
+              fontWeight: Math.random() > 0.5 ? "bold" : "normal",
+              fontFamily: Math.random() > 0.5 ? "serif" : "sans-serif",
+              textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
+            }}
+            className="select-none"
+          >
+            {item.character}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    {/* REFRESH BUTTON */}
+    <button
+      type="button"
+      onClick={handleRefresh}
+      className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+      title="Refresh Captcha"
+    >
+      <ArrowPathIcon className={`w-4 h-4 ${isRotated ? "animate-spin" : ""}`} />
+    </button>
+  </div>
+
+  {/* CAPTCHA INPUT FIELD */}
+  <input
+    type="text"
+    name="captcha"
+    value={formData.captcha}
+    onChange={handleInputChange}
+    onPaste={handleCaptchaPaste}
+    className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+    placeholder="Enter captcha"
+    required
+  />
+</div>
+
 
               <button
                 type="button"
@@ -899,20 +904,27 @@ const resetPassword = async () => {
                 <label className="block text-sm font-medium text-gray-700">
                   {forgotPasswordData.identifierType === "email" ? "Email Address" : "Mobile Number"}
                 </label>
+
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    {forgotPasswordData.identifierType === "email" ? (
-                      <EnvelopeIcon className="h-4 w-4 text-blue-600" />
-                    ) : (
-                      <DevicePhoneMobileIcon className="h-4 w-4 text-blue-600" />
-                    )}
-                  </div>
+                  {forgotPasswordData.identifierType === "email" ? (
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <EnvelopeIcon className="h-5 w-5 text-blue-500" />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-y-0 left-0 flex items-center">
+                      <span className="inline-flex items-center pl-3 pr-2 h-full rounded-l-md border border-r-0 border-gray-300 bg-gray-100 text-gray-700 text-sm">
+                        +91
+                      </span>
+                    </div>
+                  )}
+
                   <input
                     type={forgotPasswordData.identifierType === "email" ? "email" : "tel"}
                     name="identifier"
                     value={forgotPasswordData.identifier}
                     onChange={handleForgotPasswordChange}
-                    className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                    className={`w-full py-2.5 pr-4 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition-all duration-150 ${forgotPasswordData.identifierType === "email" ? "pl-11" : "pl-16"
+                      }`}
                     placeholder={
                       forgotPasswordData.identifierType === "email"
                         ? "Enter your Gmail address"
@@ -932,9 +944,9 @@ const resetPassword = async () => {
                     }
                     required
                   />
-
                 </div>
               </div>
+
 
               <button
                 type="button"
