@@ -27,7 +27,7 @@ const LoginPage = () => {
     password: "",
     captcha: "",
   });
-
+  const [forgotOtpDigits, setForgotOtpDigits] = useState(Array(6).fill(""));
   const [forgotPasswordData, setForgotPasswordData] = useState({
     identifier: "",
     identifierType: "email",
@@ -44,7 +44,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [isRotated, setIsRotated] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
-
+  const [otpDigits, setOtpDigits] = useState(Array(6).fill(""));
   const [otpTimer, setOtpTimer] = useState(300);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
@@ -197,19 +197,96 @@ const LoginPage = () => {
   };
 
 
-  const handleOtpChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 6) {
-      setOtp(value);
+  const handleOtpChange = (e, index) => {
+    const { value } = e.target;
+    const digits = value.replace(/\D/g, "");
+
+    if (digits.length === 6) {
+      const otpArray = digits.split("").slice(0, 6);
+      setOtpDigits(otpArray);
+      document.getElementById("otp-5").focus();
+      return;
+    }
+
+    if (/^\d?$/.test(value)) {
+      const updatedOtp = [...otpDigits];
+      updatedOtp[index] = value;
+      setOtpDigits(updatedOtp);
+
+      if (value && index < 5) {
+        document.getElementById(`otp-${index + 1}`).focus();
+      }
     }
   };
 
-  const handleForgotOtpChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 6) {
-      setForgotPasswordData(prev => ({ ...prev, otp: value }));
+
+  const handleKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      document.getElementById(`otp-${index - 1}`).focus();
     }
   };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text").replace(/\D/g, "");
+
+    if (pasteData.length === 6) {
+      const otpArray = pasteData.split("").slice(0, 6);
+      setOtpDigits(otpArray);
+
+      setTimeout(() => {
+        document.getElementById("otp-5")?.focus();
+      }, 10);
+    }
+  };
+
+  const getFullOtp = () => otpDigits.join("");
+
+  useEffect(() => {
+    setForgotPasswordData(prev => ({
+      ...prev,
+      otp: forgotOtpDigits.join(""),
+    }));
+  }, [forgotOtpDigits]);
+
+  const handleForgotOtpChange = (e, index) => {
+    const value = e.target.value.replace(/\D/g, "");
+    if (value.length === 6) {
+      const digits = value.split("").slice(0, 6);
+      setForgotOtpDigits(digits);
+      document.getElementById("forgot-otp-5")?.focus();
+      return;
+    }
+
+    if (/^\d?$/.test(value)) {
+      const updated = [...forgotOtpDigits];
+      updated[index] = value;
+      setForgotOtpDigits(updated);
+
+      if (value && index < 5) {
+        document.getElementById(`forgot-otp-${index + 1}`)?.focus();
+      }
+    }
+  };
+
+  const handleForgotKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !forgotOtpDigits[index] && index > 0) {
+      document.getElementById(`forgot-otp-${index - 1}`)?.focus();
+    }
+  };
+
+  const handleForgotPaste = (e) => {
+    e.preventDefault();
+    const paste = e.clipboardData.getData("text").replace(/\D/g, "");
+    if (paste.length === 6) {
+      const digits = paste.split("").slice(0, 6);
+      setForgotOtpDigits(digits);
+      setTimeout(() => {
+        document.getElementById("forgot-otp-5")?.focus();
+      }, 10);
+    }
+  };
+
 
   const handleCaptchaPaste = (e) => {
     e.preventDefault();
@@ -718,20 +795,26 @@ const LoginPage = () => {
           {currentView === "login" && isOtpRequested && (
             <form onSubmit={handleLogin} className="space-y-3">
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Enter OTP
-                </label>
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={handleOtpChange}
-                  className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${otpTimer === 0 ? 'bg-gray-100' : ''
-                    }`}
-                  placeholder="Enter OTP"
-                  maxLength="6"
-                  required
-                  disabled={otpTimer === 0}
-                />
+
+                <div className="flex justify-between gap-2">
+                  {otpDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      id={`otp-${index}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength="1"
+                      value={digit}
+                      onChange={(e) => handleOtpChange(e, index)}
+                      onKeyDown={(e) => handleKeyDown(e, index)}
+                      onPaste={handleOtpPaste}
+                      className="w-12 h-12 text-center border border-gray-300 rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={otpTimer === 0}
+                    />
+
+                  ))}
+                </div>
+
               </div>
 
               <div className="flex space-x-2">
@@ -846,20 +929,24 @@ const LoginPage = () => {
           {currentView === "forgot-otp" && (
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Enter OTP
-                </label>
-                <input
-                  type="text"
-                  value={forgotPasswordData.otp}
-                  onChange={handleForgotOtpChange}
-                  className={`w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg tracking-widest transition-colors ${otpTimer === 0 ? 'bg-gray-100' : ''
-                    }`}
-                  placeholder="Enter OTP"
-                  maxLength="6"
-                  required
-                  disabled={otpTimer === 0}
-                />
+                <div className="flex justify-between gap-2">
+                  {forgotOtpDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      id={`forgot-otp-${index}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength="1"
+                      value={digit}
+                      onChange={(e) => handleForgotOtpChange(e, index)}
+                      onKeyDown={(e) => handleForgotKeyDown(e, index)}
+                      onPaste={handleForgotPaste}
+                      className="w-12 h-12 text-center border border-gray-300 rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={otpTimer === 0}
+                    />
+                  ))}
+                </div>
+
               </div>
 
               <div className="flex space-x-2">
