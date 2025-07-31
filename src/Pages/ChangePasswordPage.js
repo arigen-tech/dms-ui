@@ -10,7 +10,7 @@ import apiClient from "../API/apiClient";
 import { useNavigate } from "react-router-dom";
 import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
-import Profile_Image from "../Assets/Profile_Background.jpg"
+import Profile_Image from "../Assets/Profile_Background.png"
 
 const ChangePasswordPage = () => {
   const [formData, setFormData] = useState({
@@ -124,7 +124,7 @@ const ChangePasswordPage = () => {
     };
 
     try {
-      await apiClient.post(`${API_HOST}/api/change-password`, changePasswordData);
+      await apiClient.post(`${API_HOST}/api/profile`, changePasswordData);
       showPopup("Password Changed successfully!", "success");
       setActiveForm(null);
     } catch (error) {
@@ -183,20 +183,20 @@ const ChangePasswordPage = () => {
       // Set a user-friendly error message
       setError(
         error.response?.data?.message ||
-          "Error updating profile. Please try again."
+        "Error updating profile. Please try again."
       );
     }
   };
 
   const handlePencilClick = () => {
-    fileInputRef.current.click(); 
+    fileInputRef.current.click();
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedFile(file); 
-      setPhoto(URL.createObjectURL(file)); 
+      setSelectedFile(file);
+      setPhoto(URL.createObjectURL(file));
     }
   };
 
@@ -205,20 +205,20 @@ const ChangePasswordPage = () => {
       setUploadMessage("Please select a file to upload.");
       return;
     }
-  
+
     const formData = new FormData();
     formData.append("file", selectedFile);
-  
+
     const employeeId = localStorage.getItem("userId");
-  
+
     try {
-  
+
       const response = await apiClient.post(
         `${API_HOST}/employee/upload/${employeeId}`,
         formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`, 
+            Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
         }
@@ -226,9 +226,9 @@ const ChangePasswordPage = () => {
       showPopup("Photo Update successfully!", "success");
       setActiveForm(null);
       console.log("Upload response:", response.data);
-  
+
       if (typeof fetchImageSrc === "function") {
-        fetchImageSrc(); 
+        fetchImageSrc();
       }
     } catch (error) {
       console.error("Error uploading image:", error.response || error);
@@ -239,7 +239,7 @@ const ChangePasswordPage = () => {
       );
     }
   };
-  
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -276,10 +276,10 @@ const ChangePasswordPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center" 
-    style={{ backgroundImage: `url(${Profile_Image})`}}>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center"
+      style={{ backgroundImage: `url(${Profile_Image})` }}>
       <div className="bg-blue-200 rounded-lg shadow-lg p-4 w-full max-w-lg mt-4 mb-4">
-      {popupMessage && (
+        {popupMessage && (
           <Popup
             message={popupMessage.message}
             type={popupMessage.type}
@@ -292,13 +292,13 @@ const ChangePasswordPage = () => {
               <h2 className="text-xl font-bold text-center text-gray-900 mb-2">
                 Employee Profile
               </h2>
-              
+
               {isLoading ? (
                 <div className="animate-pulse">
                   <div className="flex justify-center mb-4">
                     <div className="h-20 w-20 rounded-full bg-gray-300"></div>
                   </div>
-                  
+
                   {[...Array(7)].map((_, index) => (
                     <div key={index} className="flex items-center ml-20 my-2">
                       <div className="h-4 w-24 bg-gray-300 rounded mr-2"></div>
@@ -311,50 +311,50 @@ const ChangePasswordPage = () => {
                   <div className="flex items-center justify-center mb-4">
                     {imageSrc || photo ? (
                       <img
-                        src={photo || imageSrc} 
+                        src={photo || imageSrc}
                         alt="Profile"
                         className="h-20 w-20 border-2 border-gray-400 rounded-full mb-2 object-cover"
                       />
                     ) : (
-                      <UserCircleIcon className="h-20 w-20 text-rose-800 border-4 border-black rounded-full" />
+                      <UserCircleIcon className="h-20 w-20 text-blue-600 border-4 border-black rounded-full" />
                     )}
                   </div>
 
                   <div className="space-y-2">
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <span className="w-24">Name:</span>
+                      <strong className="w-24">Name:</strong>
                       <strong className="ml-2">{employee?.name}</strong>
                     </p>
-                    
+
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <span className="w-24">Branch:</span>
+                      <strong className="w-24">Branch:</strong>
                       <strong className="ml-2">{employee?.branch?.name || "All"}</strong>
                     </p>
-                    
+
                     {department && (
                       <p className="text-md text-gray-900 ml-20 flex items-center">
-                        <span className="w-24">Department:</span>
+                        <strong className="w-24">Department:</strong>
                         <strong className="ml-2">{employee?.department?.name || "All"}</strong>
                       </p>
                     )}
-                    
+
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <span className="w-24">Role:</span>
+                      <strong className="w-24">Role:</strong>
                       <strong className="ml-2">{employee?.role.role}</strong>
                     </p>
-                    
+
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <span className="w-24">Mobile:</span>
+                      <strong className="w-24">Mobile:</strong>
                       <strong className="ml-2">{employee?.mobile}</strong>
                     </p>
-                    
+
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <span className="w-24">Joined Date:</span>
+                      <strong className="w-24">Joined Date:</strong>
                       <strong className="ml-2">{formatDate(employee?.createdOn)}</strong>
                     </p>
-                    
+
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <span className="w-24">Email:</span>
+                      <strong className="w-24">Email:</strong>
                       <strong className="ml-2">{employee?.email}</strong>
                     </p>
                   </div>
@@ -364,13 +364,13 @@ const ChangePasswordPage = () => {
               <div className="flex flex-col space-y-4 my-5">
                 <button
                   onClick={() => setActiveForm("editProfile")}
-                  className="bg-rose-600 text-white font-semibold py-1 px-2 rounded-lg hover:bg-rose-700 transition duration-300"
+                  className="bg-blue-900 text-white font-semibold py-1 px-2 rounded-lg hover:bg-blue-950 transition duration-300"
                 >
                   Edit Profile
                 </button>
                 <button
                   onClick={() => setActiveForm("changePassword")}
-                  className="bg-rose-800 text-white font-semibold py-1 px-2 rounded-lg hover:bg-rose-700 transition duration-300"
+                  className="bg-blue-900 text-white font-semibold py-1 px-2 rounded-lg hover:bg-blue-950 transition duration-300"
                 >
                   Change Password
                 </button>
@@ -406,24 +406,26 @@ const ChangePasswordPage = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type={showCurrentPassword ? "text" : "password"}  
+                    type={showCurrentPassword ? "text" : "password"}
                     visibility
                     id="currentPassword"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter your current password"
+                    maxLength={15}
+                    minLength={8}
                     required
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-4"
-                    onClick={toggleCurrentPasswordVisibility} 
+                    onClick={toggleCurrentPasswordVisibility}
                   >
                     {showCurrentPassword ? (
-                      <EyeSlashIcon className="text-rose-900 h-5 w-5" />
+                      <EyeSlashIcon className="text-blue-900 h-5 w-5" />
                     ) : (
-                      <EyeIcon className="text-rose-900 h-5 w-5" />
+                      <EyeIcon className="text-blue-900 h-5 w-5" />
                     )}
                   </button>
                 </div>
@@ -437,23 +439,25 @@ const ChangePasswordPage = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type={showNewPassword ? "text" : "password"} 
+                    type={showNewPassword ? "text" : "password"}
                     id="newPassword"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter your new password"
                     required
+                    maxLength={15}
+                    minLength={8}
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-4"
-                    onClick={toggleNewPasswordVisibility} 
+                    onClick={toggleNewPasswordVisibility}
                   >
                     {showNewPassword ? (
-                      <EyeSlashIcon className="text-rose-900 h-5 w-5" />
+                      <EyeSlashIcon className="text-blue-900 h-5 w-5" />
                     ) : (
-                      <EyeIcon className="text-rose-900 h-5 w-5" />
+                      <EyeIcon className="text-blue-900 h-5 w-5" />
                     )}
                   </button>
                 </div>
@@ -463,7 +467,7 @@ const ChangePasswordPage = () => {
                   className="block text-gray-700 text-lg font-bold mb-2"
                   htmlFor="confirmPassword"
                 >
-                  Confirm Password <span className="text-red-700">*</span>
+                  Confirm Password <span className="text-blue-700">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -472,9 +476,11 @@ const ChangePasswordPage = () => {
                     id="confirmPassword"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Confirm your new password"
                     required
+                    maxLength={15}
+                    minLength={8}
                   />
                   <button
                     type="button"
@@ -482,9 +488,9 @@ const ChangePasswordPage = () => {
                     onClick={toggleConfirmPasswordVisibility}
                   >
                     {showConfirmPassword ? (
-                      <EyeSlashIcon className="text-rose-900 h-5 w-5" />
+                      <EyeSlashIcon className="text-blue-900 h-5 w-5" />
                     ) : (
-                      <EyeIcon className="text-rose-900 h-5 w-5" />
+                      <EyeIcon className="text-blue-900 h-5 w-5" />
                     )}
                   </button>
                 </div>
@@ -493,7 +499,7 @@ const ChangePasswordPage = () => {
               <div className="space-x-4">
                 <button
                   type="submit"
-                  className="bg-rose-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-rose-700 transition duration-300"
+                  className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
                 >
                   Change Password
                 </button>
@@ -517,21 +523,21 @@ const ChangePasswordPage = () => {
               {imageSrc || photo ? (
                 <div className="relative">
                   <img
-                    src={photo || imageSrc} 
+                    src={photo || imageSrc}
                     alt="Profile"
                     className="h-28 w-28 border-2 border-gray-400 rounded-full mb-2 object-cover"
                   />
                   <PencilSquareIcon
                     onClick={handlePencilClick}
-                    className="h-8 w-8 text-rose-600 cursor-pointer hover:text-rose-800 absolute bottom-0 right-0"
+                    className="h-8 w-8 text-blue-600 cursor-pointer hover:text-rose-800 absolute bottom-0 right-0"
                   />
                 </div>
               ) : (
                 <div className="relative">
-                  <UserCircleIcon className="h-20 w-20 text-rose-800 border-2 border-gray-400 rounded-full mb-2" />
+                  <UserCircleIcon className="h-20 w-20 text-blue-800 border-2 border-gray-400 rounded-full mb-2" />
                   <PencilSquareIcon
                     onClick={handlePencilClick}
-                    className="h-8 w-8 text-rose-600 cursor-pointer hover:text-rose-800 absolute bottom-0 right-0"
+                    className="h-8 w-8 text-blue-600 cursor-pointer hover:text-blue-800 absolute bottom-0 right-0"
                   />
                 </div>
               )}
@@ -547,7 +553,7 @@ const ChangePasswordPage = () => {
               {selectedFile && (
                 <button
                   onClick={handleFileUpload}
-                  className="mt-2 bg-rose-600 text-white px-4 py-2 rounded hover:bg-rose-800"
+                  className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-800"
                 >
                   Upload
                 </button>
@@ -568,10 +574,12 @@ const ChangePasswordPage = () => {
                 </label>
                 <input
                   type="text"
-                  name="name" 
+                  name="name"
                   defaultValue={employee?.name}
-                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
+                  maxLength={25}
+                  minLength={3}
                 />
               </div>
 
@@ -582,19 +590,32 @@ const ChangePasswordPage = () => {
                 >
                   Mobile
                 </label>
-                <input
-                  type="text"
-                  name="mobile" 
-                  defaultValue={employee?.mobile}
-                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  required
-                />
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-100 text-gray-700 text-lg">
+                    +91
+                  </span>
+                  <input
+                    type="text"
+                    name="mobile"
+                    defaultValue={employee?.mobile?.slice(-10) || ""}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                    maxLength={10}
+                    minLength={10}
+                    inputMode="numeric"
+                    pattern="\d*"
+                    onInput={(e) => {
+                      e.target.value = e.target.value.replace(/\D/g, "");
+                    }}
+                  />
+                </div>
               </div>
+
 
               <div className="space-x-4">
                 <button
                   type="submit"
-                  className="bg-rose-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-rose-700 transition duration-300"
+                  className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
                 >
                   Save Changes
                 </button>

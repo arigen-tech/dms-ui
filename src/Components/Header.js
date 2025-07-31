@@ -4,27 +4,28 @@ import {
   Bars3Icon,
   PencilIcon,
   ArrowRightOnRectangleIcon,
-  BellIcon,
-  BellAlertIcon,
-  UserIcon
 } from "@heroicons/react/24/solid";
 import adminPhoto from "../Assets/profile.svg";
+import { PiUserSwitchFill } from "react-icons/pi";
+import { TbPasswordUser, TbUserCog } from "react-icons/tb";
+import { PiUserCircleGear } from "react-icons/pi";
+import { FiUser } from "react-icons/fi";
 import axios from "axios";
 import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
-import { NotificationBell } from "../Data/Notification"
+import { NotificationBell } from "../Data/Notification";
+import { ImSpinner2 } from "react-icons/im";
 
-const DropdownMenu = ({ items, onSelect, emptyMessage }) => (
-  <div className="absolute right-0 mt-0.5 w-48 bg-white rounded-md shadow-lg z-10">
+const DropdownMenu = ({ items, onSelect, emptyMessage, className }) => (
+  <div className={`absolute right-0 mt-0.5 w-48 bg-white rounded-md shadow-lg z-10 ${className}`}>
     {items && items.length > 0 ? (
       items.map((item, index) => (
         <div
           key={index}
           className="px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer rounded-md"
-          onClick={() => onSelect && onSelect(item)} // Handle item selection
+          onClick={() => onSelect && onSelect(item)}
         >
-          {typeof item === "string" ? item : item.label}{" "}
-          {/* Handle item type */}
+          {typeof item === "string" ? item : item.label}
         </div>
       ))
     ) : (
@@ -37,7 +38,7 @@ function Header({ toggleSidebar, userName }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownRoleOpen, setDropdownRoleOpen] = useState(false);
-  const [roleName, setRoleName] = useState([]);;
+  const [roleName, setRoleName] = useState([]);
   const [popupMessage, setPopupMessage] = useState(null);
   const [rol, setRole] = useState(null);
   const [imageSrc, setImageSrc] = useState(null);
@@ -47,18 +48,15 @@ function Header({ toggleSidebar, userName }) {
   const role = localStorage.getItem("role");
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [targetRoleName, setTargetRoleName] = useState("");
-  const [notifications, setNotifications] = useState([]);
   const [isConfSwitch, setIsConfSwitch] = useState(false);
 
-  // Handle logout functionality
   const handleLogout = () => {
     localStorage.removeItem("tokenKey");
     navigate("/");
   };
 
-  // Handle password change navigation
   const handleChangePassword = () => {
-    navigate("/change-password");
+    navigate("/profile");
   };
 
   const handleClose = () => {
@@ -66,27 +64,17 @@ function Header({ toggleSidebar, userName }) {
     navigate("/dashboard");
   };
 
-  // Toggle dropdown menus
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
-  const toggleDropdownRole = () => setDropdownRoleOpen(!dropdownRoleOpen);
-
-  const handleClickOutsides = (e) => {
-    if (
-      !e.target.closest(".dropdown-menu") &&
-      !e.target.closest(".dropdown-toggle")
-    ) {
-      setDropdownRoleOpen(false); // Close dropdown if clicked outside
-    }
-  };
-
-  // Handle click outside dropdown to close it
   const handleClickOutside = (event) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target) &&
+      !event.target.closest(".dropdown-toggle")
+    ) {
       setDropdownOpen(false);
+      setDropdownRoleOpen(false);
     }
   };
 
-  // Fetch user image from backend
   const fetchImageSrc = async () => {
     try {
       const employeeId = localStorage.getItem("userId");
@@ -115,41 +103,14 @@ function Header({ toggleSidebar, userName }) {
         }
       );
       setRoleName(response.data.roleNamesList);
-      console.log(response.data.roleNamesList);
     } catch (error) {
       console.error("Error fetching user roles", error);
     }
   };
 
-  // const handleRoleSwitch = async (targetRoleName) => {
-  //   console.log("Received targetRoleName:", targetRoleName); // Log received value
-  //   try {
-  //     // debugger;
-  //     const employeeId = localStorage.getItem("userId");
-  //     const response = await axios.put(
-  //       `${API_HOST}/employee/${employeeId}/role/switch`,
-  //       { "targetRoleName" : targetRoleName },
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     console.log("API Response:", response.data);
-  //     console.log("targete Response:", targetRoleName);
-
-  //     localStorage.setItem("role", targetRoleName);
-  //     setRole(targetRoleName);
-  //     showPopup("Role switched successfully!", "success");
-  //   } catch (error) {
-  //     showPopup("Error to switching role!", "success");
-  //   }
-  // };
-
   const handleRoleSwitch = async (targetRoleName) => {
-    console.log("Received targetRoleName:", targetRoleName);
-    setTargetRoleName(targetRoleName); // Set the target role
-    setShowConfirmationPopup(true); // Show confirmation popup
+    setTargetRoleName(targetRoleName);
+    setShowConfirmationPopup(true);
   };
 
   const confirmRoleSwitch = async () => {
@@ -165,65 +126,35 @@ function Header({ toggleSidebar, userName }) {
           },
         }
       );
-      console.log("API Response:", response.data);
-
-      // Update local storage and role state
       localStorage.setItem("role", targetRoleName);
       setRole(targetRoleName);
       showPopup("Role switched successfully!", "success");
-
-      // Close popup
       setShowConfirmationPopup(false);
     } catch (error) {
       showPopup("Error switching role!", "error");
-      setShowConfirmationPopup(false); // Close popup on error
+      setShowConfirmationPopup(false);
     } finally {
       setIsConfSwitch(false);
     }
   };
 
   const cancelRoleSwitch = () => {
-    setShowConfirmationPopup(false); // Close the popup
+    setShowConfirmationPopup(false);
   };
 
   const showPopup = (message, type = "info") => {
     setPopupMessage({ message, type });
   };
 
-  // Function to navigate to the notifications page
-  const handleNotificationClick = () => {
-    navigate("/notifications"); // Redirect to the notifications page
-  };
-  const addNotification = (message) => {
-    setNotifications((prev) => [...prev, { message }]);
-  };
-
   useEffect(() => {
-    if (dropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchImageSrc();
     fetchUserRole();
   }, []);
-
-  useEffect(() => {
-    if (dropdownRoleOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRoleOpen]);
 
   return (
     <header className="bg-blue-800 text-white flex flex-col md:flex-row justify-between items-end shadow-inner relative">
@@ -241,88 +172,103 @@ function Header({ toggleSidebar, userName }) {
         >
           <Bars3Icon className="h-7 w-7" />
         </button>
-        <h3 className="font-bold text-lg mb-1.5">
-          Document Management System
-        </h3>
+        <h3 className="font-bold text-lg mb-1.5">Document Management System</h3>
       </div>
-      <div className="flex space-x-4 items-center mr-10">
+
+      <div className="flex space-x-2 items-center mr-10">
         <NotificationBell />
-        <h1 className="text-3xl pb-1 mr-1">|</h1>
+        <h1 className="text-3xl mb-2">|</h1>
+
         {/* Role Dropdown */}
-        <div className="relative">
+        <div className="relative dropdown-toggle">
           <div
             className="flex items-center space-x-2 cursor-pointer"
-            onClick={toggleDropdownRole}
+            onClick={() => setDropdownRoleOpen(!dropdownRoleOpen)}
           >
-            <UserIcon className="h-5 w-5 text-white-300" />
+            <PiUserSwitchFill className="h-10 w-10" />
             <span className="font-bold text-sm mr-1">{role || "Role"}</span>
           </div>
-          {dropdownRoleOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
-              <DropdownMenu
-                items={Array.isArray(roleName) ? roleName.map((role) => ({
-                  label: (
-                    <span className="flex items-center text-sm text-gray-800 p-0.5 rounded transition duration-200 m">
-                      <UserIcon className="h-3 w-3 mr-2" /> {role}
-                    </span>
-                  ),
-                  onClick: () => {
-                    handleRoleSwitch(role);
-                    setDropdownRoleOpen(false);
-                  },
-                })) : []}
 
-                onSelect={(item) => item.onClick && item.onClick()}
-                emptyMessage="No Multiple roles available"
-                className="max-h-48 overflow-y-auto"
-              />
-            </div>
+          {dropdownRoleOpen && (
+            <DropdownMenu
+              className="max-h-48 overflow-y-auto"
+              items={
+                Array.isArray(roleName)
+                  ? roleName.map((roleItem) => {
+                      let IconComponent = FiUser;
+                      if (roleItem === "ADMIN") IconComponent = TbPasswordUser;
+                      else if (roleItem === "BRANCH ADMIN") IconComponent = TbUserCog;
+                      else if (roleItem === "DEPARTMENT ADMIN") IconComponent = PiUserCircleGear;
+
+                      return {
+                        label: (
+                          <span className="flex items-center text-sm text-gray-800 p-2 hover:bg-gray-100 rounded">
+                            <IconComponent className="h-5 w-5 mr-2" /> {roleItem}
+                          </span>
+                        ),
+                        onClick: () => {
+                          handleRoleSwitch(roleItem);
+                          setDropdownRoleOpen(false);
+                        },
+                      };
+                    })
+                  : []
+              }
+              onSelect={(item) => item.onClick && item.onClick()}
+              emptyMessage="No Multiple roles available"
+            />
           )}
         </div>
-
-        {/* Notification Icon */}
 
         {/* Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <div
             className="flex items-center space-x-2 cursor-pointer"
-            onClick={toggleDropdown}
+            onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             <h1 className="text-3xl pb-2 mr-1">|</h1>
-            <span className="font-bold text-sm mr-1 flex-shrink-0 whitespace-nowrap">{UserName}</span>
+            <span className="font-bold text-sm mr-1 flex-shrink-0 whitespace-nowrap">
+              {UserName}
+            </span>
             <img
               src={imageSrc || adminPhoto}
+              onError={(e) => (e.currentTarget.src = adminPhoto)}
               alt="Profile"
               className="h-8 w-8 rounded-full"
             />
           </div>
-          
+
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
-              <DropdownMenu
-                items={[
-                  {
-                    label: <span className="flex items-center text-gray-800 p-1 transition duration-200 text-sm"><PencilIcon className="h-3 w-3 mr-2" /> Edit Profile</span>,
-                    onClick: handleChangePassword
-                  },
-                  {
-                    label: <span className="flex items-center text-gray-800 p-1 transition duration-200 text-sm"><ArrowRightOnRectangleIcon className="h-3 w-3 mr-2" /> Logout</span>,
-                    onClick: handleLogout
-                  },
-                ]}
-                onSelect={(item) => item.onClick && item.onClick()}
-                emptyMessage="No options available"
-              />
-            </div>
+            <DropdownMenu
+              items={[
+                {
+                  label: (
+                    <span className="flex items-center text-gray-800 p-1 text-sm">
+                      <PencilIcon className="h-4 w-4 mr-2" /> Edit Profile
+                    </span>
+                  ),
+                  onClick: handleChangePassword,
+                },
+                {
+                  label: (
+                    <span className="flex items-center text-gray-800 p-1 text-sm">
+                      <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" /> Logout
+                    </span>
+                  ),
+                  onClick: handleLogout,
+                },
+              ]}
+              onSelect={(item) => item.onClick && item.onClick()}
+              emptyMessage="No options available"
+            />
           )}
         </div>
 
+        {/* Confirmation Popup */}
         {showConfirmationPopup && (
           <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6 w-96 relative z-60">
-              <h2 className="text-lg font-semibold mb-4">
-                Confirm Role Switch
-              </h2>
+              <h2 className="text-lg font-semibold mb-4">Confirm Role Switch</h2>
               <p className="text-gray-700 mb-6">
                 Are you sure you want to switch to the role:{" "}
                 <strong>{targetRoleName}</strong>?
@@ -337,16 +283,18 @@ function Header({ toggleSidebar, userName }) {
                 <button
                   onClick={confirmRoleSwitch}
                   disabled={isConfSwitch}
-                  className={`bg-indigo-500 text-white px-4 py-2 rounded transition duration-300 no-print
-                                          ${isConfSwitch
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-indigo-600'
-                    }`}
+                  className={`bg-indigo-500 text-white px-4 py-2 rounded transition duration-300 no-print ${
+                    isConfSwitch ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-600"
+                  }`}
                 >
-                  {isConfSwitch ? 'Switching...' : 'Confirm'}
+                  {isConfSwitch ? (
+                    <span className="flex items-center">
+                      <ImSpinner2 className="animate-spin mr-2" /> Switching...
+                    </span>
+                  ) : (
+                    "Confirm"
+                  )}
                 </button>
-
-
               </div>
             </div>
           </div>
@@ -356,4 +304,4 @@ function Header({ toggleSidebar, userName }) {
   );
 }
 
-export default Header;
+export default React.memo(Header);

@@ -990,7 +990,8 @@ const LoginPage = () => {
                     className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                     placeholder="Enter new password"
                     required
-                    minLength="6"
+                    maxLength={15}
+                    minLength={8}
                   />
                   <button
                     type="button"
@@ -1022,7 +1023,8 @@ const LoginPage = () => {
                     className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                     placeholder="Confirm new password"
                     required
-                    minLength="6"
+                    maxLength={15}
+                    minLength={8}
                   />
                   <button
                     type="button"
@@ -1041,7 +1043,7 @@ const LoginPage = () => {
               {forgotPasswordData.newPassword && (
                 <div className="text-xs text-gray-600 space-y-1">
                   <p className={forgotPasswordData.newPassword.length >= 6 ? "text-green-600" : "text-red-600"}>
-                    • At least 6 characters
+                    • At least 8 characters
                   </p>
                   {forgotPasswordData.confirmPassword && (
                     <p className={forgotPasswordData.newPassword === forgotPasswordData.confirmPassword ? "text-green-600" : "text-red-600"}>

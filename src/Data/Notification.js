@@ -93,7 +93,7 @@ export const NotificationBell = () => {
     <div className="relative">
       <button
         onClick={() => navigate("/notifications")}
-        className="relative p-3 text-gray-300 hover:text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110"
+        className="relative p-3 text-gray-300 hover:text-white rounded-full "
       >
         {unreadCount > 0 ? (
           <BellAlertIcon className="h-7 w-7 text-white" />

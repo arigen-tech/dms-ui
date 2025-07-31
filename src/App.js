@@ -70,7 +70,7 @@ const protectedRoutes = [
   { path: "/userReport", element: <UserReports />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/manageUserRole", element: <ManageUserRoles />, allowedRoles: [SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/documentReport", element: <DocumentsReport />, allowedRoles: [USER, SYSTEM_ADMIN,BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
-  { path: "/change-password", element: <ChangePasswordPage />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
+  { path: "/profile", element: <ChangePasswordPage />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
   { path: "/search", element: <SearchDoc />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/searchByScan", element: <SearchByScanning />, allowedRoles: [USER, SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
   { path: "/archive", element: <ArchiveDoc />, allowedRoles: [ SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN] }, 
