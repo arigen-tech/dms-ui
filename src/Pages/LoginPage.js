@@ -250,29 +250,62 @@ const LoginPage = () => {
 
   const handleForgotOtpChange = (e, index) => {
     const value = e.target.value.replace(/\D/g, "");
+
+    // Handle full OTP pasted or typed
     if (value.length === 6) {
       const digits = value.split("").slice(0, 6);
       setForgotOtpDigits(digits);
+      updateForgotOtp(digits);
+
       document.getElementById("forgot-otp-5")?.focus();
+
+      // Auto-submit if valid and allowed
+      if (otpTimer !== 0 && !isButtonDisabled) {
+        verifyForgotPasswordOtp();
+      }
       return;
     }
 
+    // Handle single digit entry
     if (/^\d?$/.test(value)) {
       const updated = [...forgotOtpDigits];
       updated[index] = value;
       setForgotOtpDigits(updated);
+      updateForgotOtp(updated);
 
       if (value && index < 5) {
         document.getElementById(`forgot-otp-${index + 1}`)?.focus();
       }
+
+      // Check if all digits are filled after entry
+      if (updated.every((d) => d !== "") && otpTimer !== 0 && !isButtonDisabled) {
+        verifyForgotPasswordOtp();
+      }
     }
   };
 
+  const updateForgotOtp = (digits) => {
+    const otp = digits.join("");
+    setForgotPasswordData((prev) => ({ ...prev, otp }));
+  };
+
+
   const handleForgotKeyDown = (e, index) => {
-    if (e.key === "Backspace" && !forgotOtpDigits[index] && index > 0) {
-      document.getElementById(`forgot-otp-${index - 1}`)?.focus();
+    const key = e.key;
+
+    if (key === "Backspace" && !forgotOtpDigits[index] && index > 0) {
+      document.getElementById(`forgot-otp-${index - 1}`).focus();
+    }
+
+    if (key === "Enter") {
+      const isComplete = forgotOtpDigits.every((digit) => digit !== "");
+      if (isComplete && !isButtonDisabled && otpTimer !== 0) {
+        updateForgotOtp(forgotOtpDigits); // ensure OTP is set
+        verifyForgotPasswordOtp();        // call submit
+      }
     }
   };
+
 
   const handleForgotPaste = (e) => {
     e.preventDefault();
@@ -346,6 +379,8 @@ const LoginPage = () => {
       setIsButtonDisabled(false);
     }
   };
+
+
 
 
 
@@ -735,66 +770,66 @@ const LoginPage = () => {
                 </div>
               </div>
 
-           <div className="space-y-1">
-  <label className="block text-sm font-medium text-gray-700">Captcha</label>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Captcha</label>
 
-  <div className="flex items-center space-x-2">
-    {/* CAPTCHA BOX */}
-    <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
-      {/* Noisy Background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <svg className="w-full h-full opacity-20">
-          <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1" />
-          <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1" />
-          <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1" />
-        </svg>
-      </div>
+                <div className="flex items-center space-x-2">
+                  {/* CAPTCHA BOX */}
+                  <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
+                    {/* Noisy Background */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <svg className="w-full h-full opacity-20">
+                        <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1" />
+                        <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1" />
+                        <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1" />
+                      </svg>
+                    </div>
 
-      {/* CAPTCHA CHARACTERS */}
-      <div className="relative flex justify-evenly items-center h-full z-10">
-        {captcha.map((item, index) => (
-          <span
-            key={item.id}
-            style={{
-              display: "inline-block",
-              transform: `rotate(${item.rotation}deg) skew(${item.skew}deg) translateY(${item.offsetY}px)`,
-              fontSize: `${Math.min(item.fontSize, 16)}px`,
-              color: item.color,
-              fontWeight: Math.random() > 0.5 ? "bold" : "normal",
-              fontFamily: Math.random() > 0.5 ? "serif" : "sans-serif",
-              textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
-            }}
-            className="select-none"
-          >
-            {item.character}
-          </span>
-        ))}
-      </div>
-    </div>
+                    {/* CAPTCHA CHARACTERS */}
+                    <div className="relative flex justify-evenly items-center h-full z-10">
+                      {captcha.map((item, index) => (
+                        <span
+                          key={item.id}
+                          style={{
+                            display: "inline-block",
+                            transform: `rotate(${item.rotation}deg) skew(${item.skew}deg) translateY(${item.offsetY}px)`,
+                            fontSize: `${Math.min(item.fontSize, 16)}px`,
+                            color: item.color,
+                            fontWeight: Math.random() > 0.5 ? "bold" : "normal",
+                            fontFamily: Math.random() > 0.5 ? "serif" : "sans-serif",
+                            textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
+                          }}
+                          className="select-none"
+                        >
+                          {item.character}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
 
-    {/* REFRESH BUTTON */}
-    <button
-      type="button"
-      onClick={handleRefresh}
-      className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-      title="Refresh Captcha"
-    >
-      <ArrowPathIcon className={`w-4 h-4 ${isRotated ? "animate-spin" : ""}`} />
-    </button>
-  </div>
+                  {/* REFRESH BUTTON */}
+                  <button
+                    type="button"
+                    onClick={handleRefresh}
+                    className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                    title="Refresh Captcha"
+                  >
+                    <ArrowPathIcon className={`w-4 h-4 ${isRotated ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
 
-  {/* CAPTCHA INPUT FIELD */}
-  <input
-    type="text"
-    name="captcha"
-    value={formData.captcha}
-    onChange={handleInputChange}
-    onPaste={handleCaptchaPaste}
-    className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-    placeholder="Enter captcha"
-    required
-  />
-</div>
+                {/* CAPTCHA INPUT FIELD */}
+                <input
+                  type="text"
+                  name="captcha"
+                  value={formData.captcha}
+                  onChange={handleInputChange}
+                  onPaste={handleCaptchaPaste}
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  placeholder="Enter captcha"
+                  required
+                />
+              </div>
 
 
               <button
