@@ -42,7 +42,7 @@ const EmployeeRole = () => {
 
     try {
 
-      const response = await axios.get(`${API_HOST}/employee/pending-by-department`, {
+      const response = await axios.get(`${API_HOST}/employee/pending-by-branch`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(response.data);

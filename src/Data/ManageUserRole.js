@@ -35,8 +35,6 @@ const ManageUserRole = () => {
   const [currBranchId, setCurrBranchId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
-
-
   const token = localStorage.getItem("tokenKey");
   const [loading, setLoading] = useState(false);
   const employeId = localStorage.getItem("userId");
@@ -57,9 +55,7 @@ const ManageUserRole = () => {
 
 
   useEffect(() => {
-    fetchUsers();
     fetchLoginEmployees();
-    fetchAvailableRolesForUser();
   }, []);
 
   useEffect(() => {
@@ -90,6 +86,10 @@ const ManageUserRole = () => {
       // Log the fetched data
       console.log("User response:", userResponse.data);
 
+      if (userResponse.data?.role?.roleCode) {
+        fetchAvailableRolesForUser(userResponse.data?.role?.roleCode);
+        console.log("Available roles fetched for user:", userResponse.data?.role?.roleCode);
+      }
       // Set current branch ID if available
       if (userResponse.data?.branch?.id) {
         setCurrBranchId(userResponse.data.branch.id);
@@ -143,33 +143,34 @@ const ManageUserRole = () => {
     }
   };
 
-  // Use useEffect to ensure fetchUsers is triggered after currBranchId is set
   useEffect(() => {
     if (loginEmpRole === BRANCH_ADMIN) {
       fetchLoginEmployees().then(() => {
-        if (currBranchId) fetchUsers(); // Call fetchUsers after branch ID is set
+        if (currBranchId) fetchUsers();
       });
     } else {
-      fetchUsers(); // For non-branch admin roles
+      fetchUsers();
     }
-  }, [loginEmpRole, currBranchId]); // Dependency array ensures it reacts to changes
+  }, [loginEmpRole, currBranchId]);
 
-  const fetchAvailableRolesForUser = async (id) => {
-    setIsLoading(true);
+  const fetchAvailableRolesForUser = async (userRoleCode) => {
 
     try {
       const rolesResponse = await axios.get(`${ROLE_API}/findAll`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setAllRoles(rolesResponse.data);
+      const filteredRoles = rolesResponse.data.filter(
+        (role) => role.roleCode < userRoleCode
+      );
+
+      setAllRoles(filteredRoles);
     } catch (error) {
       console.error("Error fetching available roles for user:", error);
-    }finally{
-    setIsLoading(false);
-
     }
   };
+
+
 
   const HandleEditRole = async (user) => {
     console.log("USer Name being sent:", user);
@@ -180,7 +181,7 @@ const ManageUserRole = () => {
   };
 
   const handleAddButtonClick = () => {
-    fetchAvailableRolesForUser();
+    // fetchAvailableRolesForUser();
     setShowAvailableRoles(true);
   };
 
@@ -258,7 +259,7 @@ const ManageUserRole = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
-     setIsConfirmDisabled(true);
+    setIsConfirmDisabled(true);
 
     if (!roleToToggle) {
       showPopup("No role selected for status change.");
@@ -291,7 +292,7 @@ const ManageUserRole = () => {
         );
         setRoles(updatedRoles);
         setModalVisible(false);
-         setIsConfirmDisabled(false);
+        setIsConfirmDisabled(false);
         setRoleToToggle(null);
         showPopup("Role status updated successfully!", "success"); // Change here
         fetchUsers();
@@ -341,7 +342,7 @@ const ManageUserRole = () => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-  if (isLoading) {
+  if (loading) {
     return <LoadingComponent />;
   }
 
@@ -507,51 +508,36 @@ const ManageUserRole = () => {
       </div>
 
       {selectedUser && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white rounded-lg p-6 w-96 max-h-[80vh] overflow-auto">
-            <h2 className="text-lg font-semibold mb-4">Edit User Details</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center ">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-[95%] max-w-md max-h-[90vh] overflow-y-auto">
+            
+            <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Update User Roles</h2>
 
             {/* User Info */}
-            <div className="mb-4">
-              <p>
-                <strong>Name:</strong> {selectedUser.name || "N/A"}
-              </p>
-              <p>
-                <strong>Email:</strong> {selectedUser.email || "N/A"}
-              </p>
-              <p>
-                <strong>Mobile:</strong> {selectedUser.mobile || "N/A"}
-              </p>
-              <p>
-                <strong>Branch:</strong> {selectedUser.branchName || "N/A"}
-              </p>
-              <p>
-                <strong>Department:</strong>{" "}
-                {selectedUser.departmentName || "N/A"}
-              </p>
-              <p>
-                <strong>Status:</strong> {selectedUser.status || "N/A"}
-              </p>
+            <div className="space-y-1 text-md text-gray-800 mb-4">
+              <p>Name: <strong>{selectedUser?.name || "N/A"}</strong></p>
+              <p>Email: <strong>{selectedUser?.email || "N/A"}</strong></p>
+              <p>Mobile: <strong>+91 {selectedUser?.mobile || "N/A"}</strong></p>
+              <p>Branch: <strong>{selectedUser?.branchName || "N/A"}</strong></p>
+              <p>Department: <strong>{selectedUser?.departmentName || "N/A"}</strong></p>
+              <p>Status: <strong>{selectedUser?.status || "N/A"}</strong></p>
             </div>
 
-            {/* Employee Roles List */}
-            <h3 className="text-md font-semibold mb-2">Employee Roles:</h3>
-            <ul className="space-y-2">
+            {/* Current Roles */}
+            <h3 className="text-md font-semibold text-gray-800 mb-2 border-b pb-1">Assigned Roles</h3>
+            <ul className="space-y-2 mb-4">
               {roleByEmp.map((role, index) => (
-                <li
-                  key={index}
-                  className="flex items-center justify-between border-b pb-2"
-                >
+                <li key={index} className="flex justify-between items-center border p-2 rounded">
                   <span>{role.roleName || "Unnamed Role"}</span>
                   <button
                     onClick={() => handleToggleActiveStatus(role)}
-                    className={`p-1 rounded-full ${role.active === true ? "bg-green-500" : "bg-red-500"
+                    className={`p-1.5 rounded-full transition ${role.active ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
                       }`}
                   >
-                    {role.active === true ? (
-                      <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
+                    {role.active ? (
+                      <LockOpenIcon className="h-5 w-5 text-white" />
                     ) : (
-                      <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
+                      <LockClosedIcon className="h-5 w-5 text-white" />
                     )}
                   </button>
                 </li>
@@ -559,22 +545,23 @@ const ManageUserRole = () => {
             </ul>
 
             {/* Add Role Section */}
-            <div className="flex flex-col gap-2">
+            <div className="space-y-2">
               {!showAvailableRoles && (
                 <button
                   onClick={handleAddButtonClick}
-                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition"
                 >
-                  Add Role
+                  + Add Role
                 </button>
               )}
+
               {showAvailableRoles && (
-                <div className="mt-2">
+                <div>
                   {availableRoles.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-4 items-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
                       <select
                         onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-full border p-2 rounded"
+                        className="border rounded px-3 py-2"
                       >
                         <option value="">Select a role</option>
                         {availableRoles.map((role) => (
@@ -583,34 +570,40 @@ const ManageUserRole = () => {
                           </option>
                         ))}
                       </select>
+
                       <button
                         onClick={addSelectedRole}
-                        className={`${isLoading
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-green-500"
-                          } text-white px-4 py-2 rounded`}
-                        disabled={isLoading} // Disable button when loading
+                        disabled={isLoading}
+                        className={`text-white px-4 py-2 rounded transition ${isLoading
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-green-600 hover:bg-green-700"
+                          }`}
                       >
+                        {isLoading ? "Assigning..." : "Assign Role"}
                       </button>
                     </div>
                   ) : (
-                    <p className="text-gray-500 mt-2">All Roles Are Assigned</p>
+                    <p className="text-gray-500 mt-2">All roles are already assigned.</p>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Modal Actions */}
-            <div className="flex justify-end mt-4">
+            {/* Modal Footer */}
+            <div className="flex justify-end mt-6 space-x-2">
               <button
-                onClick={() => setSelectedUser(null)}
-                className="bg-red-500 text-white px-4 py-2 rounded mr-2"
+                onClick={() => {
+                  setSelectedUser(null);
+                  setShowAvailableRoles(false);
+                }}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition"
               >
                 Cancel
               </button>
             </div>
           </div>
         </div>
+
       )}
 
       {modalVisible && (
@@ -630,7 +623,7 @@ const ManageUserRole = () => {
             <p id="modal-description" className="text-gray-600 mb-6">
               Are you sure you want to{" "}
               <span className="font-medium">
-                {roleToToggle?.isActive === true ? "deactivate" : "activate"}
+                {roleToToggle?.active === true ? "Deactivate" : "Activate"}
               </span>{" "}
               the role <strong>{roleToToggle?.roleName}</strong>?
             </p>
@@ -641,14 +634,14 @@ const ManageUserRole = () => {
               >
                 Cancel
               </button>
-             <button
-                                onClick={confirmToggleActiveStatus}
-                                disabled={isConfirmDisabled}
-                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                            >
-                                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
-                            </button>
+              <button
+                onClick={confirmToggleActiveStatus}
+                disabled={isConfirmDisabled}
+                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+              >
+                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+              </button>
             </div>
           </div>
         </div>

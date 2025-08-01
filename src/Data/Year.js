@@ -41,8 +41,8 @@ const Year = () => {
       setYears(response.data);
     } catch (error) {
       console.error('Error fetching years:', error);
-    }finally{
-    setIsLoading(false);
+    } finally {
+      setIsLoading(false);
 
     }
   };
@@ -54,23 +54,27 @@ const Year = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Validate length for the year input
-    if (name === 'year' && (value.length > 4)) {
-      return; // Prevent setting the state if length exceeds 4
+    if (name === 'year') {
+      if (/^\d{0,4}$/.test(value)) {
+        setFormData((prevData) => ({
+          ...prevData,
+          [name]: value,
+        }));
+      }
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value,
+      }));
     }
-
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
   };
+
+
 
 
   const handleAddYear = async () => {
     if (formData.year) {
-      const newYear = {
-        name: formData.year,
-      };
+      const newYear = { name: formData.year };
 
       try {
         const token = localStorage.getItem(tokenKey);
@@ -78,11 +82,12 @@ const Year = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setYears([...years, response.data]);
-        setFormData({ year: '' }); // Reset the form field
-        showPopup("YEAR Added successfully!", "success");
+        setFormData({ year: '' });
+        showPopup("Year added successfully!", "success");
       } catch (error) {
-        console.error('Error adding year:', error.response ? error.response.data : error.message);
-        showPopup("Failed to adding the year. Please try again.");
+        const message = error.response?.data?.message || "Failed to add year.";
+        showPopup(message, "error");
+        console.error('Error adding year:', message);
       }
     }
   };
@@ -109,10 +114,11 @@ const Year = () => {
         ));
         setFormData({ year: '' });
         setEditingIndex(null);
-        showPopup('Year updated successfully!');
+        showPopup('Year updated successfully!', "success");
       } catch (error) {
-        console.error('Error updating year:', error.response ? error.response.data : error.message);
-        showPopup('Failed to update the year. Please try again.');
+        const message = error.response?.data?.message || "Failed to update year.";
+        showPopup(message, "error");
+        console.error('Error updating year:', message);
       }
     }
   };
@@ -222,21 +228,20 @@ const Year = () => {
         <div className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="flex gap-6 ">
             <div className="flex w-1/2 gap-6">
-              <label htmlFor="name" className="w-full block text-md font-medium text-gray-700 flex-1">
-                Select Year
+              <label htmlFor="year" className="w-full block text-md font-medium text-gray-700 flex-1">
+                Enter Year <span className="text-red-500">*</span>
                 <input
-                  type="number"
-                  min="1900"
-                  max="2099"
-                  step="1"
-                  placeholder="2016"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="2000 - 2050"
                   name="year"
                   value={formData.year}
                   onChange={handleInputChange}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-
                 />
               </label>
+
 
               <div className=" flex items-end">
                 {editingIndex === null ? (
@@ -339,7 +344,7 @@ const Year = () => {
           </table>
         </div>
 
-       {/* Pagination Controls */}
+        {/* Pagination Controls */}
         <div className="flex items-center mt-4">
           {/* Previous Button */}
           <button
