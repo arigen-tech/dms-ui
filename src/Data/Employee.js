@@ -1,6 +1,5 @@
-import Popup from "../Components/LoadingComponent";
+import Popup from "../Components/Popup";
 import LoadingComponent from '../Components/LoadingComponent';
-
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -11,7 +10,7 @@ import {
   PencilIcon,
   PlusCircleIcon,
 } from "@heroicons/react/24/solid";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   REGISTER_API,
@@ -19,21 +18,19 @@ import {
   BRANCH_API,
   DEPAETMENT_API,
   ROLE_API,
-} from "../API/apiConfig"; // Import your API URLs
+} from "../API/apiConfig";
 import { API_HOST } from "../API/apiConfig";
 
 const UserAddEmployee = () => {
   const [employees, setEmployees] = useState([]);
   const [formData, setFormData] = useState({
-    // employeeId: '',
     name: "",
     email: "",
     mobile: "",
-    branch: { id: "", name: "" }, // Ensure initial structure
-    department: { id: "", name: "" }, // Ensure initial structure
+    countryCode: "+91",
+    branch: { id: "", name: "" },
+    department: { id: "", name: "" },
   });
-
-
   const [searchTerm, setSearchTerm] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -42,17 +39,12 @@ const UserAddEmployee = () => {
   const [employeeToToggle, setEmployeeToToggle] = useState(null);
   const [branchOptions, setBranchOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [userName, setUserName] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
-  const [Message, setMessage] = useState("");
-  // const [isSubmitting, setIsSubmitting] = useState(false);
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupConfig, setPopupConfig] = useState({
@@ -61,21 +53,33 @@ const UserAddEmployee = () => {
   });
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const [emailError, setEmailError] = useState("");
+  const [mobileError, setMobileError] = useState("");
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  
+  const formRef = useRef(null); // Ref for the form section
 
   useEffect(() => {
     fetchEmployees();
     fetchOptions();
   }, []);
 
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validateMobile = (mobile) => {
+    const re = /^\d{10}$/;
+    return re.test(mobile);
+  };
+
   const fetchEmployees = async () => {
     setIsLoading(true);
-
     try {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("tokenKey");
 
-      // Fetch user details
       const userResponse = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
         {
@@ -86,10 +90,8 @@ const UserAddEmployee = () => {
       );
 
       const userData = userResponse.data;
-      console.log("Complete User Data:", userData);
       setUserName(userResponse.data.name);
 
-      // Explicitly set branch and department
       const userBranch = userData.branch
         ? { id: userData.branch.id, name: userData.branch.name }
         : { id: "", name: "" };
@@ -98,22 +100,18 @@ const UserAddEmployee = () => {
         ? { id: userData.department.id, name: userData.department.name }
         : { id: "", name: "" };
 
-      // Set branch and department states
       setUserBranch(userBranch);
       setUserDepartment(userDepartment);
 
-      // Update form data with user's branch and department
       setFormData((prevData) => ({
         ...prevData,
         branch: userBranch,
         department: userDepartment,
       }));
 
-      // Determine if user is admin
       const isAdmin = userData.role?.role?.toUpperCase() === "ADMIN";
 
       if (isAdmin) {
-        // Fetch all employees if the user is an admin
         const allEmployeesResponse = await axios.get(
           `${API_HOST}/employee/findAll`,
           {
@@ -122,81 +120,34 @@ const UserAddEmployee = () => {
             },
           }
         );
-
-        console.log("All employees data:", allEmployeesResponse.data);
         setEmployees(allEmployeesResponse.data);
       } else {
-        // Fetch employees created by the logged-in user
         const createdByResponse = await axios.get(
-          `${API_HOST}/employee/employeeCreateby/${userData.id}`, // Ensure userData.id holds the empId
+          `${API_HOST}/employee/employeeCreateby/${userData.id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
-        console.log("Employees created by user:", createdByResponse.data);
-        // setEmployees(createdByResponse.data.payload || []);
         setEmployees(createdByResponse.data.response);
-        // Adjust based on your API response structure
       }
     } catch (error) {
       console.error("Error fetching user details or employees:", error);
       setError("Could not fetch user details or employees");
-    } finally{
-    setIsLoading(false);
-
+      setShowPopup(true);
+      setPopupConfig({
+        message: "Error fetching data. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return <LoadingComponent />;
-  }
-
-  // const fetchEmployees = async () => {
-  //   setLoading(true);
-  //   setError("");
-  //   try {
-  //     // Retrieve userId from localStorage
-  //     const userId = localStorage.getItem("userId");
-
-  //     // Fetch branchId using userId
-  //     const branchResponse = await axios.get(
-  //       `${ API_HOST }/employee/findById/${userId}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
-  //         },
-  //       }
-  //     );
-
-  //     const branchId = branchResponse.data.branch.id; // Adjust this based on your API response structure
-
-  //     // Fetch employees using the branchId
-  //     const employeeResponse = await axios.get(
-  //       `${ API_HOST }/employee/branch/${branchId}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
-  //         },
-  //       }
-  //     );
-
-  //     setEmployees(employeeResponse.data);
-  //     console.log(employeeResponse.data);
-  //   } catch (error) {
-  //     setError("Error fetching employees.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const fetchOptions = async () => {
-    setLoading(true);
-    setError("");
     try {
-      const token = localStorage.getItem("tokenKey"); // Retrieve the token from local storage
+      const token = localStorage.getItem("tokenKey");
 
       const branchesRes = await axios.get(`${BRANCH_API}/findActiveRole`, {
         headers: {
@@ -205,21 +156,20 @@ const UserAddEmployee = () => {
       });
 
       setBranchOptions(branchesRes.data);
-      console.log(branchesRes.data);
     } catch (error) {
-      setError("Error fetching options.");
-    } finally {
-      setLoading(false);
+      setError("Error fetching branch options.");
+      setShowPopup(true);
+      setPopupConfig({
+        message: "Error fetching branch options.",
+        type: "error",
+      });
     }
   };
 
   const fetchDepartments = async (branchId) => {
-    setLoading(true);
-    setError("");
     try {
       const token = localStorage.getItem("tokenKey");
 
-      // Fetch departments for the selected branch
       const departmentsRes = await axios.get(
         `${DEPAETMENT_API}/findByBranch/${branchId}`,
         {
@@ -232,17 +182,44 @@ const UserAddEmployee = () => {
       setDepartmentOptions(departmentsRes.data);
     } catch (error) {
       setError("Error fetching departments.");
-    } finally {
-      setLoading(false);
+      setShowPopup(true);
+      setPopupConfig({
+        message: "Error fetching departments.",
+        type: "error",
+      });
     }
   };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "email") {
+      const isValid = validateEmail(value);
+      setEmailError(isValid ? "" : "Please enter a valid email address (must contain @)");
+    }
+
+    if (name === "mobile") {
+      const numericValue = value.replace(/\D/g, '');
+      const isValid = numericValue.length === 10;
+      setMobileError(isValid ? "" : "Please enter exactly 10 digits");
+      setFormData(prev => ({ ...prev, mobile: numericValue }));
+      return;
+    }
+
+    if (name === "name") {
+      const regex = /^[A-Za-z\s]*$/; // Only letters and spaces
+      if (value === "" || (regex.test(value) && value.length <= 30)) {
+        setFormData(prev => ({ ...prev, [name]: value }));
+      }
+      return;
+    }
+
     setFormData((prevFormData) => ({
       ...prevFormData,
       [name]: value,
     }));
   };
+
   const handleSelectChange = (e, key) => {
     const { value, selectedOptions } = e.target;
     const selectedName = selectedOptions[0].text;
@@ -255,97 +232,127 @@ const UserAddEmployee = () => {
       },
     }));
 
-    // Fetch departments when a branch is selected
     if (key === "branch") {
-      fetchDepartments(value); // Pass the selected branch ID to fetch related departments
+      fetchDepartments(value);
     }
   };
 
+  const handleCountryCodeChange = (e) => {
+    setFormData(prev => ({ ...prev, countryCode: e.target.value }));
+  };
+
+  const validateForm = () => {
+    let isValid = true;
+    setError("");
+
+    if (!formData.name.trim()) {
+      setError("Name is required");
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      setEmailError("Email is required");
+      isValid = false;
+    } else if (!validateEmail(formData.email)) {
+      setEmailError("Please enter a valid email address");
+      isValid = false;
+    }
+
+    if (!formData.mobile) {
+      setMobileError("Mobile number is required");
+      isValid = false;
+    } else if (!validateMobile(formData.mobile)) {
+      setMobileError("Please enter exactly 10-digit mobile number");
+      isValid = false;
+    }
+
+    if (!formData.branch.id) {
+      setError("Branch is required");
+      isValid = false;
+    }
+
+    if (!formData.department.id) {
+      setError("Department is required");
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleAddEmployee = async () => {
-    console.log("Form Data before submit:", formData);
+    if (!validateForm()) {
+      return;
+    }
 
-    const isFormDataValid =
-      formData.name?.trim() &&
-      formData.email?.trim() &&
-      formData.mobile?.trim();
-    const isBranchSelected = formData.branch?.id;
-    const isDepartmentSelected = formData.department?.id;
+    setIsSubmitting(true);
+    setIsButtonDisabled(true);
 
-    if (isFormDataValid && isBranchSelected && isDepartmentSelected) {
-      setIsSubmitting(true);
-      try {
-        const token = localStorage.getItem("tokenKey");
-        const userId = parseInt(localStorage.getItem("userId"), 10);
+    try {
+      const token = localStorage.getItem("tokenKey");
+      const userId = parseInt(localStorage.getItem("userId"), 10);
 
-        if (isNaN(userId)) {
-          setShowPopup(true);
-          setPopupConfig({
-            message: "User authentication error. Please log in again.",
-            type: "error",
-          });
-          return;
+      const fullMobileNumber = `${formData.countryCode}${formData.mobile}`;
+
+      const employeeData = {
+        name: formData.name,
+        email: formData.email,
+        mobile: fullMobileNumber,
+        password: `${formData.name}${formData.mobile.slice(0, 4)}`,
+        isActive: 0,
+        createdBy: { id: userId },
+        updatedBy: { id: userId },
+        department: { id: parseInt(formData.department.id, 10) },
+        branch: { id: parseInt(formData.branch.id, 10) },
+        createdOn: new Date().toISOString(),
+        updatedOn: new Date().toISOString(),
+      };
+
+      const response = await axios.post(
+        `${API_HOST}/register/create`,
+        employeeData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
+      );
 
-        const employeeData = {
-          name: formData.name,
-          email: formData.email,
-          mobile: formData.mobile,
-          password: `${formData.name}${formData.mobile.slice(0, 4)}`,
-          isActive: 0,
-          createdBy: { id: userId },
-          updatedBy: { id: userId },
-          department: { id: parseInt(formData.department.id, 10) },
-          branch: { id: parseInt(formData.branch.id, 10) },
-          createdOn: new Date().toISOString(),
-          updatedOn: new Date().toISOString(),
-        };
+      setShowPopup(true);
+      setPopupConfig({
+        message: "Employee added successfully!",
+        type: "success",
+      });
 
-        console.log("Formatted Employee Data:", employeeData);
+      setEmployees(prev => [...prev, response.data]);
 
-        const response = await axios.post(
-          `${API_HOST}/register/create`,
-          employeeData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      setFormData({
+        name: "",
+        email: "",
+        mobile: "",
+        countryCode: "+91",
+        branch: userBranch || { id: "", name: "" },
+        department: userDepartment || { id: "", name: "" },
+      });
 
-        console.log("API Response:", response.data);
+      setEmailError("");
+      setMobileError("");
+      setError("");
 
-        // Clear form after successful submission
-        setEmployees((prevEmployees) => [...prevEmployees, response.data]);
-        setFormData({
-          name: "",
-          email: "",
-          mobile: "",
-          branch: { id: "", name: "" },
-          department: { id: "", name: "" },
-        });
+      setTimeout(() => setShowPopup(false), 3000);
 
-        setShowPopup(true);
-        setPopupConfig({
-          message: "Employee added successfully!",
-          type: "success",
-        });
-      } catch (error) {
-        console.log("Full Error:", error);
-        console.log("Error Response:", error.response);
-
-        // Get the error message from the response
-        const errorMessage =
-          error.response?.data || "Failed to add employee. Please try again.";
-
-        setShowPopup(true);
-        setPopupConfig({
-          message: errorMessage,
-          type: "error",
-        });
-      }finally {
-        setIsSubmitting(false); 
-      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data || "Failed to add employee. Please try again.";
+      setShowPopup(true);
+      setPopupConfig({
+        message: errorMessage,
+        type: "error",
+      });
+      setTimeout(() => setShowPopup(false), 3000);
+    } finally {
+      setIsSubmitting(false);
+      setIsButtonDisabled(false);
     }
   };
 
@@ -353,180 +360,182 @@ const UserAddEmployee = () => {
     const employeeToEdit = employees.find((emp) => emp.id === employeeId);
     if (employeeToEdit) {
       setEditingIndex(employeeId);
+
+      let countryCode = "+91";
+      let mobile = employeeToEdit.mobile;
+
+      if (employeeToEdit.mobile) {
+        if (employeeToEdit.mobile.startsWith("+91")) {
+          countryCode = "+91";
+          mobile = employeeToEdit.mobile.substring(3).replace(/\D/g, '');
+        } else if (employeeToEdit.mobile.startsWith("+")) {
+          const match = employeeToEdit.mobile.match(/^(\+\d{1,3})(.*)$/);
+          if (match) {
+            countryCode = match[1];
+            mobile = match[2].replace(/\D/g, '');
+          }
+        } else {
+          mobile = employeeToEdit.mobile.replace(/\D/g, '');
+        }
+      }
+
       setFormData({
         id: employeeToEdit.id,
         name: employeeToEdit.name,
         email: employeeToEdit.email,
-        mobile: employeeToEdit.mobile,
-        // Ensure the branch and department have both id and name
+        mobile: mobile,
+        countryCode: countryCode,
         branch: employeeToEdit.branch || { id: "", name: "" },
-        department: employeeToEdit.department || { id: "", name: "" }, // Ensure this is set correctly
-        password: "", // Password field left empty for editing
+        department: employeeToEdit.department || { id: "", name: "" },
+        password: "",
         createdOn: employeeToEdit.createdOn,
         enabled: employeeToEdit.enabled,
       });
 
-      // Optionally fetch departments for the selected branch if needed
       if (employeeToEdit.branch) {
         fetchDepartments(employeeToEdit.branch.id);
+      }
+      
+      // Scroll to form section
+      if (formRef.current) {
+        formRef.current.scrollIntoView({ behavior: 'smooth' });
       }
     }
   };
 
   const handleSaveEdit = async () => {
-    console.log("Form Data before save:", formData);
-
-    const isFormDataValid = formData.name && formData.email && formData.mobile;
-    const isBranchSelected = formData.branch && formData.branch.id;
-    const isDepartmentSelected = formData.department && formData.department.id;
-
-    if (isFormDataValid && isBranchSelected && isDepartmentSelected) {
-      setIsSubmitting(true);
-
-      try {
-        const token = localStorage.getItem("tokenKey");
-
-        const updatedEmployeeData = {
-          name: formData.name,
-          email: formData.email,
-          mobile: formData.mobile,
-          branch: { id: formData.branch.id, name: formData.branch.name },
-          department: {
-            id: formData.department.id,
-            name: formData.department.name,
-          },
-          password: formData.password ? formData.password : null,
-          updatedOn: new Date().toISOString(),
-          enabled: formData.enabled,
-        };
-
-        const response = await axios.put(
-          `${API_HOST}/employee/update/${formData.id}`,
-          updatedEmployeeData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response.data) {
-          const updatedEmployees = employees.map((emp) =>
-            emp.id === formData.id ? response.data : emp
-          );
-          setEmployees(updatedEmployees);
-
-          // Reset form data
-          setFormData({
-            name: "",
-            email: "",
-            mobile: "",
-            branch: { id: "", name: "", address: "" },
-            department: { id: "", name: "" },
-            password: "",
-            createdOn: "",
-            enabled: false,
-          });
-
-          setError("");
-          // Set success message
-          setShowPopup(true);
-          setPopupConfig({
-            message: "Employee updated successfully!",
-            type: "success",
-          });
-          // Automatically hide the flash message after 3 seconds
-          setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
-
-          setEditingIndex(null);
-        }
-      } catch (error) {
-        console.error("Error updating employee:", error);
-        const errorMessage =
-          error.response?.data?.message ||
-          "Error updating employee. Please try again.";
-
-        // Set error message
-        setShowPopup(true);
-        setPopupConfig({
-          message: errorMessage,
-          type: "error",
-        });
-      }finally {
-        setIsSubmitting(false); 
-      }
-    } else {
-      const errorMessage =
-        "Please fill out all fields and select a branch and department.";
-      setError(errorMessage);
-      // Optionally, you could show an error popup here as well
-      setShowPopup(true);
-      setPopupConfig({
-        message: errorMessage,
-        type: "error",
-      });
+    if (!validateForm()) {
+      return;
     }
-  };
 
-  const handleToggleActive = (employee) => {
-    setEmployeeToToggle(employee);
-    setModalVisible(true);
-  };
+    setIsSubmitting(true);
+    setIsButtonDisabled(true);
 
-  const confirmToggleActive = async () => {
-    setIsConfirmDisabled(true); // Disable the button to prevent multiple clicks
     try {
-      const newStatus = !employeeToToggle.active; // Toggle between true and false
+      const token = localStorage.getItem("tokenKey");
+      const fullMobileNumber = `${formData.countryCode}${formData.mobile}`;
 
-      // Send the PUT request to update the status
+      const updatedEmployeeData = {
+        name: formData.name,
+        email: formData.email,
+        mobile: fullMobileNumber,
+        branch: { id: formData.branch.id, name: formData.branch.name },
+        department: {
+          id: formData.department.id,
+          name: formData.department.name,
+        },
+        password: formData.password ? formData.password : null,
+        updatedOn: new Date().toISOString(),
+        enabled: formData.enabled,
+      };
+
       const response = await axios.put(
-        `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`, // Updated URL with employee ID
-        newStatus, // Send the new status directly as the request body
+        `${API_HOST}/employee/update/${formData.id}`,
+        updatedEmployeeData,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("tokenKey")}`, // Include the token in the headers
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
       );
 
-      if (response.data) {
-        // Update the local employee list after successful status update
-        const updatedEmployees = employees.map((employee) =>
-          employee.id === employeeToToggle.id
-            ? { ...employee, active: newStatus }
-            : employee
-        );
-        setEmployees(updatedEmployees);
+      setShowPopup(true);
+      setPopupConfig({
+        message: "Employee updated successfully!",
+        type: "success",
+      });
 
-        // Set flash message based on the new status
-        const message = newStatus
-          ? "Employee has been activated."
-          : "Employee has been deactivated.";
-        setShowPopup(true); // Show the popup for feedback
-        setPopupConfig({
-          message: message,
-          type: "success",
-        });
+      const updatedEmployees = employees.map((emp) =>
+        emp.id === formData.id ? response.data : emp
+      );
+      setEmployees(updatedEmployees);
 
-        // Automatically hide the flash message after 3 seconds
-        setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
-      }
+      setFormData({
+        name: "",
+        email: "",
+        mobile: "",
+        countryCode: "+91",
+        branch: userBranch || { id: "", name: "" },
+        department: userDepartment || { id: "", name: "" },
+        password: "",
+        createdOn: "",
+        enabled: false,
+      });
+      setEditingIndex(null);
+
+      setEmailError("");
+      setMobileError("");
+      setError("");
+
+      setTimeout(() => setShowPopup(false), 3000);
     } catch (error) {
-      console.error("Error toggling employee status:", error);
       const errorMessage =
         error.response?.data?.message ||
-        "Error toggling employee status. Please try again.";
-
-      // Set error message
-      setShowPopup(true); // Show the popup for error feedback
+        "Error updating employee. Please try again.";
+      setShowPopup(true);
       setPopupConfig({
         message: errorMessage,
         type: "error",
       });
+      setTimeout(() => setShowPopup(false), 3000);
     } finally {
-      // Ensure modal is closed and state is cleared even if there was an error
+      setIsSubmitting(false);
+      setIsButtonDisabled(false);
+    }
+  };
+
+  const handleToggleActive = async (employee) => {
+    setEmployeeToToggle(employee);
+    setModalVisible(true);
+  };
+
+  const confirmToggleActive = async () => {
+    setIsConfirmDisabled(true);
+
+    try {
+      const newStatus = !employeeToToggle.active;
+
+      const response = await axios.put(
+        `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`,
+        newStatus,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const message = newStatus
+        ? "Employee has been activated."
+        : "Employee has been deactivated.";
+
+      setShowPopup(true);
+      setPopupConfig({
+        message: message,
+        type: "success",
+      });
+
+      const updatedEmployees = employees.map((employee) =>
+        employee.id === employeeToToggle.id
+          ? { ...employee, active: newStatus }
+          : employee
+      );
+      setEmployees(updatedEmployees);
+
+      setTimeout(() => setShowPopup(false), 3000);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Error toggling employee status. Please try again.";
+      setShowPopup(true);
+      setPopupConfig({
+        message: errorMessage,
+        type: "error",
+      });
+      setTimeout(() => setShowPopup(false), 3000);
+    } finally {
       setModalVisible(false);
       setEmployeeToToggle(null);
       setIsConfirmDisabled(false);
@@ -534,12 +543,7 @@ const UserAddEmployee = () => {
   };
 
   const handleClosePopup = () => {
-    // Refresh the page when the popup is closed after a successful action
-    if (popupConfig.type === "success") {
-      window.location.reload(); // Refresh the page
-    } else {
-      setShowPopup(false); // Just close the popup for other types
-    }
+    setShowPopup(false);
   };
 
   const formatDate = (dateString) => {
@@ -552,8 +556,21 @@ const UserAddEmployee = () => {
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
+  const formatMobileNumber = (mobile) => {
+    if (!mobile) return "N/A";
+    if (mobile.startsWith("+91") && mobile.length > 3) {
+      return `+91 ${mobile.substring(3)}`;
+    }
+    if (mobile.startsWith("+")) {
+      const match = mobile.match(/^(\+\d{1,3})(.*)$/);
+      if (match) {
+        return `${match[1]} ${match[2]}`;
+      }
+    }
+    return mobile;
+  };
+
   const filteredEmployees = employees.filter((employee) => {
-    // Safeguard for undefined values and normalize data
     const name = employee.name?.toLowerCase() || "";
     const email = employee.email?.toLowerCase() || "";
     const mobile = employee.mobile?.toLowerCase() || "";
@@ -570,10 +587,8 @@ const UserAddEmployee = () => {
     const createdBy = employee.createdBy?.name?.toLowerCase() || "unknown";
     const updatedBy = employee.updatedBy?.name?.toLowerCase() || "unknown";
 
-    // Normalize the search term
     const lowerSearchTerm = searchTerm?.toLowerCase() || "";
 
-    // Return true if any column includes the search term
     return (
       name.includes(lowerSearchTerm) ||
       email.includes(lowerSearchTerm) ||
@@ -593,7 +608,6 @@ const UserAddEmployee = () => {
 
   const totalItems = sortedEmployees.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  // const maxPageButtons = 5; // Maximum number of page buttons to show
 
   const paginatedEmployees = sortedEmployees.slice(
     (currentPage - 1) * itemsPerPage,
@@ -601,15 +615,12 @@ const UserAddEmployee = () => {
   );
 
   const getPageNumbers = () => {
-    const maxPageNumbers = 5; // Show 5 pages at a time
+    const maxPageNumbers = 5;
     const pages = [];
-
-    // Calculate the start and end page numbers
     const startPage =
       Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
 
-    // Push pages to display in the pagination
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
@@ -619,12 +630,15 @@ const UserAddEmployee = () => {
 
   const role = localStorage.getItem("role");
 
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
+
   return (
     <div className="px-2">
       <h1 className="text-2xl mb-1 font-semibold">USERS</h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         {error && <p className="text-red-500">{error}</p>}
-        {/* Success Message */}
         {showPopup && (
           <Popup
             message={popupConfig.message}
@@ -633,62 +647,73 @@ const UserAddEmployee = () => {
           />
         )}
 
-
-        <div className="mb-4 bg-slate-100 p-6 rounded-lg shadow-md">
+        <div ref={formRef} className="mb-4 bg-slate-100 p-6 rounded-lg shadow-md">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Name Input */}
             <label className="block text-md font-medium text-gray-700">
-              Name
+              Name <span className="text-red-500">*</span>
               <input
                 type="text"
                 placeholder="Enter name"
                 name="name"
                 value={formData.name || ""}
                 onChange={handleInputChange}
+                maxLength={30}
                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                required
               />
             </label>
 
-            {/* Email Input */}
             <label className="block text-md font-medium text-gray-700">
-              Email
+              Email <span className="text-red-500">*</span>
               <input
                 type="email"
                 placeholder="Enter email"
                 name="email"
                 value={formData.email || ""}
                 onChange={handleInputChange}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                maxLength={30}
+                className={`mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 ${emailError ? "border-red-500" : ""
+                  }`}
+                required
               />
+              {emailError && (
+                <p className="text-red-500 text-sm mt-1">{emailError}</p>
+              )}
             </label>
 
-            {/* Phone Input */}
             <label className="block text-md font-medium text-gray-700">
-              Phone
-              <input
-                type="tel"
-                placeholder="Enter phone number"
-                name="mobile"
-                maxLength={10}
-                minLength={10}
-                value={formData.mobile || ""}
-                onChange={handleInputChange}
-                onInput={(e) => {
-                  e.target.value = e.target.value.replace(/[^0-9]/g, ""); // Allow only numbers
-                }}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              Phone <span className="text-red-500">*</span>
+              <div className="flex mt-1">
+                <span className="w-20 p-2 border rounded-l-md bg-gray-100 text-center text-gray-700">
+                  +91
+                </span>
+                <input
+                  type="tel"
+                  placeholder="Enter phone number"
+                  name="mobile"
+                  value={formData.mobile || ""}
+                  onChange={handleInputChange}
+                  maxLength={10}
+                  minLength={10}
+                  className={`flex-1 p-2 border rounded-r-md outline-none focus:ring-2 focus:ring-blue-500 ${mobileError ? "border-red-500" : ""
+                    }`}
+                  required
+                />
+              </div>
+              {mobileError && (
+                <p className="text-red-500 text-sm mt-1">{mobileError}</p>
+              )}
             </label>
 
-            {/* Branch Selection */}
             <label className="block text-md font-medium text-gray-700">
-              Branch
+              Branch <span className="text-red-500">*</span>
               {role === "ADMIN" ? (
                 <select
                   name="branch"
                   value={formData.branch?.id || ""}
                   onChange={(e) => handleSelectChange(e, "branch")}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 >
                   <option value="" disabled>
                     Select Branch
@@ -706,15 +731,15 @@ const UserAddEmployee = () => {
               )}
             </label>
 
-            {/* Department Selection */}
             <label className="block text-md font-medium text-gray-700">
-              Department
+              Department <span className="text-red-500">*</span>
               {role === "ADMIN" ? (
                 <select
                   name="department"
                   value={formData.department?.id || ""}
                   onChange={(e) => handleSelectChange(e, "department")}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 >
                   <option value="" disabled>
                     Select Department
@@ -733,13 +758,14 @@ const UserAddEmployee = () => {
             </label>
           </div>
 
-          {/* Buttons */}
           <div className="mt-6 flex flex-wrap gap-4">
             {editingIndex === null ? (
               <button
                 onClick={handleAddEmployee}
-                disabled={isSubmitting}
-                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                disabled={isButtonDisabled || isSubmitting || emailError || mobileError}
+                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting || emailError || mobileError
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
                   }`}
               >
                 <PlusCircleIcon className="h-5 w-5 mr-2" />
@@ -748,8 +774,10 @@ const UserAddEmployee = () => {
             ) : (
               <button
                 onClick={handleSaveEdit}
-                disabled={isSubmitting}
-                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                disabled={isButtonDisabled || isSubmitting || emailError || mobileError}
+                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting || emailError || mobileError
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
                   }`}
               >
                 <CheckCircleIcon className="h-5 w-5 mr-2" />
@@ -762,7 +790,6 @@ const UserAddEmployee = () => {
         {(role === "ADMIN" || role === "USER") && (
           <>
             <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-              {/* Items Per Page (50%) */}
               <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
                 <label
                   htmlFor="itemsPerPage"
@@ -787,7 +814,6 @@ const UserAddEmployee = () => {
                 </select>
               </div>
 
-              {/* Search Input (Remaining Space) */}
               <div className="flex items-center w-full md:w-auto flex-1">
                 <input
                   type="text"
@@ -799,7 +825,6 @@ const UserAddEmployee = () => {
                 <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
               </div>
             </div>
-
 
             <div className="overflow-x-auto">
               <table className="w-full border-collapse border">
@@ -835,7 +860,7 @@ const UserAddEmployee = () => {
                       </td>
                       <td className="border p-2">{employee.name}</td>
                       <td className="border p-2">{employee.email}</td>
-                      <td className="border p-2">{employee.mobile}</td>
+                      <td className="border p-2">{formatMobileNumber(employee.mobile)}</td>
                       <td className="border p-2">
                         {employee.branch?.name || "N/A"}
                       </td>
@@ -872,8 +897,12 @@ const UserAddEmployee = () => {
 
                       <td className="border p-2">
                         <button
-                          onClick={() => handleEditEmployee(employee.id)} disabled={employee.active === false}
-                          className={`${employee.active === false ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          onClick={() => handleEditEmployee(employee.id)}
+                          disabled={employee.active === false}
+                          className={`${employee.active === false
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                            }`}
                         >
                           <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                         </button>
@@ -899,52 +928,59 @@ const UserAddEmployee = () => {
               </table>
             </div>
 
-            {/* Pagination Controls */}
-        <div className="flex items-center mt-4">
-          {/* Previous Button */}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1 || totalPages === 0}
-            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
-          >
-            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            Previous
-          </button>
+            <div className="flex items-center mt-4">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+                  }`}
+              >
+                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+                Previous
+              </button>
 
-          {/* Page Number Buttons */}
-          {totalPages > 0 && getPageNumbers().map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                }`}
-            >
-              {page}
-            </button>
-          ))}
+              {totalPages > 0 &&
+                getPageNumbers().map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded mx-1 ${currentPage === page
+                      ? "bg-blue-500 text-white"
+                      : "bg-slate-200 hover:bg-blue-100"
+                      }`}
+                  >
+                    {page}
+                  </button>
+                ))}
 
-          {/* Page Count Info */}
-          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+              <span className="text-sm text-gray-700 mx-2">
+                of {totalPages} pages
+              </span>
 
-          {/* Next Button */}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
-          >
-            Next
-            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-          </button>
-          <div className="ml-4">
-            <span className="text-sm text-gray-700">
-              Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-              {totalItems} entries
-            </span>
-          </div>
-        </div>
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-slate-200 hover:bg-slate-300"
+                  }`}
+              >
+                Next
+                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+              </button>
+              <div className="ml-4">
+                <span className="text-sm text-gray-700">
+                  Showing{" "}
+                  {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
+                  {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                  {totalItems} entries
+                </span>
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -962,7 +998,7 @@ const UserAddEmployee = () => {
               </strong>{" "}
               the employee <strong>{employeeToToggle.name}</strong> ?
             </p>
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end space-x-4 mt-4">
               <button
                 onClick={() => setModalVisible(false)}
                 className="bg-gray-500 text-white rounded-md px-4 py-2"
@@ -972,10 +1008,10 @@ const UserAddEmployee = () => {
               <button
                 onClick={confirmToggleActive}
                 disabled={isConfirmDisabled}
-                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? "opacity-50 cursor-not-allowed" : ""
                   }`}
               >
-                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+                {isConfirmDisabled ? "Processing..." : "Confirm"}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
   ArrowLeftIcon,
@@ -14,7 +14,6 @@ import { DEPAETMENT_API, BRANCH_API } from '../API/apiConfig';
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 
-
 const Department = () => {
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -29,11 +28,11 @@ const Department = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [toggleDepartment, setToggleDepartment] = useState(null);
-  const [message, setMessage] = useState(null); // For the success message
-  const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // For button disabling
+  const formSectionRef = useRef(null);
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -54,17 +53,14 @@ const Department = () => {
       setBranches(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
-    }
-    finally {
+      showPopup('Failed to fetch branches', 'error');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return <LoadingComponent />;
-  }
-
   const fetchDepartments = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${DEPAETMENT_API}/findAll`, {
         headers: {
@@ -74,8 +70,15 @@ const Department = () => {
       setDepartments(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
+      showPopup('Failed to fetch departments', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({
@@ -83,7 +86,9 @@ const Department = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        window.location.reload();
+        if (type === 'success') {
+          window.location.reload();
+        }
       }
     });
   };
@@ -91,155 +96,141 @@ const Department = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Allow only letters and spaces
+    // Allow only letters and spaces, max 30 chars
     const regex = /^[A-Za-z\s]*$/;
-
-    if (regex.test(value) || value === "") {
-      setFormData((prevData) => ({
-        ...prevData,
-        [name]: value,
-      }));
+    if ((regex.test(value) || value === "") && value.length <= 30) {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    } else if (value.length > 30) {
+      showPopup('Department name cannot exceed 30 characters', 'error');
     }
   };
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const options = {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      // hour12: true
-    };
-    return date.toLocaleString('en-GB', options).replace(',', '');
-  };
-
 
   const handleBranchChange = (e) => {
     const selectedBranch = branches.find(branch => branch.id === parseInt(e.target.value));
-    setFormData({ ...formData, branch: selectedBranch });
+    setFormData(prev => ({ ...prev, branch: selectedBranch }));
+  };
+
+  const isDuplicateDepartment = (name, branchId) => {
+    return departments.some(dept => {
+      // Exclude current department being edited from duplicate check
+      const isEditingCurrent = editingIndex && dept.id === editingIndex;
+      return !isEditingCurrent && 
+             dept.name.toLowerCase() === name.toLowerCase() && 
+             dept.branch?.id === branchId;
+    });
+  };
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      showPopup('Please enter a department name', 'warning');
+      return false;
+    }
+
+    if (!formData.branch) {
+      showPopup('Please select a branch', 'warning');
+      return false;
+    }
+
+    if (isDuplicateDepartment(formData.name, formData.branch.id)) {
+      showPopup('Department with this name already exists in the selected branch', 'error');
+      return false;
+    }
+
+    return true;
   };
 
   const handleAddDepartment = async () => {
-    if (formData.name && formData.branch) {
-      try {
-        const newDepartment = {
-          name: formData.name,
-          branch: formData.branch,
-          createdOn: new Date().toISOString(),
-          updatedOn: new Date().toISOString(),
-          isActive: formData.isActive ? 1 : 0,
-        };
+    if (!validateForm() || isSubmitting) return;
+    setIsSubmitting(true);
 
-        const response = await axios.post(`${DEPAETMENT_API}/save`, newDepartment, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+    try {
+      const newDepartment = {
+        name: formData.name,
+        branch: formData.branch,
+        createdOn: new Date().toISOString(),
+        updatedOn: new Date().toISOString(),
+        isActive: formData.isActive ? 1 : 0,
+      };
 
-        setDepartments([...departments, response.data]);
-        setFormData({ name: '', branch: null, isActive: true });
+      const response = await axios.post(`${DEPAETMENT_API}/save`, newDepartment, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-        // Set success message
-        showPopup('Department added successfully!', "success");
-
-      } catch (error) {
-        console.error('Error adding department:', error.response ? error.response.data : error.message);
-
-        // Set error message
-        showPopup('Failed to add the Department. Please try again.', "error");
-        ;
-      }
-    } else {
-      // Set warning message
-      showPopup('Please fill in all required fields.', "warning");
-
+      setDepartments([...departments, response.data]);
+      setFormData({ name: '', branch: null, isActive: true });
+      showPopup('Department added successfully!', "success");
+    } catch (error) {
+      console.error('Error adding department:', error.response ? error.response.data : error.message);
+      showPopup('Failed to add the Department. Please try again.', "error");
+    } finally {
+      setIsSubmitting(false);
     }
-
   };
 
-
   const handleEditDepartment = (departmentId) => {
-    // Set the ID of the department being edited
     setEditingIndex(departmentId);
-
-    // Find the department in the original list by its ID to populate the form
     const departmentToEdit = departments.find(department => department.id === departmentId);
 
-    // Populate the form with the department data (if found)
     if (departmentToEdit) {
       setFormData({
         name: departmentToEdit.name,
-        branch: departmentToEdit.branch, // Ensure this is structured as needed
-        isActive: departmentToEdit.isActive === 1, // Convert to boolean if needed
-        id: departmentToEdit.id, // Ensure the ID is also in formData for updates
+        branch: departmentToEdit.branch,
+        isActive: departmentToEdit.isActive === 1,
+        id: departmentToEdit.id,
       });
-    } else {
-      console.error('Department not found for ID:', departmentId); // Log if the department is not found
+      
+      // Scroll to form section
+      if (formSectionRef.current) {
+        formSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
   const handleSaveEdit = async () => {
-    if (formData.name.trim() && formData.branch) {
-      try {
-        // Find the department in the original list by its ID
-        const departmentIndex = departments.findIndex(department => department.id === formData.id);
+    if (!validateForm() || isSubmitting) return;
+    setIsSubmitting(true);
 
-        if (departmentIndex === -1) {
-          setMessage('Department not found!');
-          setMessageType('error');
-          setTimeout(() => setMessage(null), 3000);
-          return;
-        }
+    try {
+      const departmentIndex = departments.findIndex(department => department.id === formData.id);
 
-        // Create the updated department object
-        const updatedDepartment = {
-          ...departments[departmentIndex],
-          name: formData.name,
-          branch: formData.branch,
-          isActive: formData.isActive ? 1 : 0,
-          updatedOn: new Date().toISOString(),
-        };
-
-        // Send the update request to the server
-        const response = await axios.put(`${DEPAETMENT_API}/update/${updatedDepartment.id}`, updatedDepartment, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        // Update the original departments list with the updated department
-        const updatedDepartments = departments.map(department =>
-          department.id === updatedDepartment.id ? response.data : department
-        );
-
-        // Update the state with the modified departments array
-        setDepartments(updatedDepartments);
-        setFormData({ name: '', branch: null, isActive: true }); // Reset form data
-        setEditingIndex(null); // Reset the editing state
-
-        // Set success message
-        showPopup('Department updated successfully!', "success");
-
-      } catch (error) {
-        console.error('Error updating department:', error.response ? error.response.data : error.message);
-
-        // Set error message
-        showPopup('Failed to update the department. Please try again.!', "error");
-
+      if (departmentIndex === -1) {
+        showPopup('Department not found!', 'error');
+        return;
       }
-    } else {
-      // Set warning message
-      showPopup('Please fill in all required fields.!', "warning");
 
+      const updatedDepartment = {
+        ...departments[departmentIndex],
+        name: formData.name,
+        branch: formData.branch,
+        isActive: formData.isActive ? 1 : 0,
+        updatedOn: new Date().toISOString(),
+      };
+
+      const response = await axios.put(`${DEPAETMENT_API}/update/${updatedDepartment.id}`, updatedDepartment, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const updatedDepartments = departments.map(department =>
+        department.id === updatedDepartment.id ? response.data : department
+      );
+
+      setDepartments(updatedDepartments);
+      setFormData({ name: '', branch: null, isActive: true });
+      setEditingIndex(null);
+      showPopup('Department updated successfully!', "success");
+    } catch (error) {
+      console.error('Error updating department:', error.response ? error.response.data : error.message);
+      showPopup('Failed to update the department. Please try again.', "error");
+    } finally {
+      setIsSubmitting(false);
     }
-
   };
-
-
-
 
   const handleToggleActive = (department) => {
     setToggleDepartment(department);
@@ -247,15 +238,14 @@ const Department = () => {
   };
 
   const confirmToggleActiveStatus = async () => {
-    setIsConfirmDisabled(true); // Disable the confirm button to prevent multiple clicks
+    setIsConfirmDisabled(true);
     if (toggleDepartment) {
       try {
         const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
 
-        const token = localStorage.getItem('tokenKey');
         const response = await axios.put(
           `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
-          isActive, // Send only the isActive value
+          isActive,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -264,35 +254,36 @@ const Department = () => {
           }
         );
 
-        // Update the department's status locally
         const updatedDepartments = departments.map(dept =>
-          dept.id === toggleDepartment.id ? { ...dept, isActive: isActive } : dept
+          dept.id === toggleDepartment.id ? { ...dept, isActive } : dept
         );
 
         setDepartments(updatedDepartments);
-        setModalVisible(false); // Close modal
-        setToggleDepartment(null); // Clear the toggle department state
-        setIsConfirmDisabled(false); // Reset the confirm button state
-
-        // Set success message
+        setModalVisible(false);
+        setToggleDepartment(null);
         showPopup('Status changed successfully!', "success");
-
       } catch (error) {
         console.error('Error toggling department status:', error.response ? error.response.data : error.message);
-
-        // Set error message
         showPopup('Failed to change the status. Please try again.', "error");
-
+      } finally {
+        setIsConfirmDisabled(false);
       }
     } else {
-      // Set warning message
       showPopup('No department selected for status toggle.', "warning");
-
     }
-
-
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const options = {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    };
+    return date.toLocaleString('en-GB', options).replace(',', '');
+  };
 
   const filteredDepartments = departments.filter(department => {
     const statusText = department.isActive === 1 ? 'active' : 'inactive';
@@ -312,7 +303,10 @@ const Department = () => {
 
   const totalItems = sortedDepartments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedDepartments = sortedDepartments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const paginatedDepartments = sortedDepartments.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
@@ -321,15 +315,11 @@ const Department = () => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-
-
   return (
     <div className="px-2">
       <h1 className="text-lg mb-1 font-semibold">DEPARTMENTS</h1>
 
       <div className="bg-white p-4 rounded-lg shadow-sm">
-
-        {/* Popup Messages */}
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -337,57 +327,76 @@ const Department = () => {
             onClose={popupMessage.onClose}
           />
         )}
+
         {/* Form Section */}
-        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+        <div ref={formSectionRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="flex gap-6">
             <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <label htmlFor="name" className="block text-md font-medium text-gray-700 flex-1">
-                Name
+                Name <span className="text-red-500">*</span>
                 <input
                   type="text"
                   id="name"
                   name="name"
-                  placeholder="Enter name"
+                  placeholder="Enter department name"
                   value={formData.name}
                   onChange={handleInputChange}
+                  maxLength={30}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
 
-              {/* Branch Selection */}
               <label htmlFor="branch" className="block text-md font-medium text-gray-700">
-                Branch
+                Branch <span className="text-red-500">*</span>
                 <select
                   id="branch"
                   name="branch"
                   value={formData.branch?.id || ''}
                   onChange={handleBranchChange}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-
-
                 >
                   <option value="">Select Branch</option>
                   {branches.map(branch => (
-                    <option key={branch.id} value={branch.id} >
+                    <option key={branch.id} value={branch.id}>
                       {branch.name}
                     </option>
                   ))}
                 </select>
               </label>
-
             </div>
 
-            {/* Button */}
-            <div className=" flex items-end">
+            <div className="flex items-end">
               {editingIndex === null ? (
-                <button onClick={handleAddDepartment} className="bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center"
+                <button 
+                  onClick={handleAddDepartment} 
+                  disabled={isSubmitting}
+                  className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Department
+                  {isSubmitting ? (
+                    'Adding...'
+                  ) : (
+                    <>
+                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Department
+                    </>
+                  )}
                 </button>
               ) : (
-                <button onClick={handleSaveEdit} className="bg-blue-900 text-white rounded-2xl p-2 text-sm flex items-center justify-center"
+                <button 
+                  onClick={handleSaveEdit} 
+                  disabled={isSubmitting}
+                  className={`bg-blue-900 text-white rounded-2xl p-2 text-sm flex items-center justify-center ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                  {isSubmitting ? (
+                    'Updating...'
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                    </>
+                  )}
                 </button>
               )}
             </div>
@@ -396,12 +405,8 @@ const Department = () => {
 
         {/* Search and Items Per Page Section */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
+            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
               Show:
             </label>
             <select
@@ -421,7 +426,6 @@ const Department = () => {
             </select>
           </div>
 
-          {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
@@ -433,6 +437,7 @@ const Department = () => {
             <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
         </div>
+
         {/* Departments Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border">
@@ -458,8 +463,11 @@ const Department = () => {
                   <td className="border px-4 py-2">{formatDate(department.updatedOn)}</td>
                   <td className="border p-2">{department.isActive === 1 ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditDepartment(department.id)} disabled={department.isActive === 0}
-                      className={`${department.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <button 
+                      onClick={() => handleEditDepartment(department.id)} 
+                      disabled={department.isActive === 0}
+                      className={`${department.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>
@@ -481,41 +489,33 @@ const Department = () => {
           </table>
         </div>
 
-        
         {/* Pagination Controls */}
         <div className="flex items-center mt-4">
-          {/* Previous Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1 || totalPages === 0}
-            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
+            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
           >
             <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
             Previous
           </button>
 
-          {/* Page Number Buttons */}
           {totalPages > 0 && getPageNumbers().map((page) => (
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                }`}
+              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"}`}
             >
               {page}
             </button>
           ))}
 
-          {/* Page Count Info */}
           <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
 
-          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
-            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
+            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
           >
             Next
             <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
@@ -535,7 +535,7 @@ const Department = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-semibold mb-4">Confirm Status Change</h2>
-            <p>Are you sure you want to {toggleDepartment.isActive === 1 ? 'deactivate' : 'activate'} the department <strong>{toggleDepartment.name}</strong>?</p>
+            <p>Are you sure you want to {toggleDepartment?.isActive === 1 ? 'deactivate' : 'activate'} the department <strong>{toggleDepartment?.name}</strong>?</p>
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setModalVisible(false)}
@@ -546,8 +546,7 @@ const Department = () => {
               <button
                 onClick={confirmToggleActiveStatus}
                 disabled={isConfirmDisabled}
-                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isConfirmDisabled ? 'Processing...' : 'Confirm'}
               </button>
