@@ -1,12 +1,11 @@
 import { CATEGORI_API } from '../API/apiConfig';
 import { ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, PencilIcon, PlusCircleIcon, LockClosedIcon, LockOpenIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 
-
-const tokenKey = 'tokenKey'; // Correct token key name
+const tokenKey = 'tokenKey';
 
 const Category = () => {
   const [categories, setCategories] = useState([]);
@@ -18,167 +17,144 @@ const Category = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [categoryToToggle, setCategoryToToggle] = useState(null);
-  const [message, setMessage] = useState(null); // For the success message
-  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+  const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const formSectionRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-
         const response = await axios.get(`${CATEGORI_API}/findAll`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
           },
         });
         setCategories(response.data);
-        console.log(response.data);
-
       } catch (error) {
         console.error('Error fetching categories:', error);
-      } finally{
-      setIsLoading(false);
-
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchCategories();
   }, []);
 
-  if (isLoading) {
-    return <LoadingComponent />;
-  }
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Allow only letters and spaces
+    // Allow only letters and spaces, max 30 characters
     const regex = /^[A-Za-z\s]*$/;
-
-    if (regex.test(value) || value === "") {
+    if ((regex.test(value) || value === "") && value.length <= 30) {
       setFormData((prevData) => ({
         ...prevData,
         [name]: value,
       }));
+    } else if (value.length > 30) {
+      showPopup('Category name cannot exceed 30 characters', 'error');
     }
+  };
+
+  const isDuplicateCategory = (name) => {
+    return categories.some(category => 
+      category.name.toLowerCase() === name.toLowerCase() && 
+      category.id !== editingCategoryId
+    );
   };
 
   const handleAddCategory = async () => {
-    if (formData.name.trim()) {
-      try {
-        const response = await axios.post(`${CATEGORI_API}/save`, formData, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
-
-        // Update categories state with the new category
-        setCategories([...categories, response.data]);
-        setFormData({ name: '' }); // Reset form data
-
-        // Set success message
-        showPopup('Category added successfully!', "success");
-
-      } catch (error) {
-        console.error('Error adding category:', error.response ? error.response.data : error.message);
-
-        // Set error message if request fails
-        setMessage('Failed to add the category. Please try again.!', "error");
-
-      }
-    } else {
-      // Set warning message if name is not provided
-      setMessage('Please enter a category name.!', "warning");
-
+    if (!formData.name.trim()) {
+      showPopup('Please enter a category name!', 'warning');
+      return;
     }
 
+    if (isDuplicateCategory(formData.name)) {
+      showPopup('Category with this name already exists!', 'error');
+      return;
+    }
 
+    try {
+      const response = await axios.post(`${CATEGORI_API}/save`, formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
+        },
+      });
+
+      setCategories([...categories, response.data]);
+      setFormData({ name: '' });
+      showPopup('Category added successfully!', "success");
+    } catch (error) {
+      console.error('Error adding category:', error.response ? error.response.data : error.message);
+      showPopup('Failed to add the category. Please try again!', "error");
+    }
   };
 
-
   const handleEditCategory = (categoryId) => {
-    // Set the actual ID of the category being edited
     setEditingCategoryId(categoryId);
-
-    // Find the category in the original list by its ID to populate the form
     const categoryToEdit = categories.find(category => category.id === categoryId);
 
-    // Populate the form with the category data (if found)
     if (categoryToEdit) {
       setFormData({
         name: categoryToEdit.name,
-        isActive: true, // Set status to true by default
       });
-
-      // Set success message
-      // showPopup('Category loaded successfully for editing!',"success");
-
-    } else {
-      // Set error message if category not found
-      // showPopup('Category not found. Please try again.!',"error");
-
+      
+      // Scroll to form section
+      if (formSectionRef.current) {
+        formSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-
-
   };
 
-
   const handleSaveEdit = async () => {
-    if (formData.name.trim() && editingCategoryId !== null) {
+    if (!formData.name.trim()) {
+      showPopup('Please enter a category name', 'warning');
+      return;
+    }
+
+    if (isDuplicateCategory(formData.name)) {
+      showPopup('Category with this name already exists!', 'error');
+      return;
+    }
+
+    if (editingCategoryId !== null) {
       try {
-        // Find the category in the original list by its ID
         const categoryIndex = categories.findIndex(category => category.id === editingCategoryId);
 
         if (categoryIndex === -1) {
-          // Set error message if category is not found
-          showPopup('Category not found! Please try again.!', "error");
-
+          showPopup('Category not found! Please try again!', "error");
           return;
         }
 
-        // Create the updated category object
         const updatedCategory = {
           ...categories[categoryIndex],
           name: formData.name,
-          isActive: true, // Set status to true by default
           updatedOn: new Date().toISOString(),
         };
 
-        // Send the update request to the server
         const response = await axios.put(`${CATEGORI_API}/update/${updatedCategory.id}`, updatedCategory, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
           },
         });
 
-        // Update the original categories list with the updated category
         const updatedCategories = categories.map(category =>
           category.id === updatedCategory.id ? response.data : category
         );
 
-        // Update the state with the modified categories array
         setCategories(updatedCategories);
         setFormData({ name: '' });
-        setEditingCategoryId(null); // Reset the editing state
-
-        // Set success message
+        setEditingCategoryId(null);
         showPopup('Category updated successfully!', "success");
-
       } catch (error) {
         console.error('Error updating category:', error.response ? error.response.data : error.message);
-        // Set error message if update fails
-        showPopup('Failed to update the category. Please try again.!', "error");
-
+        showPopup('Failed to update the category. Please try again!', "error");
       }
-
-
     }
   };
-
-
 
   const handleToggleActiveStatus = (category) => {
     setCategoryToToggle(category);
@@ -192,13 +168,13 @@ const Category = () => {
       try {
         const updatedCategory = {
           ...categoryToToggle,
-          active: categoryToToggle.active === true ? 0 : 1, // Toggle between 1 and 0
+          active: categoryToToggle.active === true ? 0 : 1,
           updatedOn: new Date().toISOString(),
         };
 
-        const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
+        const token = localStorage.getItem(tokenKey);
         const response = await axios.put(
-          `${CATEGORI_API}/updatestatus/${updatedCategory.id}`, // Update API endpoint
+          `${CATEGORI_API}/updatestatus/${updatedCategory.id}`,
           updatedCategory,
           {
             headers: {
@@ -217,34 +193,19 @@ const Category = () => {
           setModalVisible(false);
           setCategoryToToggle(null);
           setIsConfirmDisabled(false);
-
-          // Set success message
           showPopup('Category status changed successfully!', "success");
-
         } else {
-          // Set error message for unexpected response
           showPopup('Failed to change the category status. Please try again.', "error");
-
         }
       } catch (error) {
         console.error('Error toggling Category status:', error.response ? error.response.data : error.message);
-
-        // Set error message for failed API request
         showPopup('Failed to change the category status. Please try again.', "error");
-
       }
-
-      // Clear the message after 3 seconds
-      setTimeout(() => setMessage(null), 3000);
     } else {
       console.error('No Category selected for status toggle');
-
-      // Set error message if no category is selected
-      showPopup('No category selected for status toggle.!', "error");
-
+      showPopup('No category selected for status toggle!', "error");
     }
   };
-
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({
@@ -252,7 +213,9 @@ const Category = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        window.location.reload();
+        if (type === 'success') {
+          window.location.reload();
+        }
       }
     });
   };
@@ -265,7 +228,6 @@ const Category = () => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      // hour12: true 
     };
     return date.toLocaleString('en-GB', options).replace(',', '');
   };
@@ -283,19 +245,19 @@ const Category = () => {
     );
   });
 
-  // Sorting the filtered categories by 'active' status
   const sortedCategories = filteredCategories.sort((a, b) => {
     if (b.active === a.active) {
-      return 0; // Maintain original order if same status
+      return 0;
     }
-    return b.active ? 1 : -1; // Active categories come first
+    return b.active ? 1 : -1;
   });
 
-  // Pagination logic
   const totalItems = sortedCategories.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedCategories = sortedCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
+  const paginatedCategories = sortedCategories.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
@@ -304,13 +266,14 @@ const Category = () => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="px-2">
       <h1 className="text-lg mb-1 font-semibold">Categories</h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
-        {/* Popup Messages */}
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -318,37 +281,54 @@ const Category = () => {
             onClose={popupMessage.onClose}
           />
         )}
-        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+
+        {/* Form Section with ref */}
+        <div ref={formSectionRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="flex gap-2">
             <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="flex gap-2">
                 <label htmlFor="name" className="block text-md font-medium text-gray-700 flex-1">
-                  Name
+                  Name <span className="text-red-500">*</span>
                   <input
                     type="text"
                     id="name"
                     name="name"
-                    placeholder="Enter Name"
+                    placeholder="Enter Name "
                     value={formData.name}
                     onChange={handleInputChange}
+                    maxLength={30}
                     className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
                 <div className="flex items-end">
                   {editingCategoryId === null ? (
-                    <button
-                      onClick={handleAddCategory}
-                      className="bg-blue-900 text-white rounded-2xl p-2 text-sm flex items-center justify-center"
-                    >
-                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Category
-                    </button>
+                     <button
+                  onClick={handleAddCategory}
+                  disabled={isSubmitting}
+                  className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isSubmitting ? (
+                    'Adding...'
+                  ) : (
+                    <>
+                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Role
+                    </>
+                  )}
+                </button>
                   ) : (
                     <button
-                      onClick={handleSaveEdit}
-                      className="bg-blue-900 text-white rounded-2xl p-2 text-sm flex items-center justify-center"
-                    >
+                  onClick={handleSaveEdit}
+                  disabled={isSubmitting}
+                  className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isSubmitting ? (
+                    'Updating...'
+                  ) : (
+                    <>
                       <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
-                    </button>
+                    </>
+                  )}
+                </button>
                   )}
                 </div>
               </div>
@@ -357,12 +337,8 @@ const Category = () => {
         </div>
 
         <div className="mb-3 bg-slate-100 px-3 py-2 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
+            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
               Show:
             </label>
             <select
@@ -382,7 +358,6 @@ const Category = () => {
             </select>
           </div>
 
-          {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
@@ -417,8 +392,11 @@ const Category = () => {
                   <td className="border p-2">{formatDate(category.updatedOn)}</td>
                   <td className="border p-2">{category.active === true ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditCategory(category.id)} disabled={category.active === false}
-                      className={`${category.active === false ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <button 
+                      onClick={() => handleEditCategory(category.id)} 
+                      disabled={category.active === false}
+                      className={`${category.active === false ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>
@@ -440,9 +418,7 @@ const Category = () => {
           </table>
         </div>
 
-        {/* Pagination Controls */}
         <div className="flex items-center mt-4">
-          {/* Previous Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1 || totalPages === 0}
@@ -453,7 +429,6 @@ const Category = () => {
             Previous
           </button>
 
-          {/* Page Number Buttons */}
           {totalPages > 0 && getPageNumbers().map((page) => (
             <button
               key={page}
@@ -465,10 +440,8 @@ const Category = () => {
             </button>
           ))}
 
-          {/* Page Count Info */}
           <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
 
-          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
@@ -486,14 +459,13 @@ const Category = () => {
             </span>
           </div>
         </div>
-
       </div>
 
       {modalVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-semibold mb-4">Confirm Status Change</h2>
-            <p>Are you sure you want to {categoryToToggle?.active === true ? 'inactivate' : 'activate'} the category <strong>{categoryToToggle.name}</strong>?</p>
+            <p>Are you sure you want to {categoryToToggle?.active === true ? 'inactivate' : 'activate'} the category <strong>{categoryToToggle?.name}</strong>?</p>
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setModalVisible(false)}

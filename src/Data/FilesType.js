@@ -14,7 +14,6 @@ import { FILETYPE_API } from '../API/apiConfig';
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 
-
 const tokenKey = 'tokenKey';
 
 const FilesType = () => {
@@ -43,12 +42,9 @@ const FilesType = () => {
     fetchFilesType();
   }, []);
 
-  console.log(filesType);
-
   const fetchFilesType = async () => {
     setIsLoading(true);
     try {
-      
       const response = await axios.get(`${FILETYPE_API}/getAll`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -57,55 +53,79 @@ const FilesType = () => {
       setFilesType(response?.data?.response);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
-    }finally{
+    } finally {
       setIsLoading(false);
-
     }
   };
-  
+
   if (isLoading) {
     return <LoadingComponent />;
   }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    
+    // For extension field, ensure it starts with a dot and has no spaces
+    if (name === 'extension') {
+      let processedValue = value.trim();
+      
+      // If the value doesn't start with a dot and isn't empty, add one
+      if (processedValue && !processedValue.startsWith('.')) {
+        processedValue = '.' + processedValue;
+      }
+      
+      // Remove any additional dots the user might try to add
+      processedValue = processedValue.replace(/\.+/g, '.');
+      
+      // Remove any spaces
+      processedValue = processedValue.replace(/\s/g, '');
+      
+      setFormData({ ...formData, [name]: processedValue });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const validateExtension = (extension) => {
+    // Extension must start with a dot and have at least one character after it
+    return extension.match(/^\.[a-zA-Z0-9]+$/);
   };
 
   const handleAddFileType = async () => {
-    if (formData.filetype && formData.extension) {
-      try {
-        const newFileType = {
-          ...formData,
-          createdOn: new Date().toISOString(),
-          updatedOn: new Date().toISOString(),
-          isActive: formData.isActive ? 1 : 0,
-        };
-
-        const response = await axios.post(`${FILETYPE_API}/create`, newFileType, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        setFilesType([...filesType, response.data]);
-        setFormData({ filetype: '', extension: '', isActive: true });
-
-        showPopup('FileType added successfully!', "success");
-        fetchFilesType();
-      } catch (error) {
-        console.error('Error adding FileType:', error.response ? error.response.data : error.message);
-
-        showPopup(error.response.data, "error");
-
-      }
-    } else {
-      showPopup('Please fill in all required fields.!', "warning");
-
+    if (!formData.filetype || !formData.extension) {
+      showPopup('Please fill in all required fields!', "warning");
+      return;
     }
 
+    if (!validateExtension(formData.extension)) {
+      showPopup('Extension must start with a dot (.) and contain only letters/numbers (e.g., .pdf, .docx)', "error");
+      return;
+    }
 
+    try {
+      const newFileType = {
+        ...formData,
+        createdOn: new Date().toISOString(),
+        updatedOn: new Date().toISOString(),
+        isActive: formData.isActive ? 1 : 0,
+      };
+
+      const response = await axios.post(`${FILETYPE_API}/create`, newFileType, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      setFilesType([...filesType, response.data]);
+      setFormData({ filetype: '', extension: '', isActive: true });
+
+      showPopup('FileType added successfully!', "success");
+      fetchFilesType();
+    } catch (error) {
+      console.error('Error adding FileType:', error.response ? error.response.data : error.message);
+      showPopup(error.response?.data || 'Failed to add FileType', "error");
+    }
   };
 
   const handleEditFileType = (fileTypeId) => {
@@ -126,7 +146,17 @@ const FilesType = () => {
   };
 
   const handleSaveEdit = async () => {
-    if (formData.extension.trim() && editingFileTypeId !== null) {
+    if (!formData.filetype || !formData.extension) {
+      showPopup('Please fill in all required fields!', "warning");
+      return;
+    }
+
+    if (!validateExtension(formData.extension)) {
+      showPopup('Extension must start with a dot (.) and contain only letters/numbers (e.g., .pdf, .docx)', "error");
+      return;
+    }
+
+    if (editingFileTypeId !== null) {
       try {
         const fileTypeIndex = filesType.findIndex(fileType => fileType.id === editingFileTypeId);
 
@@ -162,12 +192,8 @@ const FilesType = () => {
         showPopup('File Type updated successfully!', "success");
       } catch (error) {
         console.error('Error updating File Type:', error.response ? error.response.data : error.message);
-
-        showPopup('Failed to update the File Type. Please try again.!', "error");
-
+        showPopup('Failed to update the File Type. Please try again!', "error");
       }
-
-
     }
   };
 
@@ -183,12 +209,12 @@ const FilesType = () => {
       try {
         const updatedFilesType = {
           ...fileTypeToToggle,
-          status: fileTypeToToggle.isActive === 1 ? 0 : 1, // Toggle between 1 and 0
+          status: fileTypeToToggle.isActive === 1 ? 0 : 1,
           updatedOn: new Date().toISOString(),
         };
 
         const response = await axios.put(
-          `${FILETYPE_API}/update/status/${updatedFilesType.id}?status=${updatedFilesType.status}`, // Send status as query param
+          `${FILETYPE_API}/update/status/${updatedFilesType.id}?status=${updatedFilesType.status}`,
           {},
           {
             headers: {
@@ -212,17 +238,11 @@ const FilesType = () => {
 
       } catch (error) {
         console.error('Error toggling branch status:', error.response ? error.response.data : error.message);
-
-        // Show error message
         showPopup('Failed to change the status. Please try again!', "error");
-
       }
-
-      // Clear the message after 3 seconds
-      setTimeout(() => setMessage(null), 3000);
     } else {
       console.error('No Branch selected for status toggle');
-      showPopup('No branch selected for status toggle.!', "error");
+      showPopup('No branch selected for status toggle!', "error");
     }
   };
 
@@ -244,7 +264,6 @@ const FilesType = () => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      // hour12: true 
     };
     return date.toLocaleString('en-GB', options).replace(',', '');
   };
@@ -262,7 +281,6 @@ const FilesType = () => {
       updatedOnText.includes(searchTerm.toLowerCase())
     );
   });
-
 
   const sortedfile = filteredFilesType?.sort((a, b) => b.isActive - a.isActive);
 
@@ -287,13 +305,11 @@ const FilesType = () => {
     }
   };
 
-
   return (
     <div className="px-2">
       <h1 className="text-lg mb-1 font-semibold">FileTypes</h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
 
-        {/* Popup Messages */}
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -302,33 +318,31 @@ const FilesType = () => {
           />
         )}
 
-
-
         <div className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="flex gap-6">
             <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <label htmlFor="name" className="block text-md font-medium text-gray-700">
-
-
-                File Types
+                File Types<span className="text-red-500">*</span>
                 <input
                   type="text"
                   placeholder="Enter File Types"
                   name="filetype"
                   value={formData.filetype || ""}
+                  maxLength={15}
                   onChange={handleInputChange}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
 
-              {/* Address Input */}
               <label className="block text-md font-medium text-gray-700">
                 Extension
+                <span className="text-red-500 text-sm ml-2 align-middle">(Unique)</span>
                 <input
-                  type="extension"
-                  placeholder="Enter extension"
+                  type="text"
+                  placeholder="Enter extension (e.g., .pdf)"
                   name="extension"
                   value={formData.extension || ""}
+                  maxLength={7}
                   onChange={handleInputChange}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -350,9 +364,7 @@ const FilesType = () => {
           </div>
         </div>
 
-        {/* Search and Items Per Page Section */}
         <div className="mb-3 bg-slate-100 px-3 py-2 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label
               htmlFor="itemsPerPage"
@@ -377,7 +389,6 @@ const FilesType = () => {
             </select>
           </div>
 
-          {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
@@ -390,7 +401,6 @@ const FilesType = () => {
           </div>
         </div>
 
-        {/* Branches Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border">
             <thead>
@@ -438,11 +448,7 @@ const FilesType = () => {
           </table>
         </div>
 
-
-        
-        {/* Pagination Controls */}
         <div className="flex items-center mt-4">
-          {/* Previous Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1 || totalPages === 0}
@@ -453,7 +459,6 @@ const FilesType = () => {
             Previous
           </button>
 
-          {/* Page Number Buttons */}
           {totalPages > 0 && getPageNumbers().map((page) => (
             <button
               key={page}
@@ -465,10 +470,8 @@ const FilesType = () => {
             </button>
           ))}
 
-          {/* Page Count Info */}
           <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
 
-          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
@@ -488,12 +491,11 @@ const FilesType = () => {
         </div>
       </div>
 
-      {/* Toggle Active Modal */}
       {modalVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-lg font-semibold mb-4">Confirm Status Change</h2>
-            <p className="mb-4">Are you sure you want to {fileTypeToToggle.isActive ? 'deactivate' : 'activate'} this branch<strong>{fileTypeToToggle.name}</strong>?</p>
+            <p className="mb-4">Are you sure you want to {fileTypeToToggle.isActive ? 'deactivate' : 'activate'} this branch <strong>{fileTypeToToggle.name}</strong>?</p>
             <div className="flex justify-end gap-4">
               <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">Cancel</button>
               <button

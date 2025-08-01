@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
   ArrowLeftIcon,
@@ -29,19 +29,20 @@ const Branch = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [branchToToggle, setBranchToToggle] = useState(null);
-  const [editingBranchId, setEditingBranchId] = useState(null); // Define the state for editing role ID
-  const [message, setMessage] = useState(null); // For the success message
-  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+  const [editingBranchId, setEditingBranchId] = useState(null);
+  const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const formSectionRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
 
   useEffect(() => {
     fetchBranches();
-  }, []); // Adding an empty dependency array to avoid infinite loop
+  }, []);
 
   const fetchBranches = async () => {
     setIsLoading(true);
@@ -61,84 +62,109 @@ const Branch = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    // Validate name field (no numbers, max 30 chars)
+    if (name === 'name') {
+      if (/\d/.test(value)) {
+        showPopup('Branch name cannot contain numbers', 'error');
+        return;
+      }
+      if (value.length > 30) {
+        showPopup('Branch name cannot exceed 30 characters', 'error');
+        return;
+      }
+    }
+
+    // Validate address field (max 50 chars)
+    if (name === 'address' && value.length > 50) {
+      showPopup('Address cannot exceed 50 characters', 'error');
+      return;
+    }
+
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleAddBranch = async () => {
-    if (formData.name && formData.address) {
-      try {
-        const newBranch = {
-          ...formData,
-          createdOn: new Date().toISOString(),
-          updatedOn: new Date().toISOString(),
-          isActive: formData.isActive ? 1 : 0,
-        };
-
-        const response = await axios.post(`${BRANCH_API}/save`, newBranch, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        setBranches([...branches, response.data]);
-        setFormData({ name: '', address: '', isActive: true });
-
-        // Set success message
-        showPopup('Branch added successfully!', "success");
-      } catch (error) {
-        console.error('Error adding branch:', error.response ? error.response.data : error.message);
-
-        // Set error message
-        showPopup('Failed to add the Branch. Please try again.!', "error");
-
-      }
-    } else {
-      // Set warning message
-      showPopup('Please fill in all required fields.!', "warning");
-
-    }
-
-
+  const isDuplicateBranch = (name) => {
+    return branches.some(branch =>
+      branch.name.toLowerCase() === name.toLowerCase() &&
+      branch.id !== editingBranchId
+    );
   };
 
+  const handleAddBranch = async () => {
+    if (!formData.name.trim() || !formData.address.trim()) {
+      showPopup('Please fill in all required fields!', 'warning');
+      return;
+    }
 
+    if (isDuplicateBranch(formData.name)) {
+      showPopup('Branch with this name already exists!', 'error');
+      return;
+    }
 
-  // Function to handle role editing
+    try {
+      const newBranch = {
+        ...formData,
+        createdOn: new Date().toISOString(),
+        updatedOn: new Date().toISOString(),
+        isActive: formData.isActive ? 1 : 0,
+      };
+
+      const response = await axios.post(`${BRANCH_API}/save`, newBranch, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      setBranches([...branches, response.data]);
+      setFormData({ name: '', address: '', isActive: true });
+      showPopup('Branch added successfully!', "success");
+    } catch (error) {
+      console.error('Error adding branch:', error.response ? error.response.data : error.message);
+      showPopup('Failed to add the Branch. Please try again!', "error");
+    }
+  };
+
   const handleEditBranch = (branchId) => {
-    // Set the actual ID of the branch being edited
     setEditingBranchId(branchId);
-
-    // Find the branch in the original list by its ID to populate the form
     const branchToEdit = branches.find(branch => branch.id === branchId);
 
-    // Populate the form with the branch data (if found)
     if (branchToEdit) {
       setFormData({
         name: branchToEdit.name,
         address: branchToEdit.address,
-        isActive: branchToEdit.isActive === 1, // Convert to boolean if needed
-        id: branchToEdit.id, // Ensure the ID is also in formData for updates
+        isActive: branchToEdit.isActive === 1,
+        id: branchToEdit.id,
       });
-    } else {
-      console.error('Branch not found for ID:', branchId); // Log if the branch is not found
+
+      // Scroll to form section
+      if (formSectionRef.current) {
+        formSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
   const handleSaveEdit = async () => {
-    if (formData.name.trim() && editingBranchId !== null) {
+    if (!formData.name.trim()) {
+      showPopup('Please enter a branch name', 'warning');
+      return;
+    }
+
+    if (isDuplicateBranch(formData.name)) {
+      showPopup('Branch with this name already exists!', 'error');
+      return;
+    }
+
+    if (editingBranchId !== null) {
       try {
-        // Find the branch in the original list by its ID
         const branchIndex = branches.findIndex(branch => branch.id === editingBranchId);
 
         if (branchIndex === -1) {
-          setMessage('Branch not found!');
-          setMessageType('error');
-          setTimeout(() => setMessage(null), 3000);
+          showPopup('Branch not found!', 'error');
           return;
         }
 
-        // Create the updated branch object
         const updatedBranch = {
           ...branches[branchIndex],
           name: formData.name,
@@ -147,38 +173,26 @@ const Branch = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        // Send the update request to the server
         const response = await axios.put(`${BRANCH_API}/update/${updatedBranch.id}`, updatedBranch, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
           },
         });
 
-        // Update the original branches list with the updated branch
         const updatedBranches = branches.map(branch =>
           branch.id === updatedBranch.id ? response.data : branch
         );
 
-        // Update the state with the modified branches array
         setBranches(updatedBranches);
-        setFormData({ name: '', address: '', isActive: true }); // Reset form data
-        setEditingBranchId(null); // Reset the editing state
-
-        // Show success message
+        setFormData({ name: '', address: '', isActive: true });
+        setEditingBranchId(null);
         showPopup('Branch updated successfully!', "success");
       } catch (error) {
         console.error('Error updating branch:', error.response ? error.response.data : error.message);
-
-        // Show error message
-        showPopup('Failed to update the branch. Please try again.!', "error");
-
+        showPopup('Failed to update the branch. Please try again!', "error");
       }
-
-
     }
   };
-
-
 
   const handleToggleActiveStatus = (branch) => {
     setBranchToToggle(branch);
@@ -192,13 +206,13 @@ const Branch = () => {
       try {
         const updatedBranch = {
           ...branchToToggle,
-          isActive: branchToToggle.isActive === 1 ? 0 : 1, // Toggle between 1 and 0
+          isActive: branchToToggle.isActive === 1 ? 0 : 1,
           updatedOn: new Date().toISOString(),
         };
 
-        const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
+        const token = localStorage.getItem(tokenKey);
         const response = await axios.put(
-          `${BRANCH_API}/updatestatus/${updatedBranch.id}`, // Update API endpoint
+          `${BRANCH_API}/updatestatus/${updatedBranch.id}`,
           updatedBranch,
           {
             headers: {
@@ -216,26 +230,16 @@ const Branch = () => {
         setModalVisible(false);
         setBranchToToggle(null);
         setIsConfirmDisabled(false);
-
-        // Show success message
         showPopup('Status changed successfully!', "success");
-
       } catch (error) {
         console.error('Error toggling branch status:', error.response ? error.response.data : error.message);
-
-        // Show error message
         showPopup('Failed to change the status. Please try again!', "error");
-
       }
-
-      // Clear the message after 3 seconds
-      setTimeout(() => setMessage(null), 3000);
     } else {
       console.error('No Branch selected for status toggle');
-      showPopup('No branch selected for status toggle.!', "error");
+      showPopup('No branch selected for status toggle!', "error");
     }
   };
-
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({
@@ -243,11 +247,12 @@ const Branch = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        window.location.reload();
+        if (type === 'success') {
+          window.location.reload();
+        }
       }
     });
   };
-
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -257,7 +262,6 @@ const Branch = () => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      // hour12: true 
     };
     return date.toLocaleString('en-GB', options).replace(',', '');
   };
@@ -277,19 +281,15 @@ const Branch = () => {
   });
 
   const sortedBranches = filteredBranches.sort((a, b) => b.isActive - a.isActive);
-
   const totalItems = sortedBranches.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  // Calculate the paginated branches
   const paginatedBranches = sortedBranches.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Generate page numbers
   const getPageNumbers = () => {
-    const maxPageNumbers = 5; // Number of page buttons to show
+    const maxPageNumbers = 5;
     const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
@@ -310,8 +310,6 @@ const Branch = () => {
       <h1 className="text-2xl mb-1 font-semibold">Branches</h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
 
-
-        {/* Popup Messages */}
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -320,66 +318,76 @@ const Branch = () => {
           />
         )}
 
-        {/* Form Section */}
-        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+        {/* Form Section with ref */}
+        <div ref={formSectionRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="flex gap-6">
             <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Name Input */}
               <label className="block text-md font-medium text-gray-700">
-                Name
+                Name <span className="text-red-500">*</span>
                 <input
                   type="text"
-                  placeholder="Enter name"
+                  placeholder="Enter name "
                   name="name"
                   value={formData.name || ""}
                   onChange={handleInputChange}
+                  maxLength={30}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
               </label>
 
-              {/* Address Input */}
               <label className="block text-md font-medium text-gray-700">
-                Address
+                Address <span className="text-red-500">*</span>
                 <input
                   type="text"
-                  placeholder="Enter address"
+                  placeholder="Enter address "
                   name="address"
                   value={formData.address || ""}
                   onChange={handleInputChange}
+                  maxLength={50}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
               </label>
             </div>
 
             <div className="w-1/5 flex items-end">
               {editingBranchId === null ? (
-                <button
+                 <button
                   onClick={handleAddBranch}
-                  className="bg-blue-900 text-white rounded-2xl p-2 mb-1 text-sm flex items-center justify-center"
+                  disabled={isSubmitting}
+                  className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <PlusCircleIcon className="h-4 w-4 mr-1" /> Add Branch
+                  {isSubmitting ? (
+                    'Adding...'
+                  ) : (
+                    <>
+                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Role
+                    </>
+                  )}
                 </button>
               ) : (
                 <button
                   onClick={handleSaveEdit}
-                  className="bg-blue-900 text-white rounded-2xl p-2 mb-1 text-sm flex items-center justify-center"
+                  disabled={isSubmitting}
+                  className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <CheckCircleIcon className="h-4 w-4 mr-1" /> Update
+                  {isSubmitting ? (
+                    'Updating...'
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                    </>
+                  )}
                 </button>
               )}
             </div>
           </div>
         </div>
 
-
-        {/* Search and Items Per Page Section */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
+            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
               Show:
             </label>
             <select
@@ -399,7 +407,6 @@ const Branch = () => {
             </select>
           </div>
 
-          {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
@@ -412,7 +419,6 @@ const Branch = () => {
           </div>
         </div>
 
-        {/* Branches Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border">
             <thead>
@@ -437,8 +443,11 @@ const Branch = () => {
                   <td className="border p-2">{formatDate(branch.updatedOn)}</td>
                   <td className="border p-2">{branch.isActive ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2 text-center">
-                    <button onClick={() => handleEditBranch(branch.id)} disabled={branch.isActive === 0}
-                      className={`${branch.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <button
+                      onClick={() => handleEditBranch(branch.id)}
+                      disabled={branch.isActive === 0}
+                      className={`${branch.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
                   </td>
@@ -460,11 +469,7 @@ const Branch = () => {
           </table>
         </div>
 
-
-        
-        {/* Pagination Controls */}
         <div className="flex items-center mt-4">
-          {/* Previous Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1 || totalPages === 0}
@@ -475,7 +480,6 @@ const Branch = () => {
             Previous
           </button>
 
-          {/* Page Number Buttons */}
           {totalPages > 0 && getPageNumbers().map((page) => (
             <button
               key={page}
@@ -487,10 +491,8 @@ const Branch = () => {
             </button>
           ))}
 
-          {/* Page Count Info */}
           <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
 
-          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
@@ -510,12 +512,11 @@ const Branch = () => {
         </div>
       </div>
 
-      {/* Toggle Active Modal */}
       {modalVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-lg font-semibold mb-4">Confirm Status Change</h2>
-            <p className="mb-4">Are you sure you want to {branchToToggle.isActive ? 'deactivate' : 'activate'} this branch<strong>{branchToToggle.name}</strong>?</p>
+            <p className="mb-4">Are you sure you want to {branchToToggle.isActive ? 'deactivate' : 'activate'} this branch <strong>{branchToToggle.name}</strong>?</p>
             <div className="flex justify-end gap-4">
               <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">Cancel</button>
               <button
