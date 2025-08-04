@@ -344,14 +344,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
    const openFileBeforeSubmit = async (file) => {
     try {
-      // setIsOpeningFile(true);
-
-      // const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-      // const department = selectedDoc.employee.department.name.replace(/ /g, "_");
-      // const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-      // const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
-      // const version = file.version;
-      // const fileName = file.docName.replace(/ /g, "_");
 
       const fileUrl = `${API_HOST}/api/documents/download/${file}`;
 
