@@ -75,9 +75,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [contentType, setContentType] = useState("");
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
-  const [isOpeningFile, setIsOpeningFile] = useState(false);
+  const [openingFileIndex, setOpeningFileIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [bProcess, setBProcess] = useState(false);
+  const [loadingFiles, setLoadingFiles] = useState(false);
 
   console.log("formData", formData);
   useEffect(() => {
@@ -91,6 +92,22 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     fetchUser();
 
   }, []);
+
+
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+        if (type === 'success') {
+          window.location.reload();
+        }
+      }
+    });
+  };
+
+  console.log("already uploaded", uploadedFilePath);
 
   const fetchFilesType = async () => {
     try {
@@ -157,11 +174,22 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setYearOptions(response.data);
+
+      const currentYear = new Date().getFullYear();
+
+      const filteredYears = response.data
+        .filter((yearObj) => {
+          return parseInt(yearObj.name) <= currentYear;
+        })
+        .sort((a, b) => parseInt(b.name) - parseInt(a.name));
+
+      setYearOptions(filteredYears);
     } catch (error) {
       console.error("Error fetching Year:", error);
     }
   };
+
+
 
   const fetchUser = async () => {
     try {
@@ -276,7 +304,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const openFile = async (file) => {
     try {
-      setIsOpeningFile(true);
+      // setIsOpeningFile(true);
 
       const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
       const department = selectedDoc.employee.department.name.replace(/ /g, "_");
@@ -310,7 +338,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       console.error("Error:", error);
       alert("Failed to fetch or preview the file.");
     } finally {
-      setIsOpeningFile(false);
+      // setIsOpeningFile(false);
     }
   };
 
@@ -358,6 +386,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return name.includes(term) || version.includes(term);
     });
   }, [selectedDoc, searchFileTerm]);
+
+  useEffect(() => {
+    if (selectedDoc) {
+      setLoadingFiles(true);
+      setTimeout(() => {
+        setLoadingFiles(false);
+      }, 300);
+    }
+  }, [selectedDoc]);
 
 
   const formatDate = (dateString) => {
@@ -427,7 +464,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 ...(prevData.uploadedFilePaths || []),
                 ...result.uploadedFiles.map((filePath) => ({
                   path: filePath,
-                  version: `V${version}`,
+                  version: `${version}`,
                 })),
               ],
             }));
@@ -444,8 +481,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 version: `${version}`,
               })),
             ]);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = null;
+            }
+            setFormData(prev => ({
+              ...prev,
+              version: ""
+            }));
 
             showPopup("Files uploaded successfully!", "success");
+
           }
 
           if (result.errors.length > 0) {
@@ -561,17 +606,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       !year ||
       uploadedFilePath.length === 0
     ) {
-      showPopup(
-        "Please fill in all the required fields and upload files.",
-        "error"
-      );
+      showPopup("Please fill in all the required fields and upload files.", "error");
       return;
     }
 
-    // Correct mapping of file paths and versions
     const versionedFilePaths = uploadedFilePath.map((file) => ({
-      path: file.path, // Directly use the path property
-      version: file.version, // Use the version property
+      path: file.path,
+      version: file.version,
     }));
 
     const payload = {
@@ -584,7 +625,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         yearMaster: { id: year.id },
         employee: { id: parseInt(userId, 10) },
       },
-      filePaths: versionedFilePaths, // Flattened structure
+      filePaths: versionedFilePaths,
     };
 
     try {
@@ -599,23 +640,34 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorDetails = await response.text();
-        throw new Error(
-          `HTTP error! Status: ${response.status}. Message: ${errorDetails}`
-        );
+      const result = await response.json();
+
+      console.log("API result:", result); // Debugging
+
+      // ❗ Check for non-OK or conflict or missing success field
+      if (!response.ok || result?.status === 409 || result?.response?.msg || result?.message) {
+        const warningMessage =
+          result?.response?.msg || result?.message || "Unknown error occurred";
+
+        showPopup(`Document update failed: ${warningMessage}`, "warning"); // ✅ Show yellow warning
+        return;
       }
 
-      showPopup("Document updated successfully!", "success");
+      const successMessage = result?.message || "Document updated successfully!";
+      showPopup(successMessage, "success");
+
       resetEditForm();
       fetchDocuments();
+
     } catch (error) {
       console.error("Error updating document:", error);
-      showPopup(`Document update failed: ${error.message}`, "error");
+      showPopup(`Document update failed: ${error.message}`, "warning");
     } finally {
       setBProcess(false);
     }
+
   };
+
 
   const resetEditForm = () => {
     setFormData({
@@ -667,70 +719,67 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       !formData.year ||
       formData.uploadedFilePaths.length === 0
     ) {
-      showPopup(
-        "Please fill in all the required fields and upload a file.",
-        "error"
-      );
+      showPopup("Please fill in all the required fields and upload a file.", "error");
       return;
     }
 
-    // Add versioning to uploadedFilePaths based on directory structure
+    // Add versioning to uploadedFilePaths
     const versionedFilePaths = formData.uploadedFilePaths.map((filePath) => {
       if (typeof filePath !== "string") {
         console.error("Invalid filePath format:", filePath);
         return {
-          path: filePath?.path || "Unknown", // Adjust as per your data structure
+          path: filePath?.path || "Unknown",
           version: formData.version,
         };
       }
 
-      const versionMatch = filePath.match(/\/V(\d+)\//i); // Extract version from path
-      const version = versionMatch ? `V${versionMatch[1]}` : formData.version; // Use extracted or current version
+      const versionMatch = filePath.match(/\/V(\d+)\//i);
+      const version = versionMatch ? `V${versionMatch[1]}` : formData.version;
       return {
         path: filePath,
         version: version,
       };
     });
 
-    // Construct the payload
+    // Construct payload
     const payload = {
       documentHeader: {
         fileNo: formData.fileNo,
         title: formData.title,
         subject: formData.subject,
-        categoryMaster: { id: formData.category.id }, // Category ID from formData
+        categoryMaster: { id: formData.category.id },
         yearMaster: { id: formData.year.id },
-        employee: { id: parseInt(UserId, 10) }, // Employee ID from user session
+        employee: { id: parseInt(UserId, 10) },
       },
-      filePaths: versionedFilePaths, // Versioned file paths
+      filePaths: versionedFilePaths,
     };
-
-    console.log("Payload to be sent:", payload);
 
     try {
       setBProcess(true);
-      // Send the payload to the backend
+
       const response = await fetch(`${API_HOST}/api/documents/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Include the authorization token
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload), // Convert payload to JSON
+        body: JSON.stringify(payload),
       });
 
-      // Check if the response is successful
-      if (!response.ok) {
-        const errorDetails = await response.text(); // Get error details from the response
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorDetails}`
-        );
+      const result = await response.json();
+
+      // ✅ Enhanced error handling
+      if (!response.ok || result?.status === 409 || result?.response?.msg || result?.message?.toLowerCase().includes("duplicate")) {
+        const errorMessage = result?.response?.msg || result?.message || "Unknown error occurred";
+        showPopup(`Document save failed: ${errorMessage}`, "warning");
+        return;
       }
 
-      // If successful, reset the form and reload documents
-      showPopup("Document saved successfully!", "success");
 
-      // Reset the form data
+      const successMessage = result?.message || "Document saved successfully";
+      showPopup(successMessage, "success");
+
+      // Reset form
       setFormData({
         fileNo: "",
         title: "",
@@ -741,15 +790,17 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         uploadedFilePaths: [],
       });
       setUploadedFilePath([]);
-      setUploadedFileNames([]); // Clear file names
-      fetchDocuments(); // Refresh the documents list
+      setUploadedFileNames([]);
+      fetchDocuments();
+
     } catch (error) {
       console.error("Error saving document:", error);
-      showPopup(`Document save failed`, "error");
+      showPopup(`Document save failed: ${error.message}`, "warning");
     } finally {
       setBProcess(false);
     }
   };
+
 
   const fetchPaths = async (doc) => {
     try {
@@ -894,9 +945,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }, 1000);
   };
 
-  const showPopup = (message, type = "info") => {
-    setPopupMessage({ message, type });
-  };
+
 
   useEffect(() => {
     if (selectedDoc && selectedDoc.id) {
@@ -1003,11 +1052,24 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     );
   };
 
-  const filteredDocuments = documents.filter((doc) =>
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.fileNo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  console.log("searchTerm", documents)
+
+
+  const filteredDocuments = documents.filter((doc) => {
+    const search = searchTerm.toLowerCase();
+    const createdDate = new Date(doc.createdOn).toLocaleDateString("en-GB");
+
+    return (
+      doc.title.toLowerCase().includes(search) ||
+      doc.subject.toLowerCase().includes(search) ||
+      doc.fileNo.toLowerCase().includes(search) ||
+      doc.yearMaster.name.toLowerCase().includes(search) ||
+      doc.categoryMaster.name.toLowerCase().includes(search) ||
+      doc.approvalStatus.toLowerCase().includes(search) ||
+      createdDate.includes(search)
+    );
+  });
+
 
   const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
@@ -1052,6 +1114,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     setFormData({ ...formData, fileNo: e.target.value })
                   }
                   disabled={fieldsDisabled}
+                  maxLength={20}
+                  minLength={3}
+                  required
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
@@ -1068,6 +1133,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     setFormData({ ...formData, title: e.target.value })
                   }
                   disabled={fieldsDisabled}
+                  maxLength={20}
+                  minLength={3}
+                  required
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
@@ -1084,6 +1152,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     setFormData({ ...formData, subject: e.target.value })
                   }
                   disabled={fieldsDisabled}
+                  maxLength={20}
+                  minLength={3}
+                  required
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
@@ -1095,7 +1166,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   name="category"
                   value={formData.category?.id || ""}
                   onChange={handleCategoryChange}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={formData.uploadedFilePaths?.length > 0}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select category</option>
                   {categoryOptions.map((category) => (
@@ -1112,7 +1184,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   name="year"
                   value={formData.year?.id || ""}
                   onChange={handleYearChange}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={formData.uploadedFilePaths?.length > 0}
+                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select Year</option>
                   {yearOptions.map((year) => (
@@ -1122,6 +1195,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   ))}
                 </select>
               </label>
+
               {unsportFile === true && (
                 <button onClick={viewfiletype} className="bg-blue-600 text-white h-12 px-2 mt-7 rounded-md">
                   Show Supported File Types
@@ -1140,6 +1214,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     setFormData({ ...formData, version: e.target.value })
                   }
                   disabled={fieldsDisabled}
+                  maxLength={20}
+                  minLength={3}
+                  required
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
@@ -1172,7 +1249,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
               <button
                 onClick={handleUploadDocument}
-                disabled={!isUploadEnabled || isUploading}
+                disabled={
+                  !isUploadEnabled ||
+                  isUploading ||
+                  !fileInputRef.current ||
+                  fileInputRef.current.files.length === 0 ||
+                  !formData.version
+                }
+
                 className={`ml-2 text-white rounded-xl p-2 h-14 mt-6 flex items-center justify-center relative transition-all duration-300 ${isUploading ? "bg-blue-600 cursor-not-allowed" : isUploadEnabled ? "bg-blue-900" : "bg-gray-400"
                   }`}
               >
@@ -1247,6 +1331,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                           className="border rounded px-2 py-1 text-sm"
                           disabled={!handleEditDocumentActive}
                           placeholder="v1"
+                          maxLength={10}
                         />
                       </label>
                     </div>
@@ -1267,8 +1352,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 const displayName = uploadedFileNames[index];
                 const version = file.version;
 
+                // Check if this file path exists in formData.uploadedFilePaths
+                const isDisabled = formData?.uploadedFilePaths?.some(
+                  (uploaded) => uploaded.path === file.path
+                );
+
                 return (
-                  <li key={index} className="grid grid-cols-3 items-center gap-4 p-2 border rounded-md">
+                  <li
+                    key={index}
+                    className="grid grid-cols-3 items-center gap-4 p-2 border rounded-md"
+                  >
                     <div className="text-left">
                       <span className="block font-medium">
                         <strong>{displayName}</strong>
@@ -1283,10 +1376,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         <input
                           type="text"
                           value={version}
-                          onChange={(e) => handleVersionChange(index, e.target.value.trim())}
+                          onChange={(e) =>
+                            handleVersionChange(index, e.target.value.trim())
+                          }
                           className="border rounded px-2 py-1 text-sm"
-                          disabled={!handleEditDocumentActive}
+                          disabled={!handleEditDocumentActive || isDisabled}
                           placeholder="v1"
+                          maxLength={10}
                         />
                       </label>
                     </div>
@@ -1302,6 +1398,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   </li>
                 );
               })
+
             )}
 
             <FilePreviewModal
@@ -1387,6 +1484,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 className="border rounded-l-md p-1 outline-none"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                maxLength={20}
               />
               <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
             </div>
@@ -1604,12 +1702,19 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                                 placeholder="Search Files..."
                                 value={searchFileTerm}
                                 onChange={(e) => setSearchFileTerm(e.target.value)}
+                                maxLength={20}
                                 className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                               />
                             </div>
                           </div>
 
-                          {selectedDoc && filteredDocFiles.length > 0 ? (
+                          {loadingFiles ? (
+                            <div className="flex justify-center items-center mt-4">
+                              <div className="w-6 h-6 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+                              <span className="ml-2 text-gray-600">Loading files...</span>
+                            </div>
+
+                          ) : selectedDoc && filteredDocFiles.length > 0 ? (
                             <>
                               <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
                                 <h3 className="flex-1 text-left ml-2">File Name</h3>
@@ -1637,17 +1742,18 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                                     <div className="text-right">
                                       <button
                                         onClick={() => {
+                                          setOpeningFileIndex(index);
                                           setSelectedDocFiles(file);
-                                          openFile(file);
+                                          openFile(file).finally(() => setOpeningFileIndex(null));
                                         }}
-                                        disabled={isOpeningFile}
+                                        disabled={openingFileIndex !== null}
                                         className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
-                                          ${isOpeningFile
+                ${openingFileIndex === index
                                             ? 'opacity-50 cursor-not-allowed'
-                                            : 'hover:bg-indigo-600'
-                                          }`}
+                                            : 'hover:bg-indigo-600'}
+              `}
                                       >
-                                        {isOpeningFile ? 'Opening...' : 'Open'}
+                                        {openingFileIndex === index ? 'Opening...' : 'Open'}
                                       </button>
                                     </div>
                                   </li>
@@ -1659,6 +1765,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                               No attached files available.
                             </p>
                           )}
+
                         </div>
                       </div>
                     </div>
@@ -1666,42 +1773,52 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 </div>
               )}
 
-              {viewFileTypeModel === true && (
-                <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 bg-white shadow-lg rounded-lg p-4 border border-gray-200 max-h-80 overflow-y-auto">
-                  <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-lg font-semibold">Supported File Types</h2>
-                    <button
-                      onClick={handlecloseFileType}
-                      className="text-gray-600 hover:text-gray-900"
-                    >
-                      ✖
-                    </button>
+              {viewFileTypeModel && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+                  <div className="w-80 sm:w-96 bg-white rounded-xl shadow-xl p-5 border border-gray-200 max-h-[80vh] overflow-y-auto transition-all">
+
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-semibold text-gray-800">Supported File Types</h2>
+                      <button
+                        onClick={handlecloseFileType}
+                        className="text-gray-400 hover:text-red-500 text-xl focus:outline-none"
+                        aria-label="Close"
+                      >
+                        &times;
+                      </button>
+                    </div>
+
+                    {/* Search Input */}
+                    <input
+                      type="text"
+                      placeholder="Search file type..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchFileTerm(e.target.value)}
+                      maxLength={20}
+                      className="w-full p-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+
+                    {/* List */}
+                    <ul className="space-y-2">
+                      {filteredFiles.length > 0 ? (
+                        filteredFiles.map((file) => (
+                          <li
+                            key={file.id}
+                            className="flex justify-between items-center px-3 py-2 bg-gray-50 rounded-md hover:bg-blue-50 transition text-sm"
+                          >
+                            <span className="text-gray-800 font-medium">{file.filetype}</span>
+                            <span className="text-gray-500">{file.extension}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-center text-gray-500 text-sm">No matching file types found</li>
+                      )}
+                    </ul>
                   </div>
-
-                  {/* Search Input */}
-                  <input
-                    type="text"
-                    placeholder="Search file type..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchFileTerm(e.target.value)}
-                    className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-
-                  <ul className="space-y-2">
-                    {filteredFiles.length > 0 ? (
-                      filteredFiles.map((file) => (
-                        <li key={file.id} className="flex justify-between text-gray-700">
-                          <span>{file.filetype}</span>
-                          <span className="text-gray-500">{file.extension}</span>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="text-gray-500">No matching file types found</li>
-                    )}
-                  </ul>
                 </div>
-
               )}
+
             </>
           </div>
         </div>
