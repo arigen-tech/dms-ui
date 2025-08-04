@@ -342,6 +342,40 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
+   const openFileBeforeSubmit = async (file) => {
+    try {
+      // setIsOpeningFile(true);
+
+      // const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+      // const department = selectedDoc.employee.department.name.replace(/ /g, "_");
+      // const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
+      // const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+      // const version = file.version;
+      // const fileName = file.docName.replace(/ /g, "_");
+
+      const fileUrl = `${API_HOST}/api/documents/download/${file}`;
+
+      const response = await apiClient.get(fileUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob",
+      });
+
+      let blob = new Blob([response.data], { type: response.headers["content-type"] });
+      let url = URL.createObjectURL(blob);
+
+      setBlobUrl(url);
+      setContentType(response.headers["content-type"]);
+      // setIsOpen(false);
+      setSearchFileTerm("");
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to fetch or preview the file.");
+    } finally {
+      // setIsOpeningFile(false);
+    }
+  };
+
   const handleDownload = async (file) => {
     const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
     const department = selectedDoc.employee.department.name.replace(/ /g, "_");
@@ -1310,7 +1344,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               formData?.uploadedFilePaths?.map((file, index) => {
                 const displayName = uploadedFileNames[index];
                 const version = file.version;
-
                 return (
                   <li key={index} className="grid grid-cols-3 items-center gap-4 p-2 border rounded-md">
                     <div className="text-left">
@@ -1336,14 +1369,22 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       </label>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right flex justify-end gap-2">
                       <button
-                        onClick={() => handleDiscardAddingFile(index)}
-                        className="bg-red-500 text-white hover:bg-red-800 rounded-2xl p-2 text-sm"
+                        onClick={() => openFileBeforeSubmit(file?.path)}
+                        className="bg-indigo-500 text-white hover:bg-indigo-700 rounded-2xl px-3 py-1 text-sm"
+                      >
+                        Open
+                      </button>
+                      <button
+                        onClick={() => handleDiscardFile(index)}
+                        className="bg-red-500 text-white hover:bg-red-800 rounded-2xl px-3 py-1 text-sm"
                       >
                         Delete
                       </button>
+
                     </div>
+
                   </li>
                 );
               })
@@ -1387,14 +1428,22 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       </label>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right flex justify-end gap-2">
+                      <button
+                        onClick={() => openFileBeforeSubmit(file?.path)}
+                        className="bg-indigo-500 text-white hover:bg-indigo-700 rounded-2xl px-3 py-1 text-sm"
+                      >
+                        Open
+                      </button>
                       <button
                         onClick={() => handleDiscardFile(index)}
-                        className="bg-red-500 text-white hover:bg-red-800 rounded-2xl p-2 text-sm"
+                        className="bg-red-500 text-white hover:bg-red-800 rounded-2xl px-3 py-1 text-sm"
                       >
                         Delete
                       </button>
+                      
                     </div>
+
                   </li>
                 );
               })
