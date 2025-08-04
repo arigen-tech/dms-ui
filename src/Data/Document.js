@@ -614,85 +614,86 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setUploadedFileVersion(existingFiles.map((file) => file.version));
   };
 
-  const handleSaveEdit = async () => {
-    const userId = localStorage.getItem("userId");
+const handleSaveEdit = async () => {
+  const userId = localStorage.getItem("userId");
 
-    if (!userId || !token) {
-      showPopup("User not logged in. Please log in again.", "error");
-      return;
-    }
+  if (!userId || !token) {
+    showPopup("User not logged in. Please log in again.", "error");
+    return;
+  }
 
-    const { fileNo, title, subject, category, year } = formData;
+  const { fileNo, title, subject, category, year } = formData;
 
-    if (
-      !fileNo ||
-      !title ||
-      !subject ||
-      !category ||
-      !year ||
-      uploadedFilePath.length === 0
-    ) {
-      showPopup("Please fill in all the required fields and upload files.", "error");
-      return;
-    }
+  if (
+    !fileNo ||
+    !title ||
+    !subject ||
+    !category ||
+    !year ||
+    uploadedFilePath.length === 0
+  ) {
+    showPopup("Please fill in all the required fields and upload files.", "error");
+    return;
+  }
 
-    const versionedFilePaths = uploadedFilePath.map((file) => ({
-      path: file.path,
-      version: file.version,
-    }));
+  const versionedFilePaths = uploadedFilePath.map((file) => ({
+    path: file.path,
+    version: file.version,
+  }));
 
-    const payload = {
-      documentHeader: {
-        id: editingDoc.id,
-        fileNo,
-        title,
-        subject,
-        categoryMaster: { id: category.id },
-        yearMaster: { id: year.id },
-        employee: { id: parseInt(userId, 10) },
-      },
-      filePaths: versionedFilePaths,
-    };
-
-    try {
-      setBProcess(true);
-
-      const response = await fetch(`${API_HOST}/api/documents/update`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      console.log("API result:", result); // Debugging
-
-      // ❗ Check for non-OK or conflict or missing success field
-      if (!response.ok || result?.status === 409 || result?.response?.msg || result?.message) {
-        const warningMessage =
-          result?.response?.msg || result?.message || "Unknown error occurred";
-
-        showPopup(`Document update failed: ${warningMessage}`, "warning"); // ✅ Show yellow warning
-        return;
-      }
-
-      const successMessage = result?.message || "Document updated successfully!";
-      showPopup(successMessage, "success");
-
-      resetEditForm();
-      fetchDocuments();
-
-    } catch (error) {
-      console.error("Error updating document:", error);
-      showPopup(`Document update failed: ${error.message}`, "warning");
-    } finally {
-      setBProcess(false);
-    }
-
+  const payload = {
+    documentHeader: {
+      id: editingDoc.id,
+      fileNo,
+      title,
+      subject,
+      categoryMaster: { id: category.id },
+      yearMaster: { id: year.id },
+      employee: { id: parseInt(userId, 10) },
+    },
+    filePaths: versionedFilePaths,
   };
+
+  try {
+    setBProcess(true);
+
+    const response = await fetch(`${API_HOST}/api/documents/update`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    console.log("API result:", result); // For debugging
+
+    // ✅ Handle failure conditions
+    if (!response.ok || result?.status === 409 || result?.message?.toLowerCase() !== "success") {
+      const warningMessage =
+        result?.response?.msg || result?.message || "Unknown error occurred";
+      showPopup(`Document update failed: ${warningMessage}`, "warning");
+      return;
+    }
+
+    // ✅ Handle success case
+    const successMessage =
+      result?.response?.msg || result?.message || "Document updated successfully!";
+    showPopup(successMessage, "success");
+
+    resetEditForm();
+    fetchDocuments();
+
+  } catch (error) {
+    console.error("Error updating document:", error);
+    showPopup(`Document update failed: ${error.message}`, "warning");
+  } finally {
+    setBProcess(false);
+  }
+};
+
 
 
   const resetEditForm = () => {
@@ -735,97 +736,105 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   // Handle adding the document
-  const handleAddDocument = async () => {
-    // Validate required fields and uploaded files
+const handleAddDocument = async () => {
+  // Validate required fields and uploaded files
+  if (
+    !formData.fileNo ||
+    !formData.title ||
+    !formData.subject ||
+    !formData.category ||
+    !formData.year ||
+    formData.uploadedFilePaths.length === 0
+  ) {
+    showPopup("Please fill in all the required fields and upload a file.", "error");
+    return;
+  }
+
+  // Add versioning to uploadedFilePaths
+  const versionedFilePaths = formData.uploadedFilePaths.map((filePath) => {
+    if (typeof filePath !== "string") {
+      console.error("Invalid filePath format:", filePath);
+      return {
+        path: filePath?.path || "Unknown",
+        version: formData.version,
+      };
+    }
+
+    const versionMatch = filePath.match(/\/V(\d+)\//i);
+    const version = versionMatch ? `V${versionMatch[1]}` : formData.version;
+    return {
+      path: filePath,
+      version: version,
+    };
+  });
+
+  // Construct payload
+  const payload = {
+    documentHeader: {
+      fileNo: formData.fileNo,
+      title: formData.title,
+      subject: formData.subject,
+      categoryMaster: { id: formData.category.id },
+      yearMaster: { id: formData.year.id },
+      employee: { id: parseInt(UserId, 10) },
+    },
+    filePaths: versionedFilePaths,
+  };
+
+  try {
+    setBProcess(true);
+
+    const response = await fetch(`${API_HOST}/api/documents/save`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    // ✅ Only show warning if actual error or conflict
     if (
-      !formData.fileNo ||
-      !formData.title ||
-      !formData.subject ||
-      !formData.category ||
-      !formData.year ||
-      formData.uploadedFilePaths.length === 0
+      !response.ok ||
+      result?.status === 409 ||
+      result?.message?.toLowerCase().includes("duplicate") ||
+      result?.message?.toLowerCase().includes("error")
     ) {
-      showPopup("Please fill in all the required fields and upload a file.", "error");
+      const errorMessage =
+        result?.response?.msg || result?.message || "Unknown error occurred";
+      showPopup(`Document save failed: ${errorMessage}`, "warning");
       return;
     }
 
-    // Add versioning to uploadedFilePaths
-    const versionedFilePaths = formData.uploadedFilePaths.map((filePath) => {
-      if (typeof filePath !== "string") {
-        console.error("Invalid filePath format:", filePath);
-        return {
-          path: filePath?.path || "Unknown",
-          version: formData.version,
-        };
-      }
+    // ✅ Success case
+    const successMessage =
+      result?.response?.msg || result?.message || "Document saved successfully";
+    showPopup(successMessage, "success");
 
-      const versionMatch = filePath.match(/\/V(\d+)\//i);
-      const version = versionMatch ? `V${versionMatch[1]}` : formData.version;
-      return {
-        path: filePath,
-        version: version,
-      };
+    // Reset form
+    setFormData({
+      fileNo: "",
+      title: "",
+      subject: "",
+      version: "",
+      category: null,
+      year: null,
+      uploadedFilePaths: [],
     });
+    setUploadedFilePath([]);
+    setUploadedFileNames([]);
+    fetchDocuments();
 
-    // Construct payload
-    const payload = {
-      documentHeader: {
-        fileNo: formData.fileNo,
-        title: formData.title,
-        subject: formData.subject,
-        categoryMaster: { id: formData.category.id },
-        yearMaster: { id: formData.year.id },
-        employee: { id: parseInt(UserId, 10) },
-      },
-      filePaths: versionedFilePaths,
-    };
+  } catch (error) {
+    console.error("Error saving document:", error);
+    showPopup(`Document save failed: ${error.message}`, "warning");
+  } finally {
+    setBProcess(false);
+  }
+};
 
-    try {
-      setBProcess(true);
-
-      const response = await fetch(`${API_HOST}/api/documents/save`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      // ✅ Enhanced error handling
-      if (!response.ok || result?.status === 409 || result?.response?.msg || result?.message?.toLowerCase().includes("duplicate")) {
-        const errorMessage = result?.response?.msg || result?.message || "Unknown error occurred";
-        showPopup(`Document save failed: ${errorMessage}`, "warning");
-        return;
-      }
-
-
-      const successMessage = result?.message || "Document saved successfully";
-      showPopup(successMessage, "success");
-
-      // Reset form
-      setFormData({
-        fileNo: "",
-        title: "",
-        subject: "",
-        version: "",
-        category: null,
-        year: null,
-        uploadedFilePaths: [],
-      });
-      setUploadedFilePath([]);
-      setUploadedFileNames([]);
-      fetchDocuments();
-
-    } catch (error) {
-      console.error("Error saving document:", error);
-      showPopup(`Document save failed: ${error.message}`, "warning");
-    } finally {
-      setBProcess(false);
-    }
-  };
 
 
   const fetchPaths = async (doc) => {
