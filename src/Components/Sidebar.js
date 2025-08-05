@@ -759,7 +759,7 @@ function Sidebar() {
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
                         <SidebarLink
-                      to="/dpAdminOcr"
+                      to="/searchOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
                     // count={counts.totalRejectedDocuments}
@@ -889,7 +889,7 @@ function Sidebar() {
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
                         <SidebarLink
-                      to="/userOcr"
+                      to="/searchOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
                     />

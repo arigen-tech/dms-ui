@@ -6,17 +6,17 @@ import {
   DEPAETMENT_API,
   BRANCH_API,
   YEAR_API,
-  API_HOST,
   CATEGORI_API,
   API_OCR_HOST,
+  API_HOST
 } from "../API/apiConfig";
-import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
-import LoadingComponent from "../Components/LoadingComponent";
+import { ArrowLeftIcon, ArrowRightIcon, MagnifyingGlassIcon } from "@heroicons/react/24/solid";
+import LoadingComponent from '../Components/LoadingComponent';
 
 const DpAdminOCR = () => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [years, setYears] = useState([]);
@@ -25,21 +25,108 @@ const DpAdminOCR = () => {
   const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState({
-    branch: "All",
-    department: "All",
-    year: "All",
+    branch: "",
+    department: "",
+    year: "",
     approvalStatus: "",
-    category: "All",
+    category: "",
     search: "",
   });
-  const token = localStorage.getItem("tokenKey");
   const [isLoading, setIsLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const token = localStorage.getItem("tokenKey");
+  const [fixedBranchName, setFixedBranchName] = useState("");
+  const [fixedDepartmentName, setFixedDepartmentName] = useState("");
+
+  // Fetch initial data
+  useEffect(() => {
+    const currentYear = new Date().getFullYear();
+
+    const fetchData = async () => {
+      try {
+        // Fetch years
+        const yearsResponse = await axios.get(`${YEAR_API}/findActiveYear`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const filteredYears = yearsResponse.data
+          .filter((yearObj) => parseInt(yearObj.name) <= currentYear)
+          .sort((a, b) => parseInt(b.name) - parseInt(a.name));
+        setYears([...filteredYears]);
+
+        // Fetch branches
+        const branchesResponse = await axios.get(`${BRANCH_API}/findActiveRole`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setBranches(branchesResponse.data);
+
+        // Fetch categories
+        const categoriesResponse = await axios.get(`${CATEGORI_API}/findActiveCategory`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCategories(categoriesResponse.data);
+      } catch (error) {
+        console.error("Error fetching dropdown data:", error);
+      }
+    };
+
+    fetchData();
+  }, [token]);
 
 
-  const fetchDocuments = async () => {
+  const fetchUser = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/getAll`, {
+      const userId = localStorage.getItem("userId");
+      const response = await axios.get(
+        `${API_HOST}/employee/findById/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Set fixed branch and department from user data
+      const userBranch = response.data.branch;
+      const userDepartment = response.data.department;
+
+      if (userBranch && userDepartment) {
+        // Fetch documents for this department
+        fetchDocuments(userDepartment.id);
+
+        // Update filters with fixed values
+        setFilters(prev => ({
+          ...prev,
+          branch: userBranch.id,
+          department: userDepartment.id,
+        }));
+
+        // Store names for display
+        setFixedBranchName(userBranch.name);
+        setFixedDepartmentName(userDepartment.name);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  // Fetch documents when branch is selected
+  const fetchDocuments = async (dpId) => {
+    if (!dpId) {
+      setDocuments([]);
+      setFilteredDocuments([]);
+      return;
+    }
+
+    setIsLoading(true);
+    setSearchError("");
+
+    try {
+      const response = await axios.get(`${DOCUMENTHEADER_API}/findByDepartmrntId/${dpId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -54,164 +141,115 @@ const DpAdminOCR = () => {
       setFilteredDocuments(sortedDocuments);
     } catch (error) {
       console.error("Fetch documents error:", error.message);
-    }finally{
+      setSearchError("Failed to load documents. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchUser = async () => {
-    try {
-      const userId = localStorage.getItem("userId");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
+
+  // Fetch departments when branch changes
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      if (filters.branch) {
+        try {
+          const response = await axios.get(
+            `${DEPAETMENT_API}/findByBranch/${filters.branch}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setDepartments(response.data);
+        } catch (error) {
+          console.error("Error fetching departments:", error);
+          setDepartments([]);
         }
-      );
-      const userBranch = response.data.branch.name;
-      const userDepartment = response.data.department.name;
-      setFilters((prevFilters) => ({
-        ...prevFilters,
-        branch: userBranch,
-      }));
-      setFilters((prevFilters) => ({
-        ...prevFilters,
-        department: userDepartment,
-      }));
-    } catch (error) {
-      console.error("Error fetching user branch:", error);
-    }
-  };
+      } else {
+        setDepartments([]);
+      }
+    };
 
-  useEffect(() => {
-    fetchDocuments();
-    fetchUser();
-  }, []);
+    fetchDepartments();
+  }, [filters.branch, token]);
 
-  const fetchDropdownData = (url, setState, allLabel) => {
-    axios
-      .get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        setState([{ name: allLabel }, ...response.data]);
-      })
-      .catch((error) =>
-        console.error(`Error fetching data from ${url}:`, error)
-      );
-  };
-
-  useEffect(() => {
-    fetchDropdownData(`${YEAR_API}/findActiveYear`, setYears, "All Years");
-    fetchDropdownData(
-      `${BRANCH_API}/findActiveRole`,
-      setBranches,
-      "All Branch"
-    );
-    fetchDropdownData(
-      `${CATEGORI_API}/findActiveCategory`,
-      setCategories,
-      "All Category"
-    );
-  }, []);
-
-
+  // Apply filters whenever filters or documents change
   useEffect(() => {
     const applyFilters = () => {
-      let filtered = documents;
+      let filtered = [...documents];
 
-      if (filters.branch !== "All") {
-        filtered = filtered.filter((doc) =>
-          doc.employee?.branch?.name
-            ?.toLowerCase()
-            .includes(filters.branch.toLowerCase())
-        );
-      }
+      // Always filter by the fixed department (no need for branch filter)
+      filtered = filtered.filter(
+        doc => doc.employee?.department?.id === filters.department
+      );
 
-      if (filters.department !== "All") {
-        filtered = filtered.filter((doc) =>
-          doc.employee?.department?.name
-            ?.toLowerCase()
-            .includes(filters.department.toLowerCase())
-        );
-      }
-
-      if (filters.year !== "All") {
-        filtered = filtered.filter((doc) =>
-          doc.yearMaster?.name
-            ?.toLowerCase()
-            .includes(filters.year.toLowerCase())
+      // Apply other filters
+      if (filters.year) {
+        filtered = filtered.filter(
+          doc => doc.yearMaster?.name === filters.year
         );
       }
 
       if (filters.approvalStatus) {
-        filtered = filtered.filter((doc) =>
-          doc.approvalStatus
-            ?.toLowerCase()
-            .includes(filters.approvalStatus.toLowerCase())
+        filtered = filtered.filter(
+          doc => doc.approvalStatus === filters.approvalStatus
         );
       }
 
-      if (filters.category !== "All") {
-        filtered = filtered.filter((doc) =>
-          doc.categoryMaster?.name
-            ?.toLowerCase()
-            .includes(filters.category.toLowerCase())
+      if (filters.category) {
+        filtered = filtered.filter(
+          doc => doc.categoryMaster?.name === filters.category
         );
       }
 
       if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
         filtered = filtered.filter(
-          (doc) =>
-            doc.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-            doc.fileNo.toLowerCase().includes(filters.search.toLowerCase()) ||
-            doc.subject.toLowerCase().includes(filters.search.toLowerCase())
+          doc =>
+            doc.title.toLowerCase().includes(searchTerm) ||
+            doc.fileNo.toLowerCase().includes(searchTerm) ||
+            doc.subject.toLowerCase().includes(searchTerm)
         );
       }
 
       setFilteredDocuments(filtered);
+      setCurrentPage(1);
     };
 
     applyFilters();
   }, [filters, documents]);
 
-  const handleFilterChange = (key, value) => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [key]: value,
-    }));
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+
+    if (field === "branch") {
+      fetchDocuments(value);
+    }
   };
 
-  useEffect(() => {
-    if (filters.branch !== "All") {
-      const branchId = branches.find(
-        (branch) => branch.name === filters.branch
-      )?.id;
+  const handleSearch = (e) => {
+    e.preventDefault();
 
-      if (branchId) {
-        fetchDropdownData(
-          `${DEPAETMENT_API}/findByBranch/${branchId}`,
-          setDepartments,
-          "All Department"
-        );
-      }
+    if (!query) {
+      setSearchError("Please enter a search query");
+      return;
     }
-  }, [filters.branch, branches]);
 
-  //   const handleFilterChange = (field, value) => {
-  //     setFilters((prev) => ({ ...prev, [field]: value }));
-  //   };
+    if (filteredDocuments.length === 0) {
+      setSearchError("No documents available to search. Please select a branch first.");
+      return;
+    }
 
-  const docNames = filteredDocuments
-    .flatMap((doc) => doc.documentDetails.map((detail) => detail.docName))
-    .filter(Boolean);
+    const docNames = filteredDocuments
+      .flatMap((doc) => doc.documentDetails.map((detail) => detail.docName))
+      .filter(Boolean);
 
-  console.log("setFilteredDataArray(filtered)", filteredDocuments);
-  console.log("docNames", docNames);
+    if (docNames.length === 0) {
+      setSearchError("No valid document names found for searching");
+      return;
+    }
 
-  const handleSearch = () => {
+    setIsLoading(true);
+    setSearchError("");
+
     const apiEndpoint = `${API_OCR_HOST}/search/selected`;
-
     const payload = {
       query: query,
       selected_files: docNames,
@@ -231,12 +269,14 @@ const DpAdminOCR = () => {
         return response.json();
       })
       .then((data) => {
-        console.log("Response from server:", data);
-
         navigate("/adminOCRResponce", { state: { responseData: data } });
       })
       .catch((error) => {
         console.error("Error:", error);
+        setSearchError("Search failed. Please try again.");
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
@@ -249,6 +289,7 @@ const DpAdminOCR = () => {
     });
   };
 
+  // Pagination calculations
   const totalItems = filteredDocuments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
@@ -258,64 +299,154 @@ const DpAdminOCR = () => {
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
-    const startPage =
-      Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const startPage = Math.max(1, currentPage - Math.floor(maxPageNumbers / 2));
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
     return Array.from(
       { length: endPage - startPage + 1 },
       (_, i) => startPage + i
     );
   };
+
   if (isLoading) {
     return <LoadingComponent />;
   }
 
   return (
-    <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">Department Admin OCR</h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <div className="mb-4 flex flex-wrap gap-4">
-          <div className="flex items-center gap-1">
-            <label
-              htmlFor="searchQuery"
-              className="text-md font-medium text-gray-700 w-full"
-            >
-              Enter Search Query:
-            </label>
-            <input
-              id="searchQuery"
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="border p-2 rounded-sm w-full"
-              placeholder="Enter Query"
-            />
-          </div>
-          <button
-            onClick={handleSearch}
-            disabled={!query} // Disable the button if query is empty
-            className={`bg-blue-500 text-white p-2 rounded-lg ${!query ? "cursor-not-allowed opacity-70" : ""
-              }`}
-          >
-            Search
-          </button>
-        </div>
+    <div className="px-4 py-6">
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Document Search (OCR)</h1>
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-          <div className="flex items-center bg-blue-500 rounded-lg">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
-              Show:
-            </label>
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-lg font-medium text-gray-700 mb-4">Search Documents</h2>
+
+        <form onSubmit={handleSearch} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Branch
+              </label>
+              <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100">
+                {fixedBranchName || "Not assigned"}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Department
+              </label>
+              <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100">
+                {fixedDepartmentName || "Not assigned"}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                File Year
+              </label>
+              <select
+                value={filters.year}
+                onChange={(e) => handleFilterChange("year", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Years</option>
+                {years.map((year) => (
+                  <option key={year.name} value={year.name}>
+                    {year.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <select
+                value={filters.category}
+                onChange={(e) => handleFilterChange("category", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.name} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
+                value={filters.approvalStatus}
+                onChange={(e) => handleFilterChange("approvalStatus", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <h3 className="text-md font-medium text-gray-700 mb-3">OCR Text Search</h3>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search Query <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter text to search in documents..."
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  disabled={!query || !filters.branch || filteredDocuments.length === 0}
+                  className={`px-4 py-2 rounded-md text-white font-medium ${!query || !filters.branch || filteredDocuments.length === 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                >
+                  Search in Documents
+                </button>
+              </div>
+            </div>
+            {searchError && (
+              <div className="mt-2 text-sm text-red-600">{searchError}</div>
+            )}
+            {filters.branch && filteredDocuments.length > 0 && (
+              <div className="mt-2 text-sm text-gray-500">
+                Searching in {filteredDocuments.length} documents
+              </div>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* Documents Table */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="p-4 border-b flex justify-between items-center">
+          <h2 className="text-lg font-medium text-gray-700">
+            Documents {filteredDocuments.length > 0 && `(${filteredDocuments.length})`}
+          </h2>
+          <div className="flex items-center">
+            <label className="text-sm text-gray-700 mr-2">Show:</label>
             <select
-              id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none"
               value={itemsPerPage}
               onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm"
             >
-              {[5, 10, 15, 20].map((num) => (
+              {[10, 25, 50, 100].map((num) => (
                 <option key={num} value={num}>
                   {num}
                 </option>
@@ -323,202 +454,110 @@ const DpAdminOCR = () => {
             </select>
           </div>
         </div>
-        <div className="mb-4 grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <label className="block text-md font-medium text-gray-700">
-            Branch:
-            <select
-              value={filters.branch}
-              onChange={(e) => handleFilterChange("branch", e.target.value)}
-              className="border p-2 w-full"
-              disabled={true}
-            >
-              <option value="All">All Branches</option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.name}>
-                  {branch.name}
-                </option>
-              ))}
-            </select>
-          </label>
 
-          <label className="block text-md font-medium text-gray-700">
-            Department:
-            <select
-              value={filters.department}
-              onChange={(e) => handleFilterChange("department", e.target.value)}
-              className="border p-2 w-full"
-              disabled={true}
-            >
-              {departments.map((department) => (
-                <option key={department.name} value={department.name}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block text-md font-medium text-gray-700">
-            File Year:
-            <select
-              value={filters.year}
-              onChange={(e) => handleFilterChange("year", e.target.value)}
-              className="border p-2 w-full"
-            >
-              {years.map((year) => (
-                <option key={year.name} value={year.name}>
-                  {year.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block text-md font-medium text-gray-700">
-            Category:
-            <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange("category", e.target.value)}
-              className="border p-2 w-full"
-            >
-              {categories.map((category) => (
-                <option key={category.name} value={category.name}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block text-md font-medium text-gray-700">
-            Status:
-            <select
-              className="border p-2 w-full"
-              onChange={(e) =>
-                handleFilterChange("approvalStatus", e.target.value)
-              }
-            >
-              <option value="">All Statuses</option>
-              <option value="PENDING">PENDING</option>
-              <option value="APPROVED">APPROVED</option>
-              <option value="REJECTED">REJECTED</option>
-            </select>
-          </label>
-
-          <label className="block text-md font-medium text-gray-700">
-            Search:
-            <input
-              type="text"
-              className="border p-2 w-full"
-              placeholder="Search..."
-              onChange={(e) => handleFilterChange("search", e.target.value)}
-            />
-          </label>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-
-        <table className="w-full border-collapse border">
-          <thead>
-            <tr className="bg-slate-100">
-              <th className="border p-2 text-left">SR.</th>
-              <th className="border p-2 text-left">Title</th>
-              <th className="border p-2 text-left">File No</th>
-              <th className="border p-2 text-left">Subject</th>
-              <th className="border p-2 text-left">Uploaded Date</th>
-              <th className="border p-2 text-left">Category</th>
-              <th className="border p-2 text-left">File Year</th>
-              <th className="border p-2 text-left">Uploaded By</th>
-              <th className="border p-2 text-left">Department</th>
-              <th className="border p-2 text-left">Branch</th>
-              <th className="border p-2 text-left">Approval Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedDocuments.length > 0 ? (
-              paginatedDocuments.map((doc, index) => (
-                <tr key={doc.id} className="even:bg-gray-50">
-                  <td className="border p-2">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </td>
-                  <td className="border p-2">{doc.title}</td>
-                  <td className="border p-2">{doc.fileNo}</td>
-                  <td className="border p-2">{doc.subject}</td>
-                  <td className="border p-2">{formatDate(doc.createdOn)}</td>
-                  <td className="border p-2">
-                    {doc.categoryMaster ? doc.categoryMaster.name : ""}
-                  </td>
-                  <td className="border p-2">
-                    {doc.yearMaster ? doc.yearMaster.name : ""}
-                  </td>
-                  <td className="border p-2">
-                    {doc.employee ? doc.employee.name : ""}
-                  </td>
-                  <td className="border p-2">
-                    {doc.employee?.department?.name || ""}
-                  </td>
-                  <td className="border p-2">
-                    {doc.employee?.branch?.name || ""}
-                  </td>
-                  <td className="border p-2">{doc.approvalStatus}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="11" className="text-center py-4">
-                  No Records Found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-
-        </div>
-
-       {/* Pagination Controls */}
-        <div className="flex items-center mt-4">
-          {/* Previous Button */}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1 || totalPages === 0}
-            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
-          >
-            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            Previous
-          </button>
-
-          {/* Page Number Buttons */}
-          {totalPages > 0 && getPageNumbers().map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                }`}
-            >
-              {page}
-            </button>
-          ))}
-
-          {/* Page Count Info */}
-          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
-
-          {/* Next Button */}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
-          >
-            Next
-            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-          </button>
-          <div className="ml-4">
-            <span className="text-sm text-gray-700">
-              Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-              {totalItems} entries
-            </span>
+        {filteredDocuments.length === 0 ? (
+          <div>
+            No documents found
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File No</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedDocuments.map((doc, index) => (
+                    <tr key={doc.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {doc.title}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {doc.fileNo}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {doc.subject}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(doc.createdOn)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${doc.approvalStatus === "APPROVED"
+                          ? "bg-green-100 text-green-800"
+                          : doc.approvalStatus === "PENDING"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                          }`}>
+                          {doc.approvalStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+                    <span className="font-medium">
+                      {Math.min(currentPage * itemsPerPage, totalItems)}
+                    </span> of <span className="font-medium">{totalItems}</span> results
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                        }`}
+                    >
+                      <span className="sr-only">Previous</span>
+                      <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+
+                    {getPageNumbers().map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
+                          ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                        }`}
+                    >
+                      <span className="sr-only">Next</span>
+                      <ArrowRightIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

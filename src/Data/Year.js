@@ -92,10 +92,14 @@ const Year = () => {
     }
   };
 
-  const handleEditYear = (index) => {
-    setEditingIndex(index);
-    setFormData({ year: years[index].name });
-  };
+const handleEditYear = (selectedYear) => {
+  const indexInOriginal = years.findIndex(y => y.id === selectedYear.id);
+  if (indexInOriginal !== -1) {
+    setEditingIndex(indexInOriginal);
+    setFormData({ year: selectedYear.name });
+  }
+};
+
 
   const handleSaveEdit = async () => {
     if (formData.year && editingIndex !== null) {
@@ -191,7 +195,7 @@ const Year = () => {
     const updatedOnText = formatDate(year.updatedOn);
 
     return (
-      (year.year && year.year.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (year.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       statusText.includes(searchTerm.toLowerCase()) ||
       createdOnText.includes(searchTerm.toLowerCase()) ||
       updatedOnText.includes(searchTerm.toLowerCase())
@@ -321,10 +325,14 @@ const Year = () => {
                   <td className="border px-4 py-2">{formatDate(year.updatedOn)}</td>
                   <td className="border p-2">{year.isActive === 1 ? 'Active' : 'Inactive'}</td>
                   <td className="border p-2">
-                    <button onClick={() => handleEditYear(index)} disabled={year.isActive === 0}
-                      className={`${year.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <button
+                      onClick={() => handleEditYear(year)}
+                      disabled={year.isActive === 0}
+                      className={`${year.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
+
                   </td>
                   <td className="border p-2">
                     <button

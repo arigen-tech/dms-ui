@@ -4,10 +4,12 @@ import { useEffect, useState, useMemo, useRef } from "react"
 import apiClient from "../API/apiClient"
 import { API_HOST, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig"
 import { useLocation, useNavigate } from "react-router-dom"
-import { BsQrCode } from "react-icons/bs"
+import { BsQrCode, BsCameraVideo, BsCameraVideoOff, BsUpload } from "react-icons/bs"
+import { FiSearch, FiX, FiDownload, FiEye } from "react-icons/fi"
 import Popup from "../Components/Popup"
 import QrScanner from "qr-scanner"
-import FilePreviewModal from "../Components/FilePreviewModal"
+import FilePreviewModal from "../Components/FilePreviewModal";
+import LoadingSpinner from "../Components/LoadingComponent";
 
 const SearchByScan = () => {
   const navigate = useNavigate()
@@ -16,6 +18,7 @@ const SearchByScan = () => {
   const [qrEmpid, setQrEmpid] = useState(null)
   const [qrBranchid, setQrBranchid] = useState(null)
   const [qrDepartmentid, setQrDepartmentid] = useState(null)
+  const [openingFiles, setOpeningFiles] = useState({})
   const [qrData, setQrData] = useState(null)
   const [loginBranchid, setLoginBranchid] = useState(null)
   const [loginDepartmentid, setLoginDepartmentid] = useState(null)
@@ -36,10 +39,12 @@ const SearchByScan = () => {
   const [isCameraLoading, setIsCameraLoading] = useState(false)
   const [availableCameras, setAvailableCameras] = useState([])
   const [selectedCamera, setSelectedCamera] = useState(null)
+  const [scanSuccess, setScanSuccess] = useState(false)
 
   const videoRef = useRef(null)
   const qrScannerRef = useRef(null)
   const fileInputRef = useRef(null)
+  const scanSectionRef = useRef(null)
 
   const unauthorizedMessage = "You are not authorized to scan this QR code."
   const invalidQrMessage = "Invalid QR Code."
@@ -85,6 +90,8 @@ const SearchByScan = () => {
             (result) => {
               if (result) {
                 setQrData(result.data)
+                setScanSuccess(true)
+                setTimeout(() => setScanSuccess(false), 2000)
                 stopCamera()
               }
             },
@@ -229,8 +236,6 @@ const SearchByScan = () => {
       setQrBranchid(branchId)
       setQrDepartmentid(departmentId)
       setQrEmpid(empId)
-
-      console.log("Extracted QR data:", { empId, branchId, departmentId })
     }
 
     if (id) {
@@ -258,7 +263,6 @@ const SearchByScan = () => {
       })
 
       if (response.status === 200) {
-        console.log("login user data", response.data)
         const { branch, department } = response.data || {}
         if (branch && department) {
           setLoginBranchid(branch.id)
@@ -290,32 +294,34 @@ const SearchByScan = () => {
     if (!token) {
       const currentUrl = window.location.href
       localStorage.setItem("redirectUrl", currentUrl)
-
       navigate("/login")
       return
     }
 
+    setLoading(true)
     try {
       const response = await apiClient.get(`/api/documents/findBy/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setHeaderData(response.data)
-      console.log(response.data)
+      // Scroll to document section after load
+      setTimeout(() => {
+        scanSectionRef.current?.scrollIntoView({ behavior: "smooth" })
+      }, 100)
     } catch (err) {
       if (err.response) {
-        console.error("Error response from server:", err.response.data)
         const errorMessage =
           err.response.status === 404
             ? "Document not found. Please check the ID."
             : `Server error: ${err.response.statusText} (${err.response.status})`
         setError(errorMessage)
       } else if (err.request) {
-        console.error("No response received:", err.request)
         setError("No response from the server. Please try again later.")
       } else {
-        console.error("Request error:", err.message)
         setError("Error occurred while setting up the request.")
       }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -401,8 +407,7 @@ const SearchByScan = () => {
 
   const openFile = async (file) => {
     try {
-      setIsOpeningFile(true)
-      console.log("Opening file:", file)
+      setOpeningFiles(prev => ({ ...prev, [file.id]: true }))
 
       if (!file?.docName) {
         showPopup("Document name is missing. Please try again.")
@@ -436,9 +441,10 @@ const SearchByScan = () => {
       console.error("Error:", error)
       showPopup("Failed to fetch or preview the file.", "error")
     } finally {
-      setIsOpeningFile(false)
+      setOpeningFiles(prev => ({ ...prev, [file.id]: false }))
     }
   }
+
 
   const handleDownload = async (file) => {
     try {
@@ -508,344 +514,347 @@ const SearchByScan = () => {
         : null
 
   return (
-    <div className="p-1">
-      <h1 className="text-md mb-2 font-semibold">DOCUMENT SEARCH BY QR CODES</h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        {popupMessage && <Popup message={popupMessage.message} type={popupMessage.type} onClose={handlePopupClose} />}
+    <div className="p-4 max-w-7xl mx-auto">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Document Search by QR Code</h1>
 
-        {headerData && (
-          <>
-            <div className="mb-2 bg-slate-100 p-1 rounded-lg">
-              <div className="grid grid-cols-4 gap-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  File No.
-                  <input
-                    disabled
-                    value={headerData?.fileNo}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
+      {popupMessage && <Popup message={popupMessage.message} type={popupMessage.type} onClose={handlePopupClose} />}
 
-                <label className="block text-sm font-medium text-gray-700">
-                  Title
-                  <input
-                    disabled
-                    value={headerData?.title}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <LoadingSpinner size="lg" />
+        </div>
+      )}
 
-                <label className="block text-sm font-medium text-gray-700">
-                  Subject
-                  <input
-                    disabled
-                    value={headerData?.subject}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
+      {/* Scan Section */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-8" ref={scanSectionRef}>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Scan QR Code</h2>
 
-                <label className="block text-sm font-medium text-gray-700">
-                  Category
-                  <input
-                    disabled
-                    value={headerData?.categoryMaster?.name}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
-
-                <label className="block text-sm font-medium text-gray-700">
-                  Uploaded Date
-                  <input
-                    disabled
-                    value={formatDate(headerData?.createdOn)}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
-
-                <label className="block text-sm font-medium text-gray-700">
-                  Uploded By
-                  <input
-                    disabled
-                    value={headerData?.employee?.name}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
-
-                <label className="block text-sm font-medium text-gray-700">
-                  Department
-                  <input
-                    disabled
-                    value={headerData?.employee?.department?.name}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
-
-                <label className="block text-sm font-medium text-gray-700">
-                  Branch
-                  <input
-                    disabled
-                    value={headerData?.employee?.branch?.name}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
-
-                <label className="block text-sm font-medium text-gray-700">
-                  Document Status
-                  <input
-                    disabled
-                    value={headerData?.approvalStatus}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
-
-                {headerData?.approvalStatus !== "PENDING" && (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700">
-                      {actionByName} Date
-                      <input
-                        disabled
-                        value={formatDate(headerData?.approvalStatusOn)}
-                        className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </label>
-
-                    <label className="block text-sm font-medium text-gray-700">
-                      {actionByName} By
-                      <input
-                        disabled
-                        value={headerData?.employeeBy?.name}
-                        className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </label>
-                  </>
-                )}
-                {headerData?.approvalStatus === "REJECTED" && (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Rejected Reason
-                      <input
-                        disabled
-                        value={headerData?.rejectionReason}
-                        className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </label>
-                  </>
-                )}
-
-                <label className="block text-sm font-medium text-gray-700">
-                  Document Year
-                  <input
-                    disabled
-                    value={headerData?.yearMaster?.name}
-                    className="mt-1 block w-full p-1.5 text-sm border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
-              </div>
-
-              <FilePreviewModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onDownload={handleDownload}
-                fileType={contentType}
-                fileUrl={blobUrl}
-                fileName={selectedDocFile?.docName}
-                fileData={selectedDocFile}
-              />
-
-              <div className="mt-3 text-center">
-                <div className="mt-3 relative">
-                  <div className="flex justify-center">
-                    <h2 className="text-md font-semibold text-indigo-700">Attached Files</h2>
-                  </div>
-                  <div className="absolute right-0 top-0">
-                    <input
-                      type="text"
-                      placeholder="Search Files..."
-                      value={searchFileTerm}
-                      onChange={(e) => setSearchFileTerm(e.target.value)}
-                      className="px-2 py-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                {filteredDocFiles?.length > 0 ? (
-                  <div className="mt-4 border border-gray-300 rounded-md overflow-hidden">
-                    {/* Fixed Header */}
-                    <div className="bg-indigo-100 border-b border-gray-300">
-                      <table className="min-w-full table-fixed text-sm">
-                        <thead>
-                          <tr>
-                            <th className="w-12 border-r border-gray-300 px-2 py-2 text-center font-semibold">S.N.</th>
-                            <th className="border-r border-gray-300 px-2 py-2 text-left w-1/2 font-semibold">
-                              Document Name
-                            </th>
-                            <th className="w-24 border-r border-gray-300 px-2 py-2 text-center font-semibold">
-                              Version
-                            </th>
-                            <th className="w-28 px-2 py-2 text-center font-semibold">Action</th>
-                          </tr>
-                        </thead>
-                      </table>
-                    </div>
-
-                    {/* Scrollable Body - Shows max 5 rows with scroll */}
-                    <div
-                      className="overflow-y-auto"
-                      style={{
-                        maxHeight: filteredDocFiles.length > 5 ? "200px" : "auto",
-                      }}
-                    >
-                      <table className="min-w-full table-fixed text-sm">
-                        <tbody>
-                          {filteredDocFiles.map((file, index) => {
-                            const displayName = file.docName?.includes("_")
-                              ? file.docName.split("_").slice(1).join("_")
-                              : file.docName
-
-                            return (
-                              <tr
-                                key={index}
-                                className={`hover:bg-gray-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                              >
-                                <td className="w-12 border-r border-gray-200 px-2 py-2 text-center">{index + 1}</td>
-                                <td
-                                  className="border-r border-gray-200 px-2 py-2 w-1/2 break-words"
-                                  title={displayName}
-                                >
-                                  <div className="truncate">{displayName}</div>
-                                </td>
-                                <td className="w-24 border-r border-gray-200 px-2 py-2 text-center">{file.version}</td>
-                                <td className="w-28 px-2 py-2 text-center">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedDocFiles(file)
-                                      openFile(file)
-                                    }}
-                                    disabled={isOpeningFile}
-                                    className={`bg-indigo-500 text-white px-3 py-1 rounded-md transition duration-300 text-xs no-print ${
-                                      isOpeningFile ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-600"
-                                    }`}
-                                  >
-                                    {isOpeningFile ? "Opening..." : "Open"}
-                                  </button>
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Show total count if more than 5 items */}
-                    {filteredDocFiles.length > 5 && (
-                      <div className="bg-gray-50 px-2 py-1 text-xs text-gray-600 text-center border-t border-gray-300">
-                        Showing {Math.min(5, filteredDocFiles.length)} of {filteredDocFiles.length} files (scroll to see
-                        more)
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 mt-2">No attached files available.</p>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="grid grid-cols-2 gap-4">
-          {!headerData && (
-            <>
-              <div className="w-72 h-[312px] items-center justify-center ">
-                <div className="p-6 max-w-lg mx-auto bg-white shadow-md rounded-md relative w-72 h-72">
-                  <div className="absolute top-0 left-0 right-0 bottom-0 border-t-2 border-indigo-500 animate-scan-line"></div>
+        {!headerData && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* File Upload Card */}
+            <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 hover:border-indigo-500 transition-colors duration-300">
+              <div className="flex flex-col items-center justify-center h-full">
+                <div className="relative w-full max-w-xs h-64 mb-4">
+                  <div className="absolute inset-0 border-4 border-indigo-200 rounded-lg pointer-events-none"></div>
                   <img
                     id="uploaded-image"
-                    className="object-cover w-full h-full"
+                    className="w-full h-full object-contain rounded-lg"
                     src={file ? URL.createObjectURL(file) : ""}
                     alt={file ? "Uploaded QR Code" : "Click to upload"}
                     style={{ display: file ? "block" : "none" }}
                   />
+                  {!file && (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                      <BsQrCode className="text-6xl opacity-30" />
+                    </div>
+                  )}
                 </div>
-                <form onSubmit={handleSubmit} className="relative z-10 ">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="file-upload"
-                    ref={fileInputRef}
-                  />
-                  <div
-                    className="w-[60%] mt-2 h-full flex justify-center items-center border border-gray-300 rounded-lg overflow-hidden cursor-pointer"
-                    onClick={() => fileInputRef.current.click()}
-                  >
-                    {!file && (
-                      <p className="flex gap-3 items-center justify-center text-gray-500">
-                        <BsQrCode />
-                        Choose QR Code
-                      </p>
-                    )}
-                  </div>
-                </form>
-              </div>
 
-              <div className="flex flex-col items-center w-72 h-[312px] p-4">
-                {!cameraActive && (
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-upload"
+                  ref={fileInputRef}
+                />
+                <button
+                  onClick={() => fileInputRef.current.click()}
+                  className="flex items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-300"
+                >
+                  <BsUpload className="mr-2" />
+                  {file ? "Change QR Image" : "Upload QR Code"}
+                </button>
+                {file && (
                   <button
-                    onClick={handleToggleCamera}
-                    disabled={isCameraLoading}
-                    className={`px-4 py-2 text-white font-semibold rounded-md transition duration-200
-                      ${isCameraLoading ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
+                    onClick={() => setFile(null)}
+                    className="mt-2 text-sm text-gray-500 hover:text-gray-700 flex items-center"
                   >
-                    {isCameraLoading ? "Loading..." : "Open Camera"}
+                    <FiX className="mr-1" /> Clear
                   </button>
                 )}
+              </div>
+            </div>
 
-                {cameraActive && (
-                  <div className="mt-4 flex flex-col items-center">
-                    <div className="relative w-full max-w-xs">
-                      <video ref={videoRef} className="w-full h-auto border border-gray-300 rounded" playsInline />
+            {/* Camera Card */}
+            <div className="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
+              <div className="flex flex-col items-center justify-center h-full">
+                {!cameraActive ? (
+                  <>
+                    <div className="w-full max-w-xs h-64 mb-4 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <BsCameraVideo className="text-6xl text-gray-400" />
+                    </div>
+                    <button
+                      onClick={handleToggleCamera}
+                      disabled={isCameraLoading}
+                      className={`flex items-center justify-center px-6 py-3 rounded-lg transition-colors duration-300 ${isCameraLoading
+                          ? "bg-gray-500 cursor-not-allowed"
+                          : "bg-indigo-600 text-white hover:bg-indigo-700"
+                        }`}
+                    >
+                      {isCameraLoading ? (
+                        <LoadingSpinner size="sm" className="mr-2" />
+                      ) : (
+                        <BsCameraVideo className="mr-2" />
+                      )}
+                      {isCameraLoading ? "Loading..." : "Open Camera"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="relative w-full max-w-xs h-64 mb-4 rounded-lg overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        className="w-full h-full object-cover"
+                        playsInline
+                      />
+                      {scanSuccess && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-70">
+                          <div className="text-white text-lg font-semibold">Scan Successful!</div>
+                        </div>
+                      )}
                       {error && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white">
+                        <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-white p-4">
                           {error}
                         </div>
                       )}
-                      <button
-                        onClick={handleToggleCamera}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
-                        title="Close camera"
-                      >
-                        ✕
-                      </button>
                     </div>
 
-                    {availableCameras.length > 1 && (
-                      <div className="mt-2 w-full">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Camera
-                          <select
-                            value={selectedCamera}
-                            onChange={(e) => setSelectedCamera(e.target.value)}
-                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                          >
-                            {availableCameras.map((camera) => (
-                              <option key={camera.deviceId} value={camera.deviceId}>
-                                {camera.label || `Camera ${availableCameras.indexOf(camera) + 1}`}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-                    )}
+                    <div className="flex flex-col w-full max-w-xs">
+                      {availableCameras.length > 1 && (
+                        <select
+                          value={selectedCamera}
+                          onChange={(e) => setSelectedCamera(e.target.value)}
+                          className="mb-3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          {availableCameras.map((camera) => (
+                            <option key={camera.deviceId} value={camera.deviceId}>
+                              {camera.label || `Camera ${availableCameras.indexOf(camera) + 1}`}
+                            </option>
+                          ))}
+                        </select>
+                      )}
 
-                    <p className="mt-2 text-sm text-gray-600">Point camera at QR code to scan</p>
-                  </div>
+                      <button
+                        onClick={handleToggleCamera}
+                        className="flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
+                      >
+                        <BsCameraVideoOff className="mr-2" />
+                        Close Camera
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Document Details Section */}
+      {headerData && (
+        <div className="bg-white rounded-xl shadow-md p-6 mb-8 transition-all duration-300">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Document Details</h2>
+            <button
+              onClick={() => {
+                setHeaderData(null)
+                setFile(null)
+                setQrData(null)
+              }}
+              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+            >
+              <FiX className="mr-1" /> Scan Another
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">File No.</label>
+              <p className="text-gray-800 font-medium">{headerData?.fileNo || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Title</label>
+              <p className="text-gray-800 font-medium">{headerData?.title || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Subject</label>
+              <p className="text-gray-800 font-medium">{headerData?.subject || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Category</label>
+              <p className="text-gray-800 font-medium">{headerData?.categoryMaster?.name || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Uploaded Date</label>
+              <p className="text-gray-800 font-medium">{formatDate(headerData?.createdOn) || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Uploaded By</label>
+              <p className="text-gray-800 font-medium">{headerData?.employee?.name || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Department</label>
+              <p className="text-gray-800 font-medium">{headerData?.employee?.department?.name || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Branch</label>
+              <p className="text-gray-800 font-medium">{headerData?.employee?.branch?.name || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
+              <p className={`font-medium ${headerData?.approvalStatus === "APPROVED" ? "text-green-600" :
+                  headerData?.approvalStatus === "REJECTED" ? "text-red-600" : "text-yellow-600"
+                }`}>
+                {headerData?.approvalStatus || "N/A"}
+              </p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Document Year</label>
+              <p className="text-gray-800 font-medium">{headerData?.yearMaster?.name || "N/A"}</p>
+            </div>
+
+            {headerData?.approvalStatus !== "PENDING" && (
+              <>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-500 mb-1">{actionByName} Date</label>
+                  <p className="text-gray-800 font-medium">{formatDate(headerData?.approvalStatusOn) || "N/A"}</p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-500 mb-1">{actionByName} By</label>
+                  <p className="text-gray-800 font-medium">{headerData?.employeeBy?.name || "N/A"}</p>
+                </div>
+              </>
+            )}
+
+            {headerData?.approvalStatus === "REJECTED" && (
+              <div className="bg-gray-50 p-4 rounded-lg col-span-1 md:col-span-2 lg:col-span-4">
+                <label className="block text-sm font-medium text-gray-500 mb-1">Rejection Reason</label>
+                <p className="text-gray-800 font-medium">{headerData?.rejectionReason || "N/A"}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Attached Files Section */}
+          <div className="mt-8">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Attached Files</h3>
+              <div className="relative w-64">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiSearch className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search files..."
+                  value={searchFileTerm}
+                  onChange={(e) => setSearchFileTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                {searchFileTerm && (
+                  <button
+                    onClick={() => setSearchFileTerm("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    <FiX className="text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {filteredDocFiles?.length > 0 ? (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-indigo-50">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
+                          S.N.
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
+                          Document Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
+                          Version
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-indigo-700 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredDocFiles.map((file, index) => {
+                        const displayName = file.docName?.includes("_")
+                          ? file.docName.split("_").slice(1).join("_")
+                          : file.docName
+
+                        return (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {index + 1}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate" title={displayName}>
+                              {displayName}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {file.version}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex justify-end space-x-2">
+                                <button
+                                  onClick={() => openFile(file)}
+                                  disabled={openingFiles[file.id]}
+                                  className={`inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${openingFiles[file.id]
+                                      ? "bg-indigo-300 cursor-not-allowed"
+                                      : "bg-indigo-600 hover:bg-indigo-700"
+                                    }`}
+                                >
+                                  <FiEye className="mr-1" />
+                                  {openingFiles[file.id] ? "Opening..." : "View"}
+                                </button>
+                                <button
+                                  onClick={() => handleDownload(file)}
+                                  className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                  <FiDownload className="mr-1" />
+                                  Download
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-500">No attached files available</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <FilePreviewModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onDownload={handleDownload}
+        fileType={contentType}
+        fileUrl={blobUrl}
+        fileName={selectedDocFile?.docName}
+        fileData={selectedDocFile}
+      />
     </div>
   )
 }
