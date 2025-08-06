@@ -343,10 +343,13 @@ const UserAddEmployee = () => {
 
     } catch (error) {
       const errorMessage =
-        error.response?.data || "Failed to add employee. Please try again.";
+        error.response?.data?.message || // Extract message from response object
+        error.response?.data ||          // Fallback to entire response if no message
+        "Failed to add employee. Please try again.";
+      
       setShowPopup(true);
       setPopupConfig({
-        message: errorMessage,
+        message: typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage,
         type: "error",
       });
       setTimeout(() => setShowPopup(false), 3000);

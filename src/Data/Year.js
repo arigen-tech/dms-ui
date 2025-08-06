@@ -3,11 +3,10 @@ import {
   ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, PencilIcon,
   PlusCircleIcon, LockClosedIcon, LockOpenIcon, MagnifyingGlassIcon
 } from '@heroicons/react/24/solid';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
-
 
 const tokenKey = 'tokenKey';
 
@@ -23,7 +22,9 @@ const Year = () => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  
+  // Create a ref for the form section
+  const formRef = useRef(null);
 
   useEffect(() => {
     // Fetch years from the server
@@ -33,7 +34,6 @@ const Year = () => {
   const fetchYears = async () => {
     setIsLoading(true);
     try {
-
       const token = localStorage.getItem(tokenKey);
       const response = await axios.get(`${YEAR_API}/findAll`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -43,13 +43,14 @@ const Year = () => {
       console.error('Error fetching years:', error);
     } finally {
       setIsLoading(false);
-
     }
   };
 
-  if (isLoading) {
-    return <LoadingComponent />;
-  }
+  const scrollToForm = () => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -68,9 +69,6 @@ const Year = () => {
       }));
     }
   };
-
-
-
 
   const handleAddYear = async () => {
     if (formData.year) {
@@ -92,14 +90,15 @@ const Year = () => {
     }
   };
 
-const handleEditYear = (selectedYear) => {
-  const indexInOriginal = years.findIndex(y => y.id === selectedYear.id);
-  if (indexInOriginal !== -1) {
-    setEditingIndex(indexInOriginal);
-    setFormData({ year: selectedYear.name });
-  }
-};
-
+  const handleEditYear = (selectedYear) => {
+    const indexInOriginal = years.findIndex(y => y.id === selectedYear.id);
+    if (indexInOriginal !== -1) {
+      setEditingIndex(indexInOriginal);
+      setFormData({ year: selectedYear.name });
+      // Scroll to form after setting the edit state
+      scrollToForm();
+    }
+  };
 
   const handleSaveEdit = async () => {
     if (formData.year && editingIndex !== null) {
@@ -180,7 +179,6 @@ const handleEditYear = (selectedYear) => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      // hour12: true 
     };
     return date.toLocaleString('en-GB', options).replace(',', '');
   };
@@ -202,13 +200,11 @@ const handleEditYear = (selectedYear) => {
     );
   });
 
-
   const sortedYears = filteredYears.sort((a, b) => b.isActive - a.isActive);
 
   const totalItems = sortedYears.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedYears = sortedYears.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
@@ -217,6 +213,9 @@ const handleEditYear = (selectedYear) => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
+  if (isLoading) {
+    return <LoadingComponent />;
+  }
 
   return (
     <div className="px-2">
@@ -229,7 +228,9 @@ const handleEditYear = (selectedYear) => {
             onClose={() => setPopupMessage(null)}
           />
         )}
-        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+        
+        {/* Add ref to the form section */}
+        <div ref={formRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="flex gap-6 ">
             <div className="flex w-1/2 gap-6">
               <label htmlFor="year" className="w-full block text-md font-medium text-gray-700 flex-1">
@@ -245,7 +246,6 @@ const handleEditYear = (selectedYear) => {
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
-
 
               <div className=" flex items-end">
                 {editingIndex === null ? (
@@ -265,7 +265,6 @@ const handleEditYear = (selectedYear) => {
         </div>
 
         <div className="mb-3 bg-slate-100 px-3 py-2 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label
               htmlFor="itemsPerPage"
@@ -290,7 +289,6 @@ const handleEditYear = (selectedYear) => {
             </select>
           </div>
 
-          {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
@@ -332,7 +330,6 @@ const handleEditYear = (selectedYear) => {
                     >
                       <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                     </button>
-
                   </td>
                   <td className="border p-2">
                     <button
@@ -354,7 +351,6 @@ const handleEditYear = (selectedYear) => {
 
         {/* Pagination Controls */}
         <div className="flex items-center mt-4">
-          {/* Previous Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1 || totalPages === 0}
@@ -365,7 +361,6 @@ const handleEditYear = (selectedYear) => {
             Previous
           </button>
 
-          {/* Page Number Buttons */}
           {totalPages > 0 && getPageNumbers().map((page) => (
             <button
               key={page}
@@ -377,10 +372,8 @@ const handleEditYear = (selectedYear) => {
             </button>
           ))}
 
-          {/* Page Count Info */}
           <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
 
-          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
@@ -400,34 +393,31 @@ const handleEditYear = (selectedYear) => {
         </div>
       </div>
 
-      {
-        modalVisible && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">Confirm Status Change</h2>
-              <p>Are you sure you want to {yearToToggle?.isActive === 1 ? 'deactivate' : 'activate'} the year <strong>{yearToToggle.year}</strong>?</p>
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setModalVisible(false)}
-                  className="bg-gray-300 text-gray-800 rounded-lg px-4 py-2 mr-2"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmToggleActiveStatus}
-                  disabled={isConfirmDisabled}
-                  className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                >
-                  {isConfirmDisabled ? 'Processing...' : 'Confirm'}
-                </button>
-              </div>
+      {modalVisible && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Confirm Status Change</h2>
+            <p>Are you sure you want to {yearToToggle?.isActive === 1 ? 'deactivate' : 'activate'} the year <strong>{yearToToggle.year}</strong>?</p>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setModalVisible(false)}
+                className="bg-gray-300 text-gray-800 rounded-lg px-4 py-2 mr-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmToggleActiveStatus}
+                disabled={isConfirmDisabled}
+                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+              >
+                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+              </button>
             </div>
           </div>
-        )
-      }
-
-    </div >
+        </div>
+      )}
+    </div>
   );
 };
 

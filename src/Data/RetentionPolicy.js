@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import axios from "axios"
 import {
   PlusCircleIcon, PencilIcon, LockClosedIcon, LockOpenIcon, ArrowLeftIcon,
@@ -34,18 +34,17 @@ const RetentionPolicy = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [editId, setEditId] = useState(null)
 
-  // Modified useEffect to ensure proper loading order
+  // Create a ref for the form section
+  const formRef = useRef(null)
+
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
-        // First load branches and departments
         await Promise.all([
           fetchBranches(),
           fetchAllDepartments()
         ]);
-
-        // Then load policies
         await fetchPolicies();
       } catch (error) {
         console.error("Error loading initial data:", error);
@@ -58,7 +57,6 @@ const RetentionPolicy = () => {
     fetchInitialData();
   }, []);
 
-  // Fixed useEffect to update policy names when branches or departments change
   useEffect(() => {
     if (branches.length && allDepartments.length && policies.length) {
       setPolicies(prevPolicies => 
@@ -69,7 +67,7 @@ const RetentionPolicy = () => {
         }))
       );
     }
-  }, [branches, allDepartments]); // Removed 'policies' from dependency to avoid infinite loop
+  }, [branches, allDepartments]);
 
   useEffect(() => {
     if (selectedBranch) {
@@ -79,7 +77,12 @@ const RetentionPolicy = () => {
     }
   }, [selectedBranch])
 
-  // Helper function to get branch name by ID
+  const scrollToForm = () => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const getBranchNameById = (id) => {
     const branch = branches.find(b => b.id === id);
     return branch ? branch.name : "Unknown Branch";
@@ -91,8 +94,7 @@ const RetentionPolicy = () => {
     return department?.name || "Unknown Department";
   };
 
-  // Modified fetchPolicies to set names immediately if data is available
- const fetchPolicies = async () => {
+  const fetchPolicies = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
       const response = await axios.get(`${API_HOST}/retention-policy/findAll`, {
@@ -141,7 +143,6 @@ const RetentionPolicy = () => {
     });
   };
 
-
   const convertArrayToDate = (dateArray) => {
     if (!Array.isArray(dateArray) || dateArray.length < 6) return null
     const [year, month, day, hour, minute, second, nano = 0] = dateArray
@@ -155,7 +156,6 @@ const RetentionPolicy = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      // Handle the response structure
       const branchesData = response.data?.response || response.data || []
       setBranches(Array.isArray(branchesData) ? branchesData : [branchesData])
     } catch (error) {
@@ -171,7 +171,6 @@ const RetentionPolicy = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      // Handle the response structure
       const departmentsData = response.data?.response || response.data || []
       setDepartments(Array.isArray(departmentsData) ? departmentsData : [departmentsData])
     } catch (error) {
@@ -188,7 +187,6 @@ const RetentionPolicy = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      // Handle the response structure
       const departmentsData = response.data?.response || response.data || []
       setAllDepartments(Array.isArray(departmentsData) ? departmentsData : [departmentsData])
     } catch (error) {
@@ -208,14 +206,12 @@ const RetentionPolicy = () => {
     const branchId = e.target.value
     setSelectedBranch(branchId)
 
-    // Reset department selection when branch changes
     setFormData({
       ...formData,
       branchId: branchId,
-      departmentId: "", // Reset department when branch changes
+      departmentId: "",
     })
 
-    // Fetch departments for the selected branch
     if (branchId) {
       await fetchDepartments(branchId)
     } else {
@@ -238,12 +234,11 @@ const RetentionPolicy = () => {
         policyType: formData.policyType,
         description: formData.description,
         retentionDate: formData.retentionDate,
-        retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:00", // ✅ updated here
+        retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:00",
         isActive: formData.isActive,
         departmentId: formData.departmentId || null,
         branchId: formData.branchId,
       };
-
 
       const token = localStorage.getItem("tokenKey");
       await axios.post(`${API_HOST}/retention-policy`, newPolicy, {
@@ -283,6 +278,8 @@ const RetentionPolicy = () => {
         setDepartments([]);
       }
       setIsEditing(true);
+      // Scroll to form after setting the edit state
+      scrollToForm();
     }
   };
 
@@ -304,13 +301,12 @@ const RetentionPolicy = () => {
         policyType: formData.policyType,
         description: formData.description,
         retentionDate: formData.retentionDate,
-        retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:00", // ✅ updated here
+        retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:00",
         isActive: formData.isActive ? 1 : 0,
         departmentId: formData.departmentId || null,
         branchId: formData.branchId,
         updatedOn: new Date().toISOString(),
       };
-
 
       await axios.put(`${API_HOST}/retention-policy/${updatedPolicy.id}`, updatedPolicy, {
         headers: {
@@ -382,7 +378,6 @@ const RetentionPolicy = () => {
     }
   }; 
 
-
   const showPopup = (message, type = "info") => {
     setPopupMessage({
       message,
@@ -432,7 +427,6 @@ const RetentionPolicy = () => {
     return `${formattedDate} at ${formattedTime}`;
   };
 
-  // Enhanced filtered policies with better name handling
   const filteredPolicies = policies.filter((policy) => {
     const searchLower = searchTerm.toLowerCase()
     const branchName = policy.branchName || getBranchNameById(policy.branchId)
@@ -454,7 +448,7 @@ const RetentionPolicy = () => {
   const paginatedPolicies = sortedPolicies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   const getPageNumbers = () => {
-    const maxPageNumbers = 5; // Number of page buttons to show
+    const maxPageNumbers = 5;
     const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
     const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
@@ -473,8 +467,8 @@ const RetentionPolicy = () => {
           <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
         )}
 
-        {/* Policy Form */}
-        <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+        {/* Policy Form with ref */}
+        <div ref={formRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <label className="block text-md font-medium text-gray-700">
               Policy Type <span className="text-red-500">*</span>
@@ -589,7 +583,6 @@ const RetentionPolicy = () => {
 
         {/* Search and Filter */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label
               htmlFor="itemsPerPage"
@@ -614,7 +607,6 @@ const RetentionPolicy = () => {
             </select>
           </div>
 
-          {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
@@ -699,10 +691,8 @@ const RetentionPolicy = () => {
           </table>
         </div>
 
-        
         {/* Pagination Controls */}
         <div className="flex items-center mt-4">
-          {/* Previous Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1 || totalPages === 0}
@@ -713,7 +703,6 @@ const RetentionPolicy = () => {
             Previous
           </button>
 
-          {/* Page Number Buttons */}
           {totalPages > 0 && getPageNumbers().map((page) => (
             <button
               key={page}
@@ -725,10 +714,8 @@ const RetentionPolicy = () => {
             </button>
           ))}
 
-          {/* Page Count Info */}
           <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
 
-          {/* Next Button */}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
