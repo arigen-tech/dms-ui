@@ -39,7 +39,7 @@ import Scanner from "./Pages/Scanner";
 import {SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "./API/apiConfig";
 import Notification from "./Data/Notification";
 import ChatBotPopup from "./Components/ChatBotPopup";
-import IDCardGenerator from "./Components/IDCardGenerator";
+import IDCardGenerator from "./Pages/IDCardGenerator";
 import FilesType from "./Pages/FilesTypes";
 import RetentionPolicypage from "./Pages/RetentionPolicypage";
 import ArchivalDashboard from "./Pages/ArchivalDashboard";

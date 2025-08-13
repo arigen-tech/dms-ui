@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { toPng } from "html-to-image";
 import apiClient from "../API/apiClient";
 import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN } from "../API/apiConfig";
-import Layout from './Layout';
+import Layout from '../Components/Layout';
 import axios from "axios";
 import {
     MagnifyingGlassIcon,
@@ -11,7 +11,6 @@ import {
     CheckIcon,
     XMarkIcon,
     ArrowDownTrayIcon,
-    UserCircleIcon,
     PhotoIcon,
     ArrowsRightLeftIcon
 } from '@heroicons/react/24/solid';
@@ -21,6 +20,7 @@ import Popup from "../Components/Popup";
 import LoadingSpinner from "../Components/LoadingSpinner";
 import verticalBg from "../Assets/idbg.jpg";
 import horizontalBg from "../Assets/idbg1.jpg";
+
 const IDCardGenerator = () => {
     // State management
     const [layout, setLayout] = useState("vertical");
@@ -34,8 +34,8 @@ const IDCardGenerator = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [generateId, setGenerateId] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [userBranchId, setUserBranchId] = useState();
-    const [userDepartmentId, setUserDepartmentId] = useState();
+    const [userBranchId, setUserBranchId] = useState(null);
+    const [userDepartmentId, setUserDepartmentId] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
@@ -44,96 +44,105 @@ const IDCardGenerator = () => {
     const [previewImage, setPreviewImage] = useState(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [isLayoutChanging, setIsLayoutChanging] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const token = localStorage.getItem("tokenKey");
     const role = localStorage.getItem("role");
 
-    // Background images for ID cards
-    const idBgImage = "linear-gradient(to bottom, #f0f9ff, #e0f2fe)";
-    const idBgImage1 = "linear-gradient(to right, #f0f9ff, #e0f2fe)";
-
-    // Fetch data effects
-    useEffect(() => {
-        fetchUserDetails();
+    // Format date helper function
+    const formatDate = useCallback((dateString) => {
+        if (!dateString) return "N/A";
+        const date = new Date(dateString);
+        const options = {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        };
+        return date.toLocaleString('en-GB', options).replace(',', '');
     }, []);
 
+    // Show popup helper function
+    const showPopup = useCallback((message, type = "info") => {
+        setPopupMessage({ message, type });
+    }, []);
+
+    // Main data loading effect - fixed to prevent infinite loops
     useEffect(() => {
-        if (!role) return;
+        const loadInitialData = async () => {
+            setIsLoading(true);
+            try {
+                // 1. First fetch user details
+                const userId = localStorage.getItem("userId");
+                const userResponse = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const userData = userResponse.data;
 
-        switch (role) {
-            case SYSTEM_ADMIN:
-                fetchEmployees();
-                break;
-            case BRANCH_ADMIN:
-                if (userBranchId) fetchBranchEmployees();
-                break;
-            case DEPARTMENT_ADMIN:
-                if (userDepartmentId) fetchDepartmentEmployees();
-                break;
-            default:
-                console.log("Invalid role to Access Generate ID Cards");
-        }
-    }, [role, userBranchId, userDepartmentId]);
+                // 2. Set the IDs from user data
+                setUserBranchId(userData?.branch?.id || null);
+                setUserDepartmentId(userData?.department?.id || null);
 
+                // 3. Based on role, fetch the appropriate employees
+                if (!role) return;
 
-
-    // Data fetching functions
-    const fetchUserDetails = async () => {
-        try {
-            const userId = localStorage.getItem("userId");
-            const response = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setUserBranchId(response.data?.branch?.id);
-            setUserDepartmentId(response.data?.department?.id);
-        } catch (error) {
-            console.error("Error fetching user details:", error);
-            showPopup("Failed to load user details", "error");
-        }
-    };
-
-    const fetchEmployees = async () => {
-        try {
-            const response = await axios.get(`${API_HOST}/employee/findAll`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.data.length > 0) {
-                setAllUsers(response.data);
+                if (role === SYSTEM_ADMIN) {
+                    const employeesResponse = await axios.get(`${API_HOST}/employee/findAll`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    setAllUsers(employeesResponse.data || []);
+                }
+                else if (role === BRANCH_ADMIN && userData?.branch?.id) {
+                    const branchResponse = await axios.get(`${API_HOST}/employee/branch/${userData.branch.id}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    setAllUsers(branchResponse.data || []);
+                }
+                else if (role === DEPARTMENT_ADMIN && userData?.department?.id) {
+                    const deptResponse = await axios.get(`${API_HOST}/employee/department/${userData.department.id}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    setAllUsers(deptResponse.data || []);
+                }
+            } catch (error) {
+                console.error("Error loading initial data:", error);
+                showPopup("Failed to load initial data", "error");
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error("Error fetching employees:", error);
-            showPopup("Failed to load employees", "error");
-        }
-    };
+        };
 
-    const fetchBranchEmployees = async () => {
-        if (!userBranchId) return;
-        try {
-            const response = await axios.get(`${API_HOST}/employee/branch/${userBranchId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.data.length > 0) {
-                setAllUsers(response.data);
-            }
-        } catch (error) {
-            console.error("Error fetching branch employees:", error);
-            showPopup("Failed to load branch employees", "error");
-        }
-    };
+        loadInitialData();
+    }, [token, role, showPopup]);
 
-    const fetchDepartmentEmployees = async () => {
-        if (!userDepartmentId) return;
-        try {
-            const response = await axios.get(`${API_HOST}/employee/department/${userDepartmentId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.data.length > 0) {
-                setAllUsers(response.data);
-            }
-        } catch (error) {
-            console.error("Error fetching department employees:", error);
-            showPopup("Failed to load department employees", "error");
-        }
+    // Filter and paginate users
+    const filteredUsers = useMemo(() => {
+        const searchLower = searchTerm.toLowerCase();
+        return allUsers.filter(user => (
+            (user.name?.toLowerCase().includes(searchLower)) ||
+            (user.email?.toLowerCase().includes(searchLower)) ||
+            (user.isActive ? 'active' : 'inactive').includes(searchLower) ||
+            (user.createdOn && formatDate(user.createdOn).includes(searchLower))
+        )).sort((a, b) => {
+            return b.isActive - a.isActive || new Date(b.createdOn) - new Date(a.createdOn);
+        });
+    }, [allUsers, searchTerm, formatDate]);
+
+    // Update current page users
+    useEffect(() => {
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const endIdx = startIdx + itemsPerPage;
+        setCurrentPageUsers(filteredUsers.slice(startIdx, endIdx));
+    }, [currentPage, itemsPerPage, filteredUsers.length]);
+
+    // Calculate pagination
+    const totalItems = filteredUsers.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    const getPageNumbers = () => {
+        const maxPageNumbers = 5;
+        const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+        const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+        return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
     };
 
     // Image handling functions
@@ -197,15 +206,7 @@ const IDCardGenerator = () => {
         }
     };
 
-    const handleCancelUpload = () => {
-        setIsModalOpen(false);
-        setSelectedFile(null);
-        setSelectedEmployeeId(null);
-        setSelectedEmployeeName("");
-        setPreviewImage(null);
-    };
-
-    const fetchImages = async () => {
+    const fetchImages = useCallback(async () => {
         let images = {};
 
         await Promise.all(
@@ -230,7 +231,7 @@ const IDCardGenerator = () => {
         );
 
         setImageSrcs(images);
-    };
+    }, [selectedUsers, token]);
 
     // ID Card generation functions
     const handleDownload = async () => {
@@ -300,6 +301,14 @@ const IDCardGenerator = () => {
         }, 1000);
     };
 
+    const handleCancelUpload = () => {
+        setIsModalOpen(false);
+        setSelectedFile(null);
+        setSelectedEmployeeId(null);
+        setSelectedEmployeeName("");
+        setPreviewImage(null);
+    };
+
     const handleGenerate = async () => {
         if (selectedUsers.length === 0) {
             showPopup("Please select at least one employee", "warning");
@@ -318,54 +327,6 @@ const IDCardGenerator = () => {
         } finally {
             setIsProcessing(false);
         }
-    };
-
-    // Utility functions
-    const formatDate = (dateString) => {
-        if (!dateString) return "N/A";
-        const date = new Date(dateString);
-        const options = {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        };
-        return date.toLocaleString('en-GB', options).replace(',', '');
-    };
-
-    const showPopup = (message, type = "info") => {
-        setPopupMessage({ message, type });
-    };
-
-    // Data filtering and pagination
-    const filteredUsers = allUsers.filter(user => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-            (user.name && user.name.toLowerCase().includes(searchLower)) ||
-            (user.email && user.email.toLowerCase().includes(searchLower)) ||
-            (user.isActive ? 'active' : 'inactive').includes(searchLower) ||
-            (user.createdOn && formatDate(user.createdOn).includes(searchLower))
-        );
-    });
-
-    const sortedUsers = [...filteredUsers].sort((a, b) => {
-        return b.isActive - a.isActive || new Date(b.createdOn) - new Date(a.createdOn);
-    });
-
-    // Update current page users when pagination changes
-    useEffect(() => {
-        const startIdx = (currentPage - 1) * itemsPerPage;
-        const endIdx = startIdx + itemsPerPage;
-        setCurrentPageUsers(filteredUsers.slice(startIdx, endIdx));
-    }, [currentPage, itemsPerPage, filteredUsers]);
-
-    const totalItems = sortedUsers.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-    const getPageNumbers = () => {
-        const maxPageNumbers = 5;
-        const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
-        const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
-        return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
     };
 
     // Render ID Card
@@ -427,7 +388,7 @@ const IDCardGenerator = () => {
                     <div className={`${isHorizontal ? "grid grid-cols-2 gap-x-4 gap-y-1 text-sm" : "space-y-1 text-sm"}`}>
                         <div className="flex justify-between">
                             <span className="font-medium text-gray-600">Branch:</span>
-                            <span className="text-right">{employee.branch?.name || "N/A"}</span>
+                            <span>{employee.branch?.name || "N/A"}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="font-medium text-gray-600">Dept:</span>
@@ -468,6 +429,15 @@ const IDCardGenerator = () => {
         );
     };
 
+    if (isLoading) {
+        return (
+            <Layout>
+                <div className="flex justify-center items-center h-screen">
+                    <LoadingSpinner size="xl" />
+                </div>
+            </Layout>
+        );
+    }
 
     return (
         <Layout>

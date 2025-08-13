@@ -280,37 +280,37 @@ function Sidebar() {
                 </button>
                 {isCreateOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/create-branch"
                       icon={KeyIcon}
                       text="Branch"
                       count={counts.totalBranches}
                     />
-                              <SidebarLink
+                    <SidebarLink
                       to="/create-department"
                       icon={ComputerDesktopIcon}
                       text="Department"
                       count={counts.totalDepartment}
                     />
-                              <SidebarLink
+                    <SidebarLink
                       to="/create-role"
                       icon={UserCircleIcon}
                       text="Role"
                       count={counts.totalRoles}
                     />
-                              <SidebarLink
+                    <SidebarLink
                       to="/create-category"
                       icon={ShoppingCartIcon}
                       text="Category"
                       count={counts.totalCategories}
                     />
-                              <SidebarLink
+                    <SidebarLink
                       to="/create-year"
                       icon={CalendarDaysIcon}
                       text="Years"
                       count={counts.annualYear}
                     />
-                              <SidebarLink
+                    <SidebarLink
                       to="/create-fileType"
                       icon={GiFiles}
                       text="Files Types"
@@ -336,7 +336,7 @@ function Sidebar() {
                 </button>
                 {isDocumentOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/approve-documents"
                       icon={IoDocumentLock}
                       text="Pending Approvals"
@@ -385,7 +385,7 @@ function Sidebar() {
                 </button>
                 {isReportOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
@@ -417,7 +417,7 @@ function Sidebar() {
                 </button>
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/adminOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
@@ -444,7 +444,7 @@ function Sidebar() {
                 </button>
                 {isArchiveOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-    
+
                     <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
@@ -517,7 +517,7 @@ function Sidebar() {
                 </button>
                 {isDocumentOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/approve-documents"
                       icon={LockClosedIcon}
                       text="Pending Approvals"
@@ -564,7 +564,7 @@ function Sidebar() {
                   </button>
                   {isReportOpen && (
                     <div className="ml-2 flex flex-col space-y-1">
-                            <SidebarLink
+                      <SidebarLink
                         to="/documentReport"
                         icon={DocumentTextIcon}
                         text="Document Report"
@@ -597,7 +597,7 @@ function Sidebar() {
                 </button>
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/brAdminOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
@@ -623,7 +623,7 @@ function Sidebar() {
                 </button>
                 {isArchiveOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
                       text="Data Archive Download"
@@ -678,7 +678,7 @@ function Sidebar() {
                 </button>
                 {isDocumentOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/approve-documents"
                       icon={IoDocumentLock}
                       text="Pending Approvals"
@@ -725,7 +725,7 @@ function Sidebar() {
                   </button>
                   {isReportOpen && (
                     <div className="ml-2 flex flex-col space-y-1">
-                            <SidebarLink
+                      <SidebarLink
                         to="/documentReport"
                         icon={DocumentTextIcon}
                         text="Document Report"
@@ -758,7 +758,7 @@ function Sidebar() {
                 </button>
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/searchOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"
@@ -784,7 +784,7 @@ function Sidebar() {
                 </button>
                 {isArchiveOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
                       text="Data Archive Download"
@@ -863,7 +863,7 @@ function Sidebar() {
                 </button>
                 {isReportOpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/documentReport"
                       icon={DocumentTextIcon}
                       text="Document Report"
@@ -888,7 +888,7 @@ function Sidebar() {
                 </button>
                 {isOCROpen && (
                   <div className="ml-2 flex flex-col space-y-1">
-                        <SidebarLink
+                    <SidebarLink
                       to="/searchOcr"
                       icon={RiMenuSearchLine}
                       text="Search OCR"

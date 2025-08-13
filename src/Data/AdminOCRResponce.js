@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import apiClient from "../API/apiClient";
-import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
 import { EyeIcon, XMarkIcon, PrinterIcon } from "@heroicons/react/24/solid";
 import Popup from "../Components/Popup";
 
 const AdminOCRResponse = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const responseData = location.state?.responseData;
   const [documents, setDocuments] = useState([]);
@@ -15,6 +16,7 @@ const AdminOCRResponse = () => {
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
   const [printTrue, setPrintTrue] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
 
@@ -111,6 +113,16 @@ const AdminOCRResponse = () => {
     }
   };
 
+  const handleback = () => {
+    const role = localStorage.getItem("role") || sessionStorage.getItem("role");
+    if (role === SYSTEM_ADMIN) {
+      navigate("/adminOcr");
+    } else if (role === BRANCH_ADMIN) {
+      navigate("/brAdminOcr");
+    } else  {
+      navigate("/searchOcr");
+    } 
+  }
   console.log("selectedDoc", selectedDoc);
 
   useEffect(() => {
@@ -207,6 +219,92 @@ const AdminOCRResponse = () => {
     setSelectedDoc(null);
   };
 
+  useEffect(() => {
+    if (selectedDoc && selectedDoc.id) {
+      fetchQRCode(selectedDoc.id);
+    }
+  }, [selectedDoc]);
+
+  const fetchQRCode = async (documentId) => {
+    try {
+      if (!token) {
+        throw new Error("Authentication token is missing");
+      }
+
+      // API URL to fetch the QR code
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`, // Add the token to the header
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+      }
+
+      const qrCodeBlob = await response.blob();
+
+      console.log("Fetched QR code Blob:", qrCodeBlob);
+
+      if (!qrCodeBlob.type.includes("image/png")) {
+        throw new Error("Received data is not a valid image");
+      }
+
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      setQrCodeUrl(qrCodeUrl);
+    } catch (error) {
+      // setError("Error displaying QR Code: " + error.message);
+    }
+  };
+
+  const downloadQRCode = async () => {
+    if (!selectedDoc.id) {
+      alert("Please enter a document ID");
+      return;
+    }
+
+    try {
+      if (!token) {
+        throw new Error("Authentication token is missing");
+      }
+
+      // API URL to download the QR code
+      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+
+      // Fetch the QR code as a Blob (binary data) with the token in the Authorization header
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`, // Add the token to the header
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+      }
+
+      const qrCodeBlob = await response.blob();
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+      // Create an anchor link to trigger the download
+      const link = document.createElement("a");
+      link.href = qrCodeUrl;
+      link.download = `QR_Code_${selectedDoc.id}.png`; // Set a default name for the file
+      link.click();
+
+      // Clean up URL object
+      window.URL.revokeObjectURL(qrCodeUrl);
+    } catch (error) {
+      // setError("Error downloading QR Code: " + error.message);
+    } finally {
+      // setLoading(false);
+    }
+  };
+
   const printPage = () => {
     setPrintTrue(true);
     window.print();
@@ -231,7 +329,7 @@ const AdminOCRResponse = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">Your OCR</h1>
+      <h1 className="text-2xl mb-4 font-semibold text-gray-800">Document Text Search (OCR)</h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
           <div className="flex items-center gap-1">
@@ -243,7 +341,19 @@ const AdminOCRResponse = () => {
               value={JSON.stringify(responseData.query, null, 2)}
               className="bg-slate-800 text-white p-2 rounded-lg w-full text-center cursor-not-allowed opacity-70"
             />
+
+            <button
+              onClick={handleback}
+              className="bg-blue-500 w-full text-white px-2 py-2 rounded-md hover:bg-blue-600 transition duration-300 no-print"
+              aria-label="Back to OCR Search"
+            >
+              Back to OCR Search
+
+            </button>
+
+
           </div>
+
         </div>
 
         <h1 className="font-bold">Your Matching Documents</h1>
@@ -382,28 +492,28 @@ const AdminOCRResponse = () => {
                         </p>
                       ))}
                     </div>
-                    {/* <div className="items-center justify-center text-center">
+                    <div className="items-center justify-center text-center">
                       <p className="text-md text-gray-700 mt-3">
                         <strong>QR Code:</strong>
                       </p>
                       {selectedDoc?.qrPath ? (
-                          <div className="mt-4">
-                            <img
-                              src={qrCodeUrl}
-                              alt="QR Code"
-                              className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
-                            />
-                            <button
-                              onClick={downloadQRCode}
-                              className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
-                            >
-                              Download
-                            </button>
-                          </div>
-                        ) : (
-                          <p className="text-gray-500">No QR code available</p>
-                        )}
-                    </div> */}
+                        <div className="mt-4">
+                          <img
+                            src={qrCodeUrl}
+                            alt="QR Code"
+                            className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
+                          />
+                          <button
+                            onClick={downloadQRCode}
+                            className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                          >
+                            Download
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No QR code available</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Attached Files */}
@@ -412,7 +522,7 @@ const AdminOCRResponse = () => {
                       Your Matched Files
                     </h2>
                     {Array.isArray(selectedDoc.paths) &&
-                    selectedDoc.paths.length > 0 ? (
+                      selectedDoc.paths.length > 0 ? (
                       <>
                         <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
                           <h3 className="flex-1 text-left ml-2">File Name</h3>
@@ -420,11 +530,10 @@ const AdminOCRResponse = () => {
                           <h3 className="text-right mr-10 no-print">Actions</h3>
                         </div>
                         <ul
-                          className={`space-y-4 ${
-                            printTrue === false && selectedDoc.paths.length > 2
-                              ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
-                              : ""
-                          }`}
+                          className={`space-y-4 ${printTrue === false && selectedDoc.paths.length > 2
+                            ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
+                            : ""
+                            }`}
                         >
                           {selectedDoc.paths
                             .filter((file) => {

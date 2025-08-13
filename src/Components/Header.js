@@ -49,6 +49,7 @@ function Header({ toggleSidebar, userName }) {
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [targetRoleName, setTargetRoleName] = useState("");
   const [isConfSwitch, setIsConfSwitch] = useState(false);
+  const [currentRole, setCurrentRole] = useState("");
 
   const handleLogout = () => {
     localStorage.removeItem("tokenKey");
@@ -102,11 +103,23 @@ function Header({ toggleSidebar, userName }) {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setRoleName(response.data.roleNamesList);
+
+      const rolePriority = ["ADMIN", "BRANCH ADMIN", "DEPARTMENT ADMIN", "USER"];
+
+      const sortedRoles = response.data.roleNamesList.sort(
+        (a, b) => rolePriority.indexOf(a) - rolePriority.indexOf(b)
+      );
+
+      setCurrentRole(response.data.employeeRole);
+
+      console.log(" Roles:", response.data);
+      setRoleName(sortedRoles);
     } catch (error) {
       console.error("Error fetching user roles", error);
     }
   };
+
+
 
   const handleRoleSwitch = async (targetRoleName) => {
     setTargetRoleName(targetRoleName);
@@ -130,6 +143,7 @@ function Header({ toggleSidebar, userName }) {
       setRole(targetRoleName);
       showPopup("Role switched successfully!", "success");
       setShowConfirmationPopup(false);
+      fetchUserRole();
     } catch (error) {
       showPopup("Error switching role!", "error");
       setShowConfirmationPopup(false);
@@ -194,7 +208,9 @@ function Header({ toggleSidebar, userName }) {
               className="max-h-48 overflow-y-auto"
               items={
                 Array.isArray(roleName)
-                  ? roleName.map((roleItem) => {
+                  ? roleName
+                    .filter((roleItem) => roleItem !== currentRole) // skip currentRole
+                    .map((roleItem) => {
                       let IconComponent = FiUser;
                       if (roleItem === "ADMIN") IconComponent = TbPasswordUser;
                       else if (roleItem === "BRANCH ADMIN") IconComponent = TbUserCog;
@@ -218,6 +234,7 @@ function Header({ toggleSidebar, userName }) {
               emptyMessage="No Multiple roles available"
             />
           )}
+
         </div>
 
         {/* Profile Dropdown */}
@@ -283,9 +300,8 @@ function Header({ toggleSidebar, userName }) {
                 <button
                   onClick={confirmRoleSwitch}
                   disabled={isConfSwitch}
-                  className={`bg-indigo-500 text-white px-4 py-2 rounded transition duration-300 no-print ${
-                    isConfSwitch ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-600"
-                  }`}
+                  className={`bg-indigo-500 text-white px-4 py-2 rounded transition duration-300 no-print ${isConfSwitch ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-600"
+                    }`}
                 >
                   {isConfSwitch ? (
                     <span className="flex items-center">
