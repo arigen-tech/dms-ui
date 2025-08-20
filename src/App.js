@@ -44,6 +44,7 @@ import FilesType from "./Pages/FilesTypes";
 import RetentionPolicypage from "./Pages/RetentionPolicypage";
 import ArchivalDashboard from "./Pages/ArchivalDashboard";
 
+
 const protectedRoutes = [
   { path: "/dashboard", element: <Dashboard />, allowedRoles: [SYSTEM_ADMIN, USER, BRANCH_ADMIN,DEPARTMENT_ADMIN] },
   { path: "/inbox", element: <Inbox />, allowedRoles: [SYSTEM_ADMIN, USER, BRANCH_ADMIN,DEPARTMENT_ADMIN] },

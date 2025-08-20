@@ -448,13 +448,13 @@ function Sidebar() {
                     <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
-                      text="Data Archive Download"
+                      text="Download Archive Data"
                     />
 
                     <SidebarLink
                       to="/archivesuplod"
                       icon={RiInboxUnarchiveFill}
-                      text="Data Archive Upload"
+                      text="Upload Archive Data"
                     />
                     <SidebarLink
                       to="/retentionpolicy"
@@ -626,13 +626,13 @@ function Sidebar() {
                     <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
-                      text="Data Archive Download"
+                      text="Download Archive Data"
                     />
 
                     <SidebarLink
                       to="/archivesuplod"
                       icon={RiInboxUnarchiveFill}
-                      text="Data Archive Upload"
+                      text="Upload Archive Data"
                     />
                   </div>
                 )}
@@ -787,13 +787,13 @@ function Sidebar() {
                     <SidebarLink
                       to="/archive"
                       icon={RiInboxArchiveFill}
-                      text="Data Archive Download"
+                      text="Download Archive Data"
                     />
 
                     <SidebarLink
                       to="/archivesuplod"
                       icon={RiInboxUnarchiveFill}
-                      text="Data Archive Upload"
+                      text="Upload Archive Data"
                     />
                   </div>
                 )}
