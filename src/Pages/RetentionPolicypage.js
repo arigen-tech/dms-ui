@@ -1,7 +1,7 @@
 import React,{useState} from 'react'
 import Sidebar from '../Components/Sidebar';
 import Layout from '../Components/Layout';
-import NewRetentionPolicy from '../Data/NewRetaintionPolicy';
+import RetentionPolicy from '../Data/RetentionPolicy';
 
 function ArchiveDoc() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -11,7 +11,7 @@ function ArchiveDoc() {
     };
     return (
         <Layout>
-        <NewRetentionPolicy/>
+        <RetentionPolicy/>
       </Layout>
     )
 }
