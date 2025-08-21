@@ -137,31 +137,31 @@ const NewRetaintionPolicy = () => {
         }
     };
 
-function formatDate(value) {
-    if (!value) return ""; 
+    function formatDate(value) {
+        if (!value) return "";
 
-    let date;
-    if (Array.isArray(value)) {
+        let date;
+        if (Array.isArray(value)) {
 
-        const [year, month, day, hour = 0, minute = 0, second = 0] = value;
-        date = new Date(year, month - 1, day, hour, minute, second);
-    } else {
-        date = new Date(value);
+            const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+            date = new Date(year, month - 1, day, hour, minute, second);
+        } else {
+            date = new Date(value);
+        }
+
+        if (isNaN(date.getTime())) return "";
+
+        const options = {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        };
+
+        return date.toLocaleString("en-GB", options).replace(",", " at");
     }
-
-    if (isNaN(date.getTime())) return ""; 
-
-    const options = {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-    };
-
-    return date.toLocaleString("en-GB", options).replace(",", " at");
-}
 
 
 
@@ -344,52 +344,55 @@ function formatDate(value) {
             showPopup("Policy created successfully!", "success");
         } catch (error) {
             console.error("Error creating policy:", error);
-            showPopup("Failed to create policy", "error");
+
+            const backendMessage = error.response?.data?.message || error.message || "Something went wrong";
+            showPopup(backendMessage, "warning");
         }
+
     };
 
 
-const handleEditPolicy = async (policy) => {
-    if (policy) {
-        const parseToDate = (value) => {
-            if (!value) return null;
-            if (Array.isArray(value)) {
-                // Array from backend: [year, month, day, hour, minute, (second)]
-                const [year, month, day, hour = 0, minute = 0, second = 0] = value;
-                return new Date(year, month - 1, day, hour, minute, second);
+    const handleEditPolicy = async (policy) => {
+        if (policy) {
+            const parseToDate = (value) => {
+                if (!value) return null;
+                if (Array.isArray(value)) {
+                    // Array from backend: [year, month, day, hour, minute, (second)]
+                    const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+                    return new Date(year, month - 1, day, hour, minute, second);
+                }
+                return new Date(value); // in case backend sends ISO string later
+            };
+
+            const fromDateObj = parseToDate(policy.fromdate);
+            const toDateObj = parseToDate(policy.todate);
+
+            setEditId(policy?.id);
+            setFormData({
+                description: policy.description || "",
+                fromdate: fromDateObj ? fromDateObj.toLocaleDateString("en-CA") : "",
+                todate: toDateObj ? toDateObj.toLocaleDateString("en-CA") : "",
+                isActive: policy.isActive === true || policy.isActive === 1,
+                retentionDate: policy.retentionDate ? policy.retentionDate.join("-") : "",
+                retentionTime: policy.retentionTime
+                    ? `${String(policy.retentionTime[0]).padStart(2, "0")}:${String(policy.retentionTime[1]).padStart(2, "0")}`
+                    : "23:59",
+                policyType: policy.policyType || "FILE_RETENTION",
+                departmentId: policy.departmentId || "",
+                branchId: policy.branchId || "",
+            });
+
+            if (policy.branchId) {
+                setSelectedBranch(policy.branchId);
+                await fetchDepartments(policy.branchId);
+            } else {
+                setDepartments([]);
             }
-            return new Date(value); // in case backend sends ISO string later
-        };
 
-        const fromDateObj = parseToDate(policy.fromdate);
-        const toDateObj   = parseToDate(policy.todate);
-
-        setEditId(policy?.id);
-        setFormData({
-            description: policy.description || "",
-            fromdate: fromDateObj ? fromDateObj.toLocaleDateString("en-CA") : "", 
-            todate: toDateObj ? toDateObj.toLocaleDateString("en-CA") : "",     
-            isActive: policy.isActive === true || policy.isActive === 1,
-            retentionDate: policy.retentionDate ? policy.retentionDate.join("-") : "",
-            retentionTime: policy.retentionTime
-                ? `${String(policy.retentionTime[0]).padStart(2, "0")}:${String(policy.retentionTime[1]).padStart(2, "0")}`
-                : "23:59",
-            policyType: policy.policyType || "FILE_RETENTION",
-            departmentId: policy.departmentId || "",
-            branchId: policy.branchId || "",
-        });
-
-        if (policy.branchId) {
-            setSelectedBranch(policy.branchId);
-            await fetchDepartments(policy.branchId);
-        } else {
-            setDepartments([]);
+            setIsEditing(true);
+            scrollToForm();
         }
-
-        setIsEditing(true);
-        scrollToForm();
-    }
-};
+    };
 
 
 
@@ -433,9 +436,12 @@ const handleEditPolicy = async (policy) => {
             resetForm();
             showPopup("Retention policy updated successfully!", "success");
         } catch (error) {
-            console.error("Error updating policy:", error);
-            showPopup("Failed to update the retention policy", "error");
+            console.error("Error creating policy:", error);
+
+            const backendMessage = error.response?.data?.message || error.message || "Something went wrong";
+            showPopup(backendMessage, "warning");
         }
+
     };
 
 
