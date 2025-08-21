@@ -137,6 +137,35 @@ const NewRetaintionPolicy = () => {
         }
     };
 
+function formatDate(value) {
+    if (!value) return ""; 
+
+    let date;
+    if (Array.isArray(value)) {
+
+        const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+        date = new Date(year, month - 1, day, hour, minute, second);
+    } else {
+        date = new Date(value);
+    }
+
+    if (isNaN(date.getTime())) return ""; 
+
+    const options = {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    };
+
+    return date.toLocaleString("en-GB", options).replace(",", " at");
+}
+
+
+
+
     const formatDateTime = (dateArray, timeArray) => {
         if (!dateArray || !timeArray) return "Invalid Date";
 
@@ -144,13 +173,15 @@ const NewRetaintionPolicy = () => {
         const [hour = 0, minute = 0] = timeArray;
 
         const date = new Date(year, month - 1, day, hour, minute);
-        return date.toLocaleString('en-IN', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+
+        return date.toLocaleString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        }).replace(",", " at");
     };
 
     const convertArrayToDate = (dateArray) => {
@@ -280,7 +311,6 @@ const NewRetaintionPolicy = () => {
     }
 
     const handleAddPolicy = async () => {
-
         if (!formData.retentionDate) {
             showPopup("Please select a retention date", "warning");
             return;
@@ -290,8 +320,10 @@ const NewRetaintionPolicy = () => {
             const newPolicy = {
                 policyType: formData.policyType,
                 description: formData.description,
-                fromdate: formData.fromdateTs,
-                todate: formData.todateTs,
+
+                fromdate: formData.fromdate ? new Date(formData.fromdate).toISOString().slice(0, 19) : null,
+                todate: formData.todate ? new Date(formData.todate).toISOString().slice(0, 19) : null,
+
                 retentionDate: formData.retentionDate,
                 retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:59",
                 isActive: formData.isActive,
@@ -316,38 +348,52 @@ const NewRetaintionPolicy = () => {
         }
     };
 
-    const handleEditPolicy = async (policyId) => {
-        const policyToEdit = policies.find((policy) => policy.id === policyId);
-        if (policyToEdit) {
-            setEditId(policyId);
-            setFormData({
-                description: policyToEdit.description || "",
-                retentionDate: policyToEdit.retentionDate || "",
-                retentionTime: policyToEdit.retentionTime || "",
-                isActive: policyToEdit.isActive,
-                policyType: policyToEdit.policyType || "FILE_RETENTION",
-                departmentId: policyToEdit.departmentId || "",
-                branchId: policyToEdit.branchId || "",
-                id: policyToEdit.id,
-            });
-            if (policyToEdit.branchId) {
-                setSelectedBranch(policyToEdit.branchId);
-                await fetchDepartments(policyToEdit.branchId);
-            } else {
-                setDepartments([]);
+
+const handleEditPolicy = async (policy) => {
+    if (policy) {
+        const parseToDate = (value) => {
+            if (!value) return null;
+            if (Array.isArray(value)) {
+                // Array from backend: [year, month, day, hour, minute, (second)]
+                const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+                return new Date(year, month - 1, day, hour, minute, second);
             }
-            setIsEditing(true);
-            // Scroll to form after setting the edit state
-            scrollToForm();
+            return new Date(value); // in case backend sends ISO string later
+        };
+
+        const fromDateObj = parseToDate(policy.fromdate);
+        const toDateObj   = parseToDate(policy.todate);
+
+        setEditId(policy?.id);
+        setFormData({
+            description: policy.description || "",
+            fromdate: fromDateObj ? fromDateObj.toLocaleDateString("en-CA") : "", 
+            todate: toDateObj ? toDateObj.toLocaleDateString("en-CA") : "",     
+            isActive: policy.isActive === true || policy.isActive === 1,
+            retentionDate: policy.retentionDate ? policy.retentionDate.join("-") : "",
+            retentionTime: policy.retentionTime
+                ? `${String(policy.retentionTime[0]).padStart(2, "0")}:${String(policy.retentionTime[1]).padStart(2, "0")}`
+                : "23:59",
+            policyType: policy.policyType || "FILE_RETENTION",
+            departmentId: policy.departmentId || "",
+            branchId: policy.branchId || "",
+        });
+
+        if (policy.branchId) {
+            setSelectedBranch(policy.branchId);
+            await fetchDepartments(policy.branchId);
+        } else {
+            setDepartments([]);
         }
-    };
+
+        setIsEditing(true);
+        scrollToForm();
+    }
+};
+
+
 
     const handleSaveEdit = async () => {
-        if (!formData.policyType || editId === null || !formData.retentionDate || !formData.branchId) {
-            showPopup("Please fill in required fields", "warning");
-            return;
-        }
-
         try {
             const policyIndex = policies.findIndex((policy) => policy.id === editId);
             if (policyIndex === -1) {
@@ -359,15 +405,24 @@ const NewRetaintionPolicy = () => {
                 ...policies[policyIndex],
                 policyType: formData.policyType,
                 description: formData.description,
+
+                // ✅ send ISO strings, not millis
+                fromdate: formData.fromdate
+                    ? new Date(formData.fromdate).toISOString().slice(0, 19)
+                    : null,
+                todate: formData.todate
+                    ? new Date(formData.todate).toISOString().slice(0, 19)
+                    : null,
+
                 retentionDate: formData.retentionDate,
                 retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:00",
-                isActive: formData.isActive ? 1 : 0,
+                isActive: !!formData.isActive,
                 departmentId: formData.departmentId || null,
-                branchId: formData.branchId,
-                updatedOn: new Date().toISOString(),
+                branchId: formData.branchId || null,
+                updatedOn: new Date().toISOString().slice(0, 19),
             };
 
-            await axios.put(`${API_HOST}/retention-policy/${updatedPolicy.id}`, updatedPolicy, {
+            await axios.put(`${API_HOST}/retention-policy/updateNewPolicy/${updatedPolicy.id}`, updatedPolicy, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
                     "Content-Type": "application/json",
@@ -382,6 +437,8 @@ const NewRetaintionPolicy = () => {
             showPopup("Failed to update the retention policy", "error");
         }
     };
+
+
 
     const resetForm = () => {
         setFormData({
@@ -722,19 +779,20 @@ const NewRetaintionPolicy = () => {
                 </div>
 
                 {/* Policies Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border">
+                <div className="w-full overflow-x-auto">
+                    <table className="min-w-max border-collapse border">
                         <thead>
                             <tr className="bg-slate-100">
                                 <th className="border p-2 text-left">SR.</th>
                                 <th className="border p-2 text-left">Policy Type</th>
-                                <th className="border p-2 text-left">Retention Period</th>
+                                <th className="border p-2 text-left">Archival Period</th>
+                                <th className="border p-2 text-left">Archive Date & Time</th>
                                 <th className="border p-2 text-left">Branch</th>
                                 <th className="border p-2 text-left">Department</th>
                                 <th className="border p-2 text-left">Description</th>
                                 <th className="border p-2 text-left">Status</th>
                                 <th className="border p-2 text-left">Edit</th>
-                                <th className="border p-2 text-left">Access</th>
+                                {/* <th className="border p-2 text-left">Access</th> */}
                             </tr>
                         </thead>
                         <tbody>
@@ -752,6 +810,10 @@ const NewRetaintionPolicy = () => {
                                         </span>
                                     </td>
                                     <td className="px-4 py-2 text-center text-gray-700">
+                                        {`${formatDate(policy.fromdate)} TO ${formatDate(policy.todate)}`}
+                                    </td>
+
+                                    <td className="px-4 py-2 text-center text-gray-700">
                                         {formatDateTime(policy.retentionDate, policy.retentionTime)}
                                     </td>
 
@@ -760,22 +822,22 @@ const NewRetaintionPolicy = () => {
                                     <td className="border p-2">{policy.description || "-"}</td>
                                     <td className="border p-2">
                                         <span
-                                            className={`px-2 py-1 rounded text-xs font-semibold ${policy.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                                            className={`px-2 py-1 rounded text-xs font-semibold ${policy.isActive ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"
                                                 }`}
                                         >
-                                            {policy.isActive ? "Active" : "Inactive"}
+                                            {policy.isActive ? "Waiting For Archive" : "Archived"}
                                         </span>
                                     </td>
                                     <td className="border p-2 text-center">
                                         <button
-                                            onClick={() => handleEditPolicy(policy.id)}
+                                            onClick={() => handleEditPolicy(policy)}
                                             disabled={!policy.isActive}
                                             className={`${!policy.isActive ? "opacity-50 cursor-not-allowed" : ""}`}
                                         >
                                             <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                                         </button>
                                     </td>
-                                    <td className="border p-2 text-center">
+                                    {/* <td className="border p-2 text-center">
                                         <button
                                             onClick={() => handleToggleActiveStatus(policy)}
                                             className={`p-1 rounded-full ${policy.isActive ? "bg-green-500" : "bg-red-500"}`}
@@ -786,7 +848,7 @@ const NewRetaintionPolicy = () => {
                                                 <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
                                             )}
                                         </button>
-                                    </td>
+                                    </td> */}
                                 </tr>
                             ))}
                         </tbody>
