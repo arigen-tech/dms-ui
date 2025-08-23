@@ -10,7 +10,7 @@ import {
   PencilIcon,
   PlusCircleIcon,
 } from '@heroicons/react/24/solid';
-import { DEPAETMENT_API, EMPLOYEE_API } from '../../API/apiConfig';
+import { DEPAETMENT_API } from '../../API/apiConfig';
 import { API_HOST } from "../../API/apiConfig";
 import Popup from '../../Components/Popup';
 import LoadingComponent from '../../Components/LoadingComponent';

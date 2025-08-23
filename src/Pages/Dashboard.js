@@ -22,22 +22,21 @@ import {
   Pie,
 } from "recharts";
 import { useNavigate, Link } from "react-router-dom";
-import Sidebar from "../Components/Sidebar";
-import Header from "../Components/Header";
+
 import { GiFiles } from "react-icons/gi";
 import {
   CalendarDaysIcon,
   ComputerDesktopIcon,
-  DocumentArrowDownIcon,
+  
   DocumentCheckIcon,
   DocumentMinusIcon,
   DocumentIcon,
-  DocumentMagnifyingGlassIcon,
+  
   KeyIcon,
   ShoppingCartIcon,
   UserCircleIcon,
   UsersIcon,
-  IdentificationIcon
+
 } from "@heroicons/react/24/solid";
 import { IoDocumentLock } from "react-icons/io5";
 import { FaUserClock } from "react-icons/fa6";
@@ -50,17 +49,17 @@ function Dashboard() {
   const [chartData, setChartData] = useState([]);
   const [barChartData, setBarChartData] = useState([]); // Separate state for bar chart
   const [topOffice, setTopOffice] = useState([]);
-  const [branchId, setBranchId] = useState(null);
+  
   const [branchesId, setBranchsId] = useState(null);
   const [departmentId, setDepartmentId] = useState(null);
-  const [branchUserCount, setBranchUserCount] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+ 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isGrLoading, setIsGrLoading] = useState(true);
   const [isBarChartLoading, setIsBarChartLoading] = useState(true);
-  const [isGraphChartLoading, setIsGraphChartLoading] = useState(true);
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [ setIsGraphChartLoading] = useState(true);
+ 
   const [selectedLineStatus, setSelectedLineStatus] = useState("all");
 
   // Separate loading for bar chart
@@ -435,7 +434,6 @@ function Dashboard() {
 
         const employeeId = localStorage.getItem("userId");
         const token = localStorage.getItem("tokenKey");
-        const role = localStorage.getItem("role");
 
         if (!token || !employeeId) {
           throw new Error("Unauthorized: Token or Employee ID missing.");
@@ -505,9 +503,6 @@ function Dashboard() {
   }, [navigate, selectedYear, selectedBranch, selectedLineStatus]);
 
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
 
   function StatBlock({ title, value, Icon }) {
     return (
