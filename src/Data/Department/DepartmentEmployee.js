@@ -30,7 +30,7 @@ const DepartmentEmployee = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [employeeToToggle, setEmployeeToToggle] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [ setError] = useState("");
     const [userBranch, setUserBranch] = useState(null);
     const [userDepartment, setUserDepartment] = useState(null);
     const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);

@@ -24,14 +24,13 @@ const Branch = () => {
     isActive: true,
   });
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingIndex, setEditingIndex] = useState(null);
+
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [branchToToggle, setBranchToToggle] = useState(null);
   const [editingBranchId, setEditingBranchId] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [messageType, setMessageType] = useState('');
+  
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -101,6 +100,7 @@ const Branch = () => {
       showPopup('Branch with this name already exists!', 'error');
       return;
     }
+    setIsSubmitting(true);
 
     try {
       const newBranch = {
@@ -123,6 +123,9 @@ const Branch = () => {
     } catch (error) {
       console.error('Error adding branch:', error.response ? error.response.data : error.message);
       showPopup('Failed to add the Branch. Please try again!', "error");
+    }
+    finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -293,11 +296,7 @@ const Branch = () => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prevPage) => prevPage + 1);
-    }
-  };
+  
 
   if (isLoading) {
     return <LoadingComponent />;

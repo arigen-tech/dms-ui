@@ -25,12 +25,10 @@ const UserReport = () => {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [branchOptions, setBranchOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
-  const [resData, setResData] = useState([]);
-  const [fileContent, setFileContent] = useState([]);
-  const [fileName, setFileName] = useState([]);
+
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
-  const [error, setError] = useState("");
+ 
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState("");
   const [showModal, setShowModal] = useState(false);

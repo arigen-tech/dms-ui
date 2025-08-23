@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
+  
   CheckCircleIcon,
-  LockClosedIcon,
-  LockOpenIcon,
-  MagnifyingGlassIcon,
-  PencilIcon,
-  PlusCircleIcon,
+  
   XMarkIcon,
   ExclamationTriangleIcon,
   ClockIcon,
@@ -34,7 +29,7 @@ const CountdownTimer = ({ targetDate, onComplete }) => {
         if (targetDate.includes(' ')) {
           const [datePart, timePart] = targetDate.split(' ');
           const [year, month, day] = datePart.split('-').map(Number);
-          const [time, ms] = timePart.split('.');
+          const [time] = timePart.split('.');
           const [hour, minute, second] = time.split(':').map(Number);
           targetTime = new Date(year, month - 1, day, hour, minute, second).getTime();
         } else {
@@ -99,9 +94,9 @@ const CountdownTimer = ({ targetDate, onComplete }) => {
 
 const RetentionCheckAlert = ({ onClose, result }) => {
   const [isVisible, setIsVisible] = useState(true);
-  const [showDetails, setShowDetails] = useState(false);
+
   const [showMissingFiles, setShowMissingFiles] = useState(false);
-  const [showNotEligible, setShowNotEligible] = useState(false);
+  
   const [selectedPolicy, setSelectedPolicy] = useState(null);
 
   const handleClose = () => {

@@ -20,8 +20,8 @@ const ManageUserRole = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
   const [empId, setEmpId] = useState(null); // For editing role
-  const [role, setRole] = useState(""); // Role input field
-  const [newRole, setNewRole] = useState("");
+  const [ setRole] = useState(""); // Role input field
+  
   const [availableRoles, setAvailableRoles] = useState([]);
   const [allRoles, setAllRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState("");
@@ -31,7 +31,7 @@ const ManageUserRole = () => {
   const [roleToToggle, setRoleToToggle] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [roles, setRoles] = useState([]);
-  const [refreshTrigger, setRefreshTrigger] = useState(false);
+  const [refreshTrigger] = useState(false);
   const [currBranchId, setCurrBranchId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
