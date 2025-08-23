@@ -56,7 +56,7 @@ const UserReport = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        window.location.reload();
+        
       }
     });
   };

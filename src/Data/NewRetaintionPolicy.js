@@ -21,7 +21,7 @@ const NewRetaintionPolicy = () => {
     const [currentPage, setCurrentPage] = useState(1)
     const [modalVisible, setModalVisible] = useState(false)
     const [policyToToggle, setPolicyToToggle] = useState(null)
-
+    const [downloadingId, setDownloadingId] = useState(null);
     const [formData, setFormData] = useState({
         description: "",
         fromdate: "",
@@ -39,9 +39,6 @@ const NewRetaintionPolicy = () => {
     // Create a ref for the form section
     const formRef = useRef(null)
 
-    useEffect(() => {
-        console.log("Form Data:", JSON.stringify(formData, null, 2));
-    }, [formData]);
 
 
     useEffect(() => {
@@ -220,6 +217,49 @@ const NewRetaintionPolicy = () => {
             setDepartments([])
         }
     }
+
+    const handleDownloadZip = async (policy) => {
+        if (downloadingId) return;
+        setDownloadingId(policy.id);
+        try {
+            const response = await fetch(`${API_HOST}/archiveJob/download/${policy.id}`, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to download ZIP");
+            }
+
+            let fileName = `archive_${policy.id}.zip`;
+            const disposition = response.headers.get("content-disposition");
+            if (disposition) {
+                const match = disposition.match(/filename="?([^"]+)"?/);
+                if (match && match[1]) {
+                    fileName = match[1];
+                }
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error downloading ZIP:", error);
+            alert("Failed to download ZIP file");
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
 
     const fetchAllDepartments = async () => {
         try {
@@ -613,7 +653,7 @@ const NewRetaintionPolicy = () => {
                                 value={formData.fromdate || ''}
                                 onChange={handleInputChange}
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                                min={new Date().toISOString().split('T')[0]} // must be today or later
+                            //  min={new Date().toISOString().split('T')[0]} // must be today or later
                             />
                         </label>
 
@@ -785,56 +825,66 @@ const NewRetaintionPolicy = () => {
                 </div>
 
                 {/* Policies Table */}
-                <div className="w-full overflow-x-auto">
-                    <table className="min-w-max border-collapse border">
-                        <thead>
-                            <tr className="bg-slate-100">
-                                <th className="border p-2 text-left">SR.</th>
-                                <th className="border p-2 text-left">Policy Type</th>
-                                <th className="border p-2 text-left">Archival Period</th>
-                                <th className="border p-2 text-left">Archive Date & Time</th>
-                                <th className="border p-2 text-left">Branch</th>
-                                <th className="border p-2 text-left">Department</th>
-                                <th className="border p-2 text-left">Description</th>
-                                <th className="border p-2 text-left">Status</th>
-                                <th className="border p-2 text-left">Edit</th>
-                                {/* <th className="border p-2 text-left">Access</th> */}
+                <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
+                    <table className="table-fixed border-collapse border border-gray-300 min-w-[1400px]">
+                        <thead className="bg-gray-100 sticky top-0 z-10">
+                            <tr>
+                                <th className="border p-2 text-left w-12">SR.</th>
+                                <th className="border p-2 text-left w-44">Policy Type</th>
+                                <th className="border p-2 text-left w-[650px]">Archival Period</th>
+                                <th className="border p-2 text-left w-96">Archive Date & Time</th>
+                                <th className="border p-2 text-left w-40">Branch</th>
+                                <th className="border p-2 text-left w-40">Department</th>
+                                <th className="border p-2 text-left w-60">Description</th>
+                                <th className="border p-2 text-left w-28">Status</th>
+                                <th className="border p-2 text-left w-20">Edit</th>
+                                <th className="border p-2 text-left w-28">Retrieved</th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedPolicies.map((policy, index) => (
                                 <tr key={policy.id}>
-                                    <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
-                                    <td className="border p-2">
+                                    <td className="border p-2 w-12">
+                                        {index + 1 + (currentPage - 1) * itemsPerPage}
+                                    </td>
+                                    <td className="border p-2 w-44">
                                         <span
                                             className={`px-2 py-1 rounded text-xs font-semibold ${policy.policyType === "FILE_RETENTION"
                                                 ? "bg-blue-100 text-blue-800"
                                                 : "bg-green-100 text-green-800"
                                                 }`}
                                         >
-                                            {policy.policyType === "FILE_RETENTION" ? "File Retention" : "Data Retention"}
+                                            {policy.policyType === "FILE_RETENTION"
+                                                ? "File Retention"
+                                                : "Data Retention"}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-2 text-center text-gray-700">
+                                    <td className="border p-2 w-[500px] text-center text-gray-700">
                                         {`${formatDate(policy.fromdate)} TO ${formatDate(policy.todate)}`}
                                     </td>
-
-                                    <td className="px-4 py-2 text-center text-gray-700">
+                                    <td className="border p-2 w-96 text-center text-gray-700">
                                         {formatDateTime(policy.retentionDate, policy.retentionTime)}
                                     </td>
-
-                                    <td className="border p-2">{policy.branchName || getBranchNameById(policy.branchId)}</td>
-                                    <td className="border p-2">{policy.departmentName || getDepartmentNameById(policy.departmentId)}</td>
-                                    <td className="border p-2">{policy.description || "-"}</td>
-                                    <td className="border p-2">
+                                    <td className="border p-2 w-40">
+                                        {policy.branchName || getBranchNameById(policy.branchId)}
+                                    </td>
+                                    <td className="border p-2 w-40">
+                                        {policy.departmentName || getDepartmentNameById(policy.departmentId)}
+                                    </td>
+                                    <td className="border p-2 w-60">
+                                        {policy.description || "-"}
+                                    </td>
+                                    <td className="border p-2 w-28">
                                         <span
-                                            className={`px-2 py-1 rounded text-xs font-semibold ${policy.isActive ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"
+                                            className={`px-2 py-1 rounded text-xs font-semibold ${policy.isActive
+                                                ? "bg-yellow-100 text-yellow-800"
+                                                : "bg-green-100 text-green-800"
                                                 }`}
                                         >
                                             {policy.isActive ? "Waiting For Archive" : "Archived"}
                                         </span>
                                     </td>
-                                    <td className="border p-2 text-center">
+                                    <td className="border p-2 w-20 text-center">
                                         <button
                                             onClick={() => handleEditPolicy(policy)}
                                             disabled={!policy.isActive}
@@ -843,23 +893,50 @@ const NewRetaintionPolicy = () => {
                                             <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                                         </button>
                                     </td>
-                                    {/* <td className="border p-2 text-center">
+                                    <td className="border p-2 w-28 text-center">
                                         <button
-                                            onClick={() => handleToggleActiveStatus(policy)}
-                                            className={`p-1 rounded-full ${policy.isActive ? "bg-green-500" : "bg-red-500"}`}
+                                            onClick={() => handleDownloadZip(policy)}
+                                            disabled={policy.isActive || downloadingId === policy.id}
+                                            className={`p-1 rounded-full ${policy.isActive || downloadingId === policy.id
+                                                    ? "bg-gray-400 cursor-not-allowed"
+                                                    : "bg-green-500 hover:bg-green-600"
+                                                } text-white transition duration-200 flex items-center gap-2`}
                                         >
                                             {policy.isActive ? (
-                                                <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
+                                                <span>Disabled</span>
+                                            ) : downloadingId === policy.id ? (
+                                                <>
+                                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                                        <circle
+                                                            cx="12"
+                                                            cy="12"
+                                                            r="10"
+                                                            stroke="currentColor"
+                                                            strokeWidth="4"
+                                                            fill="none"
+                                                            className="opacity-25"
+                                                        />
+                                                        <path
+                                                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                                            fill="currentColor"
+                                                            className="opacity-75"
+                                                        />
+                                                    </svg>
+                                                    <span>Downloading…</span>
+                                                </>
                                             ) : (
-                                                <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
+                                                <span>Download</span>
                                             )}
                                         </button>
-                                    </td> */}
+                                    </td>
+
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
+
+
 
                 {/* Pagination Controls */}
                 <div className="flex items-center mt-4">

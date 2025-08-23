@@ -97,9 +97,7 @@ const BranchDepartments = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        if (type === 'success') {
-          window.location.reload();
-        }
+        
       }
     });
   };

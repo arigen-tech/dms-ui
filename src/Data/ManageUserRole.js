@@ -47,7 +47,7 @@ const ManageUserRole = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        window.location.reload();
+        
       }
     });
   };

@@ -1,254 +1,241 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Calendar, Clock, Archive, FileText, CheckCircle, Building, Users, Filter, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import Layout from "../Components/Layout";
+import {
+    Archive,
+    Clock,
+    Filter,
+    Search,
+    Building,
+    Users,
+} from "lucide-react";
 import {
     ArrowLeftIcon,
     ArrowRightIcon,
     ArchiveBoxXMarkIcon,
-    ArchiveBoxIcon
 } from '@heroicons/react/24/solid';
 import ArchiveBoxCheachMarkIcon from '../Assets/ArchiveBoxCheachMarkIcon.png';
-import axios from "axios";
-import { API_HOST } from "../API/apiConfig";
+import { API_HOST, BRANCH_API, DEPAETMENT_API } from "../API/apiConfig";
 
-
-
-// const generateSampleData = () => {
-
-//     const branches = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata'];
-//     const departments = ['HR', 'Finance', 'IT', 'Operations', 'Legal', 'Marketing'];
-//     const statuses = ['Scheduled', 'Archived', 'Failed'];
-
-//     return Array.from({ length: 50 }, (_, i) => ({
-//         id: `ARC-${String(i + 1).padStart(4, '0')}`,
-//         title: `Document Set ${i + 1}`,
-//         branch: branches[Math.floor(Math.random() * branches.length)],
-//         department: departments[Math.floor(Math.random() * departments.length)],
-//         status: statuses[Math.floor(Math.random() * statuses.length)],
-//         scheduledDate: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000),
-//         archivedDate: Math.random() > 0.5 ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000) : null,
-//         priority: Math.random() > 0.7 ? 'High' : Math.random() > 0.4 ? 'Medium' : 'Low',
-//         size: `${(Math.random() * 500 + 10).toFixed(1)} MB`,
-//         documentsCount: Math.floor(Math.random() * 1000) + 10
-//     }));
-// };
-
-
-
-
-const ArchivalDashboard = () => {
-    const [data, setNewData] = useState([]);
-
-    // const [data] = useState(generateSampleData());
-    const [searchTerm, setSearchTerm] = useState('');
-    const [itemsPerPage, setItemsPerPage] = useState(5);
-
+const ArchiveDashboard = () => {
+    const [branches, setBranches] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [statuses] = useState(["IN_PROGRESS", "ARCHIVED", "FAILED"]);
+    const [selectedBranch, setSelectedBranch] = useState("All");
+    const [selectedDepartment, setSelectedDepartment] = useState("All");
+    const [selectedStatus, setSelectedStatus] = useState("All");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [files, setFiles] = useState([]);
+    const [stats, setStats] = useState({
+        total: 0,
+        scheduled: 0,
+        archived: 0,
+        failed: 0,
+    });
     const [currentPage, setCurrentPage] = useState(1);
-    const [selectedBranch, setSelectedBranch] = useState('All');
-    const [selectedDepartment, setSelectedDepartment] = useState('All');
-    const [selectedStatus, setSelectedStatus] = useState('All');
-    const [sortBy, setSortBy] = useState('fifo');
+    const itemsPerPage = 10;
+    const token = localStorage.getItem("tokenKey");
 
-    // Get unique values for filters
-    const branches = [...new Set(data.map(item => item.branch))];
-    const departments = [...new Set(data.map(item => item.department))];
-    const statuses = [...new Set(data.map(item => item.status))];
 
-    const transformRetentionData = (data) => {
-        const groupedData = data.reduce((acc, item) => {
-            if (!acc[item.name]) acc[item.name] = [];
-            acc[item.name].push(item);
-            return acc;
-        }, {});
-
-        const result = Object.entries(groupedData).map(([name, items], index) => {
-            const first = items[0];
-
-            // Convert date arrays to ISO strings safely
-            const getDateIsoString = (dateArray) => {
-                if (
-                    Array.isArray(dateArray) &&
-                    dateArray.length >= 6 &&
-                    dateArray.every((val) => val !== null && val !== undefined)
-                ) {
-                    try {
-                        return new Date(
-                            ...dateArray.slice(0, 6) // [year, month, day, hour, minute, second]
-                        ).toISOString();
-                    } catch {
-                        return null;
-                    }
-                }
-                return null;
-            };
-
-            return {
-                id: `ARC-${(index + 1).toString().padStart(4, "0")}`,
-                title: name,
-                branch: first.branchName ?? "Unknown",
-                department: first.departmentName ?? "Unknown",
-                status: first.status ?? "null",
-                scheduledDate: getDateIsoString(first.lastAccessed),
-                archivedDate: getDateIsoString(first.archiveDate),
-                documentsCount: items.length,
-            };
-        });
-
-        return result;
-    };
-
+    // Fetch Branches
     useEffect(() => {
-        const fetchRetentionData = async () => {
+        const fetchBranches = async () => {
             try {
-                const token = localStorage.getItem("tokenKey");
-                const response = await axios.get(`${API_HOST}/archive-reference/all`, {
+                const res = await axios.get(`${BRANCH_API}/findActiveRole`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setBranches(res.data);
+            } catch (err) {
+                console.error("Error fetching branches:", err);
+            }
+        };
+        fetchBranches();
+    }, [token]);
+
+    // Fetch Departments (depends on branch)
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            try {
+                if (selectedBranch !== "All") {
+                    const res = await axios.get(
+                        `${DEPAETMENT_API}/findByBranch/${selectedBranch}`,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    setDepartments(res.data);
+                } else {
+                    setDepartments([]);
+                }
+            } catch (err) {
+                console.error("Error fetching departments:", err);
+                setDepartments([]);
+            }
+        };
+        fetchDepartments();
+    }, [selectedBranch, token]);
+
+    // Fetch Archive Jobs
+    useEffect(() => {
+        const fetchJobs = async () => {
+            try {
+                const res = await axios.get(`${API_HOST}/archiveJob/getALL/DhashboardData`, {
+                    params: {
+                        branchId: selectedBranch !== "All" ? selectedBranch : null,
+                        deptId: selectedDepartment !== "All" ? selectedDepartment : null,
+                        status: selectedStatus !== "All" ? selectedStatus : null,
+                    },
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                const transformed = transformRetentionData(response.data.response);
-                setNewData(transformed);
-            } catch (error) {
-                console.error("Error fetching retention data:", error);
+                setFiles(res.data);
+                setStats({
+                    total: res.data.length,
+                    scheduled: res.data.filter((j) => j.status === "WAITING").length,
+                    archived: res.data.filter((j) => j.status === "ARCHIVED").length,
+                    failed: res.data.filter((j) => j.status === "FAILED").length,
+                });
+            } catch (err) {
+                console.error("Error fetching archive jobs:", err);
+                setFiles([]);
             }
         };
-
-        fetchRetentionData();
-    }, []);
-
+        fetchJobs();
+    }, [selectedBranch, selectedDepartment, selectedStatus, token]);
 
 
-    // Filter and sort data
-    const filteredAndSortedData = useMemo(() => {
-        let filtered = data.filter(item => {
-            const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.branch.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.department.toLowerCase().includes(searchTerm.toLowerCase());
+    console.log("Files Data:", files);
 
-            const matchesBranch = selectedBranch === 'All' || item.branch === selectedBranch;
-            const matchesDepartment = selectedDepartment === 'All' || item.department === selectedDepartment;
-            const matchesStatus = selectedStatus === 'All' || item.status === selectedStatus;
+    // Filter + Pagination
+    const filteredAndSortedData = files.filter((item) => {
+        const search = searchTerm.toLowerCase();
+        return (
+            item.description?.toLowerCase().includes(search) ||
+            item.policyType?.toLowerCase().includes(search) ||
+            item.status?.toLowerCase().includes(search)
+        );
+    });
 
-            return matchesSearch && matchesBranch && matchesDepartment && matchesStatus;
-        });
+    function formatDate(value) {
+        if (!value) return "";
 
-        // FIFO Queue Management: Scheduled items first, then by date
-        return filtered.sort((a, b) => {
-            if (sortBy === 'fifo') {
-                if (a.status === 'Scheduled' && b.status !== 'Scheduled') return -1;
-                if (b.status === 'Scheduled' && a.status !== 'Scheduled') return 1;
+        let date;
+        if (Array.isArray(value)) {
+            // Handle [year, month, day, hour, minute, second]
+            const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+            date = new Date(year, month - 1, day, hour, minute, second);
+        } else {
+            // Handle normal ISO string / timestamp
+            date = new Date(value);
+        }
 
-                // For scheduled items, sort by scheduled date (earliest first)
-                if (a.status === 'Scheduled' && b.status === 'Scheduled') {
-                    return new Date(a.scheduledDate) - new Date(b.scheduledDate);
-                }
+        if (isNaN(date.getTime())) return "";
 
-                // For archived items, sort by archived date (most recent first)
-                if (a.archivedDate && b.archivedDate) {
-                    return new Date(b.archivedDate) - new Date(a.archivedDate);
-                }
+        const options = {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        };
 
-                return 0;
-            }
+        return date.toLocaleString("en-GB", options).replace(",", " at");
+    }
 
-            // Other sorting options can be added here
-            return 0;
-        });
-    }, [data, searchTerm, selectedBranch, selectedDepartment, selectedStatus, sortBy]);
-
-    const totalItems = filteredAndSortedData?.length;
+    const totalItems = filteredAndSortedData.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-    const paginatedFiles = filteredAndSortedData?.slice(
+    const paginatedFiles = filteredAndSortedData.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
 
+    console.log("paginatedFiles Data:", paginatedFiles);
+
     const getPageNumbers = () => {
-        const maxPageNumbers = 5;
-        const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
-        const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
-        return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
     };
-
-    // Statistics
-    const stats = useMemo(() => {
-        const total = filteredAndSortedData.length;
-        const scheduled = filteredAndSortedData.filter(item => item.status === 'SCHEDULING').length;
-        const inProgress = filteredAndSortedData.filter(item => item.status === 'In Progress').length;
-        const archived = filteredAndSortedData.filter(item => item.status === 'ARCHIVED').length;
-        const failed = filteredAndSortedData.filter(item => item.status === 'FAILED').length;
-
-        return { total, scheduled, inProgress, archived, failed };
-    }, [filteredAndSortedData]);
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'Scheduled': return 'bg-yellow-100 text-yellow-400';
-            case 'Archived': return 'bg-green-100 text-green-800';
-            case 'Failed': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case "WAITING":
+                return "bg-yellow-100 text-yellow-800";
+            case "IN_PROGRESS":
+                return "bg-blue-100 text-blue-800";
+            case "ARCHIVED":
+                return "bg-green-100 text-green-800";
+            case "FAILED":
+                return "bg-red-100 text-red-800";
+            default:
+                return "bg-gray-100 text-gray-800";
         }
     };
 
     return (
         <Layout>
             <div className="bg-slate-100 p-3">
-
                 <div className="max-w-7xl mx-auto">
-                    <h1 className="text-xl font-bold text-gray-900 mb-4">Archival Dashboard</h1>
+                    <h1 className="text-xl font-bold text-gray-900 mb-4">
+                        Archival Dashboard
+                    </h1>
 
+                    {/* 🔹 Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
-                    {/* Total Records */}
-                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50 transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-gray-300 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Total Records</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                        {/* Total */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Total Records</p>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                        {stats.total}
+                                    </p>
+                                </div>
+                                <Archive className="h-8 w-8 text-gray-400" />
+                            </div>
                         </div>
-                        <Archive className="h-8 w-8 text-gray-400" />
+
+                        {/* Scheduled */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Scheduled</p>
+                                    <p className="text-2xl font-bold text-yellow-600">
+                                        {stats.scheduled}
+                                    </p>
+                                </div>
+                                <Clock className="h-8 w-8 text-yellow-400" />
+                            </div>
+                        </div>
+
+                        {/* Archived */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Archived</p>
+                                    <p className="text-2xl font-bold text-green-600">
+                                        {stats.archived}
+                                    </p>
+                                </div>
+                                <img src={ArchiveBoxCheachMarkIcon} className="h-9 w-9" alt="icon" />
+                            </div>
+                        </div>
+
+                        {/* Failed */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Failed</p>
+                                    <p className="text-2xl font-bold text-red-600">
+                                        {stats.failed}
+                                    </p>
+                                </div>
+                                <ArchiveBoxXMarkIcon className="h-8 w-8 text-red-400" />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Scheduled */}
-                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50 transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-yellow-300 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Scheduled</p>
-                            <p className="text-2xl font-bold text-yellow-600">{stats.scheduled}</p>
-                        </div>
-                        <Clock className="h-8 w-8 text-yellow-400" />
-                        </div>
-                    </div>
-
-                    {/* Archived */}
-                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50 transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-green-300 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Archived</p>
-                            <p className="text-2xl font-bold text-green-600">{stats.archived}</p>
-                        </div>
-                        <img src={ArchiveBoxCheachMarkIcon} className="h-9 w-9" alt="icon" />
-                        </div>
-                    </div>
-
-                    {/* Failed */}
-                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-50 transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-red-300 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600">Failed</p>
-                            <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
-                        </div>
-                        <ArchiveBoxXMarkIcon className="h-8 w-8 text-red-400" />
-                        </div>
-                    </div>
-                    </div>
-
-
-
+                    {/* 🔹 Filters */}
                     <div className="bg-white rounded-lg shadow-sm p-3 mb-3">
                         <div className="flex flex-wrap gap-4 items-center">
-                            {/* Search Input */}
+                            {/* Search */}
                             <div className="flex-1 min-w-64">
                                 <div className="relative">
                                     <Search className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
@@ -262,183 +249,189 @@ const ArchivalDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Branch Filter */}
+                            {/* Branch */}
                             <div className="flex items-center space-x-2">
                                 <Building className="h-4 w-4 text-gray-500" />
                                 <select
                                     value={selectedBranch}
                                     onChange={(e) => setSelectedBranch(e.target.value)}
-                                    className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="border border-gray-300 rounded-md px-3 py-2"
                                 >
                                     <option value="All">All Branches</option>
-                                    {branches.map(branch => (
-                                        <option key={branch} value={branch}>{branch}</option>
+                                    {branches.map((b) => (
+                                        <option key={b.id} value={b.id}>
+                                            {b.name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
 
-                            {/* Department Filter */}
+                            {/* Department */}
                             <div className="flex items-center space-x-2">
                                 <Users className="h-4 w-4 text-gray-500" />
                                 <select
                                     value={selectedDepartment}
                                     onChange={(e) => setSelectedDepartment(e.target.value)}
-                                    className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="border border-gray-300 rounded-md px-3 py-2"
                                 >
                                     <option value="All">All Departments</option>
-                                    {departments.map(dept => (
-                                        <option key={dept} value={dept}>{dept}</option>
+                                    {departments.map((d) => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
 
-                            {/* Status Filter */}
+                            {/* Status */}
                             <div className="flex items-center space-x-2">
                                 <Filter className="h-4 w-4 text-gray-500" />
                                 <select
                                     value={selectedStatus}
                                     onChange={(e) => setSelectedStatus(e.target.value)}
-                                    className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="border border-gray-300 rounded-md px-3 py-2"
                                 >
                                     <option value="All">All Status</option>
-                                    {statuses.map(status => (
-                                        <option key={status} value={status}>{status}</option>
+                                    {statuses.map((s) => (
+                                        <option key={s} value={s}>
+                                            {s}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
                         </div>
-
-
                     </div>
 
-                    {/* Data Table */}
+                    {/* 🔹 Data Table */}
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden p-4">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             S.N.
                                         </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Archive Name
                                         </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Archival Priod
+                                        </th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Office Name
                                         </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Department
                                         </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Status
                                         </th>
-
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Scheduled Date
                                         </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Archived Date
                                         </th>
-
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                             Documents
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {paginatedFiles?.map((item, index) => (
+                                    {paginatedFiles.map((item, idx) => (
                                         <tr key={item.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
-                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                                {item.title}
+                                            <td className="px-4 py-2 text-sm">
+                                                {idx + 1 + (currentPage - 1) * itemsPerPage}
                                             </td>
-                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                                {item.branch}
+                                            
+                                            <td className="px-4 py-2 text-sm">
+                                                {item.archiveName}
                                             </td>
-                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                                {item.department}
+
+                                            <td className="px-4 py-2 text-sm">
+                                                {`${formatDate(item.fromDate)} TO ${formatDate(item.toDate)}`}
                                             </td>
-                                            <td className="px-4 py-2 whitespace-nowrap">
-                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
+
+                                            <td className="px-4 py-2 text-sm">
+                                                {item.branchName || "All offices"}
+                                            </td>
+
+                                            <td className="px-4 py-2 text-sm">
+                                                {item.departmentName || "All Department"}
+                                            </td>
+
+                                            <td className="px-4 py-2 text-sm">
+                                                <span
+                                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                                                        item.status
+                                                    )}`}
+                                                >
                                                     {item.status}
                                                 </span>
                                             </td>
 
-                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                                {item.scheduledDate ? (
-                                                    <>
-                                                        {new Date(item.scheduledDate).toLocaleDateString()}{" "}
-                                                        {new Date(item.scheduledDate).toLocaleTimeString([], {
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        })}
-                                                    </>
-                                                ) : (
-                                                    <span className="text-gray-400">-</span>
-                                                )}
+                                            <td className="px-4 py-2 text-sm">
+                                                {formatDate(item.archiveDateTime)}
                                             </td>
 
-                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                                {item.archivedDate ? (
-                                                    <>
-                                                        {new Date(item.archivedDate).toLocaleDateString()}{" "}
-                                                        {new Date(item.archivedDate).toLocaleTimeString([], {
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        })}
-                                                    </>
-                                                ) : (
-                                                    <span className="text-gray-400">-</span>
-                                                )}
+                                            <td className="px-4 py-2 text-sm">
+                                                {formatDate(item.archivedDateTime)}
                                             </td>
 
-
-                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                                {item.documentsCount.toLocaleString()}
+                                            <td className="px-4 py-2 text-sm">
+                                                {item.totalFiles}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
+
                             </table>
+
                         </div>
+
                         {/* Pagination */}
                         <div className="flex items-center mt-4">
-                            {/* Previous Button */}
                             <button
-                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                                 disabled={currentPage === 1}
-                                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                                className={`px-3 py-1 rounded mr-3 ${currentPage === 1
+                                    ? "bg-gray-300 cursor-not-allowed"
+                                    : "bg-slate-200 hover:bg-slate-300"
                                     }`}
                             >
                                 <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
                                 Previous
                             </button>
 
-                            {/* Page Number Buttons */}
-                            {getPageNumbers()?.map((page) => (
+                            {getPageNumbers().map((p) => (
                                 <button
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-                                    className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                                    key={p}
+                                    onClick={() => setCurrentPage(p)}
+                                    className={`px-3 py-1 rounded mx-1 ${currentPage === p
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-slate-200 hover:bg-blue-100"
                                         }`}
                                 >
-                                    {page}
+                                    {p}
                                 </button>
                             ))}
 
-                            {/* Page Count Info */}
-                            <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+                            <span className="text-sm text-gray-700 mx-2">
+                                of {totalPages} pages
+                            </span>
 
-                            {/* Next Button */}
                             <button
-                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                                 disabled={currentPage === totalPages}
-                                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+                                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages
+                                    ? "bg-gray-300 cursor-not-allowed"
+                                    : "bg-slate-200 hover:bg-slate-300"
                                     }`}
                             >
                                 Next
                                 <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
                             </button>
+
                             <div className="ml-4">
                                 <span className="text-sm text-gray-700">
                                     Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
@@ -451,17 +444,19 @@ const ArchivalDashboard = () => {
                         {filteredAndSortedData.length === 0 && (
                             <div className="text-center py-12">
                                 <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">No archival records found</h3>
-                                <p className="text-gray-500">Try adjusting your search criteria or filters</p>
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                    No archival records found
+                                </h3>
+                                <p className="text-gray-500">
+                                    Try adjusting your search criteria or filters
+                                </p>
                             </div>
                         )}
                     </div>
-
-
                 </div>
             </div>
         </Layout>
     );
 };
 
-export default ArchivalDashboard;
+export default ArchiveDashboard;

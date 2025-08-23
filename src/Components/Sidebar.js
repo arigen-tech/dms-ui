@@ -459,7 +459,7 @@ function Sidebar() {
                     <SidebarLink
                       to="/retentionpolicy"
                       icon={ClockIcon}
-                      text="RetentionPolicy"
+                      text="Archival Policy"
                     />
 
                   </div>

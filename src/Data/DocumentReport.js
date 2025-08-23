@@ -50,7 +50,7 @@ const DocumentReport = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        window.location.reload();
+        
       }
     });
   };

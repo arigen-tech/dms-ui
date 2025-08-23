@@ -213,9 +213,7 @@ const Category = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        if (type === 'success') {
-          window.location.reload();
-        }
+        
       }
     });
   };
@@ -311,7 +309,7 @@ const Category = () => {
                     'Adding...'
                   ) : (
                     <>
-                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Role
+                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add
                     </>
                   )}
                 </button>

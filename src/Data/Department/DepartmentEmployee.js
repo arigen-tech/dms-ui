@@ -405,7 +405,7 @@ const DepartmentEmployee = () => {
 
     const handleClosePopup = () => {
         if (popupConfig.type === 'success') {
-            window.location.reload();
+            
         } else {
             setShowPopup(false);
         }

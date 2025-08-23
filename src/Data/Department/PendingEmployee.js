@@ -183,7 +183,7 @@ const EmployeeRole = () => {
 
   const handlePopupClose = () => {
     setPopupMessage(null);
-    window.location.reload(); // This will refresh the entire page
+     // This will refresh the entire page
   };
 
   const showPopup = (message, type = 'info') => {

@@ -145,7 +145,7 @@ const EmployeeRole = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        window.location.reload();
+        
       }
     });
   };

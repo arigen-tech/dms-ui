@@ -53,8 +53,8 @@ const ApprovedDoc = () => {
     const searchParams = new URLSearchParams(location.search);
     const notificationDocId = searchParams.get('docId');
 
-    if (notificationDocId && documents.length > 0) {
-      const filteredDocuments = documents.filter((doc) =>
+    if (notificationDocId && documents?.length > 0) {
+      const filteredDocuments = documents?.filter((doc) =>
         Object.entries(doc).some(([key, value]) => {
           if (key === "id") {
             return value.toString() === notificationDocId;
@@ -286,7 +286,7 @@ const ApprovedDoc = () => {
   const filteredDocFiles = useMemo(() => {
     if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
 
-    return selectedDoc.paths.filter((file) => {
+    return selectedDoc?.paths?.filter((file) => {
       const name = file.docName.toLowerCase();
       const version = String(file.version).toLowerCase();
       const term = searchFileTerm.toLowerCase();
@@ -306,8 +306,7 @@ const ApprovedDoc = () => {
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
-  const filteredDocuments = documents
-    .filter((doc) =>
+  const filteredDocuments = documents?.filter((doc) =>
       Object.entries(doc).some(([key, value]) => {
         if (key === "categoryMaster" && value?.name) {
           return value.name.toLowerCase().includes(searchTerm.toLowerCase());

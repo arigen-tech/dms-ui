@@ -746,17 +746,17 @@ function Dashboard() {
             <>
               <Link to="/users" className="block">
                 <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="Create User" value={stats.createdByCount} Icon={UsersIcon} />
+                  <StatBlock title="Created User" value={stats.createdByCount} Icon={UsersIcon} />
                 </div>
               </Link>
 
               <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                <StatBlock title="Total Documents" value={totalDocsbyUser} Icon={DocumentIcon} />
+                <StatBlock title="Total Uploaded Documents" value={totalDocsbyUser} Icon={DocumentIcon} />
               </div>
 
               <Link to="/all-documents" className="block">
                 <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="Pending Documents" value={stats.pendingDocsbyid} Icon={IoDocumentLock} />
+                  <StatBlock title="Pending For Approval" value={stats.pendingDocsbyid} Icon={IoDocumentLock} />
                 </div>
               </Link>
 
