@@ -193,7 +193,7 @@ const RetentionCheckAlert = ({ onClose, result }) => {
       if (dateToFormat.includes(' ')) {
         const [datePart, timePart] = dateToFormat.split(' ');
         const [year, month, day] = datePart.split('-').map(Number);
-        const [time, ms] = timePart.split('.');
+        const [time] = timePart.split('.');
         const [hour, minute, second] = time.split(':').map(Number);
 
         const date = new Date(year, month - 1, day, hour, minute, second);
