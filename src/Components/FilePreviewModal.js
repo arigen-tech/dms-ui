@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 import Papa from "papaparse";
@@ -10,11 +10,7 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
   const [typeToPreview, setTypeToPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isDownloading, setIsDownloading] = useState(false); // Add this state
-
-  // Removed pagination state since we're removing Previous/Next buttons
-
-  // Fix: Add null check and provide fallback
+  const [isDownloading, setIsDownloading] = useState(false); 
   const ogFileName = fileName ? fileName.substring(fileName.indexOf('_') + 1) : 'Unknown File';
 
   useEffect(() => {
@@ -38,10 +34,8 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
         const isExecutable = ["application/x-msdownload", "application/x-msi", "application/vnd.android.package-archive"].includes(fileType);
         const isBinaryDocument = ["application/msword"].includes(fileType); // Old .doc format
 
-        // Handle image files
         if (isImage) {
           if (fileType === "image/tiff" || fileType === "image/tif") {
-            // For TIFF, just show the first page since we removed pagination
             await handleTiff();
           } else if (fileType === "image/svg+xml") {
             await handleSvg();
@@ -54,12 +48,10 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
             setTypeToPreview(fileType);
           }
         }
-        // Handle PDF files
         else if (isPdf) {
           setPreviewContent(fileUrl);
           setTypeToPreview(fileType);
         }
-        // Handle text files
         else if (isText || isJson || isXml) {
           if (isMarkdown) {
             await handleMarkdown();
@@ -69,12 +61,10 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
             await handleTextFile();
           }
         }
-        // Handle media files
         else if (isVideo || isAudio) {
           setPreviewContent(fileUrl);
           setTypeToPreview(fileType);
         }
-        // Handle documents
         else if (fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
           await handleDocx();
         } else if (
@@ -90,13 +80,11 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
           setTypeToPreview("download-only");
           setError("PowerPoint files can only be downloaded.");
         }
-        // Handle special files that are download-only
         else if (isArchive || isExecutable || isBinaryDocument) {
           setPreviewContent(null);
           setTypeToPreview("download-only");
           setError(`${getFileExtension(fileName)} files can only be downloaded.`);
         }
-        // Handle unsupported files
         else {
           setPreviewContent(null);
           setTypeToPreview(null);

@@ -1,7 +1,6 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import apiClient from "../API/apiClient";
 import { useLocation } from "react-router-dom";
-import Search from "./Search"; // Import the Search component
 import Popup from "../Components/Popup";
 import { useDropzone } from "react-dropzone";
 import FilePreviewModal from "../Components/FilePreviewModal";
@@ -19,7 +18,7 @@ import {
   ArrowRightIcon,
   PrinterIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API, UPLOADFILE_API, FILETYPE_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, FILETYPE_API } from "../API/apiConfig";
 
 const DocumentManagement = ({ fieldsDisabled }) => {
   const location = useLocation();
@@ -35,8 +34,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   });
   const [uploadedFileNames, setUploadedFileNames] = useState([]);
   const [uploadedFilePath, setUploadedFilePath] = useState([]);
-  const [uploadedFileVersion, setUploadedFileVersion] = useState([]);
-  const [editingIndex, setEditingIndex] = useState(null);
+  // const [uploadedFileVersion, setUploadedFileVersion] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [handleEditDocumentActive, setHandleEditDocumentActive] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -54,16 +52,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null); // To hold the document being edited
-  const [updatedDoc, setUpdatedDoc] = useState(null);
-  const [searchResults, setSearchResults] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
-  const [qrPath, setQrPath] = useState("");
-  const [documentDetails, setDocumentDetails] = useState(null);
   const [error, setError] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [filesType, setFilesType] = useState([]);
@@ -135,7 +129,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setFormData({ ...formData, year: selectedYear });
   };
 
-  // Update upload button enable status based on form data
   useEffect(() => {
     const { fileNo, title, subject, version, category, year } = formData;
     const isFormFilled =
@@ -237,25 +230,25 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   console.log("all doc by user", documents);
 
-  const extractFiles = async (items, fileList = []) => {
-    for (const item of items) {
-      if (item.kind === "file") {
-        fileList.push(item.getAsFile());
-      } else if (item.kind === "directory") {
-        const directoryReader = item.createReader();
-        const readEntries = async () => {
-          const entries = await new Promise((resolve) =>
-            directoryReader.readEntries(resolve)
-          );
-          if (entries.length > 0) {
-            await extractFiles(entries, fileList);
-          }
-        };
-        await readEntries();
-      }
-    }
-    return fileList;
-  };
+  // const extractFiles = async (items, fileList = []) => {
+  //   for (const item of items) {
+  //     if (item.kind === "file") {
+  //       fileList.push(item.getAsFile());
+  //     } else if (item.kind === "directory") {
+  //       const directoryReader = item.createReader();
+  //       const readEntries = async () => {
+  //         const entries = await new Promise((resolve) =>
+  //           directoryReader.readEntries(resolve)
+  //         );
+  //         if (entries.length > 0) {
+  //           await extractFiles(entries, fileList);
+  //         }
+  //       };
+  //       await readEntries();
+  //     }
+  //   }
+  //   return fileList;
+  // };
 
   const onDrop = useCallback(async (acceptedFiles, event) => {
     let files = acceptedFiles;
@@ -566,13 +559,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
 
 
-  const resetFileSelection = () => {
-    setSelectedFiles([]);
-    setIsUploadEnabled(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
 
   const handleEditDocument = (doc) => {
     console.log("Editing document:", doc);
@@ -609,7 +595,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       }))
     );
 
-    setUploadedFileVersion(existingFiles.map((file) => file.version));
+    // setUploadedFileVersion(existingFiles.map((file) => file.version));
   };
 
   const handleSaveEdit = async () => {
@@ -706,7 +692,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setUploadedFilePath([]);
     setSelectedFiles([]);
     setUploadedFileNames([]);
-    setUploadedFileVersion([]);
+    // setUploadedFileVersion([]);
     setEditingDoc(null);
     setUnsportFile(false);
   };
@@ -886,13 +872,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-  const handleDiscardAddingFile = (indexToRemove) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      uploadedFilePaths: prevData.uploadedFilePaths.filter((_, index) => index !== indexToRemove),
-    }));
-  };
-
 
   const handleDiscardFile = (index) => {
     if (index < 0 || index >= uploadedFileNames.length) {
@@ -919,7 +898,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         setFormData({ ...formData, removedFilePaths: updatedRemovedFiles });
       } else {
         // Handle newly uploaded files during editing
-        const newUploadIndex = index - editingDoc.documentDetails.length;
         const updatedFileNames = uploadedFileNames.filter(
           (_, i) => i !== index
         );
@@ -1023,6 +1001,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       setError("Error displaying QR Code: " + error.message);
     }
   };
+
+  console.log(error);
 
   const downloadQRCode = async () => {
     if (!selectedDoc.id) {
@@ -1462,7 +1442,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             />
 
             <div className="flex justify-between items-center">
-              {uploadedFilePath != 0 && (
+              {uploadedFilePath !== 0 && (
                 <div
                   className="text-red-800 cursor-pointer hover:underline"
                   onClick={handleDiscardAll}

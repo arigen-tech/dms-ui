@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { API_HOST, DOCUMENTHEADER_API, USER } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API} from "../API/apiConfig";
 import "jspdf-autotable";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -24,10 +24,9 @@ const DocumentReport = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
-  const [userRole, setUserRole] = useState(null);
+  // const [userRole, setUserRole] = useState(null);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
-  const [error, setError] = useState("");
   const [selectedFormat, setSelectedFormat] = useState("PDF");
   const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
   const [modalType, setModalType] = useState("");
@@ -159,7 +158,7 @@ const DocumentReport = () => {
 
       setUserBranch(response.data.branch);
       setUserDepartment(response.data.department);
-      setUserRole(response.data.role);
+      // setUserRole(response.data.role);
     } catch (error) {
       console.error("Error fetching user details:", error);
     }
@@ -520,7 +519,6 @@ const DocumentReport = () => {
           </label>
         </div>
 
-        {error && <p className="text-red-500">{error}</p>}
 
         <button
           onClick={handleDownload}
