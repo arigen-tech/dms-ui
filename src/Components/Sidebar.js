@@ -805,12 +805,12 @@ function Sidebar() {
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
 
-              <SidebarLink
+              {/* <SidebarLink
                 to="/users"
                 icon={UserGroupIcon}
                 text="Users"
                 count={counts.createdByCount}
-              />
+              /> */}
 
               <SidebarLink
                 to="/scan"

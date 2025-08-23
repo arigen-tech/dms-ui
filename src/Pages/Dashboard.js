@@ -744,11 +744,11 @@ function Dashboard() {
 
           {role === USER && (
             <>
-              <Link to="/users" className="block">
+              {/* <Link to="/users" className="block">
                 <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                   <StatBlock title="Created User" value={stats.createdByCount} Icon={UsersIcon} />
                 </div>
-              </Link>
+              </Link> */}
 
               <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                 <StatBlock title="Total Uploaded Documents" value={totalDocsbyUser} Icon={DocumentIcon} />
