@@ -58,7 +58,7 @@ function Dashboard() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isGrLoading, setIsGrLoading] = useState(true);
   const [isBarChartLoading, setIsBarChartLoading] = useState(true);
-  const [ setIsGraphChartLoading] = useState(true);
+  const [ ,setIsGraphChartLoading] = useState(true);
  
   const [selectedLineStatus, setSelectedLineStatus] = useState("all");
 
