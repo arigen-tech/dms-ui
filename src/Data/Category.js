@@ -11,14 +11,11 @@ const Category = () => {
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({ name: '' });
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingIndex, setEditingIndex] = useState(null);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [categoryToToggle, setCategoryToToggle] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +73,7 @@ const Category = () => {
       showPopup('Category with this name already exists!', 'error');
       return;
     }
-
+    setIsSubmitting(true);
     try {
       const response = await axios.post(`${CATEGORI_API}/save`, formData, {
         headers: {
@@ -90,6 +87,8 @@ const Category = () => {
     } catch (error) {
       console.error('Error adding category:', error.response ? error.response.data : error.message);
       showPopup('Failed to add the category. Please try again!', "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -121,6 +120,7 @@ const Category = () => {
     }
 
     if (editingCategoryId !== null) {
+      setIsSubmitting(true);
       try {
         const categoryIndex = categories.findIndex(category => category.id === editingCategoryId);
 
@@ -152,6 +152,8 @@ const Category = () => {
       } catch (error) {
         console.error('Error updating category:', error.response ? error.response.data : error.message);
         showPopup('Failed to update the category. Please try again!', "error");
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };

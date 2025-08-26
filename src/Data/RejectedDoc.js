@@ -184,6 +184,8 @@ function RejectedDoc() {
     }
   };
 
+  console.log("Error: ", error);
+
   const openFile = async (file) => {
     setIsOpeningFile(true); 
     const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
@@ -442,18 +444,7 @@ function RejectedDoc() {
     setSelectedDoc(null);
   };
 
-  const formatDates = (timestamp) => {
-    if (!timestamp) {
-      return "N/A";
-    }
 
-    const date = new Date(timestamp); // Convert milliseconds to Date
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
 
    if (loading) {
      return <LoadingComponent />;

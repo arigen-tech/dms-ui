@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react"
 import {
   BellIcon,
-  XMarkIcon,
   ChevronRightIcon,
   DocumentTextIcon,
   UserIcon,
   UserGroupIcon,
   ExclamationTriangleIcon,
-  AdjustmentsHorizontalIcon,
   ArrowLeftIcon,
 } from "@heroicons/react/24/solid"
 import { BellAlertIcon } from "@heroicons/react/24/solid"
@@ -118,8 +116,6 @@ export const Notification = () => {
   const [isDetailView, setIsDetailView] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [showFilters, setShowFilters] = useState(false)
-  const [clearingAll, setClearingAll] = useState(false);
 
   const navigate = useNavigate()
 
@@ -255,7 +251,6 @@ export const Notification = () => {
   const clearAllNotifications = async () => {
     if (notifications.length === 0) return;
 
-    setClearingAll(true);
     try {
       // Mark all current notifications as read on the server
       const markAsReadPromises = notifications.map(notification =>
@@ -274,9 +269,7 @@ export const Notification = () => {
     } catch (error) {
       console.error("Error clearing notifications:", error);
       setError("Failed to clear all notifications");
-    } finally {
-      setClearingAll(false);
-    }
+    } 
   };
 
 

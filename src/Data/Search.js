@@ -101,6 +101,8 @@ const Search = () => {
   };
 }, [searchCriteria]); 
 
+console.log("Error: ", error);
+
   const fetchUserDetails = async () => {
     setIsLoading(true);
 

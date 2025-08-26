@@ -3,14 +3,12 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   DOCUMENTHEADER_API,
-  DEPAETMENT_API,
-  BRANCH_API,
   YEAR_API,
   CATEGORI_API,
   API_OCR_HOST,
   API_HOST
 } from "../API/apiConfig";
-import { ArrowLeftIcon, ArrowRightIcon, MagnifyingGlassIcon } from "@heroicons/react/24/solid";
+import { ArrowLeftIcon, ArrowRightIcon} from "@heroicons/react/24/solid";
 import LoadingComponent from '../Components/LoadingComponent';
 
 const DpAdminOCR = () => {
@@ -20,8 +18,6 @@ const DpAdminOCR = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [years, setYears] = useState([]);
-  const [branches, setBranches] = useState([]);
-  const [departments, setDepartments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -52,12 +48,6 @@ const DpAdminOCR = () => {
           .filter((yearObj) => parseInt(yearObj.name) <= currentYear)
           .sort((a, b) => parseInt(b.name) - parseInt(a.name));
         setYears([...filteredYears]);
-
-        // Fetch branches
-        const branchesResponse = await axios.get(`${BRANCH_API}/findActiveRole`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setBranches(branchesResponse.data);
 
         // Fetch categories
         const categoriesResponse = await axios.get(`${CATEGORI_API}/findActiveCategory`, {
@@ -148,27 +138,6 @@ const DpAdminOCR = () => {
   };
 
 
-  // Fetch departments when branch changes
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      if (filters.branch) {
-        try {
-          const response = await axios.get(
-            `${DEPAETMENT_API}/findByBranch/${filters.branch}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          setDepartments(response.data);
-        } catch (error) {
-          console.error("Error fetching departments:", error);
-          setDepartments([]);
-        }
-      } else {
-        setDepartments([]);
-      }
-    };
-
-    fetchDepartments();
-  }, [filters.branch, token]);
 
   // Apply filters whenever filters or documents change
   useEffect(() => {

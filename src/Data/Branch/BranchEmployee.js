@@ -10,13 +10,7 @@ import {
 } from "@heroicons/react/24/solid";
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import {
-    REGISTER_API,
-    EMPLOYEE_API,
-    BRANCH_API,
-    DEPAETMENT_API,
-    ROLE_API,
-} from "../../API/apiConfig";
+import {DEPAETMENT_API} from "../../API/apiConfig";
 import { API_HOST } from "../../API/apiConfig";
 import Popup from '../../Components/Popup';
 import LoadingComponent from '../../Components/LoadingComponent';
@@ -38,8 +32,6 @@ const BranchEmployee = () => {
     const [employeeToToggle, setEmployeeToToggle] = useState(null);
     const [departmentOptions, setDepartmentOptions] = useState([]);
     const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
-    const [Message, setMessage] = useState("");
     const [userBranch, setUserBranch] = useState(null);
     const [emailError, setEmailError] = useState("");
     const [mobileError, setMobileError] = useState("");
@@ -52,6 +44,8 @@ const BranchEmployee = () => {
     });
     const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
     const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+
+    console.log("Error: ", error);
     
     const formRef = useRef(null); // Ref for the form section
 

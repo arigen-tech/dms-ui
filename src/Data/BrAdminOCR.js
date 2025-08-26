@@ -10,7 +10,7 @@ import {
   API_OCR_HOST,
   API_HOST
 } from "../API/apiConfig";
-import { ArrowLeftIcon, ArrowRightIcon, MagnifyingGlassIcon } from "@heroicons/react/24/solid";
+import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
 import LoadingComponent from '../Components/LoadingComponent';
 
 const BrAdminOCR = () => {

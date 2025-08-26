@@ -50,7 +50,6 @@ const ArchiveDownload = () => {
   const [filteredArchivedFiles, setFilteredArchivedFiles] = useState([])
   const [isRetrievingArchived, setIsRetrievingArchived] = useState(false)
   const [retrievingId, setRetrievingId] = useState(null)
-  const [activeTab, setActiveTab] = useState("all")
 
   // Retention Check state (NO file type filtering)
   const [runCheckLoading, setRunCheckLoading] = useState(false)
@@ -823,8 +822,7 @@ const ArchiveDownload = () => {
     </div>
   ))
 
-  const commonInputClasses =
-    "block w-full h-[46px] px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
+
   const commonLabelClasses = "block text-md font-medium text-gray-700 mb-2"
   const commonWrapperClasses = "relative flex flex-col"
 

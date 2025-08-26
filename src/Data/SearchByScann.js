@@ -15,9 +15,6 @@ const SearchByScan = () => {
   const navigate = useNavigate()
   const [headerData, setHeaderData] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [qrEmpid, setQrEmpid] = useState(null)
-  const [qrBranchid, setQrBranchid] = useState(null)
-  const [qrDepartmentid, setQrDepartmentid] = useState(null)
   const [openingFiles, setOpeningFiles] = useState({})
   const [qrData, setQrData] = useState(null)
   const [loginBranchid, setLoginBranchid] = useState(null)
@@ -35,7 +32,6 @@ const SearchByScan = () => {
   const [contentType, setContentType] = useState("")
   const [selectedDocFile, setSelectedDocFiles] = useState(null)
   const [searchFileTerm, setSearchFileTerm] = useState("")
-  const [isOpeningFile, setIsOpeningFile] = useState(false)
   const [isCameraLoading, setIsCameraLoading] = useState(false)
   const [availableCameras, setAvailableCameras] = useState([])
   const [selectedCamera, setSelectedCamera] = useState(null)
@@ -151,11 +147,11 @@ const SearchByScan = () => {
     let isUnauthorized = false
 
     if (role === BRANCH_ADMIN) {
-      isUnauthorized = loginBranchid != qrParams.branchId
+      isUnauthorized = loginBranchid !== qrParams.branchId
     } else if (role === DEPARTMENT_ADMIN) {
-      isUnauthorized = loginBranchid != qrParams.branchId || loginDepartmentid != qrParams.departmentId
+      isUnauthorized = loginBranchid !== qrParams.branchId || loginDepartmentid !== qrParams.departmentId
     } else if (role === USER) {
-      isUnauthorized = userId != qrParams.empId
+      isUnauthorized = userId !== qrParams.empId
     }
 
     if (isUnauthorized) {
@@ -185,11 +181,7 @@ const SearchByScan = () => {
       showPopup(invalidQrMessage, "error")
       return
     }
-    if (branchId && departmentId && empId) {
-      setQrBranchid(branchId)
-      setQrDepartmentid(departmentId)
-      setQrEmpid(empId)
-    }
+   
 
     if (id) {
       const qrParams = { branchId, departmentId, empId }
@@ -230,12 +222,6 @@ const SearchByScan = () => {
     if ((!branchId || !departmentId || !empId) && id) {
       showPopup(invalidQrMessage, "error")
       return
-    }
-
-    if (branchId && departmentId && empId) {
-      setQrBranchid(branchId)
-      setQrDepartmentid(departmentId)
-      setQrEmpid(empId)
     }
 
     if (id) {
@@ -388,9 +374,6 @@ const SearchByScan = () => {
           empId: params.get("e"),
         }
 
-        setQrBranchid(qrParams.branchId || null)
-        setQrDepartmentid(qrParams.departmentId || null)
-        setQrEmpid(qrParams.empId || null)
 
         if (id) {
           if (!handleQrCheck(qrParams)) {

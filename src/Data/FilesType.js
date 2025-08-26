@@ -24,14 +24,11 @@ const FilesType = () => {
     isActive: 1,
   });
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingIndex, setEditingIndex] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [fileTypeToToggle, setFileTypeToToggle] = useState(null);
   const [editingFileTypeId, seteditingFileTypeId] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [messageType, setMessageType] = useState('');
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -160,12 +157,7 @@ const FilesType = () => {
       try {
         const fileTypeIndex = filesType.findIndex(fileType => fileType.id === editingFileTypeId);
 
-        if (fileTypeIndex === -1) {
-          setMessage('FileType not found!');
-          setMessageType('error');
-          setTimeout(() => setMessage(null), 3000);
-          return;
-        }
+       
 
         const updatedFileType = {
           ...filesType[fileTypeIndex],
@@ -299,11 +291,7 @@ const FilesType = () => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prevPage) => prevPage + 1);
-    }
-  };
+
 
   return (
     <div className="px-2">

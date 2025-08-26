@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
 import {
-    PlusCircleIcon, PencilIcon, LockClosedIcon, LockOpenIcon, ArrowLeftIcon,
+    PlusCircleIcon, PencilIcon, ArrowLeftIcon,
     ArrowRightIcon, MagnifyingGlassIcon
 } from "@heroicons/react/24/solid"
 import { API_HOST, DEPAETMENT_API, BRANCH_API } from "../API/apiConfig"
@@ -97,7 +97,7 @@ const NewRetaintionPolicy = () => {
 
     const getDepartmentNameById = (departmentId) => {
         if (!departmentId || departmentId === null) return "All Departments";
-        const department = allDepartments.find((dept) => dept.id == departmentId);
+        const department = allDepartments.find((dept) => dept.id === departmentId);
         return department?.name || "Unknown Department";
     };
 
@@ -502,11 +502,6 @@ const NewRetaintionPolicy = () => {
         setDepartments([]);
     };
 
-    const handleToggleActiveStatus = (policy) => {
-        setPolicyToToggle(policy);
-        setModalVisible(true);
-    };
-
     const confirmToggleActiveStatus = async () => {
         if (policyToToggle) {
             try {
@@ -550,44 +545,6 @@ const NewRetaintionPolicy = () => {
         })
     }
 
-    const calculateDaysEquivalent = (value, unit) => {
-        const val = Number(value)
-        switch (unit) {
-            case "MINUTES":
-                return Math.max(1, Math.ceil(val / (24 * 60)))
-            case "HOURS":
-                return Math.max(1, Math.ceil(val / 24))
-            case "MONTHS":
-                return val * 30
-            case "DAYS":
-            default:
-                return val
-        }
-    }
-
-    const formatRetentionPeriod = (policy) => {
-        if (!policy.retentionDate) return "Not set";
-
-        const date = new Date(policy.retentionDate);
-        const formattedDate = date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        if (!policy.retentionTime) {
-            return formattedDate;
-        }
-
-        const time = policy.retentionTime.length === 5 ? policy.retentionTime : `0${policy.retentionTime}`;
-        const formattedTime = new Date(`1970-01-01T${time}`).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-
-        return `${formattedDate} at ${formattedTime}`;
-    };
 
     const filteredPolicies = policies.filter((policy) => {
         const searchLower = searchTerm.toLowerCase()

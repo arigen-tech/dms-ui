@@ -260,6 +260,7 @@ const Department = () => {
         setModalVisible(false);
         setToggleDepartment(null);
         showPopup('Status changed successfully!', "success");
+        console.log('Status change response:', response.data);
       } catch (error) {
         console.error('Error toggling department status:', error.response ? error.response.data : error.message);
         showPopup('Failed to change the status. Please try again.', "error");
