@@ -542,7 +542,7 @@ function RejectedDoc() {
                       {doc.employeeBy?.name || "N/A"}
                     </td>
                     <td className="border px-4 py-2">
-                      {doc.updatedOn ? formatDate(doc.updatedOn) : "N/A"}
+                      {doc.updatedOn ? formatDate(doc.approvalStatusOn) : "N/A"}
                     </td>
                     {role === "USER" && (
                       <td className="border p-2">

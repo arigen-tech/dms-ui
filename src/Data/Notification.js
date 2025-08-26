@@ -58,6 +58,33 @@ const getPriorityColor = (priority) => {
   }
 }
 
+// Helper function to get allowed notification types based on role
+const getAllowedNotificationTypes = (role) => {
+  if (role === "ADMIN" || role === "BRANCH ADMIN") {
+    // ADMIN and BRANCH ADMIN can see all notification types
+    return [
+      // "DOCUMENT_APPROVAL",
+      // "DOCUMENT_REJECTION",
+      "NEW_DOCUMENT",
+      "EMPLOYEE_UPDATE",
+      // "EMPLOYEE_STATUS_CHANGE",
+      "NEW_EMPLOYEE_ADDED",
+      "ROLE_UPDATE",
+    ]
+  } else if (role === "DEPARTMENT ADMIN") {
+    return ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED"]
+  } else {
+    // Regular users
+    return [
+      "EMPLOYEE_UPDATE",
+      "EMPLOYEE_STATUS_CHANGE",
+      "ROLE_UPDATE",
+      "DOCUMENT_APPROVAL",
+      "DOCUMENT_REJECTION",
+    ]
+  }
+}
+
 export const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0)
   const navigate = useNavigate()
@@ -67,15 +94,21 @@ export const NotificationBell = () => {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_HOST}/notifications/unread-count`, {
+      // Always fetch all notifications and filter them based on role
+      const response = await axios.get(`${API_HOST}/notifications`, {
         params: { employeeId: userId },
-        headers: {
-          Authorization: `Bearer ${tokenKey}`,
-          Role: role,
-        },
+        headers: { Authorization: `Bearer ${tokenKey}` },
       })
-      const { unreadCount } = response.data.response
-      setUnreadCount(unreadCount)
+      
+      const allNotifications = response.data.response
+      const allowedTypes = getAllowedNotificationTypes(role)
+      
+      // Filter notifications based on role and unread status
+      const filteredUnreadNotifications = allNotifications.filter(notification => 
+        allowedTypes.includes(notification.type) && !notification.read
+      )
+      
+      setUnreadCount(filteredUnreadNotifications.length)
     } catch (error) {
       console.error("Error fetching unread count:", error)
     }
@@ -159,20 +192,11 @@ export const Notification = () => {
       })
       const allNotifications = response.data.response
 
-      // First filter by role
-      const roleFilteredNotifications = allNotifications.filter((notification) => {
-        if (role === "DEPARTMENT ADMIN") {
-          return ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED"].includes(notification.type)
-        } else {
-          return [
-            "EMPLOYEE_UPDATE",
-            "EMPLOYEE_STATUS_CHANGE",
-            "ROLE_UPDATE",
-            "DOCUMENT_APPROVAL",
-            "DOCUMENT_REJECTION",
-          ].includes(notification.type)
-        }
-      })
+      // Filter by role using the helper function
+      const allowedTypes = getAllowedNotificationTypes(role)
+      const roleFilteredNotifications = allNotifications.filter((notification) => 
+        allowedTypes.includes(notification.type)
+      )
 
       // Then filter out read notifications
       const unreadNotifications = roleFilteredNotifications.filter(
@@ -272,8 +296,6 @@ export const Notification = () => {
     } 
   };
 
-
-
   const getNavigationButton = (notification) => {
     switch (notification.type) {
       case "DOCUMENT_APPROVAL":
@@ -300,6 +322,9 @@ export const Notification = () => {
         return null
     }
   }
+
+  // Get allowed notification types for current role
+  const allowedTypes = getAllowedNotificationTypes(role)
 
   if (loading) {
     return (
@@ -342,17 +367,7 @@ export const Notification = () => {
                   className={`flex flex-nowrap gap-3 transition-all duration-300 overflow-x-auto pb-4 max-h-96 overflow-hidden`}
                 >
                   {NOTIFICATION_TYPES.filter(
-                    (type) =>
-                      type === "all" ||
-                      (role === "DEPARTMENT ADMIN"
-                        ? ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED"].includes(type)
-                        : [
-                          "EMPLOYEE_UPDATE",
-                          "EMPLOYEE_STATUS_CHANGE",
-                          "ROLE_UPDATE",
-                          "DOCUMENT_APPROVAL",
-                          "DOCUMENT_REJECTION",
-                        ].includes(type)),
+                    (type) => type === "all" || allowedTypes.includes(type)
                   ).map((filterType) => {
                     const count = getFilterCount(filterType)
                     return (
