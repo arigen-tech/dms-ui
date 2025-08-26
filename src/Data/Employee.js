@@ -17,7 +17,7 @@ import {
   EMPLOYEE_API,
   BRANCH_API,
   DEPAETMENT_API,
-  ROLE_API,
+  
 } from "../API/apiConfig";
 import { API_HOST } from "../API/apiConfig";
 
@@ -40,9 +40,9 @@ const UserAddEmployee = () => {
   const [branchOptions, setBranchOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
   const [error, setError] = useState("");
-  const [selectedBranch, setSelectedBranch] = useState(null);
+
   const [userName, setUserName] = useState(null);
-  const [selectedDepartment, setSelectedDepartment] = useState(null);
+
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -237,9 +237,7 @@ const UserAddEmployee = () => {
     }
   };
 
-  const handleCountryCodeChange = (e) => {
-    setFormData(prev => ({ ...prev, countryCode: e.target.value }));
-  };
+  
 
   const validateForm = () => {
     let isValid = true;
@@ -509,6 +507,8 @@ const UserAddEmployee = () => {
           },
         }
       );
+
+      console.log("Toggle status response:", response.data);
 
       const message = newStatus
         ? "Employee has been activated."

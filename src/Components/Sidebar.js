@@ -104,8 +104,7 @@ function Sidebar() {
     counts.branchUser - counts.nullRoleEmployeeCountForBranch;
 
   //Department Admin
-  const manageUserRoleContdepartment =
-    counts.departmentUser - counts.nullRoleEmployeeCountForDepartment;
+
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -164,11 +163,7 @@ function Sidebar() {
     return localStorage.getItem("isArchiveOpen") === "true";
   });
 
-  const handleLogout = () => {
-    localStorage.removeItem(tokenKey);
-    sessionStorage.removeItem("counts");
-    navigate("/");
-  };
+  
 
   const handleCreateToggle = () => {
     const newCreateOpenState = !isCreateOpen;

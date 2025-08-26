@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import apiClient from "../API/apiClient";
-import { API_HOST, DOCUMENTHEADER_API, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, SYSTEM_ADMIN, BRANCH_ADMIN} from "../API/apiConfig";
 import { EyeIcon, XMarkIcon, PrinterIcon } from "@heroicons/react/24/solid";
-import Popup from "../Components/Popup";
+
 import FilePreviewModal from "../Components/FilePreviewModal";
 
 const AdminOCRResponse = () => {
@@ -13,7 +13,7 @@ const AdminOCRResponse = () => {
   const responseData = location.state?.responseData;
   const [documents, setDocuments] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [popupMessage, setPopupMessage] = useState(null);
+  const [, setPopupMessage] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
   const [printTrue, setPrintTrue] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +22,7 @@ const AdminOCRResponse = () => {
   const [contentType, setContentType] = useState("");
   const [openingFileIndex, setOpeningFileIndex] = useState(null);
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
-  const [searchFileTerm, setSearchFileTerm] = useState("");
+  const [, setSearchFileTerm] = useState("");
 
   const token = localStorage.getItem("tokenKey");
 

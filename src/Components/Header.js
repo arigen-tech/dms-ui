@@ -40,7 +40,7 @@ function Header({ toggleSidebar, userName }) {
   const [dropdownRoleOpen, setDropdownRoleOpen] = useState(false);
   const [roleName, setRoleName] = useState([]);
   const [popupMessage, setPopupMessage] = useState(null);
-  const [rol, setRole] = useState(null);
+  const [, setRole] = useState(null);
   const [imageSrc, setImageSrc] = useState(null);
   const dropdownRef = useRef(null);
   const UserName = localStorage.getItem("UserName") || userName;
@@ -139,6 +139,7 @@ function Header({ toggleSidebar, userName }) {
           },
         }
       );
+      console.log("Role switch response:", response.data);
       localStorage.setItem("role", targetRoleName);
       setRole(targetRoleName);
       showPopup("Role switched successfully!", "success");

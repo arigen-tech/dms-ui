@@ -2,9 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useLocation } from 'react-router-dom';
 import {
-  PencilIcon,
-  PlusCircleIcon,
-  CheckCircleIcon,
+  
   MagnifyingGlassIcon,
   EyeIcon,
   ArrowRightIcon,
@@ -12,19 +10,14 @@ import {
   XMarkIcon,
   PrinterIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API, UPLOADFILE_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from "../Components/LoadingComponent";
 
 
 const ApprovedDoc = () => {
-  const [formData, setFormData] = useState({
-    title: "",
-    subject: "",
-    version: "",
-    category: null,
-  });
+ 
   const location = useLocation();
   const [documents, setDocuments] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -450,18 +443,6 @@ const ApprovedDoc = () => {
     fetchQRCode(doc.id);
   };
 
-  const formatDates = (timestamp) => {
-    if (!timestamp) {
-      return "N/A";
-    }
-
-    const date = new Date(timestamp); // Convert milliseconds to Date
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
 
   const closeModal = () => {
     setIsOpen(false);

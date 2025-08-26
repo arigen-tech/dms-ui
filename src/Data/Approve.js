@@ -5,7 +5,7 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   MagnifyingGlassIcon,
-  CheckCircleIcon,
+  
   PrinterIcon,
   XMarkIcon,
   EyeIcon,
@@ -29,16 +29,16 @@ const Approve = () => {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
-  const [selectedDocument, setSelectedDocument] = useState(null);
+
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [documentToApprove, setDocumentToApprove] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState(null);
+  
   const [isRejectReasonModalOpen, setIsRejectReasonModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
-  const [files, setFiles] = useState([]);
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [, setError] = useState("");
+  
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [highlightedDocId, setHighlightedDocId] = useState(null);
   const [blobUrl, setBlobUrl] = useState("");
@@ -47,7 +47,7 @@ const Approve = () => {
   const [searchFileTerm, setSearchFileTerm] = useState("");
   const tokenKey = localStorage.getItem("tokenKey");
   const [isOpeningFile, setIsOpeningFile] = useState(false);
-  const [userBranch, setUserBranch] = useState(null);
+  const [, setUserBranch] = useState(null);
 
   useEffect(() => {
     fetchUserBranch();
@@ -308,6 +308,7 @@ const Approve = () => {
           },
         }
       );
+      console.log("Approval response:", response.data);
 
       setSuccessMessage("Document Approved Successfully");
       setIsConfirmModalOpen(false);
