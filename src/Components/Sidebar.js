@@ -48,11 +48,11 @@ import {
   USER,
 } from "../API/apiConfig";
 
-const tokenKey = "tokenKey";
+
 
 function Sidebar() {
   const location = useLocation();
-  const navigate = useNavigate();
+  
 
   const [counts, setCounts] = useState(() => {
     const savedCounts = sessionStorage.getItem("counts");

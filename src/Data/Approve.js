@@ -5,7 +5,7 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   MagnifyingGlassIcon,
-  
+
   PrinterIcon,
   XMarkIcon,
   EyeIcon,
@@ -32,13 +32,13 @@ const Approve = () => {
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [documentToApprove, setDocumentToApprove] = useState(null);
-  
+
   const [isRejectReasonModalOpen, setIsRejectReasonModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [, setError] = useState("");
-  
+
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [highlightedDocId, setHighlightedDocId] = useState(null);
   const [blobUrl, setBlobUrl] = useState("");
@@ -340,7 +340,7 @@ const Approve = () => {
         }
       );
       setSuccessMessage("Document Rejected Successfully");
-
+      console.log("Rejection response:", response.data);
       setIsRejectReasonModalOpen(false);
       setRejectReason("");
       fetchDocuments();
