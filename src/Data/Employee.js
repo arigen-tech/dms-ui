@@ -81,7 +81,7 @@ const UserAddEmployee = () => {
       const token = localStorage.getItem("tokenKey");
 
       const userResponse = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
+        `${EMPLOYEE_API}/findById/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -308,7 +308,7 @@ const UserAddEmployee = () => {
       };
 
       const response = await axios.post(
-        `${API_HOST}/register/create`,
+        `${REGISTER_API}/create`,
         employeeData,
         {
           headers: {
