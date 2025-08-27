@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { API_HOST } from '../API/apiConfig';
+import { useState } from "react";
+import { SCAN_API } from '../API/apiConfig';
 import Layout from "../Components/Layout";
 
 const Scanner = () => {
@@ -8,59 +7,72 @@ const Scanner = () => {
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState("");
   const [scanType, setScanType] = useState("oneByOne");
+  const [fileName, setFileName] = useState("");
   const token = localStorage.getItem("tokenKey");
 
-  const handleScan = async () => {
-    if (!totalPages || totalPages <= 0) {
-      setScanStatus("Please enter a number of total pages.");
-      return;
-    }
-  
-    setLoading(true);
-    setScanStatus(null);
-  
-    try {
-      const response = await axios.post(
-        `${API_HOST}/api/scan/start?totalPages=${totalPages}&scanType=${scanType}`,
-        null,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          responseType: "blob", 
-        }
-      );
-  
-      if (response.status === 200) {
-        setScanStatus("✅ Document scanned successfully! Downloading...");
-  
-        const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
-        const link = document.createElement("a");
-        link.href = url;
-        const contentDisposition = response.headers["content-disposition"];
-        const fileName = contentDisposition
-          ? contentDisposition.split("filename=")[1].replace(/"/g, "")
-          : "scanned_document.pdf";
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTotalPages("");
-        setScanType("oneByOne");
-      } else {
-        setScanStatus("Unexpected response from the server.");
+const handleScan = async () => {
+  if (!totalPages || totalPages <= 0) {
+    setScanStatus("❗ Please enter a valid number of total pages.");
+    return;
+  }
+
+  if (!fileName.trim()) {
+    setScanStatus("❗ Please enter a valid file name.");
+    return;
+  }
+
+  setLoading(true);
+  setScanStatus(null);
+
+  try {
+    const response = await fetch(
+      `${SCAN_API}/pdf?totalPages=${totalPages}&scanType=${scanType}&fileName=${fileName}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      setScanStatus(
-        `❌ Error scanning document: ${
-          error.response?.data?.message || error.message || "Unknown error"
-        }`
-      );
-    } finally {
-      setLoading(false);
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to scan document");
     }
-  };
-  
+
+    let downloadedFileName = "scanned_output.pdf";
+    const disposition = response.headers.get("content-disposition");
+    if (disposition) {
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match && match[1]) {
+        downloadedFileName = match[1];
+      }
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = downloadedFileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    setTotalPages("");
+    setFileName("");
+    setScanType("oneByOne");
+    setScanStatus("✅ Document scanned successfully! Downloading...");
+  } catch (error) {
+    console.error("Error scanning PDF:", error);
+    setScanStatus("❌ Failed to scan document.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   return (
     <Layout>
       <div className="flex items-center justify-center h-[600px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg">
@@ -106,13 +118,31 @@ const Scanner = () => {
             </select>
           </div>
 
+          <div className="mb-4">
+            <label
+              htmlFor="fileName"
+              className="block text-lg font-medium text-gray-700"
+            >
+              Enter Name of Scanned Document:
+            </label>
+            <input
+              type="text"
+              id="fileName"
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
+              placeholder="File name (e.g., scanned_report)"
+              className="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              disabled={loading}
+            />
+          </div>
+
+
           <button
             onClick={handleScan}
-            className={`w-full px-4 py-2 text-white font-semibold rounded-lg transition-all ${
-              loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-500 hover:bg-indigo-600"
-            }`}
+            className={`w-full px-4 py-2 text-white font-semibold rounded-lg transition-all ${loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-indigo-500 hover:bg-indigo-600"
+              }`}
             disabled={loading}
           >
             {loading ? "Scanning..." : "Start Scanning"}
@@ -120,11 +150,10 @@ const Scanner = () => {
 
           {scanStatus && (
             <div
-              className={`mt-4 p-4 rounded-lg ${
-                scanStatus.startsWith("✅")
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
+              className={`mt-4 p-4 rounded-lg ${scanStatus.startsWith("✅")
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+                }`}
             >
               {scanStatus}
             </div>
