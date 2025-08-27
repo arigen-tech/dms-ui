@@ -33,6 +33,7 @@ export const TYPE_API = `${API_HOST}/TypeMaster`;
 export const UPLOADFILE_API = `${API_HOST}/api/upload`;
 export const YEAR_API = `${API_HOST}/YearMaster`;
 export const FILETYPE_API = `${API_HOST}/file-type`;
+export const SCAN_API = `${API_HOST}/api/scan`;
 
 
 
