@@ -17,7 +17,7 @@ import {
   EMPLOYEE_API,
   BRANCH_API,
   DEPAETMENT_API,
-  
+
 } from "../API/apiConfig";
 import { API_HOST } from "../API/apiConfig";
 
@@ -56,7 +56,7 @@ const UserAddEmployee = () => {
   const [emailError, setEmailError] = useState("");
   const [mobileError, setMobileError] = useState("");
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
-  
+
   const formRef = useRef(null); // Ref for the form section
 
   useEffect(() => {
@@ -65,8 +65,55 @@ const UserAddEmployee = () => {
   }, []);
 
   const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
+    // More comprehensive email validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    // Additional checks to prevent common invalid patterns
+    const invalidPatterns = [
+      /\.\.+/, // Multiple consecutive dots
+      /^\./, // Starting with dot
+      /\.$/, // Ending with dot
+      /@\./, // @ followed immediately by dot
+      /\.@/, // Dot followed immediately by @
+      /@@/, // Multiple @ symbols
+      /@.*@/, // Multiple @ symbols anywhere
+    ];
+
+    // First check basic regex
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+
+    // Then check for invalid patterns
+    for (let pattern of invalidPatterns) {
+      if (pattern.test(email)) {
+        return false;
+      }
+    }
+
+    // Additional domain validation
+    const parts = email.split('@');
+    if (parts.length !== 2) return false;
+
+    const [localPart, domain] = parts;
+
+    // Local part validation
+    if (localPart.length === 0 || localPart.length > 64) return false;
+    if (localPart.startsWith('.') || localPart.endsWith('.')) return false;
+
+    // Domain validation
+    if (domain.length === 0 || domain.length > 255) return false;
+    if (domain.startsWith('.') || domain.endsWith('.')) return false;
+    if (domain.startsWith('-') || domain.endsWith('-')) return false;
+
+    // Check for valid domain extension
+    const domainParts = domain.split('.');
+    if (domainParts.length < 2) return false;
+
+    const extension = domainParts[domainParts.length - 1];
+    if (extension.length < 2) return false;
+
+    return true;
   };
 
   const validateMobile = (mobile) => {
@@ -103,13 +150,24 @@ const UserAddEmployee = () => {
       setUserBranch(userBranch);
       setUserDepartment(userDepartment);
 
-      setFormData((prevData) => ({
-        ...prevData,
-        branch: userBranch,
-        department: userDepartment,
-      }));
-
       const isAdmin = userData.role?.role?.toUpperCase() === "ADMIN";
+
+      // Set form data based on user role
+      if (isAdmin) {
+        // For admin, start with empty form
+        setFormData((prevData) => ({
+          ...prevData,
+          branch: { id: "", name: "" },
+          department: { id: "", name: "" },
+        }));
+      } else {
+        // For non-admin users, pre-fill with their branch/department
+        setFormData((prevData) => ({
+          ...prevData,
+          branch: userBranch,
+          department: userDepartment,
+        }));
+      }
 
       if (isAdmin) {
         const allEmployeesResponse = await axios.get(
@@ -194,8 +252,43 @@ const UserAddEmployee = () => {
     const { name, value } = e.target;
 
     if (name === "email") {
-      const isValid = validateEmail(value);
-      setEmailError(isValid ? "" : "Please enter a valid email address (must contain @)");
+      // Real-time validation with more specific error messages
+      let errorMessage = "";
+
+      if (value === "") {
+        errorMessage = "";
+      } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
+        if (!value.includes('@')) {
+          errorMessage = "Email must contain @ symbol";
+        } else if (value.includes('..')) {
+          errorMessage = "Email cannot contain consecutive dots";
+        } else if (value.startsWith('.') || value.endsWith('.')) {
+          errorMessage = "Email cannot start or end with a dot";
+        } else if (value.includes('@.') || value.includes('.@')) {
+          errorMessage = "Invalid format around @ symbol";
+        } else if ((value.match(/@/g) || []).length > 1) {
+          errorMessage = "Email can only contain one @ symbol";
+        } else {
+          const parts = value.split('@');
+          if (parts.length === 2) {
+            const domain = parts[1];
+            if (!domain.includes('.')) {
+              errorMessage = "Domain must contain a dot (e.g., gmail.com)";
+            } else if (domain.split('.').some(part => part.length === 0)) {
+              errorMessage = "Invalid domain format";
+            } else {
+              errorMessage = "Please enter a valid email address";
+            }
+          } else {
+            errorMessage = "Please enter a valid email address";
+          }
+        }
+      } else {
+        const isValid = validateEmail(value);
+        errorMessage = isValid ? "" : "Please enter a valid email address";
+      }
+
+      setEmailError(errorMessage);
     }
 
     if (name === "mobile") {
@@ -233,11 +326,20 @@ const UserAddEmployee = () => {
     }));
 
     if (key === "branch") {
+      // Reset department selection when branch changes
+      setFormData((prevData) => ({
+        ...prevData,
+        branch: {
+          id: value,
+          name: selectedName,
+        },
+        department: { id: "", name: "" }, // Reset department to empty
+      }));
       fetchDepartments(value);
     }
   };
 
-  
+
 
   const validateForm = () => {
     let isValid = true;
@@ -252,7 +354,7 @@ const UserAddEmployee = () => {
       setEmailError("Email is required");
       isValid = false;
     } else if (!validateEmail(formData.email)) {
-      setEmailError("Please enter a valid email address");
+      setEmailError("Please enter a valid email address (e.g., user@gmail.com)");
       isValid = false;
     }
 
@@ -289,7 +391,7 @@ const UserAddEmployee = () => {
       const token = localStorage.getItem("tokenKey");
       const userId = parseInt(localStorage.getItem("userId"), 10);
 
-      const fullMobileNumber = `${formData.countryCode}${formData.mobile}`;
+      const fullMobileNumber = `${formData.mobile}`;
 
       const employeeData = {
         name: formData.name,
@@ -344,7 +446,7 @@ const UserAddEmployee = () => {
         error.response?.data?.message || // Extract message from response object
         error.response?.data ||          // Fallback to entire response if no message
         "Failed to add employee. Please try again.";
-      
+
       setShowPopup(true);
       setPopupConfig({
         message: typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage,
@@ -396,7 +498,7 @@ const UserAddEmployee = () => {
       if (employeeToEdit.branch) {
         fetchDepartments(employeeToEdit.branch.id);
       }
-      
+
       // Scroll to form section
       if (formRef.current) {
         formRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -728,9 +830,13 @@ const UserAddEmployee = () => {
                   ))}
                 </select>
               ) : (
-                <div className="mt-1 block w-full p-2 border rounded-md bg-gray-100">
-                  {formData.branch?.name || "No Branch Selected"}
-                </div>
+                <input
+                  type="text"
+                  value={formData.branch?.name || ""}
+                  className="mt-1 block w-full p-2 border rounded-md bg-gray-100 cursor-not-allowed"
+                  disabled
+                  readOnly
+                />
               )}
             </label>
 
