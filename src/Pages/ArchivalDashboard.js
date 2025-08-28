@@ -20,7 +20,7 @@ import { API_HOST, BRANCH_API, DEPAETMENT_API } from "../API/apiConfig";
 const ArchiveDashboard = () => {
     const [branches, setBranches] = useState([]);
     const [departments, setDepartments] = useState([]);
-    const [statuses] = useState(["IN_PROGRESS", "ARCHIVED", "FAILED"]);
+    const [statuses] = useState(["IN_PROGRESS", "ARCHIVED", "FAILED", "WAITING"]);
     const [selectedBranch, setSelectedBranch] = useState("All");
     const [selectedDepartment, setSelectedDepartment] = useState("All");
     const [selectedStatus, setSelectedStatus] = useState("All");
@@ -28,14 +28,25 @@ const ArchiveDashboard = () => {
     const [files, setFiles] = useState([]);
     const [stats, setStats] = useState({
         total: 0,
-        scheduled: 0,
+        processing: 0,
         archived: 0,
         failed: 0,
+        waiting: 0,
     });
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const token = localStorage.getItem("tokenKey");
 
+
+    console.log("og data:", files);
+
+
+    const statusPriority = {
+        "IN_PROGRESS": 1,
+        "ARCHIVED": 2,
+        "FAILED": 3,
+        "WAITING": 4
+    };
 
     // Fetch Branches
     useEffect(() => {
@@ -89,9 +100,11 @@ const ArchiveDashboard = () => {
                 setFiles(res.data);
                 setStats({
                     total: res.data.length,
-                    scheduled: res.data.filter((j) => j.status === "WAITING").length,
+                    waiting: res.data.filter((j) => j.status === "WAITING").length,
                     archived: res.data.filter((j) => j.status === "ARCHIVED").length,
                     failed: res.data.filter((j) => j.status === "FAILED").length,
+                    processing: res.data.filter((j) => j.status === "IN_PROGRESS").length,
+
                 });
             } catch (err) {
                 console.error("Error fetching archive jobs:", err);
@@ -105,14 +118,20 @@ const ArchiveDashboard = () => {
     console.log("Files Data:", files);
 
     // Filter + Pagination
-    const filteredAndSortedData = files.filter((item) => {
-        const search = searchTerm.toLowerCase();
-        return (
-            item.description?.toLowerCase().includes(search) ||
-            item.policyType?.toLowerCase().includes(search) ||
-            item.status?.toLowerCase().includes(search)
-        );
-    });
+    const filteredAndSortedData = files
+        .filter((item) => {
+            const search = searchTerm.toLowerCase();
+            return (
+                item.description?.toLowerCase().includes(search) ||
+                item.policyType?.toLowerCase().includes(search) ||
+                item.status?.toLowerCase().includes(search)
+            );
+        })
+        .sort((a, b) => {
+            const priorityA = statusPriority[a.status] || 99; // default if unknown
+            const priorityB = statusPriority[b.status] || 99;
+            return priorityA - priorityB;
+        });
 
     function formatDate(value) {
         if (!value) return "";
@@ -178,59 +197,78 @@ const ArchiveDashboard = () => {
                     </h1>
 
                     {/* 🔹 Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-3">
                         {/* Total */}
-                        <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer">
+                        <div
+                            className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer"
+                            onClick={() => setSelectedStatus("All")}
+                        >
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Total Records</p>
-                                    <p className="text-2xl font-bold text-gray-900">
-                                        {stats.total}
-                                    </p>
+                                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                                 </div>
                                 <Archive className="h-8 w-8 text-gray-400" />
                             </div>
                         </div>
 
-                        {/* Scheduled */}
-                        <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer">
+                        {/* Processing */}
+                        <div
+                            className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer"
+                            onClick={() => setSelectedStatus("IN_PROGRESS")}
+                        >
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-600">Scheduled</p>
-                                    <p className="text-2xl font-bold text-yellow-600">
-                                        {stats.scheduled}
-                                    </p>
+                                    <p className="text-sm text-gray-600">Processing</p>
+                                    <p className="text-2xl font-bold text-blue-600">{stats.processing}</p>
                                 </div>
-                                <Clock className="h-8 w-8 text-yellow-400" />
+                                <Clock className="h-8 w-8 text-blue-400" />
                             </div>
                         </div>
 
                         {/* Archived */}
-                        <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer">
+                        <div
+                            className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer"
+                            onClick={() => setSelectedStatus("ARCHIVED")}
+                        >
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Archived</p>
-                                    <p className="text-2xl font-bold text-green-600">
-                                        {stats.archived}
-                                    </p>
+                                    <p className="text-2xl font-bold text-green-600">{stats.archived}</p>
                                 </div>
                                 <img src={ArchiveBoxCheachMarkIcon} className="h-9 w-9" alt="icon" />
                             </div>
                         </div>
 
                         {/* Failed */}
-                        <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer">
+                        <div
+                            className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer"
+                            onClick={() => setSelectedStatus("FAILED")}
+                        >
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Failed</p>
-                                    <p className="text-2xl font-bold text-red-600">
-                                        {stats.failed}
-                                    </p>
+                                    <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
                                 </div>
                                 <ArchiveBoxXMarkIcon className="h-8 w-8 text-red-400" />
                             </div>
                         </div>
+
+                        {/* Waiting For Processing */}
+                        <div
+                            className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md hover:scale-105 transition cursor-pointer"
+                            onClick={() => setSelectedStatus("WAITING")}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Waiting For Processing</p>
+                                    <p className="text-2xl font-bold text-yellow-600">{stats.waiting}</p>
+                                </div>
+                                <Clock className="h-8 w-8 text-yellow-400" />
+                            </div>
+                        </div>
                     </div>
+
 
                     {/* 🔹 Filters */}
                     <div className="bg-white rounded-lg shadow-sm p-3 mb-3">
@@ -343,7 +381,7 @@ const ArchiveDashboard = () => {
                                             <td className="px-4 py-2 text-sm">
                                                 {idx + 1 + (currentPage - 1) * itemsPerPage}
                                             </td>
-                                            
+
                                             <td className="px-4 py-2 text-sm">
                                                 {item.archiveName}
                                             </td>
@@ -366,7 +404,7 @@ const ArchiveDashboard = () => {
                                                         item.status
                                                     )}`}
                                                 >
-                                                    {item.status}
+                                                    {item.status === "WAITING" ? "WAITING FOR PROCESSING" : item.status}
                                                 </span>
                                             </td>
 
@@ -375,12 +413,15 @@ const ArchiveDashboard = () => {
                                             </td>
 
                                             <td className="px-4 py-2 text-sm">
-                                                {formatDate(item.archivedDateTime)}
+                                                {formatDate(item.archivedDateTime) || "-"}
                                             </td>
 
                                             <td className="px-4 py-2 text-sm">
-                                                {item.totalFiles}
+                                                {item.status === "ARCHIVED"
+                                                    ? (item.totalFiles != null ? item.totalFiles : 0)
+                                                    : (item.totalFiles != null ? item.totalFiles : "-")}
                                             </td>
+
                                         </tr>
                                     ))}
                                 </tbody>

@@ -277,6 +277,7 @@ const NewRetaintionPolicy = () => {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+        const now = new Date();
 
         if (name === "fromdate" && value) {
             const fromDate = new Date(value);
@@ -307,12 +308,16 @@ const NewRetaintionPolicy = () => {
             }));
         }
         else if (name === "retentionDate" && value) {
+            // compare with todate if exists
             if (formData.todate && value <= formData.todate) {
                 alert("Retention Date must be greater than Archive To Date");
                 return;
             }
 
-            const currentTime = new Date().toLocaleTimeString([], {
+            // current time + 1 min
+            const plusOneMinute = new Date();
+            plusOneMinute.setMinutes(plusOneMinute.getMinutes() + 1);
+            const nextMinute = plusOneMinute.toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: false
@@ -321,7 +326,7 @@ const NewRetaintionPolicy = () => {
             setFormData((prevData) => ({
                 ...prevData,
                 retentionDate: value,
-                retentionTime: currentTime,
+                retentionTime: nextMinute,
             }));
         }
         else {
@@ -331,6 +336,7 @@ const NewRetaintionPolicy = () => {
             });
         }
     };
+
 
 
     const handleBranchChange = async (e) => {
@@ -640,19 +646,32 @@ const NewRetaintionPolicy = () => {
                             <input
                                 type="date"
                                 name="retentionDate"
-                                value={formData.retentionDate || ''}
+                                value={formData.retentionDate || ""}
                                 onChange={handleInputChange}
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                                // must be > todate
-                                min={
-                                    formData.todate
-                                        ? (() => {
-                                            const d = new Date(formData.todate);
-                                            d.setDate(d.getDate() + 1); // strictly greater
-                                            return d.toISOString().split("T")[0];
-                                        })()
-                                        : new Date().toISOString().split("T")[0]
-                                }
+                                min={(() => {
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+
+                                    if (formData.todate) {
+                                        const toDate = new Date(formData.todate);
+                                        toDate.setHours(0, 0, 0, 0);
+
+                                        if (toDate > today) {
+                                            // ✅ Case 1: todate > today
+                                            toDate.setDate(toDate.getDate() + 1);
+                                            return toDate.toISOString().split("T")[0];
+                                        } else {
+                                            // ✅ Case 2: todate <= today
+                                            today.setDate(today.getDate() + 1);
+                                            return today.toISOString().split("T")[0];
+                                        }
+                                    } else {
+                                        // fallback: today + 1
+                                        today.setDate(today.getDate() + 1);
+                                        return today.toISOString().split("T")[0];
+                                    }
+                                })()}
                             />
                         </label>
 
@@ -662,11 +681,12 @@ const NewRetaintionPolicy = () => {
                             <input
                                 type="time"
                                 name="retentionTime"
-                                value={formData.retentionTime || ''}
+                                value={formData.retentionTime || ""}
                                 onChange={handleInputChange}
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </label>
+
 
                         <label className="block text-md font-medium text-gray-700">
                             Branch <span className="text-red-500">*</span>
@@ -855,8 +875,8 @@ const NewRetaintionPolicy = () => {
                                             onClick={() => handleDownloadZip(policy)}
                                             disabled={policy.isActive || downloadingId === policy.id}
                                             className={`p-1 rounded-full ${policy.isActive || downloadingId === policy.id
-                                                    ? "bg-gray-400 cursor-not-allowed"
-                                                    : "bg-green-500 hover:bg-green-600"
+                                                ? "bg-gray-400 cursor-not-allowed"
+                                                : "bg-green-500 hover:bg-green-600"
                                                 } text-white transition duration-200 flex items-center gap-2`}
                                         >
                                             {policy.isActive ? (
