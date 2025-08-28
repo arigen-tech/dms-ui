@@ -359,7 +359,7 @@ const Branch = () => {
                     'Adding...'
                   ) : (
                     <>
-                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Role
+                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Branch
                     </>
                   )}
                 </button>
