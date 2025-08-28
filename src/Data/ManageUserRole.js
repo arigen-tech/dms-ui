@@ -20,7 +20,7 @@ const ManageUserRole = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
   const [empId, setEmpId] = useState(null); // For editing role
-  const [ setRole] = useState(""); // Role input field
+  const [ ,setRole] = useState(""); // Role input field
   
   const [availableRoles, setAvailableRoles] = useState([]);
   const [allRoles, setAllRoles] = useState([]);
