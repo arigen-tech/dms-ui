@@ -251,7 +251,7 @@ function Sidebar() {
                 <SidebarLink
                   to="/manageUserRole"
                   icon={UserPlusIcon}
-                  text="Manage Users"
+                  text="Manage Users Roles"
                   count={manageUserRoleCont}
                 />
                 <SidebarLink
@@ -480,7 +480,7 @@ function Sidebar() {
               <SidebarLink
                 to="/manageUserRole"
                 icon={UserPlusIcon}
-                text="Manage Users Roles"
+                text="Manage Users Roles Roles"
                 count={manageUserRoleContbranch}
               />
               <SidebarLink
