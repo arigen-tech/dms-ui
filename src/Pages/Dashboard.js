@@ -506,7 +506,7 @@ function Dashboard() {
 
   function StatBlock({ title, value, Icon }) {
     return (
-      <div className="p-3 rounded-lg shadow flex items-center justify-between border-l-4 border-blue-50">
+      <div className="p-3 rounded-lg shadow flex items-center justify-between border-l-4 border-blue-50 bg-white">
         <div>
           <h3 className="text-md font-semibold text-gray-700">{title}</h3>
           {loading ? (

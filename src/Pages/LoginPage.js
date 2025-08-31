@@ -702,7 +702,7 @@ const LoginPage = () => {
               }`}>
               {getViewTitle()}
             </h2>
-            <p className="text-gray-600 mt-1 text-sm">
+            <p className="text-gray-600 mt-1 text-md font-bold">
               {getViewSubtitle()}
             </p>
           </div>
@@ -1149,7 +1149,7 @@ const LoginPage = () => {
 
         {/* Footer */}
         <div className="mt-4 text-center text-xs text-gray-500">
-          <p>© 2024 AGT Document Management System. All rights reserved.</p>
+          <p>© 2025 AGT. All rights reserved.</p>
         </div>
       </div>
     </div>
