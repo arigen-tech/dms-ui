@@ -4,7 +4,7 @@ import {
     PlusCircleIcon, PencilIcon, ArrowLeftIcon,
     ArrowRightIcon, MagnifyingGlassIcon
 } from "@heroicons/react/24/solid"
-import { API_HOST, DEPAETMENT_API, BRANCH_API } from "../API/apiConfig"
+import { API_HOST, DEPAETMENT_API, BRANCH_API, CATEGORI_API } from "../API/apiConfig"
 import Popup from "../Components/Popup"
 import LoadingComponent from "../Components/LoadingComponent"
 
@@ -13,6 +13,7 @@ const NewRetaintionPolicy = () => {
     const [branches, setBranches] = useState([])
     const [departments, setDepartments] = useState([])
     const [allDepartments, setAllDepartments] = useState([])
+    const [categories, setCategories] = useState([])
     const [isLoading, setIsLoading] = useState(false)
     const [popupMessage, setPopupMessage] = useState(null)
     const [selectedBranch, setSelectedBranch] = useState("")
@@ -32,6 +33,7 @@ const NewRetaintionPolicy = () => {
         policyType: "FILE_RETENTION",
         departmentId: "",
         branchId: "",
+        categoryId: "",
     })
     const [isEditing, setIsEditing] = useState(false)
     const [editId, setEditId] = useState(null)
@@ -47,7 +49,8 @@ const NewRetaintionPolicy = () => {
             try {
                 await Promise.all([
                     fetchBranches(),
-                    fetchAllDepartments()
+                    fetchAllDepartments(),
+                    fetchCategory()
                 ]);
                 await fetchPolicies();
             } catch (error) {
@@ -68,6 +71,7 @@ const NewRetaintionPolicy = () => {
                     ...policy,
                     branchName: getBranchNameById(policy.branchId),
                     departmentName: getDepartmentNameById(policy.departmentId),
+                    categoryName: getCategoryNameById(policy.categoryId),
                 }))
             );
         }
@@ -101,6 +105,12 @@ const NewRetaintionPolicy = () => {
         return department?.name || "Unknown Department";
     };
 
+    const getCategoryNameById = (id) => {
+        if (!id || id === null) return "All Categorys";
+        const cat = categories.find(b => b.id === id);
+        return cat ? cat.name : "Unknown Branch";
+    };
+
     const fetchPolicies = async () => {
         try {
             const token = localStorage.getItem("tokenKey");
@@ -125,6 +135,7 @@ const NewRetaintionPolicy = () => {
                     : policy.updatedOn,
                 branchName: branches.length ? getBranchNameById(policy.branchId) : "",
                 departmentName: allDepartments.length ? getDepartmentNameById(policy.departmentId) : "",
+                categoryName: categories.length ? getCategoryNameById(policy.categoryId) : "",
             }));
 
             setPolicies(normalizedPolicies);
@@ -215,6 +226,21 @@ const NewRetaintionPolicy = () => {
             console.error("Error fetching departments:", error)
             showPopup("Failed to fetch departments", "error")
             setDepartments([])
+        }
+    }
+
+    const fetchCategory = async () => {
+        try {
+            const token = localStorage.getItem("tokenKey")
+            const response = await axios.get(`${CATEGORI_API}/findAll`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+
+            const categoriesData = response.data?.response || response.data || []
+            setCategories(Array.isArray(categoriesData) ? categoriesData : [categoriesData])
+        } catch (error) {
+            console.error("Error fetching branches:", error)
+            showPopup("Failed to fetch branches", "error")
         }
     }
 
@@ -356,6 +382,8 @@ const NewRetaintionPolicy = () => {
         }
     }
 
+
+
     const handleAddPolicy = async () => {
         if (!formData.retentionDate) {
             showPopup("Please select a retention date", "warning");
@@ -374,7 +402,8 @@ const NewRetaintionPolicy = () => {
                 retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:59",
                 isActive: formData.isActive,
                 departmentId: formData.departmentId || null,
-                branchId: formData.branchId,
+                branchId: formData.branchId || null,
+                categoryId: formData.categoryId || null,
             };
 
             const token = localStorage.getItem("tokenKey");
@@ -426,6 +455,7 @@ const NewRetaintionPolicy = () => {
                 policyType: policy.policyType || "FILE_RETENTION",
                 departmentId: policy.departmentId || "",
                 branchId: policy.branchId || "",
+                categoryId: policy.categoryId || "",
             });
 
             if (policy.branchId) {
@@ -450,12 +480,17 @@ const NewRetaintionPolicy = () => {
                 return;
             }
 
+            const formatDate = (dateStr) => {
+                if (!dateStr) return null;
+                const d = new Date(dateStr);
+                return d.toISOString().split("T")[0]; 
+            };
+
             const updatedPolicy = {
                 ...policies[policyIndex],
                 policyType: formData.policyType,
                 description: formData.description,
 
-                // ✅ send ISO strings, not millis
                 fromdate: formData.fromdate
                     ? new Date(formData.fromdate).toISOString().slice(0, 19)
                     : null,
@@ -463,32 +498,39 @@ const NewRetaintionPolicy = () => {
                     ? new Date(formData.todate).toISOString().slice(0, 19)
                     : null,
 
-                retentionDate: formData.retentionDate,
-                retentionTime: formData.retentionTime ? formData.retentionTime + ":00" : "23:59:00",
+                retentionDate: formatDate(formData.retentionDate), 
+                retentionTime: formData.retentionTime
+                    ? formData.retentionTime + ":00"
+                    : "23:59:00",
                 isActive: !!formData.isActive,
-                departmentId: formData.departmentId || null,
-                branchId: formData.branchId || null,
+                departmentId: Number(formData.departmentId) || null,
+                branchId: Number(formData.branchId) || null,
+                categoryId: Number(formData.categoryId) || null, 
                 updatedOn: new Date().toISOString().slice(0, 19),
             };
 
-            await axios.put(`${API_HOST}/retention-policy/updateNewPolicy/${updatedPolicy.id}`, updatedPolicy, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
-                    "Content-Type": "application/json",
-                },
-            });
+            await axios.put(
+                `${API_HOST}/retention-policy/updateNewPolicy/${updatedPolicy.id}`,
+                updatedPolicy,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
 
             await fetchPolicies();
             resetForm();
             showPopup("Retention policy updated successfully!", "success");
         } catch (error) {
             console.error("Error creating policy:", error);
-
-            const backendMessage = error.response?.data?.message || error.message || "Something went wrong";
+            const backendMessage =
+                error.response?.data?.message || error.message || "Something went wrong";
             showPopup(backendMessage, "warning");
         }
-
     };
+
 
 
 
@@ -556,11 +598,13 @@ const NewRetaintionPolicy = () => {
         const searchLower = searchTerm.toLowerCase()
         const branchName = policy.branchName || getBranchNameById(policy.branchId)
         const departmentName = policy.departmentName || getDepartmentNameById(policy.departmentId)
+        const categoryName = policy.categoryName || getCategoryNameById(policy.categoryId)
 
         return (
             (policy.policyType || "").toLowerCase().includes(searchLower) ||
             branchName.toLowerCase().includes(searchLower) ||
-            departmentName.toLowerCase().includes(searchLower)
+            departmentName.toLowerCase().includes(searchLower) ||
+            categoryName.toLowerCase().includes(searchLower) 
         )
     })
 
@@ -705,6 +749,7 @@ const NewRetaintionPolicy = () => {
                             </select>
                         </label>
 
+
                         <label className="block text-md font-medium text-gray-700">
                             Department <span className="text-red-500">*</span>
                             <select
@@ -722,6 +767,26 @@ const NewRetaintionPolicy = () => {
                                 ))}
                             </select>
                         </label>
+
+                        <label className="block text-md font-medium text-gray-700">
+                            Category <span className="text-red-500">*</span>
+                            <select
+                                name="categoryId"
+                                value={formData.categoryId}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">All Category</option>
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+
+
                         <label className="block text-md font-medium text-gray-700">
                             Archive Description
                             <textarea
@@ -812,6 +877,7 @@ const NewRetaintionPolicy = () => {
                                 <th className="border p-2 text-left w-96">Archive Date & Time</th>
                                 <th className="border p-2 text-left w-40">Branch</th>
                                 <th className="border p-2 text-left w-40">Department</th>
+                                <th className="border p-2 text-left w-40">Category</th>
                                 <th className="border p-2 text-left w-60">Description</th>
                                 <th className="border p-2 text-left w-28">Status</th>
                                 <th className="border p-2 text-left w-20">Edit</th>
@@ -847,6 +913,9 @@ const NewRetaintionPolicy = () => {
                                     </td>
                                     <td className="border p-2 w-40">
                                         {policy.departmentName || getDepartmentNameById(policy.departmentId)}
+                                    </td>
+                                    <td className="border p-2 w-40">
+                                        {policy.categoryName || getCategoryNameById(policy.categoryId)}
                                     </td>
                                     <td className="border p-2 w-60">
                                         {policy.description || "-"}
