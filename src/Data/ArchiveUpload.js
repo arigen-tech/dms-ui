@@ -325,7 +325,7 @@ const ArchiveUpload = () => {
         <div className="mb-6">
           {renderArchiveFields()}
 
-          <div className="max-w-xl bg-slate-100 p-6 rounded-lg mt-6">
+          <div className="w-full bg-slate-100 p-6 rounded-lg mt-6">
             <div className="flex items-center justify-center w-full">
 
               <label

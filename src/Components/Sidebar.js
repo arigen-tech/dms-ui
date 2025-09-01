@@ -218,7 +218,12 @@ function Sidebar() {
       )}
     </Link>
   );
-
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const handleInputChange = (event) => {
+    setSearchTerm(event.target.value);
+    // You can implement additional logic here to filter the menu items based on the search term
+  };
   const role = localStorage.getItem("role");
 
   return (
@@ -228,7 +233,16 @@ function Sidebar() {
           <img className="flex w-30 h-30" src={logo3} alt="DMS" />
         </div>
         <nav className="flex flex-col space-y-1">
-
+           <div>
+            <input
+                    type="text"
+                    placeholder="Search Menu..."
+                    name="name"
+                    onChange={handleInputChange}
+                    maxLength={30}
+                    className="mt-1 block w-full p-1 mb-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400"
+                  />
+           </div>
           {role === SYSTEM_ADMIN && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
