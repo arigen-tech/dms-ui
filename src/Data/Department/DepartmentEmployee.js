@@ -24,13 +24,17 @@ const DepartmentEmployee = () => {
         department: { id: "", name: "" },
     });
     const [searchTerm, setSearchTerm] = useState("");
+    const [branchData, setBranchData] = useState([]);
+    const [departmentData, setDepartmentData] = useState([]);
+    const [selectedBranch, setSelectedBranch] = useState("");
+    const [selectedDepartment, setSelectedDepartment] = useState("");
     const [editingIndex, setEditingIndex] = useState(null);
     const [itemsPerPage, setItemsPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(1);
     const [modalVisible, setModalVisible] = useState(false);
     const [employeeToToggle, setEmployeeToToggle] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [ ,setError] = useState("");
+    const [, setError] = useState("");
     const [userBranch, setUserBranch] = useState(null);
     const [userDepartment, setUserDepartment] = useState(null);
     const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
@@ -48,7 +52,43 @@ const DepartmentEmployee = () => {
 
     useEffect(() => {
         fetchUserDetails();
+        fetchBranches();
     }, []);
+
+    useEffect(() => {
+        if (selectedBranch) {
+            fetchFilterDepartments(selectedBranch);
+        } else {
+            setDepartmentData([]);
+        }
+    }, [selectedBranch]);
+
+    const fetchBranches = async () => {
+        try {
+            const token = localStorage.getItem("tokenKey");
+            const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setBranchData(response.data);
+        } catch (error) {
+            console.error("Error fetching branches:", error);
+        }
+    };
+
+    const fetchFilterDepartments = async (branchId) => {
+        try {
+            const token = localStorage.getItem("tokenKey");
+            const response = await axios.get(
+                `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            setDepartmentData(response.data);
+        } catch (error) {
+            console.error("Error fetching departments:", error);
+        }
+    };
 
     const validateEmail = (email) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -405,7 +445,7 @@ const DepartmentEmployee = () => {
 
     const handleClosePopup = () => {
         if (popupConfig.type === 'success') {
-            
+
         } else {
             setShowPopup(false);
         }
@@ -422,6 +462,15 @@ const DepartmentEmployee = () => {
     };
 
     const filteredEmployees = employees.filter((employee) => {
+        if (selectedBranch && String(employee.branch?.id) !== String(selectedBranch)) {
+            return false;
+        }
+
+        // --- Apply Department Filter ---
+        if (selectedDepartment && String(employee.department?.id) !== String(selectedDepartment)) {
+            return false;
+        }
+
         const name = employee.name?.toLowerCase() || "";
         const email = employee.email?.toLowerCase() || "";
         const mobile = employee.mobile?.toLowerCase() || "";
@@ -618,7 +667,59 @@ const DepartmentEmployee = () => {
                         </select>
                     </div>
 
-                    <div className="flex items-center w-full md:w-auto flex-1">
+                    {/* Branch Filter */}
+                    <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
+                        <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+                            Branch:
+                        </label>
+                        <select
+                            id="branchFilter"
+                            className="border rounded-r-lg p-1.5 outline-none w-full"
+                            value={selectedBranch}
+                            onChange={(e) => {
+                                setSelectedBranch(e.target.value);
+                                setSelectedDepartment(""); // reset department when branch changes
+                                setCurrentPage(1);
+                            }}
+                        >
+                            <option value="">All</option>
+                            {branchData.map((branch) => (
+                                <option key={branch.id} value={branch.id}>
+                                    {branch.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+
+                    {/* Department Filter */}
+                    <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
+                        <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+                            Department:
+                        </label>
+                        <select
+                            id="departmentFilter"
+                            className="border rounded-r-lg p-1.5 outline-none w-full"
+                            value={selectedDepartment}
+                            onChange={(e) => {
+                                setSelectedDepartment(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            disabled={!selectedBranch}
+                        >
+                            <option value="">All</option>
+                            {departmentData.map((dept) => (
+                                <option key={dept.id} value={dept.id}>
+                                    {dept.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+
+
+                    {/* Search */}
+                    <div className="flex items-center w-full md:w-1/4 flex-1">
                         <input
                             type="text"
                             placeholder="Search..."

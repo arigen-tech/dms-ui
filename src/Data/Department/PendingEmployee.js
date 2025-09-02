@@ -24,6 +24,10 @@ const EmployeeRole = () => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [highlightedUserId, setHighlightedUserId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [branchData, setBranchData] = useState([]);
+  const [departmentData, setDepartmentData] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
 
   const location = useLocation();
 
@@ -32,7 +36,43 @@ const EmployeeRole = () => {
   useEffect(() => {
     fetchUsers();
     fetchEmployees();
+    fetchBranches();
   }, []);
+
+  useEffect(() => {
+    if (selectedBranch) {
+      fetchDepartments(selectedBranch);
+    } else {
+      setDepartmentData([]);
+    }
+  }, [selectedBranch]);
+
+  const fetchBranches = async () => {
+    try {
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBranchData(response.data);
+    } catch (error) {
+      console.error("Error fetching branches:", error);
+    }
+  };
+
+  const fetchDepartments = async (branchId) => {
+    try {
+      const token = localStorage.getItem("tokenKey");
+      const response = await axios.get(
+        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setDepartmentData(response.data);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    }
+  };
 
   useEffect(() => {
     // Check if there's a user ID passed from notification
@@ -184,7 +224,7 @@ const EmployeeRole = () => {
 
   const handlePopupClose = () => {
     setPopupMessage(null);
-     // This will refresh the entire page
+    // This will refresh the entire page
   };
 
   const showPopup = (message, type = 'info') => {
@@ -207,19 +247,32 @@ const EmployeeRole = () => {
   };
 
   const filteredUsers = users.filter((user) => {
+    // --- Apply Branch Filter ---
+    if (selectedBranch && String(user.branch?.id) !== String(selectedBranch)) {
+      return false;
+    }
+
+    // --- Apply Department Filter ---
+    if (selectedDepartment && String(user.department?.id) !== String(selectedDepartment)) {
+      return false;
+    }
+
+    // --- Apply Search Filter ---
     const searchFields = {
       name: user.name?.toLowerCase() || "",
       email: user.email?.toLowerCase() || "",
       mobile: user.mobile?.toLowerCase() || "",
-      branch: user.branch?.name?.toLowerCase() || "n/a",
-      department: user.department?.name?.toLowerCase() || "n/a",
-      createdBy: user.createdBy?.name?.toLowerCase() || "unknown",
-      role: user.employeeType?.toLowerCase() || "no role",
+      branch: user.branch?.name?.toLowerCase() || "",
+      department: user.department?.name?.toLowerCase() || "",
+      createdBy: user.createdBy?.name?.toLowerCase() || "",
+      role: user.role?.toLowerCase() || "",
       createdOn: user.createdOn ? formatDate(user.createdOn).toLowerCase() : ""
     };
 
     const lowerSearchTerm = searchTerm.toLowerCase();
-    return Object.values(searchFields).some(value => value.includes(lowerSearchTerm));
+    return Object.values(searchFields).some((value) =>
+      value.includes(lowerSearchTerm)
+    );
   });
 
   const totalItems = filteredUsers.length;
@@ -271,8 +324,59 @@ const EmployeeRole = () => {
             </select>
           </div>
 
-          {/* Search Input (Remaining Space) */}
-          <div className="flex items-center w-full md:w-auto flex-1">
+          {/* Branch Filter */}
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
+            <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+              Branch:
+            </label>
+            <select
+              id="branchFilter"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
+              value={selectedBranch}
+              onChange={(e) => {
+                setSelectedBranch(e.target.value);
+                setSelectedDepartment(""); // reset department when branch changes
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">All</option>
+              {branchData.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+
+          {/* Department Filter */}
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
+            <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+              Department:
+            </label>
+            <select
+              id="departmentFilter"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
+              value={selectedDepartment}
+              onChange={(e) => {
+                setSelectedDepartment(e.target.value);
+                setCurrentPage(1);
+              }}
+              disabled={!selectedBranch}
+            >
+              <option value="">All</option>
+              {departmentData.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+
+
+          {/* Search */}
+          <div className="flex items-center w-full md:w-1/4 flex-1">
             <input
               type="text"
               placeholder="Search..."
@@ -344,7 +448,7 @@ const EmployeeRole = () => {
           </table>
         </div>
 
-        
+
         {/* Pagination Controls */}
         <div className="flex items-center mt-4">
           {/* Previous Button */}
