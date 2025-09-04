@@ -43,6 +43,7 @@ import IDCardGenerator from "./Pages/IDCardGenerator";
 import FilesType from "./Pages/FilesTypes";
 import RetentionPolicypage from "./Pages/RetentionPolicypage";
 import ArchivalDashboard from "./Pages/ArchivalDashboard";
+import FileComparepage from "./Pages/FileComparepage";
 
 
 const protectedRoutes = [
@@ -84,6 +85,7 @@ const protectedRoutes = [
   { path: "/create-fileType", element: <FilesType />, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/retentionpolicy", element: <RetentionPolicypage />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN] },
   { path: "/archivalDashboard", element: <ArchivalDashboard />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/FileCompare", element: <FileComparepage />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] },
    
 ];
 

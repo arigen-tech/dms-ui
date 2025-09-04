@@ -52,7 +52,7 @@ import {
 
 function Sidebar() {
   const location = useLocation();
-  
+
 
   const [counts, setCounts] = useState(() => {
     const savedCounts = sessionStorage.getItem("counts");
@@ -163,7 +163,7 @@ function Sidebar() {
     return localStorage.getItem("isArchiveOpen") === "true";
   });
 
-  
+
 
   const handleCreateToggle = () => {
     const newCreateOpenState = !isCreateOpen;
@@ -218,7 +218,7 @@ function Sidebar() {
       )}
     </Link>
   );
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const handleInputChange = (event) => {
     setSearchTerm(event.target.value);
@@ -233,16 +233,16 @@ function Sidebar() {
           <img className="flex w-30 h-30" src={logo3} alt="DMS" />
         </div>
         <nav className="flex flex-col space-y-1">
-           <div>
+          <div>
             <input
-                    type="text"
-                    placeholder="Search Menu..."
-                    name="name"
-                    onChange={handleInputChange}
-                    maxLength={30}
-                    className="mt-1 block w-full p-1 mb-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400"
-                  />
-           </div>
+              type="text"
+              placeholder="Search Menu..."
+              name="name"
+              onChange={handleInputChange}
+              maxLength={30}
+              className="mt-1 block w-full p-1 mb-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400"
+            />
+          </div>
           {role === SYSTEM_ADMIN && (
             <>
               <SidebarLink to="/dashboard" icon={InboxIcon} text="Dashboard" />
@@ -368,6 +368,11 @@ function Sidebar() {
                       to="/search"
                       icon={DocumentMagnifyingGlassIcon}
                       text="Search Documents"
+                    />
+                    <SidebarLink
+                      to="/FileCompare"
+                      icon={DocumentMagnifyingGlassIcon}
+                      text="File Compare"
                     />
                     <SidebarLink
                       to="/searchByScan"
@@ -550,6 +555,11 @@ function Sidebar() {
                       text="Search Documents"
                     />
                     <SidebarLink
+                      to="/FileCompare"
+                      icon={DocumentMagnifyingGlassIcon}
+                      text="File Compare"
+                    />
+                    <SidebarLink
                       to="/searchByScan"
                       icon={DocumentTextIcon}
                       text="Search Documents By QR Codes"
@@ -711,6 +721,11 @@ function Sidebar() {
                       text="Search Documents"
                     />
                     <SidebarLink
+                      to="/FileCompare"
+                      icon={DocumentMagnifyingGlassIcon}
+                      text="File Compare"
+                    />
+                    <SidebarLink
                       to="/searchByScan"
                       icon={DocumentTextIcon}
                       text="Search Documents By QR Codes"
@@ -854,6 +869,11 @@ function Sidebar() {
                 to="/searchByScan"
                 icon={DocumentTextIcon}
                 text="Search Documents By QR Codes"
+              />
+              <SidebarLink
+                to="/FileCompare"
+                icon={DocumentMagnifyingGlassIcon}
+                text="File Compare"
               />
               <div>
                 <button
