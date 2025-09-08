@@ -108,7 +108,7 @@ const FileCompare = () => {
   const fetchAllDocumentHeaders = async () => {
     setIsLoading(true)
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/getAll`, {
+      const response = await axios.get(`${DOCUMENTHEADER_API}/getAllDocument`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setDocumentHeaders(response.data || [])
