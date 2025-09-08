@@ -45,6 +45,7 @@ import RetentionPolicypage from "./Pages/RetentionPolicypage";
 import ArchivalDashboard from "./Pages/ArchivalDashboard";
 import FileComparepage from "./Pages/FileComparepage";
 import ManageUserApplications from "./Pages/ManageUserApplications";
+import TemplateMasters from "./Pages/TemplateMasters";
 
 
 const protectedRoutes = [
@@ -88,6 +89,8 @@ const protectedRoutes = [
   { path: "/archivalDashboard", element: <ArchivalDashboard />, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/FileCompare", element: <FileComparepage />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] },
   { path: "/ManageUserApplications", element: <ManageUserApplications />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/TemplateMasters", element: <TemplateMasters />, allowedRoles: [SYSTEM_ADMIN] },
+
 
    
 ];

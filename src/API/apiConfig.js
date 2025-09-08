@@ -1,7 +1,7 @@
- export const API_HOST = 'http://103.133.215.182:8558/Dms';
+//  export const API_HOST = 'http://103.133.215.182:8558/Dms';
 
 
-//  export const API_HOST = 'http://localhost:8443'; 
+ export const API_HOST = 'http://localhost:8443'; 
 //  export const API_HOST = 'http://52.66.126.151:8080/dms';
 
 //  export const API_HOST = 'http://192.168.1.12:8080';
@@ -34,6 +34,11 @@ export const UPLOADFILE_API = `${API_HOST}/api/upload`;
 export const YEAR_API = `${API_HOST}/YearMaster`;
 export const FILETYPE_API = `${API_HOST}/file-type`;
 export const SCAN_API = `${API_HOST}/api/scan`;
+export const ALL_USER_APPLICATION=`/applications/getAllUserApplications`;
+export const USER_APPLICATION=`/applications`;
+export const MAS_TEMPLATE = `mas-templates`;
+
+
 
 
 

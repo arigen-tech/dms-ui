@@ -328,6 +328,12 @@ function Sidebar() {
                       // count={counts.annualYear}
                     />
                     <SidebarLink
+                      to="/templateMasters"
+                      icon={UserIcon}
+                      text="Template Masters"
+                      // count={counts.annualYear}
+                    />
+                    <SidebarLink
                       to="/create-fileType"
                       icon={GiFiles}
                       text="Files Types"
