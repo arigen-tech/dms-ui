@@ -333,6 +333,12 @@ function Sidebar() {
                       text="Template Masters"
                       // count={counts.annualYear}
                     />
+                     <SidebarLink
+                      to="/Add-form-reports"
+                      icon={UserIcon}
+                      text="Add Form Reports"
+                      // count={counts.annualYear}
+                    />
                     <SidebarLink
                       to="/create-fileType"
                       icon={GiFiles}

@@ -37,6 +37,8 @@ export const SCAN_API = `${API_HOST}/api/scan`;
 export const ALL_USER_APPLICATION=`/applications/getAllUserApplications`;
 export const USER_APPLICATION=`/applications`;
 export const MAS_TEMPLATE = `mas-templates`;
+export const MAS_APPLICATION = `/mas-applications`;
+
 
 
 
