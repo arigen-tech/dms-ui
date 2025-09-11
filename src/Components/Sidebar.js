@@ -340,6 +340,12 @@ function Sidebar() {
                       // count={counts.annualYear}
                     />
                     <SidebarLink
+                      to="/Assign-applications"
+                      icon={UserIcon}
+                      text="assign applications"
+                      // count={counts.annualYear}
+                    />
+                    <SidebarLink
                       to="/create-fileType"
                       icon={GiFiles}
                       text="Files Types"

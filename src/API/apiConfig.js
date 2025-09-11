@@ -38,6 +38,8 @@ export const ALL_USER_APPLICATION=`/dynamic-sidebar/application/getAllUserApplic
 export const USER_APPLICATION=`/dynamic-sidebar/application`;
 export const MAS_TEMPLATE = `mas-templates`;
 export const MAS_APPLICATION = `/mas-applications`;
+export const ASSIGN_TEMPLATES=`/template-applications`;
+
 
 
 
