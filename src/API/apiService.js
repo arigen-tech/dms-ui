@@ -1,5 +1,4 @@
 import { API_HOST } from "../API/apiConfig";
-const BASE_URL = API_HOST;
 
 /**
  * Function to call GET API
@@ -10,12 +9,12 @@ const BASE_URL = API_HOST;
 export const getRequest = async (endpoint, headers = {}) => {
   try {
     let token;
-    if (localStorage.token) {
-      token = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+    if (localStorage.tokenKey) {
+      token = { Authorization: `Bearer ${localStorage.getItem("tokenKey")}` };
     } else {
-      token = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+      token = { Authorization: `Bearer ${sessionStorage.getItem("tokenKey")}` };
     }
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -38,13 +37,13 @@ export const getRequest = async (endpoint, headers = {}) => {
 export const getImageRequest = async (endpoint, headers = {}, responseType = "json") => {
   try {
     let token;
-    if (localStorage.token) {
-      token = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+    if (localStorage.tokenKey) {
+      token = { Authorization: `Bearer ${localStorage.getItem("tokenKey")}` };
     } else {
-      token = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+      token = { Authorization: `Bearer ${sessionStorage.getItem("tokenKey")}` };
     }
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "GET",
       headers: {
         ...(responseType === "json" && { "Content-Type": "application/json" }),
@@ -83,12 +82,12 @@ export const getImageRequest = async (endpoint, headers = {}, responseType = "js
 export const postRequest = async (endpoint, data, headers = {}) => {
   try {
     let token;
-    if (localStorage.token) {
-      token = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+    if (localStorage.tokenKey) {
+      token = { Authorization: `Bearer ${localStorage.getItem("tokenKey")}` };
     } else {
-      token = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+      token = { Authorization: `Bearer ${sessionStorage.getItem("tokenKey")}` };
     }
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -117,14 +116,14 @@ export const postRequest = async (endpoint, data, headers = {}) => {
  */
 export const postRequestWithFormData = async (endpoint, formData) => {
   try {
-    let token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    let token = localStorage.getItem("tokenKey") || sessionStorage.getItem("tokenKey");
 
-    console.log(`Sending request to: ${BASE_URL}${endpoint}`);
+    console.log(`Sending request to: ${API_HOST}${endpoint}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,  // ✅ Keep only this
@@ -167,12 +166,12 @@ export const postRequestWithFormData = async (endpoint, formData) => {
 export const putRequest = async (endpoint, data, headers = {}) => {
   try {
     let token;
-    if (localStorage.token) {
-      token = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+    if (localStorage.tokenKey) {
+      token = { Authorization: `Bearer ${localStorage.getItem("tokenKey")}` };
     } else {
-      token = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+      token = { Authorization: `Bearer ${sessionStorage.getItem("tokenKey")}` };
     }
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -198,9 +197,9 @@ const uploadFileWithJson = async (endpoint, jsonData, files) => {
     throw new Error("No valid file provided!");
   }
 
-  let token = localStorage.token
-    ? { Authorization: `Bearer ${localStorage.getItem("token")}` }
-    : { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+  let token = localStorage.tokenKey
+    ? { Authorization: `Bearer ${localStorage.getItem("tokenKey")}` }
+    : { Authorization: `Bearer ${sessionStorage.getItem("tokenKey")}` };
 
   const formData = new FormData();
   formData.append(
@@ -216,7 +215,7 @@ const uploadFileWithJson = async (endpoint, jsonData, files) => {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "POST",
       headers: { ...token },
       body: formData,
@@ -237,7 +236,7 @@ export { uploadFileWithJson };
 
 const updateFileWithJson = async (endpoint, jsonData, files) => {
 
-  let token = localStorage.token
+  let token = localStorage.tokenKey
     ? { Authorization: `Bearer ${localStorage.getItem("token")}` }
     : { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
 
@@ -254,7 +253,7 @@ const updateFileWithJson = async (endpoint, jsonData, files) => {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "PUT", 
       headers: { ...token },
       body: formData,
@@ -276,10 +275,10 @@ export { updateFileWithJson };
 
 async function uploadMultiFileWithJson(endpoint, jsonData, files1, files2) {
   let token;
-  if (localStorage.token) {
-    token = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+  if (localStorage.tokenKey) {
+    token = { Authorization: `Bearer ${localStorage.getItem("tokenKey")}` };
   } else {
-    token = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+    token = { Authorization: `Bearer ${sessionStorage.getItem("tokenKey")}` };
   }
 
   const formData = new FormData();
@@ -291,7 +290,7 @@ async function uploadMultiFileWithJson(endpoint, jsonData, files1, files2) {
   formData.append(`thumbImage`, files2);
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "POST",
       headers: {
         ...token,
@@ -318,10 +317,10 @@ export { uploadMultiFileWithJson };
 
 async function updateMultiFileWithJson(endpoint, jsonData, files1, files2) {
   let token;
-  if (localStorage.token) {
-    token = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+  if (localStorage.tokenKey) {
+    token = { Authorization: `Bearer ${localStorage.getItem("tokenKey")}` };
   } else {
-    token = { Authorization: `Bearer ${sessionStorage.getItem("token")}` };
+    token = { Authorization: `Bearer ${sessionStorage.getItem("tokenKey")}` };
   }
 
   const formData = new FormData();
@@ -337,7 +336,7 @@ async function updateMultiFileWithJson(endpoint, jsonData, files1, files2) {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_HOST}${endpoint}`, {
       method: "PUT", // Use PUT or PATCH based on your API
       headers: {
         ...token,

@@ -7,6 +7,8 @@ import {
   PencilIcon,
   PlusCircleIcon,
   ArrowPathIcon,
+  LockClosedIcon,
+  LockOpenIcon,
 } from "@heroicons/react/24/solid"
 import { ALL_USER_APPLICATION, USER_APPLICATION } from "../API/apiConfig"
 import LoadingComponent from '../Components/LoadingComponent';
@@ -149,11 +151,11 @@ const ManageUserApplication = () => {
             prevData.map((app) =>
               app.id === editingApplication.id
                 ? {
-                    ...app,
-                    menuName: updatedApplication.userAppName || formData.menuName,
-                    url: updatedApplication.url || formData.url,
-                    status: updatedApplication.status || app.status,
-                  }
+                  ...app,
+                  menuName: updatedApplication.userAppName || formData.menuName,
+                  url: updatedApplication.url || formData.url,
+                  status: updatedApplication.status || app.status,
+                }
                 : app,
             ),
           )
@@ -167,7 +169,7 @@ const ManageUserApplication = () => {
         const response = await postRequest(`${USER_APPLICATION}/create`, {
           userAppName: formData.menuName,
           url: formData.url,
-          status: "y",
+          // status: "y",
         })
 
         console.log("Create Response:", response)
@@ -419,21 +421,7 @@ const ManageUserApplication = () => {
                       <tr key={application.id}>
                         <td className="border p-2">{application.menuName || "No Name"}</td>
                         <td className="border p-2">{application.url || "No URL"}</td>
-                        <td className="border p-2">
-                          <label className="inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="sr-only peer"
-                              checked={application.status?.toLowerCase() === "y"}
-                              onChange={() => handleSwitchChange(application.id, application.status)}
-                            />
-                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            <span className="ms-3 text-sm font-medium text-gray-900">
-                              {application.status?.toLowerCase() === "y" ? "Active" : "Deactivated"}
-                            </span>
-                          </label>
-                        </td>
-                        <td className="border p-2 text-center">
+                         <td className="border p-2 text-center">
                           <button
                             onClick={() => handleEdit(application)}
                             disabled={application.status?.toLowerCase() !== "y"}
@@ -441,6 +429,20 @@ const ManageUserApplication = () => {
                           >
                             <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                           </button>
+                        </td>
+                        <td className="border p-2">
+                          <button
+                            onClick={() => handleSwitchChange(application.id, application.status)}
+                            className={`p-1 rounded-full ${application.status?.toLowerCase() === "y" ? "bg-green-500" : "bg-red-500"
+                              }`}
+                          >
+                            {application.status?.toLowerCase() === "y" ? (
+                              <LockOpenIcon className="h-5 w-5 text-white p-0.5" />
+                            ) : (
+                              <LockClosedIcon className="h-5 w-5 text-white p-0.5" />
+                            )}
+                          </button>
+
                         </td>
                       </tr>
                     ))}
