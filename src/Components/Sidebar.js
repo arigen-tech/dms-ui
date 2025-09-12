@@ -346,6 +346,12 @@ function Sidebar() {
                       // count={counts.annualYear}
                     />
                     <SidebarLink
+                      to="/Role-rights"
+                      icon={UserIcon}
+                      text="Role Rights"
+                      // count={counts.annualYear}
+                    />
+                    <SidebarLink
                       to="/create-fileType"
                       icon={GiFiles}
                       text="Files Types"

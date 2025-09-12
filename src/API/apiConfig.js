@@ -39,7 +39,8 @@ export const USER_APPLICATION=`/dynamic-sidebar/application`;
 export const MAS_TEMPLATE = `/dynamic-sidebar/mas-templates`;
 export const MAS_APPLICATION = `/dynamic-sidebar/mas-applications`;
 export const ASSIGN_TEMPLATES=`/dynamic-sidebar/template-applications`;
-
+export const MAS_ROLES = `/mas-roles`;
+export const ROLE_TEMPLATE=`/role-template`;
 
 
 
