@@ -414,6 +414,7 @@ const ManageUserApplication = () => {
                       <th className="border p-2 text-left">URL</th>
                       <th className="border p-2 text-left">Status</th>
                       <th className="border p-2 text-left">Edit</th>
+                      <th className="border p-2 text-left">Access</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -421,6 +422,7 @@ const ManageUserApplication = () => {
                       <tr key={application.id}>
                         <td className="border p-2">{application.menuName || "No Name"}</td>
                         <td className="border p-2">{application.url || "No URL"}</td>
+                        <td className="border p-2">{application.status === "y" ? 'Active' : 'Inactive'}</td>
                          <td className="border p-2 text-center">
                           <button
                             onClick={() => handleEdit(application)}

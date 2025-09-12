@@ -1,7 +1,7 @@
-//  export const API_HOST = 'http://103.133.215.182:8558/Dms';
+ export const API_HOST = 'http://103.133.215.182:8558/Dms';
 
 
- export const API_HOST = 'http://localhost:8080'; 
+//  export const API_HOST = 'http://localhost:8080'; 
 //  export const API_HOST = 'http://52.66.126.151:8080/dms';
 
 //  export const API_HOST = 'http://192.168.1.12:8080';
@@ -27,7 +27,7 @@ export const LOGOUT_API = `${API_HOST}/logout`;
 export const FORGATE_PASS_API = `${API_HOST}/auth/forgot-password`;
 export const RESET_PASS_API = `${API_HOST}/auth/reset-password`;
 export const VERIFY_FORGATE_OTP = `${API_HOST}/auth/verify-forgot-password-otp`;
-export const REGISTER_API = `${API_HOST}/newRegister`;
+export const REGISTER_API = `${API_HOST}/register`;
 export const ROLE_API = `${API_HOST}/RoleMaster`;
 export const TYPE_API = `${API_HOST}/TypeMaster`;
 export const UPLOADFILE_API = `${API_HOST}/api/upload`;
@@ -36,9 +36,9 @@ export const FILETYPE_API = `${API_HOST}/file-type`;
 export const SCAN_API = `${API_HOST}/api/scan`;
 export const ALL_USER_APPLICATION=`/dynamic-sidebar/application/getAllUserApplications`;
 export const USER_APPLICATION=`/dynamic-sidebar/application`;
-export const MAS_TEMPLATE = `mas-templates`;
-export const MAS_APPLICATION = `/mas-applications`;
-export const ASSIGN_TEMPLATES=`/template-applications`;
+export const MAS_TEMPLATE = `/dynamic-sidebar/mas-templates`;
+export const MAS_APPLICATION = `/dynamic-sidebar/mas-applications`;
+export const ASSIGN_TEMPLATES=`/dynamic-sidebar/template-applications`;
 
 
 
