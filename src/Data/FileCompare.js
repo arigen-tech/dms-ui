@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useRef } from "react"
 import {
   DocumentDuplicateIcon,
@@ -12,6 +11,7 @@ import {
   FilmIcon,
   SpeakerWaveIcon,
   ExclamationTriangleIcon,
+  CodeBracketIcon,
 } from "@heroicons/react/24/solid"
 import axios from "axios"
 
@@ -19,10 +19,13 @@ import { DOCUMENTHEADER_API, API_HOST } from "../API/apiConfig"
 import LoadingComponent from '../Components/LoadingComponent';
 import Popup from '../Components/Popup';
 
-
 const tokenKey = "tokenKey"
 
 const imageExtensions = ["png", "jpg", "jpeg", "gif", "bmp", "svg", "tiff", "webp", "heic", "heif"]
+const textExtensions = ["txt", "csv", "log", "xml", "html", "htm", "js", "jsx", "ts",
+  "css", "scss", "json", "md", "yml", "yaml", "java", "py", "cpp",
+  "c", "h", "php", "rb", "go", "rs", "swift", "kt"];
+const textMimes = ["text/", "application/json", "application/xml", "application/javascript"];
 
 function getExtension(nameOrType) {
   if (!nameOrType) return ""
@@ -47,6 +50,14 @@ function isImageByMeta(fileType, contentType, fileName) {
   const isImgExt = imageExtensions.includes(extFromType) || imageExtensions.includes(extFromName)
   const isImgMime = (contentType || "").toLowerCase().includes("image/")
   return isImgExt || isImgMime
+}
+
+function isTextFile(fileType, contentType, fileName) {
+  const extFromType = getExtension(fileType)
+  const extFromName = getExtension(fileName)
+  const isTextExt = textExtensions.includes(extFromType) || textExtensions.includes(extFromName)
+  const isTextMime = textMimes.some(mime => (contentType || "").toLowerCase().includes(mime))
+  return isTextExt || isTextMime
 }
 
 // Function to extract filename by removing the first part (before first underscore)
@@ -94,12 +105,10 @@ const FileCompare = () => {
     }
   }, [warningMessage])
 
-
-
   const fetchAllDocumentHeaders = async () => {
     setIsLoading(true)
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/getAll`, {
+      const response = await axios.get(`${DOCUMENTHEADER_API}/getAllDocument`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setDocumentHeaders(response.data || [])
@@ -405,6 +414,7 @@ const FileCompare = () => {
             fileType: leftFileType,
             path: apiResponse.comparisonResult?.leftFile?.filePath || file1?.path || "",
             detailsId: file1?.detailsId || null,
+            highlightedContent: apiResponse.comparisonResult?.leftFile?.highlightedContent || ""
           },
           rightFile: {
             fileName:
@@ -413,6 +423,7 @@ const FileCompare = () => {
             fileType: rightFileType,
             path: apiResponse.comparisonResult?.rightFile?.filePath || file2?.path || "",
             detailsId: file2?.detailsId || null,
+           highlightedContent: apiResponse.comparisonResult?.rightFile?.highlightedContent || ""
           },
           diffImagePath: apiResponse.diffImagePath, // may exist for image diffs
         }
@@ -460,7 +471,6 @@ const FileCompare = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-
       }
     });
   };
@@ -563,6 +573,15 @@ const FileCompare = () => {
     const leftIsImage = isImageByMeta(left?.fileType, fileUrls.firstFile?.contentType, left?.fileName)
     const rightIsImage = isImageByMeta(right?.fileType, fileUrls.secondFile?.contentType, right?.fileName)
     return !!(leftIsImage && rightIsImage && fileUrls.firstFile?.url && fileUrls.secondFile?.url)
+  }, [comparisonResult, fileUrls.firstFile, fileUrls.secondFile])
+
+  const bothText = useMemo(() => {
+    if (!comparisonResult) return false
+    const left = comparisonResult.leftFile
+    const right = comparisonResult.rightFile
+    const leftIsText = isTextFile(left?.fileType, fileUrls.firstFile?.contentType, left?.fileName)
+    const rightIsText = isTextFile(right?.fileType, fileUrls.secondFile?.contentType, right?.fileName)
+    return !!(leftIsText && rightIsText && fileUrls.firstFile?.url && fileUrls.secondFile?.url)
   }, [comparisonResult, fileUrls.firstFile, fileUrls.secondFile])
 
   return (
@@ -804,6 +823,17 @@ const FileCompare = () => {
                       Visual Diff (Images)
                     </button>
                   )}
+                  {bothText && (
+                    <button
+                      onClick={() => setActiveTab("textDiff")}
+                      className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "textDiff"
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        }`}
+                    >
+                      Text Comparison
+                    </button>
+                  )}
                 </nav>
               </div>
 
@@ -870,14 +900,25 @@ const FileCompare = () => {
                   </div>
                 ) : activeTab === "differences" ? (
                   renderDifferencesView()
-                ) : (
+                ) : activeTab === "visualDiff" ? (
                   <VisualDiffPanel
                     leftUrl={fileUrls.firstFile?.url || ""}
                     rightUrl={fileUrls.secondFile?.url || ""}
                     leftName={extractFileName(comparisonResult.leftFile.fileName)}
                     rightName={extractFileName(comparisonResult.rightFile.fileName)}
                   />
-                )}
+                ) : activeTab === "textDiff" ? (
+                  <TextDiffPanel
+                    leftContent={comparisonResult.comparisonResult?.leftFile?.content || []}
+                    rightContent={comparisonResult.comparisonResult?.rightFile?.content || []}
+                    differences={comparisonResult.differences || []}
+                    leftName={extractFileName(comparisonResult.leftFile.fileName)}
+                    rightName={extractFileName(comparisonResult.rightFile.fileName)}
+                    comparisonResult={comparisonResult.comparisonResult}
+                    leftHighlightedContent={comparisonResult.leftFile.highlightedContent}
+                    rightHighlightedContent={comparisonResult.rightFile.highlightedContent}
+                  />
+                ) : null}
               </div>
 
               {/* Footer */}
@@ -1158,4 +1199,309 @@ function VisualDiffPanel({
       </div>
     </div>
   )
+}
+
+/* Text diff panel for text files with inline highlighted differences */
+function TextDiffPanel({ 
+  leftContent, 
+  rightContent, 
+  differences, 
+  leftName, 
+  rightName, 
+  comparisonResult,
+  leftHighlightedContent,
+  rightHighlightedContent 
+}) {
+  const [viewMode, setViewMode] = useState('full-document'); // Default to full document view
+
+  // Extract highlighted content from the comparison result
+  const leftHighlighted = leftHighlightedContent || 
+                         (comparisonResult?.leftFile?.highlightedContent || '');
+  const rightHighlighted = rightHighlightedContent || 
+                          (comparisonResult?.rightFile?.highlightedContent || '');
+
+  // Function to render highlighted content with proper styling
+  const renderHighlightedContent = (content, isLeft = true) => {
+    if (!content) {
+      return (
+        <div className="no-content">
+          No content available for {isLeft ? leftName : rightName}
+        </div>
+      );
+    }
+
+    // If content is already HTML (contains span tags with diff classes)
+    if (content.includes('<span class="diff-')) {
+      return (
+        <div 
+          className="highlighted-content"
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
+      );
+    }
+
+    // If content is plain text (array of lines)
+    if (Array.isArray(content)) {
+      return (
+        <div className="full-document-content">
+          {content.map((line, index) => {
+            // Check if this line has differences
+            const lineDiff = differences?.find(d => 
+              (isLeft && d.leftLineNumber === index + 1) || 
+              (!isLeft && d.rightLineNumber === index + 1)
+            );
+            
+            let className = "document-line";
+            if (lineDiff) {
+              if (lineDiff.type === 'DELETED') className += " deleted";
+              else if (lineDiff.type === 'ADDED') className += " added";
+              else if (lineDiff.type === 'MODIFIED') className += " modified";
+            }
+            
+            return (
+              <div key={index} className={className}>
+                {line || <span className="empty-line">&nbsp;</span>}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Fallback for string content
+    return (
+      <div className="full-document-content">
+        {content.split('\n').map((line, index) => (
+          <div key={index} className="document-line">
+            {line}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderFullDocumentView = () => (
+    <div className="grid grid-cols-2 gap-4 h-full overflow-auto p-4">
+      {/* Left Document - Full Content */}
+      <div className="border rounded-lg bg-white overflow-hidden">
+        <div className="sticky top-0 bg-blue-50 p-3 border-b font-medium text-blue-800 flex justify-between items-center">
+          <span>{leftName} (Original)</span>
+          <span className="text-xs font-normal text-blue-600">
+            {differences && differences.filter(d => d.type === 'DELETED' || d.type === 'MODIFIED').length} changes
+          </span>
+        </div>
+        <div className="p-4 overflow-auto max-h-96 full-document-container">
+          {renderHighlightedContent(leftHighlighted || leftContent, true)}
+        </div>
+      </div>
+
+      {/* Right Document - Full Content */}
+      <div className="border rounded-lg bg-white overflow-hidden">
+        <div className="sticky top-0 bg-blue-50 p-3 border-b font-medium text-blue-800 flex justify-between items-center">
+          <span>{rightName} (Modified)</span>
+          <span className="text-xs font-normal text-blue-600">
+            {differences && differences.filter(d => d.type === 'ADDED' || d.type === 'MODIFIED').length} changes
+          </span>
+        </div>
+        <div className="p-4 overflow-auto max-h-96 full-document-container">
+          {renderHighlightedContent(rightHighlighted || rightContent, false)}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDifferencesOnlyView = () => (
+    <div className="h-full overflow-auto p-4">
+      <div className="space-y-3">
+        {differences && differences.length > 0 ? (
+          differences.map((diff, index) => (
+            <div key={index} className={`p-3 rounded-lg border-l-4 ${
+              diff.type === 'ADDED' ? 'bg-green-100 border-green-400' :
+              diff.type === 'DELETED' ? 'bg-red-100 border-red-400' :
+              'bg-yellow-100 border-yellow-400'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  diff.type === 'ADDED' ? 'bg-green-100 text-green-800' :
+                  diff.type === 'DELETED' ? 'bg-red-100 text-red-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {diff.type}
+                </span>
+                <div className="text-xs text-gray-600">
+                  Line {diff.leftLineNumber !== -1 ? diff.leftLineNumber : "N/A"} →{" "}
+                  {diff.rightLineNumber !== -1 ? diff.rightLineNumber : "N/A"}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs font-medium text-gray-600 mb-1">Original</div>
+                  <div className="text-sm bg-white p-2 rounded border font-mono">
+                    {diff.leftContent || <span className="text-gray-400 italic">No content</span>}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-gray-600 mb-1">Modified</div>
+                  <div className="text-sm bg-white p-2 rounded border font-mono">
+                    {diff.rightContent || <span className="text-gray-400 italic">No content</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <p className="text-lg font-medium text-gray-700">No differences found</p>
+              <p className="text-sm text-gray-500">Files are identical</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between p-3 border-b bg-white">
+        <div className="text-sm text-gray-700">
+          <span className="font-medium">{leftName}</span> vs <span className="font-medium">{rightName}</span>
+          {differences && differences.length > 0 && (
+            <span className="ml-3 text-red-600">({differences.length} differences found)</span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-red-100 border border-red-500 mr-1"></div>
+              <span>Deleted content</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-green-100 border border-green-500 mr-1"></div>
+              <span>Added content</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-yellow-100 border border-yellow-500 mr-1"></div>
+              <span>Modified content</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('full-document')}
+              className={`px-3 py-1 rounded text-xs ${
+                viewMode === 'full-document' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              Full Document
+            </button>
+            <button
+              onClick={() => setViewMode('differences-only')}
+              className={`px-3 py-1 rounded text-xs ${
+                viewMode === 'differences-only' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              Differences Only
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* CSS styles for full document display */}
+      <style>
+        {`
+          .full-document-container {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+          }
+          
+          .full-document-content {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          }
+          
+          .document-line {
+            padding: 4px 8px;
+            margin: 2px 0;
+            border-left: 3px solid transparent;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+          }
+          
+          .document-line.empty-line {
+            height: 1.2em;
+            background-color: #f9fafb;
+          }
+          
+          .document-line.deleted {
+            background-color: #fef2f2;
+            color: #dc2626;
+            text-decoration: line-through;
+            border-left-color: #dc2626;
+          }
+          
+          .document-line.added {
+            background-color: #f0fdf4;
+            color: #16a34a;
+            border-left-color: #16a34a;
+          }
+          
+          .document-line.modified {
+            background-color: #fffbeb;
+            color: #ca8a04;
+            border-left-color: #ca8a04;
+          }
+          
+          .highlighted-content {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+          }
+          
+          .highlighted-content .diff-deleted {
+            background-color: #fef2f2;
+            color: #dc2626;
+            text-decoration: line-through;
+          }
+          
+          .highlighted-content .diff-added {
+            background-color: #f0fdf4;
+            color: #16a34a;
+          }
+          
+          .highlighted-content .diff-modified {
+            background-color: #fffbeb;
+            color: #ca8a04;
+          }
+          
+          .no-content {
+            color: #9ca3af;
+            font-style: italic;
+            padding: 16px;
+            text-align: center;
+          }
+        `}
+      </style>
+      
+      <div className="flex-1 overflow-hidden bg-gray-50">
+        {viewMode === 'full-document' ? renderFullDocumentView() : renderDifferencesOnlyView()}
+      </div>
+    </div>
+  );
 }

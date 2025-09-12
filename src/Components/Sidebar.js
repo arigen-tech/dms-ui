@@ -47,6 +47,7 @@ import {
   DEPARTMENT_ADMIN,
   USER,
 } from "../API/apiConfig";
+import { UserIcon } from "lucide-react";
 
 
 
@@ -318,6 +319,31 @@ function Sidebar() {
                       icon={CalendarDaysIcon}
                       text="Years"
                       count={counts.annualYear}
+                    />
+
+                    <SidebarLink
+                      to="/manageUserApplications"
+                      icon={UserIcon}
+                      text="Manage User Applications"
+                      // count={counts.annualYear}
+                    />
+                    <SidebarLink
+                      to="/templateMasters"
+                      icon={UserIcon}
+                      text="Template Masters"
+                      // count={counts.annualYear}
+                    />
+                     <SidebarLink
+                      to="/Add-form-reports"
+                      icon={UserIcon}
+                      text="Add Form Reports"
+                      // count={counts.annualYear}
+                    />
+                    <SidebarLink
+                      to="/Assign-applications"
+                      icon={UserIcon}
+                      text="assign applications"
+                      // count={counts.annualYear}
                     />
                     <SidebarLink
                       to="/create-fileType"
