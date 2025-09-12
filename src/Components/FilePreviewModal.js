@@ -432,7 +432,7 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
     <div className={`fixed inset-0 flex items-center justify-center z-[9000] bg-gray-800 bg-opacity-75 ${className}`}>
       <div className="bg-white rounded-xl shadow-xl w-11/12 max-w-4xl p-4 relative">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">{ogFileName}</h2>
+          <h2 className="text-lg font-semibold">{fileName}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
