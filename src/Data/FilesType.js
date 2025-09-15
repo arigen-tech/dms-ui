@@ -88,42 +88,55 @@ const FilesType = () => {
     return extension.match(/^\.[a-zA-Z0-9]+$/);
   };
 
-  const handleAddFileType = async () => {
-    if (!formData.filetype || !formData.extension) {
-      showPopup('Please fill in all required fields!', "warning");
-      return;
-    }
+const handleAddFileType = async () => {
+  if (!formData.filetype || !formData.extension) {
+    showPopup('Please fill in all required fields!', "warning");
+    return;
+  }
 
-    if (!validateExtension(formData.extension)) {
-      showPopup('Extension must start with a dot (.) and contain only letters/numbers (e.g., .pdf, .docx)', "error");
-      return;
-    }
+  if (!validateExtension(formData.extension)) {
+    showPopup(
+      'Extension must start with a dot (.) and contain only letters/numbers (e.g., .pdf, .docx)',
+      "error"
+    );
+    return;
+  }
 
-    try {
-      const newFileType = {
-        ...formData,
-        createdOn: new Date().toISOString(),
-        updatedOn: new Date().toISOString(),
-        isActive: formData.isActive ? 1 : 0,
-      };
+  try {
+    const newFileType = {
+      ...formData,
+      createdOn: new Date().toISOString(),
+      updatedOn: new Date().toISOString(),
+      isActive: formData.isActive ? 1 : 0,
+    };
 
-      const response = await axios.post(`${FILETYPE_API}/create`, newFileType, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+    const response = await axios.post(`${FILETYPE_API}/create`, newFileType, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
 
-      setFilesType([...filesType, response.data]);
-      setFormData({ filetype: '', extension: '', isActive: true });
+    // ✅ Use response.data.data (since your backend wraps data inside ApiResponse)
+    setFilesType([...filesType, response.data.data]);
+    setFormData({ filetype: '', extension: '', isActive: true });
 
-      showPopup('FileType added successfully!', "success");
-      fetchFilesType();
-    } catch (error) {
-      console.error('Error adding FileType:', error.response ? error.response.data : error.message);
-      showPopup(error.response?.data || 'Failed to add FileType', "error");
-    }
-  };
+    showPopup('FileType added successfully!', "success");
+    fetchFilesType();
+
+  } catch (error) {
+    console.error('Error adding FileType:', error.response ? error.response.data : error.message);
+
+    // ✅ Extract proper message from backend
+    const errorMessage =
+      error.response?.data?.message || // backend ApiResponse.message
+      error.response?.data?.error ||   // fallback if backend sends {error: "..."}
+      'Failed to add FileType';
+
+    showPopup(errorMessage, "error");
+  }
+};
+
 
   const handleEditFileType = (fileTypeId) => {
     seteditingFileTypeId(fileTypeId);

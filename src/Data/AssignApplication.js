@@ -3,10 +3,10 @@ import { postRequest, putRequest, getRequest } from "../API/apiService";
 import { API_HOST, MAS_TEMPLATE, ASSIGN_TEMPLATES, MAS_APPLICATION } from "../API/apiConfig";
 import LoadingComponent from '../Components/LoadingComponent';
 import {
-  PlusCircleIcon,
-  CheckCircleIcon,
-  ChevronDownIcon,
-  ChevronRightIcon
+    PlusCircleIcon,
+    CheckCircleIcon,
+    ChevronDownIcon,
+    ChevronRightIcon
 } from '@heroicons/react/24/solid';
 import Popup from "../Components/Popup"
 
@@ -52,7 +52,7 @@ const AssignApplication = () => {
                                 status: app.status || "n"
                             });
                         }
-                        
+
                         if (app.children) {
                             findParentApps(app.children);
                         }
@@ -251,28 +251,28 @@ const AssignApplication = () => {
                 const parentChain = clickedItem.displayName.split("->");
                 parentChain.pop();
                 let currentPath = "";
-                
+
                 for (let i = 0; i < parentChain.length; i++) {
                     if (i === 0) {
                         currentPath = parentChain[i];
                     } else {
                         currentPath = `${currentPath}->${parentChain[i]}`;
                     }
-                    
+
                     const parentIndex = newData.findIndex(item => item.displayName === currentPath);
-                    
+
                     if (parentIndex !== -1) {
                         newData[parentIndex] = { ...newData[parentIndex], checked: true };
                     }
                 }
             }
-            
+
             if (!newCheckedState && clickedItem.isParent) {
                 const clickedPath = clickedItem.displayName;
-                
+
                 for (let i = 0; i < newData.length; i++) {
                     const item = newData[i];
-                    if (item.displayName !== clickedPath && 
+                    if (item.displayName !== clickedPath &&
                         item.displayName.startsWith(clickedPath + "->")) {
                         newData[i] = { ...item, checked: false };
                     }
@@ -293,7 +293,7 @@ const AssignApplication = () => {
     const handleSave = async () => {
         try {
             setLoading(true);
-            
+
             const selectedChildren = childApplications.filter(item => item.checked);
             const unselectedChildren = childApplications.filter(item => !item.checked);
 
@@ -303,7 +303,7 @@ const AssignApplication = () => {
                     type: "warning",
                     onClose: () => setPopupMessage(null)
                 });
-                setLoading(false); 
+                setLoading(false);
                 return;
             }
 
@@ -318,7 +318,7 @@ const AssignApplication = () => {
                 templateApplicationAssignments.push({
                     templateId: Number(selectedTemplate),
                     appId: selectedParentApp,
-                    status: "y"  
+                    status: "y"
                 });
             }
 
@@ -344,7 +344,7 @@ const AssignApplication = () => {
                 } else {
                     applicationStatusUpdates.push({
                         appId: appId,
-                        status: "n" 
+                        status: "n"
                     });
                 }
             });
@@ -361,7 +361,7 @@ const AssignApplication = () => {
                         if (!hasUpdate) {
                             applicationStatusUpdates.push({
                                 appId: appId,
-                                status: "n"  
+                                status: "n"
                             });
                         }
                     }
@@ -374,7 +374,7 @@ const AssignApplication = () => {
                     type: "info",
                     onClose: () => setPopupMessage(null)
                 });
-                setLoading(false); 
+                setLoading(false);
                 return;
             }
 
@@ -476,173 +476,179 @@ const AssignApplication = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="px-2">
             <h1 className="text-2xl font-semibold mb-6 text-gray-800">Assign Application To Template</h1>
 
-            {popupMessage && (
-                <Popup
-                    message={popupMessage.message}
-                    type={popupMessage.type}
-                    onClose={popupMessage.onClose}
-                />
-            )}
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="mb-4 bg-slate-100 p-4 rounded-lg">
 
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
-                    <div className="md:col-span-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Template Name <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            required
-                            onChange={handleTemplateSelect}
-                            value={selectedTemplate}
-                        >
-                            <option value="" disabled>Select Template</option>
-                            {templates.map((template) => (
-                                <option key={template.id} value={template.id}>
-                                    {template.templateName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
 
-                    <div className="md:col-span-3">
-                        <button
-                            type="button"
-                            className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg hover:bg-blue-800 transition-colors flex items-center justify-center"
-                            onClick={handleAddClick}
-                        >
-                            <PlusCircleIcon className="h-5 w-5 mr-2" />
-                            Application
-                        </button>
-                    </div>
-                </div>
+                {popupMessage && (
+                    <Popup
+                        message={popupMessage.message}
+                        type={popupMessage.type}
+                        onClose={popupMessage.onClose}
+                    />
+                )}
 
-                {showModuleSection && (
+                
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
                         <div className="md:col-span-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Module Name
+                                Template Name <span className="text-red-500">*</span>
                             </label>
                             <select
                                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
-                                onChange={handleParentApplicationSelect}
-                                value={selectedParentApp}
+                                onChange={handleTemplateSelect}
+                                value={selectedTemplate}
                             >
-                                <option value="" disabled>Select Parent Application</option>
-                                {parentApplications.map((app) => (
-                                    <option key={app.id} value={app.id}>
-                                        {app.applicationName}
+                                <option value="" disabled>Select Template</option>
+                                {templates.map((template) => (
+                                    <option key={template.id} value={template.id}>
+                                        {template.templateName}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                    </div>
-                )}
 
-                {selectedTemplate && (
-                    <div className="mb-6">
-                        <h6 className="text-lg font-semibold mb-4 text-gray-700">Template Modules</h6>
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse border border-gray-200 rounded-lg">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="p-3 border border-gray-200 text-left font-semibold">Sr No</th>
-                                        <th className="p-3 border border-gray-200 text-left font-semibold">Assigned Module</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {templateModules.length > 0 ? (
-                                        templateModules.map((item) => (
-                                            <tr key={item.srNo} className="hover:bg-gray-50">
-                                                <td className="p-3 border border-gray-200">{item.srNo}</td>
-                                                <td className="p-3 border border-gray-200">{item.module}</td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="2" className="p-3 border border-gray-200 text-center text-gray-500">
-                                                No modules assigned to this template
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
-                {showModuleSection && showModuleTable && (
-                    <div>
-                        <h6 className="text-lg font-semibold mb-4 text-gray-700">Child Applications</h6>
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse border border-gray-200 rounded-lg">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="p-3 border border-gray-200 text-left font-semibold">Sr No</th>
-                                        <th className="p-3 border border-gray-200 text-left font-semibold">Assigned Module</th>
-                                        <th className="p-3 border border-gray-200 text-left font-semibold">
-                                            <label className="flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-2"
-                                                    checked={childApplications.length > 0 && childApplications.every(item => item.checked)}
-                                                    onChange={handleSelectAllFeatures}
-                                                />
-                                                Select All
-                                            </label>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {childApplications.length > 0 ? (
-                                        childApplications
-                                            .filter(item => {
-                                                if (!item.parentHierarchy) return true;
-                                                const parentChain = item.parentHierarchy.split(" -> ");
-                                                let currentPath = "";
-
-                                                for (let i = 0; i < parentChain.length; i++) {
-                                                    if (i > 0) currentPath += " -> ";
-                                                    currentPath += parentChain[i];
-
-                                                    const ancestor = childApplications.find(
-                                                        app => app.displayName === currentPath
-                                                    );
-
-                                                    if (ancestor && !ancestor.expanded) {
-                                                        return false;
-                                                    }
-                                                }
-
-                                                return true;
-                                            })
-                                            .map(item => renderNestedItem(item))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="3" className="p-3 border border-gray-200 text-center text-gray-500">
-                                                No child applications found
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="flex justify-end mt-6">
+                        <div className="md:col-span-3">
                             <button
                                 type="button"
-                                className="bg-blue-900 text-white py-2.5 px-6 rounded-lg hover:bg-blue-800 transition-colors flex items-center"
-                                onClick={handleSave}
+                                className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg hover:bg-blue-800 transition-colors flex items-center justify-center"
+                                onClick={handleAddClick}
                             >
-                                <CheckCircleIcon className="h-5 w-5 mr-2" />
-                                Save
+                                <PlusCircleIcon className="h-5 w-5 mr-2" />
+                                Application
                             </button>
                         </div>
                     </div>
-                )}
+
+                    {showModuleSection && (
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
+                            <div className="md:col-span-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Module Name
+                                </label>
+                                <select
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                    onChange={handleParentApplicationSelect}
+                                    value={selectedParentApp}
+                                >
+                                    <option value="" disabled>Select Parent Application</option>
+                                    {parentApplications.map((app) => (
+                                        <option key={app.id} value={app.id}>
+                                            {app.applicationName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedTemplate && (
+                        <div className="mb-6">
+                            <h6 className="text-lg font-semibold mb-4 text-gray-700">Template Modules</h6>
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse border border-gray-200 rounded-lg">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">Sr No</th>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">Assigned Module</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {templateModules.length > 0 ? (
+                                            templateModules.map((item) => (
+                                                <tr key={item.srNo} className="hover:bg-gray-50">
+                                                    <td className="p-3 border border-gray-200">{item.srNo}</td>
+                                                    <td className="p-3 border border-gray-200">{item.module}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="2" className="p-3 border border-gray-200 text-center text-gray-500">
+                                                    No modules assigned to this template
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {showModuleSection && showModuleTable && (
+                        <div>
+                            <h6 className="text-lg font-semibold mb-4 text-gray-700">Child Applications</h6>
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse border border-gray-200 rounded-lg">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">Sr No</th>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">Assigned Module</th>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">
+                                                <label className="flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-2"
+                                                        checked={childApplications.length > 0 && childApplications.every(item => item.checked)}
+                                                        onChange={handleSelectAllFeatures}
+                                                    />
+                                                    Select All
+                                                </label>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {childApplications.length > 0 ? (
+                                            childApplications
+                                                .filter(item => {
+                                                    if (!item.parentHierarchy) return true;
+                                                    const parentChain = item.parentHierarchy.split(" -> ");
+                                                    let currentPath = "";
+
+                                                    for (let i = 0; i < parentChain.length; i++) {
+                                                        if (i > 0) currentPath += " -> ";
+                                                        currentPath += parentChain[i];
+
+                                                        const ancestor = childApplications.find(
+                                                            app => app.displayName === currentPath
+                                                        );
+
+                                                        if (ancestor && !ancestor.expanded) {
+                                                            return false;
+                                                        }
+                                                    }
+
+                                                    return true;
+                                                })
+                                                .map(item => renderNestedItem(item))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="3" className="p-3 border border-gray-200 text-center text-gray-500">
+                                                    No child applications found
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="flex justify-end mt-6">
+                                <button
+                                    type="button"
+                                    className="bg-blue-900 text-white py-2.5 px-6 rounded-lg hover:bg-blue-800 transition-colors flex items-center"
+                                    onClick={handleSave}
+                                >
+                                    <CheckCircleIcon className="h-5 w-5 mr-2" />
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                
+                </div>
             </div>
         </div>
     );
