@@ -522,8 +522,8 @@ const ApprovedDoc = () => {
                 <th className="border p-2 text-left">Subject</th>
                 <th className="border p-2 text-left">Category</th>
                 <th className="border p-2 text-left">Approval Status</th>
-                <th className="border p-2 text-left">Approved by</th>
-                <th className="border p-2 text-left">Approved Date</th>
+                {/* <th className="border p-2 text-left">Approved by</th>
+                <th className="border p-2 text-left">Approved Date</th> */}
                 {/* {["ADMIN", "BRANCH ADMIN", "DEPARTMENT ADMIN"].includes(
                   role
                 ) && <th className="border p-2 text-left">view</th>} */}
@@ -556,12 +556,12 @@ const ApprovedDoc = () => {
                     <td className="border p-2">
                       {doc.approvalStatus || "Pending"}
                     </td>
-                    <td className="border p-2">
+                    {/* <td className="border p-2">
                       {doc.employeeBy?.name || "No Employee"}
                     </td>
                     <td className="border px-4 py-2">
                       {doc.approvalStatusOn ? formatDate(doc.approvalStatusOn) : "N/A"}
-                    </td>
+                    </td> */}
                     {/* {["ADMIN", "BRANCH ADMIN", "DEPARTMENT ADMIN"].includes(
                       role
                     ) && (

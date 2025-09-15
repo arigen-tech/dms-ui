@@ -503,9 +503,9 @@ function RejectedDoc() {
                 <th className="border p-2 text-left">Subject</th>
                 <th className="border p-2 text-left">Category</th>
                 <th className="border p-2 text-left">Approval Status</th>
-                <th className="border p-2 text-left">Rejected Reason</th>
+                {/* <th className="border p-2 text-left">Rejected Reason</th>
                 <th className="border p-2 text-left">Rejected by</th>
-                <th className="border p-2 text-left">Rejected Date</th>
+                <th className="border p-2 text-left">Rejected Date</th> */}
                 {role === "USER" && (
                   <th className="border p-2 text-left">Edit</th>
                 )}
@@ -535,7 +535,7 @@ function RejectedDoc() {
                     <td className="border p-2">
                       {doc.approvalStatus || "N/A"}
                     </td>
-                    <td className="border p-2">
+                    {/* <td className="border p-2">
                       {doc.rejectionReason || "N/A"}
                     </td>
                     <td className="border p-2">
@@ -543,7 +543,7 @@ function RejectedDoc() {
                     </td>
                     <td className="border px-4 py-2">
                       {doc.updatedOn ? formatDate(doc.approvalStatusOn) : "N/A"}
-                    </td>
+                    </td> */}
                     {role === "USER" && (
                       <td className="border p-2">
                         <button onClick={() => handleEdit(doc.id)}>
