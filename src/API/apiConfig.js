@@ -1,7 +1,7 @@
- export const API_HOST = 'http://103.133.215.182:8558/Dms';
+//  export const API_HOST = 'http://103.133.215.182:8558/Dms';
 
 
-//  export const API_HOST = 'http://localhost:8080'; 
+ export const API_HOST = 'http://localhost:8080'; 
 //  export const API_HOST = 'http://52.66.126.151:8080/dms';
 
 //  export const API_HOST = 'http://192.168.1.12:8080';
@@ -39,7 +39,7 @@ export const USER_APPLICATION=`/dynamic-sidebar/application`;
 export const MAS_TEMPLATE = `/dynamic-sidebar/mas-templates`;
 export const MAS_APPLICATION = `/dynamic-sidebar/mas-applications`;
 export const ASSIGN_TEMPLATES=`/dynamic-sidebar/template-applications`;
-export const MAS_ROLES = `/mas-roles`;
+export const MAS_ROLES = `/RoleMaster`;
 export const ROLE_TEMPLATE=`/role-template`;
 
 
