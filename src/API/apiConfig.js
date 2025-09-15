@@ -40,7 +40,7 @@ export const MAS_TEMPLATE = `/dynamic-sidebar/mas-templates`;
 export const MAS_APPLICATION = `/dynamic-sidebar/mas-applications`;
 export const ASSIGN_TEMPLATES=`/dynamic-sidebar/template-applications`;
 export const MAS_ROLES = `/RoleMaster`;
-export const ROLE_TEMPLATE=`/role-template`;
+export const ROLE_TEMPLATE=`/dynamic-sidebar/role-template`;
 
 
 
