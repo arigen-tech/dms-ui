@@ -29,7 +29,7 @@ const Approve = () => {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState({ paths: [] });
-
+  const [openingFiles, setOpeningFiles] = useState(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [documentToApprove, setDocumentToApprove] = useState(null);
 
@@ -48,6 +48,9 @@ const Approve = () => {
   const tokenKey = localStorage.getItem("tokenKey");
   const [isOpeningFile, setIsOpeningFile] = useState(false);
   const [, setUserBranch] = useState(null);
+  const [openingFileIndex, setOpeningFileIndex] = useState(null);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+
 
   useEffect(() => {
     fetchUserBranch();
@@ -186,54 +189,32 @@ const Approve = () => {
 
   const openFile = async (file) => {
     try {
-      setIsOpeningFile(true);
-      if (!file) {
-        throw new Error("File object is undefined.");
-      }
-      console.log(file);
+      setOpeningFiles(true);
 
-      const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-      const department = selectedDoc.employee.department.name.replace(
-        / /g,
-        "_"
-      );
-      const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-      const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+      // Encode each segment separately to preserve folder structure
+      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
 
-      const version = file.version;
-      const fileName = file.docName.replace(/ /g, "_");
-
-      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch
-      )}/${encodeURIComponent(department)}/${encodeURIComponent(
-        year
-      )}/${encodeURIComponent(category)}/${encodeURIComponent(
-        version
-      )}/${encodeURIComponent(fileName)}`;
-
-      console.log("File URL:", fileUrl);
-
-      const response = await axios.get(fileUrl, {
+      const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${tokenKey}` },
         responseType: "blob",
       });
 
-      let blob = new Blob([response.data], { type: response.headers["content-type"] });
-      let url = URL.createObjectURL(blob);
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
-
     } catch (error) {
-      console.error("Error:", error);
+      console.error("❌ Error fetching file:", error);
       alert("Failed to fetch or preview the file.");
     } finally {
-      setIsOpeningFile(false);
+      setOpeningFiles(false);
     }
   };
+
 
   const handleDownload = async (file) => {
     const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
@@ -541,13 +522,13 @@ const Approve = () => {
                 <th className="border p-2 text-left">Title</th>
                 <th className="border p-2 text-left">File No</th>
                 <th className="border p-2 text-left">Subject</th>
-                <th className="border p-2 text-left">Uploaded Date</th>
-                <th className="border p-2 text-left">Category</th>
-                <th className="border p-2 text-left">User Name</th>
-                <th className="border p-2 text-left">Department</th>
                 <th className="border p-2 text-left">Branch</th>
+                <th className="border p-2 text-left">Department</th>
+                <th className="border p-2 text-left">Category</th>
+                <th className="border p-2 text-left">Uploaded Date</th>
+                <th className="border p-2 text-left">User Name</th>
                 <th className="border p-2 text-left">Approval Status</th>
-                <th className="border p-2 text-left">Action</th>
+                {/* <th className="border p-2 text-left">Action</th> */}
                 <th className="border p-2 text-left">View</th>
               </tr>
             </thead>
@@ -570,13 +551,9 @@ const Approve = () => {
                     <td className="border p-2">{doc.fileNo}</td>
                     <td className="border p-2">{doc.subject}</td>
                     <td className="border p-2">
-                      {new Date(doc.createdOn).toLocaleDateString()}
-                    </td>
-                    <td className="border p-2">
-                      {doc.categoryMaster ? doc.categoryMaster.name : ""}
-                    </td>
-                    <td className="border p-2">
-                      {doc.employee ? doc.employee.name : "N/A"}
+                      {doc.employee && doc.employee.branch
+                        ? doc.employee.branch.name
+                        : "No Branch"}
                     </td>
                     <td className="border p-2">
                       {doc.employee && doc.employee.department
@@ -584,12 +561,18 @@ const Approve = () => {
                         : "No Department"}
                     </td>
                     <td className="border p-2">
-                      {doc.employee && doc.employee.branch
-                        ? doc.employee.branch.name
-                        : "No Branch"}
+                      {doc.categoryMaster ? doc.categoryMaster.name : ""}
                     </td>
-                    <td className="border p-2">{doc.approvalStatus}</td>
                     <td className="border p-2">
+                      {new Date(doc.createdOn).toLocaleDateString()}
+                    </td>
+
+                    <td className="border p-2">
+                      {doc.employee ? doc.employee.name : "N/A"}
+                    </td>
+
+                    <td className="border p-2">{doc.approvalStatus}</td>
+                    {/* <td className="border p-2">
                       <select
                         className="border p-1"
                         onChange={(e) =>
@@ -600,7 +583,7 @@ const Approve = () => {
                         <option value="APPROVED">APPROVED</option>
                         <option value="REJECTED">REJECTED</option>
                       </select>
-                    </td>
+                    </td> */}
                     <td className="border p-2">
                       <button onClick={() => openModal(doc)}>
                         <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
@@ -623,9 +606,11 @@ const Approve = () => {
 
           <>
             {isOpen && selectedDoc && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
-                <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl p-4 sm:p-6 my-8 mx-4">
-                  <div className="max-h-[80vh] overflow-y-auto">
+              <div className="fixed inset-0 flex items-center justify-center z-30 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
+                <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-6xl p-4 sm:p-6 my-8 mx-4">
+                  <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
+
+                    {/* Print Button */}
                     <button
                       className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
                       onClick={printPage}
@@ -646,59 +631,37 @@ const Approve = () => {
                       {/* Header */}
                       <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
                         <div className="flex items-center space-x-2">
-                          <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">
-                            D
-                          </p>
-                          <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">
-                            MS
-                          </p>
+                          <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
+                          <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
                         </div>
                         <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-                          <strong>Uploaded Date:</strong>{" "}
-                          {formatDate(selectedDoc?.createdOn)}
+                          <strong>Uploaded Date:</strong> {formatDate(selectedDoc?.createdOn)}
                         </p>
                       </div>
 
                       {/* Document Details */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="mt-6 text-left">
+                        <div className="mt-6 text-left space-y-2">
                           {[
-                            {
-                              label: "Branch",
-                              value: selectedDoc?.employee?.branch?.name,
-                            },
-                            {
-                              label: "Department",
-                              value: selectedDoc?.employee?.department?.name,
-                            },
+                            { label: "Branch", value: selectedDoc?.employee?.branch?.name },
+                            { label: "Department", value: selectedDoc?.employee?.department?.name },
                             { label: "File No.", value: selectedDoc?.fileNo },
                             { label: "Title", value: selectedDoc?.title },
                             { label: "Subject", value: selectedDoc?.subject },
                             {
                               label: "Category",
-                              value:
-                                selectedDoc?.categoryMaster?.name ||
-                                "No Category",
+                              value: selectedDoc?.categoryMaster?.name || "No Category",
                             },
-                            {
-                              label: "File Year",
-                              value: selectedDoc?.yearMaster?.name,
-                            },
-                            {
-                              label: "Status",
-                              value: selectedDoc?.approvalStatus,
-                            },
-                            {
-                              label: "Upload By",
-                              value: selectedDoc?.employee?.name,
-                            },
+                            { label: "Status", value: selectedDoc?.approvalStatus },
+                            { label: "Upload By", value: selectedDoc?.employee?.name },
                           ].map((item, idx) => (
                             <p key={idx} className="text-md text-gray-700">
-                              <strong>{item.label} :-</strong>{" "}
-                              {item.value || "N/A"}
+                              <strong>{item.label} :-</strong> {item.value || "N/A"}
                             </p>
                           ))}
                         </div>
+
+                        {/* QR Code */}
                         <div className="items-center justify-center text-center">
                           <p className="text-md text-gray-700 mt-3">
                             <strong>QR Code:</strong>
@@ -724,71 +687,112 @@ const Approve = () => {
                       </div>
 
                       {/* Attached Files */}
-                      <div className="mt-6 text-center">
-                        <div className="mt-6 relative">
-                          <div className="flex justify-center">
-                            <h2 className="text-lg font-semibold text-indigo-700">Attached Files</h2>
-                          </div>
-                          <div className="absolute right-0 top-0">
-                            <input
-                              type="text"
-                              placeholder="Search Files..."
-                              value={searchFileTerm}
-                              onChange={(e) => setSearchFileTerm(e.target.value)}
-                              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                          </div>
+                      <div className="mt-8">
+                        <div className="flex justify-between items-center mb-4 relative">
+                          <h2 className="text-lg font-bold text-indigo-700">Attached Files</h2>
+                          <input
+                            type="text"
+                            placeholder="Search Files..."
+                            value={searchFileTerm}
+                            onChange={(e) => setSearchFileTerm(e.target.value)}
+                            maxLength={20}
+                            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
+                          />
                         </div>
-                        {selectedDoc && filteredDocFiles.length > 0 ? (
-                          <>
-                            <div className="flex justify-between mb-2 font-semibold text-sm text-gray-700 mt-5">
-                              <h3 className="flex-1 text-left ml-2">File Name</h3>
-                              <h3 className="flex-1 text-center">Version</h3>
-                              <h3 className="text-right mr-10 no-print">
-                                Actions
-                              </h3>
+
+                        {loadingFiles ? (
+                          <div className="flex justify-center items-center py-6">
+                            <div className="w-6 h-6 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+                            <span className="ml-2 text-gray-600">Loading files...</span>
+                          </div>
+                        ) : selectedDoc && filteredDocFiles.length > 0 ? (
+                          <div className="border border-gray-200 rounded-lg shadow-sm">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-8 bg-gray-100 text-gray-700 font-semibold text-sm px-4 py-2 sticky top-0">
+                              <span className="col-span-3 text-left">File Name</span>
+                              <span className="text-center">Year</span>
+                              <span className="text-center">Version</span>
+                              <span className="text-center">Status</span>
+                              <span className="text-center no-print">Action</span>
+                              <span className="text-center no-print">Open</span>
                             </div>
+
+                            {/* File List */}
                             <ul
-                              className={`space-y-4 ${printTrue === false &&
-                                filteredDocFiles.length > 2
-                                ? "max-h-60 overflow-y-auto print:max-h-none print:overflow-visible"
-                                : ""
+                              className={`divide-y divide-gray-200 ${printTrue === false && filteredDocFiles.length > 5
+                                  ? "max-h-72 overflow-y-auto print:max-h-none print:overflow-visible"
+                                  : ""
                                 }`}
                             >
                               {filteredDocFiles.map((file, index) => (
                                 <li
                                   key={index}
-                                  className="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-indigo-50 transition duration-300"
+                                  className="grid grid-cols-8 items-center px-4 py-3 hover:bg-indigo-50 transition duration-200"
                                 >
-                                  <div className="flex-1 text-left">
-                                    <strong>{index + 1}</strong>{" "}
-                                    {file.docName.split("_").slice(1).join("_")}
+                                  {/* File Name */}
+                                  <div className="col-span-3 text-left text-gray-800 flex items-center">
+                                    <strong className="mr-2">{index + 1}.</strong>
+                                    <span className="truncate">{file.docName}</span>
                                   </div>
-                                  <div className="flex-1 text-center">
-                                    <strong>{file.version}</strong>
-                                  </div>
-                                  <div className="text-right">
-                                    <button
-                                      onClick={() => {
-                                        setSelectedDocFiles(file);
-                                        openFile(file);
-                                      }}
-                                      disabled={isOpeningFile}
-                                      className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
-                                          ${isOpeningFile
-                                          ? 'opacity-50 cursor-not-allowed'
-                                          : 'hover:bg-indigo-600'
+
+                                  {/* Year */}
+                                  <div className="text-center text-gray-700">{file.year}</div>
+
+                                  {/* Version */}
+                                  <div className="text-center text-gray-700">{file.version}</div>
+
+                                  {/* Status */}
+                                  <div className="text-center">
+                                    <span
+                                      className={`px-2 py-1 text-xs rounded-full font-medium
+                            ${file.status === "APPROVED"
+                                          ? "bg-green-100 text-green-700"
+                                          : file.status === "REJECTED"
+                                            ? "bg-red-100 text-red-700"
+                                            : "bg-yellow-100 text-yellow-700"
                                         }`}
                                     >
-                                      {isOpeningFile ? 'Opening...' : 'Open'}
+                                      {file.status || "PENDING"}
+                                    </span>
+                                  </div>
+
+                                  {/* Select Dropdown */}
+                                  <div className="text-center no-print">
+                                    <select
+                                      className="border px-2 py-1 rounded-md"
+                                      onChange={(e) => handleStatusChange(file, e.target.value)}
+                                      disabled={file.status === "APPROVED" || file.status === "REJECTED"}
+                                    >
+                                      <option value="">Select</option>
+                                      <option value="APPROVED">APPROVED</option>
+                                      <option value="REJECTED">REJECTED</option>
+                                    </select>
+                                  </div>
+
+                                  {/* Open Button */}
+                                  <div className="flex justify-center no-print">
+                                    <button
+                                      onClick={() => {
+                                        setOpeningFileIndex(index);
+                                        setSelectedDocFiles(file);
+                                        openFile(file).finally(() => setOpeningFileIndex(null));
+                                      }}
+                                      disabled={openingFileIndex !== null}
+                                      className={`flex items-center gap-1 bg-indigo-500 text-white px-3 py-1.5 rounded-md text-sm shadow-sm transition duration-200
+                            ${openingFileIndex === index
+                                          ? "opacity-50 cursor-not-allowed"
+                                          : "hover:bg-indigo-600"
+                                        }`}
+                                    >
+                                      {openingFileIndex === index ? "Opening..." : "Open"}
                                     </button>
                                   </div>
                                 </li>
                               ))}
                             </ul>
-                          </>
+                          </div>
                         ) : (
-                          <p className="text-sm text-gray-500 mt-2">
+                          <p className="text-sm text-gray-500 mt-4 text-center">
                             No attached files available.
                           </p>
                         )}
@@ -798,6 +802,7 @@ const Approve = () => {
                 </div>
               </div>
             )}
+
           </>
         </div>
         <FilePreviewModal
@@ -858,8 +863,8 @@ const Approve = () => {
       </div>
 
       {isConfirmModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-4 rounded-md w-1/3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-4 rounded-md w-1/3 relative">
             <h3 className="text-lg font-bold mb-2">Confirm Approval</h3>
             <p>Are you sure you want to approve this document?</p>
             <div className="flex justify-end mt-4">
@@ -880,9 +885,10 @@ const Approve = () => {
         </div>
       )}
 
+      {/* Reject Reason Modal */}
       {isRejectReasonModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-4 rounded-md w-1/3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-4 rounded-md w-1/3 relative">
             <h3 className="text-lg font-bold mb-2">Reason for Rejection</h3>
             <textarea
               className="w-full border p-2 mb-2"
@@ -892,21 +898,22 @@ const Approve = () => {
               placeholder="Enter rejection reason"
               required
             ></textarea>
-            {/* Error message */}
+
             {rejectReasonError && (
               <p className="text-red-500 text-sm">
                 Please enter a rejection reason with at least 10 characters.
               </p>
             )}
+
             <div className="flex justify-end">
               <button
                 className="bg-red-500 text-white p-2 rounded-md mr-2"
                 onClick={() => {
                   if (rejectReason.trim().length < 10) {
-                    setRejectReasonError(true); // Set error message
+                    setRejectReasonError(true);
                   } else {
-                    setRejectReasonError(false); // Clear error message
-                    handleRejectDocument(); // Submit rejection
+                    setRejectReasonError(false);
+                    handleRejectDocument();
                   }
                 }}
               >
@@ -915,7 +922,7 @@ const Approve = () => {
               <button
                 className="bg-gray-500 text-white p-2 rounded-md"
                 onClick={() => {
-                  setRejectReasonError(false); // Clear error message
+                  setRejectReasonError(false);
                   setIsRejectReasonModalOpen(false);
                 }}
               >
@@ -926,9 +933,10 @@ const Approve = () => {
         </div>
       )}
 
+      {/* Success Modal */}
       {isSuccessModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-md text-center w-1/3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-md text-center w-1/3 relative">
             <div className="spinner-border animate-spin text-green-500 w-6 h-6 mb-4"></div>
             <h3 className="text-lg font-bold mb-4">{successMessage}</h3>
             <button

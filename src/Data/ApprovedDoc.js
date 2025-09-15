@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  
+  PencilIcon,
   MagnifyingGlassIcon,
   EyeIcon,
   ArrowRightIcon,
@@ -17,7 +17,7 @@ import LoadingComponent from "../Components/LoadingComponent";
 
 
 const ApprovedDoc = () => {
- 
+  const navigate = useNavigate();
   const location = useLocation();
   const [documents, setDocuments] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -300,40 +300,40 @@ const ApprovedDoc = () => {
   };
 
   const filteredDocuments = documents?.filter((doc) =>
-      Object.entries(doc).some(([key, value]) => {
-        if (key === "categoryMaster" && value?.name) {
-          return value.name.toLowerCase().includes(searchTerm.toLowerCase());
-        }
-        if (key === "employeeBy" && value) {
-          return value.name?.toLowerCase().includes(searchTerm.toLowerCase());
-        }
-        if (key === "employee" && value) {
-          return (
-            value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            value.department?.name
-              ?.toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
-            value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-        }
-        if (key === "paths" && Array.isArray(value)) {
-          return value.some((file) =>
-            file.docName.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-        }
-        if (key === "updatedOn" || key === "createdOn") {
-          const date = formatDate(value).toLowerCase();
-          return date.includes(searchTerm.toLowerCase());
-        }
-        if (key === "approvalStatus" && value) {
-          return value.toLowerCase().includes(searchTerm.toLowerCase());
-        }
-        if (typeof value === "string") {
-          return value.toLowerCase().includes(searchTerm.toLowerCase());
-        }
-        return false;
-      })
-    )
+    Object.entries(doc).some(([key, value]) => {
+      if (key === "categoryMaster" && value?.name) {
+        return value.name.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      if (key === "employeeBy" && value) {
+        return value.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      if (key === "employee" && value) {
+        return (
+          value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          value.department?.name
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      if (key === "paths" && Array.isArray(value)) {
+        return value.some((file) =>
+          file.docName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      if (key === "updatedOn" || key === "createdOn") {
+        const date = formatDate(value).toLowerCase();
+        return date.includes(searchTerm.toLowerCase());
+      }
+      if (key === "approvalStatus" && value) {
+        return value.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      if (typeof value === "string") {
+        return value.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      return false;
+    })
+  )
     .sort((a, b) => {
       // First sort by status change (non-pending status goes to top)
       if (a.approvalStatus !== "Pending" && b.approvalStatus === "Pending") return -1;
@@ -378,6 +378,12 @@ const ApprovedDoc = () => {
       // setError("Error displaying QR Code: " + error.message);
     }
   };
+
+  const handleEdit = (docId) => {
+    const data = documents.find((item) => item.id === docId);
+    navigate("/all-documents", { state: data });
+  };
+
 
   const downloadQRCode = async () => {
     if (!selectedDoc.id) {
@@ -521,6 +527,9 @@ const ApprovedDoc = () => {
                 {/* {["ADMIN", "BRANCH ADMIN", "DEPARTMENT ADMIN"].includes(
                   role
                 ) && <th className="border p-2 text-left">view</th>} */}
+                {role === "USER" &&
+                  <th className="border p-2 text-left">Edit</th>
+                }
                 <th className="border p-2 text-left">view</th>
               </tr>
             </thead>
@@ -567,6 +576,13 @@ const ApprovedDoc = () => {
                         </button>
                       </td>
                     )} */}
+                    {role === "USER" && (
+                      <td className="border p-2">
+                        <button onClick={() => handleEdit(doc.id)}>
+                          <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
+                        </button>
+                      </td>
+                    )}
                     <td className="border p-2">
                       <button
                         onClick={() => openModal(doc)}

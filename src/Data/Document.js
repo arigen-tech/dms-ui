@@ -457,7 +457,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setUploadProgress(0);
 
     const uploadData = new FormData();
-    const { category, year, version, fileNo } = formData;
+    const { category, year, version, fileNo, status } = formData;
 
     uploadData.append("category", category?.name);
     uploadData.append("year", year?.name); // or year?.id if API expects id
@@ -516,6 +516,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 path: fileObj.relativePath, // actual backend path
                 version: `${version}`,
                 yearMaster: year,
+                status: status,
                 displayName: renamedFiles[index]?.renamed, // your renamed name
               })),
             ]);
@@ -529,6 +530,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   path: fileObj.relativePath,
                   version: `${version}`,
                   yearMaster: year,
+                  status: status,
                   displayName: renamedFiles[index]?.renamed,
                 })),
               ],
@@ -599,6 +601,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       name: detail.path.split("/").pop(),
       version: detail.version,
       path: detail.path,
+      status: detail.status,
       yearMaster: detail?.yearMaster || null, // ✅ keep full yearMaster object
       isExisting: true,
     }));
@@ -621,6 +624,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       existingFiles.map((file) => ({
         path: file.path,
         version: file.version,
+        status: file.status,
         yearMaster: file.yearMaster || null, // ✅ correctly preserved
       }))
     );
@@ -1397,11 +1401,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 const displayName = uploadedFileNames[index];
                 const version = file.version;
                 const year = file?.yearMaster?.name;
+                const status = file?.status;
 
                 return (
                   <li
                     key={index}
-                    className="grid grid-cols-[50%_1fr_1fr_1fr] items-center gap-4 p-3 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
+                    className="grid grid-cols-[40%_1fr_1fr_1fr_1fr] items-center gap-2 p-3 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
                   >
                     {/* File Name */}
                     <div className="overflow-hidden whitespace-nowrap text-ellipsis">
@@ -1410,12 +1415,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
                     {/* Year */}
                     <div className="text-center">
-                      <label className="flex justify-center items-center gap-2">
+                      <label className="flex justify-center items-center gap-1">
                         <span className="text-sm font-medium text-gray-600">Year:</span>
                         <select
                           value={file?.yearMaster?.id || ""}
                           onChange={(e) => handleYearChangeForFile(index, e.target.value)}
-                          disabled={!handleEditDocumentActive}
+                          disabled={!handleEditDocumentActive || status === "APPROVED"}
                           className="border rounded-lg px-2 py-1 text-sm w-24 text-center bg-gray-50"
                         >
                           <option value="">Select</option>
@@ -1437,10 +1442,27 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                           value={version}
                           onChange={(e) => handleVersionChange(index, e.target.value.trim())}
                           className="border rounded-lg px-2 py-1 text-sm w-20 text-center"
-                          disabled={!handleEditDocumentActive}
+                          disabled={!handleEditDocumentActive || status === "APPROVED"}
                           placeholder="v1"
                           maxLength={10}
                         />
+                      </label>
+                    </div>
+
+                    <div className="text-center">
+                      <label className="flex justify-center items-center gap-2">
+                        <span className="text-sm font-medium text-gray-600">Status:</span>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full font-medium
+                            ${status === "APPROVED"
+                              ? "bg-green-100 text-green-700"
+                              : status === "REJECTED"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
+                        >
+                          {status || "PENDING"}
+                        </span>
                       </label>
                     </div>
 
@@ -1463,16 +1485,19 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          handleDiscardFile(index);
+                          if (deletingFiles !== index && status !== "APPROVED") {
+                            handleDiscardFile(index);
+                          }
                         }}
-                        disabled={deletingFiles === index}
-                        className={`rounded-lg px-3 py-1 text-sm transition ${deletingFiles === index
-                          ? "bg-gray-400 text-white cursor-not-allowed"
-                          : "bg-red-500 text-white hover:bg-red-600"
+                        disabled={deletingFiles === index || status === "APPROVED"}
+                        className={`rounded-lg px-3 py-1 text-sm transition ${deletingFiles === index || status === "APPROVED"
+                            ? "bg-gray-400 text-white cursor-not-allowed"
+                            : "bg-red-500 text-white hover:bg-red-600"
                           }`}
                       >
                         {deletingFiles === index ? "Deleting..." : "Delete"}
                       </button>
+
                     </div>
                   </li>
 
@@ -1483,6 +1508,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 const displayName = uploadedFileNames[index];
                 const version = file.version;
                 const year = file?.yearMaster?.name;
+                const status = file?.status;
 
                 const isDisabled = formData?.uploadedFilePaths?.some(
                   (uploaded) => uploaded.path === file.path
@@ -1491,7 +1517,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 return (
                   <li
                     key={index}
-                    className="grid grid-cols-[50%_1fr_1fr_1fr] items-center gap-4 p-3 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
+                    className="grid grid-cols-[40%_1fr_1fr_1fr_1fr] items-center gap-2 p-3 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
                   >
                     {/* File Name */}
                     <div className="overflow-hidden whitespace-nowrap text-ellipsis">
@@ -1505,7 +1531,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         <select
                           value={file?.yearMaster?.id || ""}
                           onChange={(e) => handleYearChangeForFile(index, e.target.value)}
-                          disabled={!handleEditDocumentActive || isDisabled}
+                          disabled={!handleEditDocumentActive || isDisabled || status === "APPROVED"}
                           className="border rounded-lg px-2 py-1 text-sm w-24 text-center bg-gray-50"
                         >
                           <option value="">Select</option>
@@ -1527,13 +1553,29 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                           value={version}
                           onChange={(e) => handleVersionChange(index, e.target.value.trim())}
                           className="border rounded-lg px-2 py-1 text-sm w-20 text-center"
-                          disabled={!handleEditDocumentActive || isDisabled}
+                          disabled={!handleEditDocumentActive || isDisabled || status === "APPROVED"}
                           placeholder="v1"
                           maxLength={10}
                         />
                       </label>
                     </div>
 
+                    <div className="text-center">
+                      <label className="flex justify-center items-center gap-2">
+                        <span className="text-sm font-medium text-gray-600">Status:</span>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full font-medium
+                            ${status === "APPROVED"
+                              ? "bg-green-100 text-green-700"
+                              : status === "REJECTED"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
+                        >
+                          {status || "PENDING"}
+                        </span>
+                      </label>
+                    </div>
                     {/* Actions */}
                     <div className="flex justify-end gap-2">
                       <button
@@ -1553,16 +1595,19 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          handleDiscardFile(index);
+                          if (deletingFiles !== index && status !== "APPROVED") {
+                            handleDiscardFile(index);
+                          }
                         }}
-                        disabled={deletingFiles === index}
-                        className={`rounded-lg px-3 py-1 text-sm transition ${deletingFiles === index
+                        disabled={deletingFiles === index || status === "APPROVED"}
+                        className={`rounded-lg px-3 py-1 text-sm transition ${deletingFiles === index || status === "APPROVED"
                           ? "bg-gray-400 text-white cursor-not-allowed"
                           : "bg-red-500 text-white hover:bg-red-600"
                           }`}
                       >
                         {deletingFiles === index ? "Deleting..." : "Delete"}
                       </button>
+
                     </div>
                   </li>
 
@@ -1762,182 +1807,182 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             {/* Document Details Code */}
             <>
               {isOpen && selectedDoc && (
-  <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
-    <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-4xl p-4 sm:p-6 my-8 mx-4">
-      <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
-        
-        {/* Print Button */}
-        <button
-          className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
-          onClick={printPage}
-        >
-          <PrinterIcon className="h-6 w-6" />
-        </button>
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
+                  <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-4xl p-4 sm:p-6 my-8 mx-4">
+                    <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
 
-        {/* Close Button */}
-        <button
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
-          onClick={closeModal}
-        >
-          <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
-        </button>
+                      {/* Print Button */}
+                      <button
+                        className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
+                        onClick={printPage}
+                      >
+                        <PrinterIcon className="h-6 w-6" />
+                      </button>
 
-        {/* Modal Content */}
-        <div className="flex flex-col h-full mt-8">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
-            <div className="flex items-center space-x-2">
-              <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
-              <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
-            </div>
-            <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-              <strong>Uploaded Date:</strong> {formatDate(selectedDoc?.createdOn)}
-            </p>
-          </div>
+                      {/* Close Button */}
+                      <button
+                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
+                        onClick={closeModal}
+                      >
+                        <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
+                      </button>
 
-          {/* Document Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="mt-6 text-left space-y-2">
-              {[
-                { label: "Branch", value: selectedDoc?.employee?.branch?.name },
-                { label: "Department", value: selectedDoc?.employee?.department?.name },
-                { label: "File No.", value: selectedDoc?.fileNo },
-                { label: "Title", value: selectedDoc?.title },
-                { label: "Subject", value: selectedDoc?.subject },
-                {
-                  label: "Category",
-                  value: selectedDoc?.categoryMaster?.name || "No Category",
-                },
-                { label: "Status", value: selectedDoc?.approvalStatus },
-                { label: "Upload By", value: selectedDoc?.employee?.name },
-              ].map((item, idx) => (
-                <p key={idx} className="text-md text-gray-700">
-                  <strong>{item.label} :-</strong> {item.value || "N/A"}
-                </p>
-              ))}
-            </div>
+                      {/* Modal Content */}
+                      <div className="flex flex-col h-full mt-8">
+                        {/* Header */}
+                        <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
+                          <div className="flex items-center space-x-2">
+                            <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
+                            <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+                            <strong>Uploaded Date:</strong> {formatDate(selectedDoc?.createdOn)}
+                          </p>
+                        </div>
 
-            {/* QR Code */}
-            <div className="items-center justify-center text-center">
-              <p className="text-md text-gray-700 mt-3">
-                <strong>QR Code:</strong>
-              </p>
-              {selectedDoc?.qrPath ? (
-                <div className="mt-4">
-                  <img
-                    src={qrCodeUrl}
-                    alt="QR Code"
-                    className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
-                  />
-                  <button
-                    onClick={downloadQRCode}
-                    className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
-                  >
-                    Download
-                  </button>
-                </div>
-              ) : (
-                <p className="text-gray-500">No QR code available</p>
-              )}
-            </div>
-          </div>
+                        {/* Document Details */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="mt-6 text-left space-y-2">
+                            {[
+                              { label: "Branch", value: selectedDoc?.employee?.branch?.name },
+                              { label: "Department", value: selectedDoc?.employee?.department?.name },
+                              { label: "File No.", value: selectedDoc?.fileNo },
+                              { label: "Title", value: selectedDoc?.title },
+                              { label: "Subject", value: selectedDoc?.subject },
+                              {
+                                label: "Category",
+                                value: selectedDoc?.categoryMaster?.name || "No Category",
+                              },
+                              { label: "Status", value: selectedDoc?.approvalStatus },
+                              { label: "Upload By", value: selectedDoc?.employee?.name },
+                            ].map((item, idx) => (
+                              <p key={idx} className="text-md text-gray-700">
+                                <strong>{item.label} :-</strong> {item.value || "N/A"}
+                              </p>
+                            ))}
+                          </div>
 
-          {/* Attached Files */}
-          <div className="mt-8">
-            <div className="flex justify-between items-center mb-4 relative">
-              <h2 className="text-lg font-bold text-indigo-700">Attached Files</h2>
-              <input
-                type="text"
-                placeholder="Search Files..."
-                value={searchFileTerm}
-                onChange={(e) => setSearchFileTerm(e.target.value)}
-                maxLength={20}
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
-              />
-            </div>
+                          {/* QR Code */}
+                          <div className="items-center justify-center text-center">
+                            <p className="text-md text-gray-700 mt-3">
+                              <strong>QR Code:</strong>
+                            </p>
+                            {selectedDoc?.qrPath ? (
+                              <div className="mt-4">
+                                <img
+                                  src={qrCodeUrl}
+                                  alt="QR Code"
+                                  className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
+                                />
+                                <button
+                                  onClick={downloadQRCode}
+                                  className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                                >
+                                  Download
+                                </button>
+                              </div>
+                            ) : (
+                              <p className="text-gray-500">No QR code available</p>
+                            )}
+                          </div>
+                        </div>
 
-            {loadingFiles ? (
-              <div className="flex justify-center items-center py-6">
-                <div className="w-6 h-6 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
-                <span className="ml-2 text-gray-600">Loading files...</span>
-              </div>
-            ) : selectedDoc && filteredDocFiles.length > 0 ? (
-              <div className="border border-gray-200 rounded-lg shadow-sm">
-                {/* Table Header */}
-                <div className="grid grid-cols-6 bg-gray-100 text-gray-700 font-semibold text-sm px-4 py-2 sticky top-0">
-                  <span className="col-span-2 text-left">File Name</span>
-                  <span className="text-center">Year</span>
-                  <span className="text-center">Version</span>
-                  <span className="text-center">Status</span>
-                  <span className="text-center no-print">Actions</span>
-                </div>
+                        {/* Attached Files */}
+                        <div className="mt-8">
+                          <div className="flex justify-between items-center mb-4 relative">
+                            <h2 className="text-lg font-bold text-indigo-700">Attached Files</h2>
+                            <input
+                              type="text"
+                              placeholder="Search Files..."
+                              value={searchFileTerm}
+                              onChange={(e) => setSearchFileTerm(e.target.value)}
+                              maxLength={20}
+                              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
+                            />
+                          </div>
 
-                {/* File List */}
-                <ul
-                  className={`divide-y divide-gray-200 ${printTrue === false && filteredDocFiles.length > 5
-                    ? "max-h-72 overflow-y-auto print:max-h-none print:overflow-visible"
-                    : ""
-                  }`}
-                >
-                  {filteredDocFiles.map((file, index) => (
-                    <li
-                      key={index}
-                      className="grid grid-cols-6 items-center px-4 py-3 hover:bg-indigo-50 transition duration-200"
-                    >
-                      {/* File Name Full (no truncate) */}
-                      <div className="col-span-2 text-left text-gray-800 break-words">
-                        <strong>{index + 1}.</strong> {file.docName}
-                      </div>
+                          {loadingFiles ? (
+                            <div className="flex justify-center items-center py-6">
+                              <div className="w-6 h-6 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+                              <span className="ml-2 text-gray-600">Loading files...</span>
+                            </div>
+                          ) : selectedDoc && filteredDocFiles.length > 0 ? (
+                            <div className="border border-gray-200 rounded-lg shadow-sm">
+                              {/* Table Header */}
+                              <div className="grid grid-cols-6 bg-gray-100 text-gray-700 font-semibold text-sm px-4 py-2 sticky top-0">
+                                <span className="col-span-2 text-left">File Name</span>
+                                <span className="text-center">Year</span>
+                                <span className="text-center">Version</span>
+                                <span className="text-center">Status</span>
+                                <span className="text-center no-print">Actions</span>
+                              </div>
 
-                      <div className="text-center text-gray-700">{file.year}</div>
-                      <div className="text-center text-gray-700">{file.version}</div>
-                      <div className="text-center">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full font-medium
-                            ${file.status === "Approved"
-                              ? "bg-green-100 text-green-700"
-                              : file.status === "Rejected"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}
-                        >
-                          {file.status || "Pending"}
-                        </span>
-                      </div>
+                              {/* File List */}
+                              <ul
+                                className={`divide-y divide-gray-200 ${printTrue === false && filteredDocFiles.length > 5
+                                  ? "max-h-72 overflow-y-auto print:max-h-none print:overflow-visible"
+                                  : ""
+                                  }`}
+                              >
+                                {filteredDocFiles.map((file, index) => (
+                                  <li
+                                    key={index}
+                                    className="grid grid-cols-6 items-center px-4 py-3 hover:bg-indigo-50 transition duration-200"
+                                  >
+                                    {/* File Name Full (no truncate) */}
+                                    <div className="col-span-2 text-left text-gray-800 break-words">
+                                      <strong>{index + 1}.</strong> {file.docName}
+                                    </div>
 
-                      {/* Actions */}
-                      <div className="flex justify-center gap-2 no-print">
-                        <button
-                          onClick={() => {
-                            setOpeningFileIndex(index);
-                            setSelectedDocFiles(file);
-                            openFile(file).finally(() => setOpeningFileIndex(null));
-                          }}
-                          disabled={openingFileIndex !== null}
-                          className={`flex items-center gap-1 bg-indigo-500 text-white px-3 py-1.5 rounded-md text-sm shadow-sm transition duration-200
+                                    <div className="text-center text-gray-700">{file.year}</div>
+                                    <div className="text-center text-gray-700">{file.version}</div>
+                                    <div className="text-center">
+                                      <span
+                                        className={`px-2 py-1 text-xs rounded-full font-medium
+                            ${file.status === "APPROVED"
+                                            ? "bg-green-100 text-green-700"
+                                            : file.status === "REJECTED"
+                                              ? "bg-red-100 text-red-700"
+                                              : "bg-yellow-100 text-yellow-700"
+                                          }`}
+                                      >
+                                        {file.status || "PENDING"}
+                                      </span>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex justify-center gap-2 no-print">
+                                      <button
+                                        onClick={() => {
+                                          setOpeningFileIndex(index);
+                                          setSelectedDocFiles(file);
+                                          openFile(file).finally(() => setOpeningFileIndex(null));
+                                        }}
+                                        disabled={openingFileIndex !== null}
+                                        className={`flex items-center gap-1 bg-indigo-500 text-white px-3 py-1.5 rounded-md text-sm shadow-sm transition duration-200
                             ${openingFileIndex === index
-                              ? "opacity-50 cursor-not-allowed"
-                              : "hover:bg-indigo-600"}
+                                            ? "opacity-50 cursor-not-allowed"
+                                            : "hover:bg-indigo-600"}
                           `}
-                        >
-                          {openingFileIndex === index ? "Opening..." : "Open"}
-                        </button>
+                                      >
+                                        {openingFileIndex === index ? "Opening..." : "Open"}
+                                      </button>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 mt-4 text-center">
+                              No attached files available.
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 mt-4 text-center">
-                No attached files available.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                    </div>
+                  </div>
+                </div>
+              )}
 
 
 
