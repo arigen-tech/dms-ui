@@ -551,7 +551,7 @@ const Addformreports = () => {
                                                 </button>
                                                 <button
                                                     type="submit"
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+                                                    className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700"
                                                     disabled={!isEditDataLoaded}
                                                 >
                                                     Update
@@ -561,7 +561,7 @@ const Addformreports = () => {
                                             <>
                                                 <button
                                                     type="submit"
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                                    className="px-4 py-2  bg-blue-900 text-white rounded-md hover:bg-blue-700"
                                                 >
                                                     Add
                                                 </button>

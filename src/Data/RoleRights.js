@@ -346,18 +346,18 @@ const Rolesrights = () => {
                                 <div className="flex justify-end space-x-2 mt-6">
                                     <button
                                         type="button"
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+                                        className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 flex items-center"
                                         onClick={handleSave}
                                     >
-                                        <span className="mr-1">💾</span> Save
+                                        <span className="mr-1"></span> Save
                                     </button>
-                                    <button
+                                    {/* <button
                                         type="button"
                                         className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 flex items-center"
                                         onClick={handleResetClick}
                                     >
                                         <span className="mr-1">↻</span> Reset
-                                    </button>
+                                    </button> */}
                                 </div>
                             </form>
                         )}

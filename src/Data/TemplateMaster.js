@@ -376,12 +376,12 @@ const Templatemaster = () => {
             <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
           
-          <button
+          {/* <button
             onClick={() => fetchTemplates(0)}
             className="bg-blue-900 text-white rounded-2xl p-2 text-sm flex items-center justify-center"
           >
             <ArrowPathIcon className="h-5 w-5 mr-1" /> Refresh
-          </button>
+          </button> */}
         </div>
 
         <div className="overflow-x-auto">
