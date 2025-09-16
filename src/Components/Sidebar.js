@@ -94,6 +94,8 @@ function Sidebar() {
         totalPendingDocumentsByDepartmentId: 0,
         totalApprovedStatusDocByDepartmentId: 0,
         totalRejectedStatusDocByDepartmentId: 0,
+        totalUserApplications: 0,
+        totalTemplate: 0,
       };
   });
 
@@ -322,16 +324,17 @@ function Sidebar() {
                     />
 
                     <SidebarLink
-                      to="/manageUserApplications"
+                      to="/ManageUserApplications"  // Change from "/manageUserApplications"
                       icon={UserIcon}
                       text="Manage User Applications"
-                      // count={counts.annualYear}
+                      count={counts.totalUserApplications}
                     />
+
                     <SidebarLink
-                      to="/templateMasters"
+                      to="/TemplateMasters"  // Change from "/templateMasters"
                       icon={UserIcon}
                       text="Template Masters"
-                      // count={counts.annualYear}
+                      count={counts.totalTemplate}
                     />
                      <SidebarLink
                       to="/Add-form-reports"
@@ -357,6 +360,7 @@ function Sidebar() {
                       text="Files Types"
                       count={counts.totalFilesType}
                     />
+                  
                   </div>
                 )}
               </div>
