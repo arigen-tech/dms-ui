@@ -418,7 +418,7 @@ const ArchiveDashboard = () => {
 
                                             <td className="px-4 py-2 text-sm">
                                                 {item.status === "ARCHIVED"
-                                                    ? (item.totalFiles != null ? item.totalFiles : 0)
+                                                    ? (item.archivedDocuments != null ? item.archivedDocuments : 0)
                                                     : (item.totalFiles != null ? item.totalFiles : "-")}
                                             </td>
 

@@ -465,14 +465,23 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     uploadData.append("branch", userBranch);
     uploadData.append("department", userDep);
 
-    // ✅ Rename files before uploading
-    const renamedFiles = selectedFiles.map((file) => {
-      const timestamp = Date.now();
-      const baseName = fileNo.split(".")[0].substring(0, 3); // first 3 chars of fileNo
-      const extension = file.name.split(".").pop(); // keep extension
+    // ✅ Rename unique files name before uploading
+    const renamedFiles = selectedFiles.map((file, index) => {
+      const now = new Date();
+      const formattedDate = `${now.getFullYear()}${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
+        now.getHours()
+      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+        now.getSeconds()
+      ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
+
+      const baseName = fileNo.split(".")[0].substring(0, 3);
+      const extension = file.name.split(".").pop();
+
       return {
         file,
-        renamed: `${timestamp}_${baseName}_${category?.name}_${year?.name}_${version}.${extension}`,
+        renamed: `${baseName}_${category?.name}_${year?.name}_${version}_${formattedDate}_${index + 1}.${extension}`,
       };
     });
 
@@ -1491,8 +1500,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         }}
                         disabled={deletingFiles === index || status === "APPROVED"}
                         className={`rounded-lg px-3 py-1 text-sm transition ${deletingFiles === index || status === "APPROVED"
-                            ? "bg-gray-400 text-white cursor-not-allowed"
-                            : "bg-red-500 text-white hover:bg-red-600"
+                          ? "bg-gray-400 text-white cursor-not-allowed"
+                          : "bg-red-500 text-white hover:bg-red-600"
                           }`}
                       >
                         {deletingFiles === index ? "Deleting..." : "Delete"}
