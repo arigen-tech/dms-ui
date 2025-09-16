@@ -98,6 +98,8 @@ function Dashboard() {
     totalPendingDocumentsByDepartmentId: 0,
     totalApprovedStatusDocByDepartmentId: 0,
     totalRejectedStatusDocByDepartmentId: 0,
+    totalUserApplications: 0,
+    totalTemplate: 0,
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -652,6 +654,7 @@ function Dashboard() {
                   <StatBlock title="Rejected Documents" value={stats.totalRejectedDocuments} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
+              
             </>
           )}
 
