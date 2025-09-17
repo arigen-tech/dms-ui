@@ -570,7 +570,9 @@ const Approve = () => {
         setDepartmentFilter(e.target.value);
         setCurrentPage(1);
       }}
-    >
+      disabled={branchFilter === ''} 
+      
+      >
       <option value="">All Departments</option>
       {departments
         .filter(dept => branchFilter === '' || dept.branch?.id === parseInt(branchFilter))
