@@ -10,7 +10,7 @@ import {
   XMarkIcon,
   EyeIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, BRANCH_API, DEPAETMENT_API } from "../API/apiConfig";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import apiClient from "../API/apiClient";
 import LoadingComponent from '../Components/LoadingComponent';
@@ -18,6 +18,10 @@ import LoadingComponent from '../Components/LoadingComponent';
 
 const Approve = () => {
   const location = useLocation();
+  const [branchFilter, setBranchFilter] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [branches, setBranches] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -55,6 +59,8 @@ const Approve = () => {
   useEffect(() => {
     fetchUserBranch();
     fetchDocuments();
+    fetchBranches();
+    fetchDepartments();
   }, []);
 
   useEffect(() => {
@@ -160,6 +166,28 @@ const Approve = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBranches = async () => {
+    try {
+      const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
+        headers: { Authorization: `Bearer ${tokenKey}` },
+      });
+      setBranches(response.data || []);
+    } catch (error) {
+      console.error('Error fetching branches:', error?.response?.data || error.message);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${DEPAETMENT_API}/findAll`, {
+        headers: { Authorization: `Bearer ${tokenKey}` },
+      });
+      setDepartments(response.data || []);
+    } catch (error) {
+      console.error('Error fetching departments:', error?.response?.data || error.message);
     }
   };
 
@@ -436,18 +464,22 @@ const Approve = () => {
     };
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
+  const filteredDocuments = documents.filter((doc) => {
+    const matchesSearch = (
+      doc.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.fileNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.categoryMaster?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.employee?.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.employee?.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
+    const matchesBranch = branchFilter === '' || doc.employee?.branch?.id === parseInt(branchFilter);
+    const matchesDepartment = departmentFilter === '' || doc.employee?.department?.id === parseInt(departmentFilter);
 
-
-  const filteredDocuments = documents.filter((doc) =>
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.fileNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.categoryMaster.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.employee.department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.employee.branch.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    return matchesSearch && matchesBranch && matchesDepartment;
+  });
   const totalItems = filteredDocuments.length;
 
   const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
@@ -500,6 +532,55 @@ const Approve = () => {
               ))}
             </select>
           </div>
+
+          {/* Branch Filter Dropdown */}
+  <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
+    <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+      Branch:
+    </label>
+    <select
+      id="branchFilter"
+      className="border rounded-r-lg p-1.5 outline-none w-full"
+      value={branchFilter}
+      onChange={(e) => {
+        setBranchFilter(e.target.value);
+        setDepartmentFilter(''); // Reset department when branch changes
+        setCurrentPage(1);
+      }}
+    >
+      <option value="">All Branches</option>
+      {branches.map((branch) => (
+        <option key={branch.id} value={branch.id}>
+          {branch.name}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Department Filter Dropdown */}
+  <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
+    <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+      Dept:
+    </label>
+    <select
+      id="departmentFilter"
+      className="border rounded-r-lg p-1.5 outline-none w-full"
+      value={departmentFilter}
+      onChange={(e) => {
+        setDepartmentFilter(e.target.value);
+        setCurrentPage(1);
+      }}
+    >
+      <option value="">All Departments</option>
+      {departments
+        .filter(dept => branchFilter === '' || dept.branch?.id === parseInt(branchFilter))
+        .map((dept) => (
+          <option key={dept.id} value={dept.id}>
+            {dept.name}
+          </option>
+        ))}
+    </select>
+  </div>
 
           {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
