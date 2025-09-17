@@ -21,18 +21,19 @@ const Department = () => {
     name: '',
     branch: null,
     isActive: true,
-  });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [toggleDepartment, setToggleDepartment] = useState(null);
-  const [popupMessage, setPopupMessage] = useState(null);
-  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // For button disabling
-  const formSectionRef = useRef(null);
+  })
+  const [searchTerm, setSearchTerm] = useState("")
+  const [branchFilter, setBranchFilter] = useState("")
+  const [editingIndex, setEditingIndex] = useState(null)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [modalVisible, setModalVisible] = useState(false)
+  const [toggleDepartment, setToggleDepartment] = useState(null)
+  const [popupMessage, setPopupMessage] = useState(null)
+  const [isConfirmDisabled, setIsConfirmDisabled] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false) // For button disabling
+  const formSectionRef = useRef(null)
 
   // Retrieve token from localStorage
   const token = localStorage.getItem('tokenKey');
@@ -289,14 +290,16 @@ const Department = () => {
     const createdOnText = formatDate(department.createdOn);
     const updatedOnText = formatDate(department.updatedOn);
 
-    return (
+    const matchesBranchFilter = branchFilter === "" || department.branch?.id === Number.parseInt(branchFilter)
+    const matchesSearchTerm =
       department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       department.branch?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       statusText.includes(searchTerm.toLowerCase()) ||
       createdOnText.includes(searchTerm.toLowerCase()) ||
       updatedOnText.includes(searchTerm.toLowerCase())
-    );
-  });
+
+    return matchesBranchFilter && matchesSearchTerm
+  })
 
   const sortedDepartments = filteredDepartments.sort((a, b) => b.isActive - a.isActive);
 
@@ -420,6 +423,28 @@ const Department = () => {
               {[5, 10, 15, 20].map((num) => (
                 <option key={num} value={num}>
                   {num}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
+            <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+              Branch:
+            </label>
+            <select
+              id="branchFilter"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
+              value={branchFilter}
+              onChange={(e) => {
+                setBranchFilter(e.target.value)
+                setCurrentPage(1)
+              }}
+            >
+              <option value="">All Branches</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
                 </option>
               ))}
             </select>
