@@ -10,7 +10,7 @@ import {
   PrinterIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, BRANCH_API, DEPAETMENT_API } from "../API/apiConfig";
 import { useNavigate } from "react-router-dom";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import apiClient from "../API/apiClient";
@@ -18,6 +18,10 @@ import LoadingComponent from '../Components/LoadingComponent';
 
 
 function RejectedDoc() {
+  const [branchFilter, setBranchFilter] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [branches, setBranches] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
   const [documents, setDocuments] = useState([]);
@@ -45,6 +49,8 @@ function RejectedDoc() {
 
   useEffect(() => {
     fetchDocuments();
+     fetchBranches();
+    fetchDepartments();
   }, []);
 
   useEffect(() => {
@@ -116,6 +122,29 @@ function RejectedDoc() {
       setLoading(false);
     }
   };
+
+  const fetchBranches = async () => {
+    try {
+      const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBranches(response.data || []);
+    } catch (error) {
+      console.error('Error fetching branches:', error?.response?.data || error.message);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${DEPAETMENT_API}/findAll`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDepartments(response.data || []);
+    } catch (error) {
+      console.error('Error fetching departments:', error?.response?.data || error.message);
+    }
+  };
+
 
   const fetchPaths = async (doc) => {
     try {
@@ -365,8 +394,13 @@ function RejectedDoc() {
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
-  // Enhanced filtering logic matching ApprovedDoc
+  // Enhanced filtering logic with branch/department filters and null-safe search
   const filteredDocuments = documents
+    .filter((doc) => {
+      const matchesBranch = branchFilter === '' || doc.employee?.branch?.id === parseInt(branchFilter);
+      const matchesDepartment = departmentFilter === '' || doc.employee?.department?.id === parseInt(departmentFilter);
+      return matchesBranch && matchesDepartment;
+    })
     .filter((doc) =>
       Object.entries(doc).some(([key, value]) => {
         if (key === "categoryMaster" && value?.name) {
@@ -378,19 +412,15 @@ function RejectedDoc() {
         if (key === "employee" && value) {
           return (
             value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            value.department?.name
-              ?.toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
+            value.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
           );
         }
         if (key === "paths" && Array.isArray(value)) {
-          return value.some((file) =>
-            file.docName.toLowerCase().includes(searchTerm.toLowerCase())
-          );
+          return value.some((file) => file.docName?.toLowerCase().includes(searchTerm.toLowerCase()));
         }
         if (key === "updatedOn" || key === "createdOn") {
-          const date = formatDate(value).toLowerCase();
+          const date = value ? formatDate(value).toLowerCase() : '';
           return date.includes(searchTerm.toLowerCase());
         }
         if (key === "approvalStatus" && value) {
@@ -477,6 +507,56 @@ function RejectedDoc() {
                   {num}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Branch Filter */}
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
+            <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+              Branch:
+            </label>
+            <select
+              id="branchFilter"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
+              value={branchFilter}
+              onChange={(e) => {
+                setBranchFilter(e.target.value);
+                setDepartmentFilter('');
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">All Branches</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Department Filter */}
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
+            <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+              Dept:
+            </label>
+            <select
+              id="departmentFilter"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
+              value={departmentFilter}
+              onChange={(e) => {
+                setDepartmentFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              disabled={branchFilter === ''}
+            >
+              <option value="">All Departments</option>
+              {departments
+                .filter((dept) => branchFilter === '' || dept.branch?.id === parseInt(branchFilter))
+                .map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
             </select>
           </div>
 
