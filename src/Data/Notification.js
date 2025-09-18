@@ -99,15 +99,15 @@ export const NotificationBell = () => {
         params: { employeeId: userId },
         headers: { Authorization: `Bearer ${tokenKey}` },
       })
-      
+
       const allNotifications = response.data.response
       const allowedTypes = getAllowedNotificationTypes(role)
-      
+
       // Filter notifications based on role and unread status
-      const filteredUnreadNotifications = allNotifications.filter(notification => 
+      const filteredUnreadNotifications = allNotifications.filter(notification =>
         allowedTypes.includes(notification.type) && !notification.read
       )
-      
+
       setUnreadCount(filteredUnreadNotifications.length)
     } catch (error) {
       console.error("Error fetching unread count:", error)
@@ -194,7 +194,7 @@ export const Notification = () => {
 
       // Filter by role using the helper function
       const allowedTypes = getAllowedNotificationTypes(role)
-      const roleFilteredNotifications = allNotifications.filter((notification) => 
+      const roleFilteredNotifications = allNotifications.filter((notification) =>
         allowedTypes.includes(notification.type)
       )
 
@@ -293,25 +293,19 @@ export const Notification = () => {
     } catch (error) {
       console.error("Error clearing notifications:", error);
       setError("Failed to clear all notifications");
-    } 
+    }
   };
 
   const getNavigationButton = (notification) => {
     switch (notification.type) {
       case "DOCUMENT_APPROVAL":
-        return {
-          path: `/approvedDocs?docId=${notification.referenceId}`,
-          label: "View Approved Document",
-        }
       case "DOCUMENT_REJECTION":
-        return {
-          path: `/rejectedDocs?docId=${notification.referenceId}`,
-          label: "View Rejected Document",
-        }
+        return null; // ❌ Don't show button for approved/rejected
+
       case "NEW_DOCUMENT":
         return {
-          path: `/approve-documents?docId=${notification.referenceId}`,
-          label: "View Document",
+          path: `/approve-documents?detailId=${notification.referenceId}`,
+          label: "Review Document File",
         }
       case "NEW_EMPLOYEE_ADDED":
         return {
@@ -322,6 +316,9 @@ export const Notification = () => {
         return null
     }
   }
+
+
+
 
   // Get allowed notification types for current role
   const allowedTypes = getAllowedNotificationTypes(role)
@@ -375,17 +372,16 @@ export const Notification = () => {
                         key={filterType}
                         onClick={() => setFilter(filterType)}
                         className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 whitespace-nowrap flex-shrink-0 flex items-center space-x-2 ${filter === filterType
-                            ? "bg-white text-blue-600 shadow-lg scale-105"
-                            : "bg-blue-950 text-white hover:bg-blue-950"
+                          ? "bg-white text-blue-600 shadow-lg scale-105"
+                          : "bg-blue-950 text-white hover:bg-blue-950"
                           }`}
                       >
                         <span>{formatFilterLabel(filterType)}</span>
                         {count > 0 && (
-                          <span className={`px-2 py-1 text-xs mt-2 rounded-full font-bold ${
-                            filter === filterType 
-                              ? "bg-blue-600 text-white" 
-                              : "bg-blue-800 text-white"
-                          }`}>
+                          <span className={`px-2 py-1 text-xs mt-2 rounded-full font-bold ${filter === filterType
+                            ? "bg-blue-600 text-white"
+                            : "bg-blue-800 text-white"
+                            }`}>
                             {count}
                           </span>
                         )}
@@ -446,72 +442,72 @@ export const Notification = () => {
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden h-[calc(100vh-4rem)] flex flex-col">
-          {/* Header */}
-          <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-blue-800 p-8">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleBack}
-                className="p-2.5 rounded-xl bg-blue-950 text-white hover:bg-blue-900 transition-all duration-200"
-              >
-                <ArrowLeftIcon className="h-6 w-6" />
-              </button>
-              <h2 className="text-2xl font-bold text-white truncate">
-                {selectedNotification?.title}
-              </h2>
+            {/* Header */}
+            <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-blue-800 p-8">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleBack}
+                  className="p-2.5 rounded-xl bg-blue-950 text-white hover:bg-blue-900 transition-all duration-200"
+                >
+                  <ArrowLeftIcon className="h-6 w-6" />
+                </button>
+                <h2 className="text-2xl font-bold text-white truncate">
+                  {selectedNotification?.title}
+                </h2>
+              </div>
             </div>
-          </div>
-      
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-8">
-              {/* Metadata */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-4">
-                  {selectedNotification && getNotificationIcon(selectedNotification.type)}
-                  <span className="text-sm text-gray-500 font-medium">
-                    {getTimeAgo(selectedNotification?.createdOn)}
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-8">
+                {/* Metadata */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-4">
+                    {selectedNotification && getNotificationIcon(selectedNotification.type)}
+                    <span className="text-sm text-gray-500 font-medium">
+                      {getTimeAgo(selectedNotification?.createdOn)}
+                    </span>
+                  </div>
+                  <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${getPriorityColor(selectedNotification?.priority)}`}>
+                    {selectedNotification?.priority}
                   </span>
                 </div>
-                <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${getPriorityColor(selectedNotification?.priority)}`}>
-                  {selectedNotification?.priority}
-                </span>
-              </div>
-      
-              {/* Message */}
-              <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
-                  {selectedNotification?.message}
-                </p>
-              </div>
-      
-              {/* Detailed Message */}
-              {selectedNotification?.detailedMessage && (
-                <div className="bg-gray-50 rounded-xl p-6 mt-4">
-                  <h3 className="text-lg font-semibold mb-4">Additional Details</h3>
-                  <div
-                    className="prose max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: selectedNotification.detailedMessage,
-                    }}
-                  />
+
+                {/* Message */}
+                <div className="bg-gray-50 rounded-xl p-6 mb-6">
+                  <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
+                    {selectedNotification?.message}
+                  </p>
                 </div>
-              )}
-      
-              {/* Navigation Button */}
-              {selectedNotification && getNavigationButton(selectedNotification) && (
-                <div className="mt-8 flex justify-center">
-                  <button
-                    onClick={() => navigate(getNavigationButton(selectedNotification).path)}
-                    className="px-6 py-3 bg-blue-950 text-white rounded-xl hover:bg-blue-900 transition-all duration-200 flex items-center space-x-2"
-                  >
-                    <ChevronRightIcon className="h-5 w-5" />
-                    <span>{getNavigationButton(selectedNotification).label}</span>
-                  </button>
-                </div>
-              )}
+
+                {/* Detailed Message */}
+                {selectedNotification?.detailedMessage && (
+                  <div className="bg-gray-50 rounded-xl p-6 mt-4">
+                    <h3 className="text-lg font-semibold mb-4">Additional Details</h3>
+                    <div
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{
+                        __html: selectedNotification.detailedMessage,
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Navigation Button */}
+                {selectedNotification && getNavigationButton(selectedNotification) && (
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      onClick={() => navigate(getNavigationButton(selectedNotification).path)}
+                      className="px-6 py-3 bg-blue-950 text-white rounded-xl hover:bg-blue-900 transition-all duration-200 flex items-center space-x-2"
+                    >
+                      <ChevronRightIcon className="h-5 w-5" />
+                      <span>{getNavigationButton(selectedNotification).label}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
         )}
       </div>
     </div>
