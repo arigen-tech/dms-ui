@@ -49,6 +49,7 @@ import TemplateMasters from "./Pages/TemplateMasters";
 import AddFormReportss from "./Pages/AddFormReportss";
 import AssignApplications from "./Pages/AssignApplications";
 import RoleRightss from "./Pages/RoleRightss";
+import AuditForms from "./Pages/AuditForms";
 
 
 const protectedRoutes = [
@@ -93,6 +94,7 @@ const protectedRoutes = [
   { path: "/FileCompare", element: <FileComparepage />, allowedRoles: [SYSTEM_ADMIN, BRANCH_ADMIN,DEPARTMENT_ADMIN, USER] },
   { path: "/ManageUserApplications", element: <ManageUserApplications />, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/TemplateMasters", element: <TemplateMasters />, allowedRoles: [SYSTEM_ADMIN] },
+  { path: "/Audit-form", element: <AuditForms/>, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/Add-form-reports", element: <AddFormReportss/>, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/Assign-applications", element: <AssignApplications/>, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/Role-rights", element: <RoleRightss/>, allowedRoles: [SYSTEM_ADMIN] },
