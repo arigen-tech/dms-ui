@@ -5,6 +5,7 @@ import Popup from "../Components/Popup";
 import { useDropzone } from "react-dropzone";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from '../Components/LoadingComponent';
+import { Tooltip } from "react-tooltip";
 
 
 import {
@@ -13,6 +14,10 @@ import {
   CheckCircleIcon,
   EyeIcon,
   XMarkIcon,
+  ArrowDownTrayIcon,
+  QrCodeIcon,
+  ArrowPathIcon,
+  DocumentIcon,
   MagnifyingGlassIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -403,12 +408,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
 
   const formatDate = (dateString) => {
+    if (!dateString) return "--";
     const date = new Date(dateString);
-    const options = {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    };
+    if (isNaN(date.getTime())) return "--";
+    const options = { day: "2-digit", month: "2-digit", year: "numeric" };
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
@@ -611,7 +614,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       version: detail.version,
       path: detail.path,
       status: detail.status,
-      yearMaster: detail?.yearMaster || null, // ✅ keep full yearMaster object
+      yearMaster: detail?.yearMaster || null,
+      rejectionReason: detail?.rejectionReason || null,
       isExisting: true,
     }));
 
@@ -635,6 +639,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         version: file.version,
         status: file.status,
         yearMaster: file.yearMaster || null, // ✅ correctly preserved
+        rejectionReason: file.rejectionReason || null,
       }))
     );
     if (formSectionRef.current) {
@@ -977,7 +982,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setIsOpen(true);
   };
 
-  console.log("selectedDoc", selectedDoc);
+  console.log("selectedDoccheack", selectedDoc);
 
 
   const closeModal = () => {
@@ -991,6 +996,37 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setTimeout(() => {
       setPrintTrue(false);
     }, 1000);
+  };
+
+  const handlePrintReport = async (id) => {
+    if (!id) return;
+
+    try {
+      const response = await fetch(`http://localhost:8443/api/reports/document/${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/pdf",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+
+      if (!response.ok) throw new Error("Failed to download PDF");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+
+      // Create a temporary <a> element to download the PDF
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `document_${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+    }
   };
 
 
@@ -1179,7 +1215,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           <div ref={formSectionRef} className="mb-2 bg-slate-100 p-4 rounded-lg">
             <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
-                📁 File Metadata
+                📁 Document Metadata
               </h2>
 
               <div className="grid grid-cols-3 gap-4">
@@ -1256,7 +1292,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             </div>
             <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
-                📄 Document Metadata
+                📄 File Metadata
               </h2>
 
               <div className="grid grid-cols-3 gap-4">
@@ -1378,7 +1414,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         Adding... {uploadProgress}%
                       </>
                     ) : (
-                      "Add Documents"
+                      "Add File"
                     )}
                     {isUploading && (
                       <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
@@ -1409,8 +1445,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               formData?.uploadedFilePaths?.map((file, index) => {
                 const displayName = uploadedFileNames[index];
                 const version = file.version;
-                const year = file?.yearMaster?.name;
                 const status = file?.status;
+                const rejectionReason = file?.rejectionReason || null;
 
                 return (
                   <li
@@ -1462,8 +1498,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       <label className="flex justify-center items-center gap-2">
                         <span className="text-sm font-medium text-gray-600">Status:</span>
                         <span
+                          data-tooltip-id="status-tooltip"
+                          data-tooltip-html={
+                            status === "REJECTED"
+                              ? `<strong style="color:#dc2626;">Rejected Reason:</strong> ${rejectionReason || "No reason provided"
+                              }`
+                              : ""
+                          }
                           className={`px-2 py-1 text-xs rounded-full font-medium
-                            ${status === "APPROVED"
+        ${status === "APPROVED"
                               ? "bg-green-100 text-green-700"
                               : status === "REJECTED"
                                 ? "bg-red-100 text-red-700"
@@ -1473,7 +1516,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                           {status || "PENDING"}
                         </span>
                       </label>
+
+                      {/* Custom Tooltip */}
+                      <Tooltip
+                        id="status-tooltip"
+                        place="top"
+                        className="!bg-white !text-gray-800 !p-3 !rounded-lg !shadow-lg !max-w-xs !whitespace-pre-wrap border border-gray-300"
+                        style={{ fontSize: "0.85rem" }}
+                      />
                     </div>
+
 
                     {/* Actions */}
                     <div className="flex justify-end gap-2">
@@ -1516,7 +1568,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               uploadedFilePath?.map((file, index) => {
                 const displayName = uploadedFileNames[index];
                 const version = file.version;
-                const year = file?.yearMaster?.name;
+                const rejectionReason = file?.rejectionReason || null; 
                 const status = file?.status;
 
                 const isDisabled = formData?.uploadedFilePaths?.some(
@@ -1569,12 +1621,21 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       </label>
                     </div>
 
+
+
                     <div className="text-center">
                       <label className="flex justify-center items-center gap-2">
                         <span className="text-sm font-medium text-gray-600">Status:</span>
                         <span
+                          data-tooltip-id="status-tooltip"
+                          data-tooltip-html={
+                            status === "REJECTED"
+                              ? `<strong style="color:#dc2626;">Rejected Reason:</strong> ${rejectionReason || "No reason provided"
+                              }`
+                              : ""
+                          }
                           className={`px-2 py-1 text-xs rounded-full font-medium
-                            ${status === "APPROVED"
+        ${status === "APPROVED"
                               ? "bg-green-100 text-green-700"
                               : status === "REJECTED"
                                 ? "bg-red-100 text-red-700"
@@ -1584,7 +1645,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                           {status || "PENDING"}
                         </span>
                       </label>
+
+                      {/* Custom Tooltip */}
+                      <Tooltip
+                        id="status-tooltip"
+                        place="top"
+                        className="!bg-white !text-gray-800 !p-3 !rounded-lg !shadow-lg !max-w-xs !whitespace-pre-wrap border border-gray-300"
+                        style={{ fontSize: "0.85rem" }}
+                      />
                     </div>
+
                     {/* Actions */}
                     <div className="flex justify-end gap-2">
                       <button
@@ -1657,7 +1727,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     aria-label="Upload File"
                   >
                     <PlusCircleIcon className="h-5 w-5 mr-1" />
-                    {bProcess ? "Uploading..." : "Upload File"}
+                    {bProcess ? "Uploading..." : "Upload Document"}
                   </button>
 
                 ) : (
@@ -1670,7 +1740,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     aria-label="Update File"
                   >
                     <CheckCircleIcon className="h-5 w-5 mr-1" />
-                    {bProcess ? "Updating..." : "Update File"}
+                    {bProcess ? "Updating..." : "Update Document"}
                   </button>
                 )}
               </div>
@@ -1816,151 +1886,152 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             {/* Document Details Code */}
             <>
               {isOpen && selectedDoc && (
-                <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
-                  <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-4xl p-4 sm:p-6 my-8 mx-4">
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900/80 backdrop-blur-sm print:bg-white overflow-y-auto p-4">
+                  <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl p-6 my-8 mx-auto">
                     <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
 
-                      {/* Print Button */}
-                      <button
-                        className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
-                        onClick={printPage}
-                      >
-                        <PrinterIcon className="h-6 w-6" />
-                      </button>
-
-                      {/* Close Button */}
-                      <button
-                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
-                        onClick={closeModal}
-                      >
-                        <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
-                      </button>
-
-                      {/* Modal Content */}
-                      <div className="flex flex-col h-full mt-8">
-                        {/* Header */}
-                        <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
-                          <div className="flex items-center space-x-2">
-                            <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
-                            <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
+                      {/* Header Actions */}
+                      <div className="flex justify-between items-center mb-6 no-print">
+                        <div className="flex items-center space-x-2">
+                          <div className="bg-indigo-600 text-white rounded-lg p-2">
+                            <span className="text-lg font-bold">D</span>
+                            <span className="text-lg font-bold">MS</span>
                           </div>
-                          <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-                            <strong>Uploaded Date:</strong> {formatDate(selectedDoc?.createdOn)}
-                          </p>
+                          <h1 className="text-2xl font-bold text-gray-800">Document Details</h1>
                         </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handlePrintReport(selectedDoc?.id)}
+                            className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
+                            title="Print document"
+                          >
+                            <PrinterIcon className="h-5 w-5" />
+                            <span>Print</span>
+                          </button>
+                          <button
+                            onClick={closeModal}
+                            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 transition-colors duration-200 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                            title="Close modal"
+                          >
+                            <XMarkIcon className="h-5 w-5" />
+                            <span>Close</span>
+                          </button>
+                        </div>
+                      </div>
 
-                        {/* Document Details */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="mt-6 text-left space-y-2">
+                      {/* Document Details */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        {/* Information Column */}
+                        <div className="lg:col-span-2 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {[
                               { label: "Branch", value: selectedDoc?.employee?.branch?.name },
                               { label: "Department", value: selectedDoc?.employee?.department?.name },
                               { label: "File No.", value: selectedDoc?.fileNo },
                               { label: "Title", value: selectedDoc?.title },
                               { label: "Subject", value: selectedDoc?.subject },
-                              {
-                                label: "Category",
-                                value: selectedDoc?.categoryMaster?.name || "No Category",
-                              },
+                              { label: "Category", value: selectedDoc?.categoryMaster?.name || "No Category" },
                               { label: "Status", value: selectedDoc?.approvalStatus },
                               { label: "Upload By", value: selectedDoc?.employee?.name },
                             ].map((item, idx) => (
-                              <p key={idx} className="text-md text-gray-700">
-                                <strong>{item.label} :-</strong> {item.value || "N/A"}
-                              </p>
-                            ))}
-                          </div>
-
-                          {/* QR Code */}
-                          <div className="items-center justify-center text-center">
-                            <p className="text-md text-gray-700 mt-3">
-                              <strong>QR Code:</strong>
-                            </p>
-                            {selectedDoc?.qrPath ? (
-                              <div className="mt-4">
-                                <img
-                                  src={qrCodeUrl}
-                                  alt="QR Code"
-                                  className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
-                                />
-                                <button
-                                  onClick={downloadQRCode}
-                                  className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
-                                >
-                                  Download
-                                </button>
+                              <div key={idx} className="space-y-1">
+                                <p className="text-sm font-medium text-gray-500">{item.label}</p>
+                                <p className="text-gray-900 font-medium">
+                                  {item.value || <span className="text-gray-400">N/A</span>}
+                                </p>
                               </div>
-                            ) : (
-                              <p className="text-gray-500">No QR code available</p>
-                            )}
+                            ))}
                           </div>
                         </div>
 
-                        {/* Attached Files */}
-                        <div className="mt-8">
-                          <div className="flex justify-between items-center mb-4 relative">
-                            <h2 className="text-lg font-bold text-indigo-700">Attached Files</h2>
+                        {/* QR Code Column */}
+                        <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-700 mb-4">QR Code</h3>
+                          {selectedDoc?.qrPath ? (
+                            <>
+                              <div className="p-3 bg-white rounded-lg border border-gray-300">
+                                <img
+                                  src={qrCodeUrl}
+                                  alt="QR Code"
+                                  className="w-32 h-32 object-contain"
+                                />
+                              </div>
+                              <button
+                                onClick={downloadQRCode}
+                                className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+                              >
+                                <ArrowDownTrayIcon className="h-4 w-4" />
+                                Download QR
+                              </button>
+                            </>
+                          ) : (
+                            <div className="text-center text-gray-500 py-8">
+                              <QrCodeIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                              <p>No QR code available</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Attached Files Section */}
+                      <div className="border-t border-gray-200 pt-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+                          <h2 className="text-xl font-semibold text-gray-800">Attached Files</h2>
+                          <div className="relative w-full sm:w-64">
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input
                               type="text"
-                              placeholder="Search Files..."
+                              placeholder="Search files..."
                               value={searchFileTerm}
                               onChange={(e) => setSearchFileTerm(e.target.value)}
-                              maxLength={20}
-                              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
+                              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             />
                           </div>
+                        </div>
 
-                          {loadingFiles ? (
-                            <div className="flex justify-center items-center py-6">
-                              <div className="w-6 h-6 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
-                              <span className="ml-2 text-gray-600">Loading files...</span>
+                        {loadingFiles ? (
+                          <div className="flex justify-center items-center py-12">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                            <span className="ml-3 text-gray-600">Loading files...</span>
+                          </div>
+                        ) : selectedDoc && filteredDocFiles.length > 0 ? (
+                          <div className="border border-gray-200 rounded-lg overflow-hidden">
+                            {/* Table Header - Hidden on mobile */}
+                            <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
+                              <span className="text-left">File Name</span>
+                              <span className="text-center">Year</span>
+                              <span className="text-center">Version</span>
+                              <span className="text-center">Status</span>
+                              <span className="text-center">Action By</span>
+                              <span className="text-center">Action Date</span>
+                              <span className="text-center">Reason</span>
+                              <span className="text-center no-print">View</span>
                             </div>
-                          ) : selectedDoc && filteredDocFiles.length > 0 ? (
-                            <div className="border border-gray-200 rounded-lg shadow-sm">
-                              {/* Table Header */}
-                              <div className="grid grid-cols-6 bg-gray-100 text-gray-700 font-semibold text-sm px-4 py-2 sticky top-0">
-                                <span className="col-span-2 text-left">File Name</span>
-                                <span className="text-center">Year</span>
-                                <span className="text-center">Version</span>
-                                <span className="text-center">Status</span>
-                                <span className="text-center no-print">Actions</span>
-                              </div>
 
-                              {/* File List */}
-                              <ul
-                                className={`divide-y divide-gray-200 ${printTrue === false && filteredDocFiles.length > 5
-                                  ? "max-h-72 overflow-y-auto print:max-h-none print:overflow-visible"
-                                  : ""
-                                  }`}
-                              >
-                                {filteredDocFiles.map((file, index) => (
-                                  <li
-                                    key={index}
-                                    className="grid grid-cols-6 items-center px-4 py-3 hover:bg-indigo-50 transition duration-200"
-                                  >
-                                    {/* File Name Full (no truncate) */}
-                                    <div className="col-span-2 text-left text-gray-800 break-words">
+                            {/* File List */}
+                            <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                              {filteredDocFiles.map((file, index) => (
+                                <div key={index} className="hover:bg-gray-50 transition-colors duration-150">
+                                  {/* Desktop View */}
+                                  <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] items-center px-6 py-4 text-sm">
+                                    <div className="text-left text-gray-800 break-words">
                                       <strong>{index + 1}.</strong> {file.docName}
                                     </div>
-
                                     <div className="text-center text-gray-700">{file.year}</div>
                                     <div className="text-center text-gray-700">{file.version}</div>
                                     <div className="text-center">
-                                      <span
-                                        className={`px-2 py-1 text-xs rounded-full font-medium
-                            ${file.status === "APPROVED"
-                                            ? "bg-green-100 text-green-700"
-                                            : file.status === "REJECTED"
-                                              ? "bg-red-100 text-red-700"
-                                              : "bg-yellow-100 text-yellow-700"
-                                          }`}
+                                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                                          file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                            "bg-yellow-100 text-yellow-800"}`}
                                       >
                                         {file.status || "PENDING"}
                                       </span>
                                     </div>
-
-                                    {/* Actions */}
-                                    <div className="flex justify-center gap-2 no-print">
+                                    <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
+                                    <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
+                                    <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
+                                    <div className="flex justify-center no-print">
                                       <button
                                         onClick={() => {
                                           setOpeningFileIndex(index);
@@ -1968,32 +2039,109 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                                           openFile(file).finally(() => setOpeningFileIndex(null));
                                         }}
                                         disabled={openingFileIndex !== null}
-                                        className={`flex items-center gap-1 bg-indigo-500 text-white px-3 py-1.5 rounded-md text-sm shadow-sm transition duration-200
-                            ${openingFileIndex === index
-                                            ? "opacity-50 cursor-not-allowed"
-                                            : "hover:bg-indigo-600"}
-                          `}
+                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                            ${openingFileIndex === index ?
+                                            "bg-indigo-400 cursor-not-allowed" :
+                                            "bg-indigo-600 hover:bg-indigo-700"} text-white`}
                                       >
-                                        {openingFileIndex === index ? "Opening..." : "Open"}
+                                        {openingFileIndex === index ? (
+                                          <>
+                                            <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                            Opening...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <EyeIcon className="h-3 w-3" />
+                                            View
+                                          </>
+                                        )}
                                       </button>
                                     </div>
-                                  </li>
-                                ))}
-                              </ul>
+                                  </div>
+
+                                  {/* Mobile View */}
+                                  <div className="md:hidden p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div className="text-left text-gray-800 break-words flex-1">
+                                        <strong>{index + 1}.</strong> {file.docName}
+                                      </div>
+                                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
+                          ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                                          file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                            "bg-yellow-100 text-yellow-800"}`}
+                                      >
+                                        {file.status || "PENDING"}
+                                      </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                                      <div>
+                                        <p className="text-xs text-gray-500">Year</p>
+                                        <p className="text-gray-700">{file.year}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500">Version</p>
+                                        <p className="text-gray-700">{file.version}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500">Action By</p>
+                                        <p className="text-gray-700">{file.approvedBy || "--"}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500">Action Date</p>
+                                        <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
+                                      </div>
+                                      <div className="col-span-2">
+                                        <p className="text-xs text-gray-500">Reason</p>
+                                        <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-3 flex justify-end">
+                                      <button
+                                        onClick={() => {
+                                          setOpeningFileIndex(index);
+                                          setSelectedDocFiles(file);
+                                          openFile(file).finally(() => setOpeningFileIndex(null));
+                                        }}
+                                        disabled={openingFileIndex !== null}
+                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                            ${openingFileIndex === index ?
+                                            "bg-indigo-400 cursor-not-allowed" :
+                                            "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                      >
+                                        {openingFileIndex === index ? (
+                                          <>
+                                            <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                            Opening...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <EyeIcon className="h-3 w-3" />
+                                            View File
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          ) : (
-                            <p className="text-sm text-gray-500 mt-4 text-center">
-                              No attached files available.
-                            </p>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
+                            <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                            <p className="text-gray-500">No attached files found</p>
+                            {searchFileTerm && (
+                              <p className="text-sm text-gray-400 mt-1">Try adjusting your search term</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
               )}
-
-
 
 
               {viewFileTypeModel && (

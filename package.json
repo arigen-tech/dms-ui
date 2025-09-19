@@ -33,6 +33,7 @@
     "react-qr-reader": "^2.2.1",
     "react-router-dom": "^6.24.0",
     "react-scripts": "^5.0.1",
+    "react-tooltip": "^5.29.1",
     "recharts": "^2.12.7",
     "sanitize-html": "^2.17.0",
     "tailwind-scrollbar": "^3.1.0",
@@ -42,14 +43,13 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-     "predeploy": "npm run build",
-  "deploy": "gh-pages -d build",
-  "start": "react-scripts start",
-  "test": "react-scripts test",
-  "eject": "react-scripts eject",
-  "build": "react-scripts build"
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
+    "start": "react-scripts start",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "build": "react-scripts build"
   },
-
   "eslintConfig": {
     "extends": [
       "react-app",
