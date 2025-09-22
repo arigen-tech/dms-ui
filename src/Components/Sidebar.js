@@ -337,6 +337,12 @@ function Sidebar() {
                       count={counts.totalTemplate}
                     />
                      <SidebarLink
+                      to="/Waiting-room"  // Change from "/templateMasters"
+                      icon={UserIcon}
+                      text="Waiting Room"
+                      count={counts.totalTemplate}
+                    />
+                     <SidebarLink
                       to="/Add-form-reports"
                       icon={UserIcon}
                       text="Add Form Reports"
