@@ -811,68 +811,58 @@ const WaitingRoom = ({ fieldsDisabled }) => {
   // Handle adding the document
   const handleAddDocument = async () => {
     if (!validateRequiredFields()) {
-      return
+      showPopup("Please fill in all the required fields.", "error");
+      return;
     }
 
-    if (formData.uploadedFilePaths.length === 0) {
-      showPopup("Please fill in all the required fields and upload a file.", "error")
-      return
-    }
-
-    // ✅ Prepare file paths for backend
-    const versionedFilePaths = formData.uploadedFilePaths.map((file) => ({
-      path: file.path || file.displayName || "Unknown", // use path first
-      version: file.version || formData.version || "1.0",
-      yearId: file.yearMaster?.id || formData.year?.id || null,
-    }))
-
-    // ✅ Construct payload
-    const payload = {
-      documentHeader: {
-        id: formData.id || null, // only if updating
-        fileNo: formData.fileNo,
-        title: formData.title,
-        subject: formData.subject,
-        categoryMaster: { id: formData.category.id },
-        employee: { id: Number.parseInt(UserId, 10) },
-        qrPath: formData.qrPath || null,
-        archive: false,
-      },
-      filePaths: versionedFilePaths,
+    if (formData.uploadedFiles.length === 0) {
+      showPopup("Please upload at least one file.", "error");
+      return;
     }
 
     try {
-      setBProcess(true)
+      setIsUploading(true);
 
-      const response = await fetch(`${API_HOST}/api/documents/save`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      })
+      // Create the document object
+      const newDocument = {
+        mobile: formData.mobile,
+        employeeName: formData.employeeName,
+        subject: formData.subject,
+        categoryMaster: formData.category,
+        yearMaster: formData.year,
+        email: formData.email,
+        uploadedFiles: formData.uploadedFiles,
+        createdOn: new Date().toISOString(),
+      };
 
-      const result = await response.json()
+      // Add the new document to the documents list
+      setDocuments((prevDocuments) => [newDocument, ...prevDocuments]);
 
-      if (!response.ok || result?.status === 409) {
-        const errorMessage = result?.response?.msg || result?.message || "Unknown error"
-        showPopup(`Document save failed: ${errorMessage}`, "warning")
-        return
-      }
+      // Reset the form
+      setFormData({
+        mobile: "",
+        title: "",
+        employeeName: "",
+        subject: "",
+        category: null,
+        year: null,
+        email: "",
+        uploadedFilePaths: [],
+        uploadedFiles: [],
+        version: "",
+        removedFilePaths: [],
+      });
+      setSelectedFiles([]);
+      setUploadedFileNames([]);
 
-      showPopup(result?.response?.msg || "Document saved successfully", "success")
-
-      // ✅ Reset form after save
-      resetEditForm() // Use resetEditForm for consistency
-      fetchDocuments() // refresh list
+      showPopup("File(s) added successfully!", "success");
     } catch (error) {
-      console.error("Error saving document:", error)
-      showPopup(`Document save failed: ${error.message}`, "warning")
+      console.error("Error adding document:", error);
+      showPopup("Failed to add file(s). Please try again.", "error");
     } finally {
-      setBProcess(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   const fetchPaths = async (doc) => {
     try {
@@ -1183,41 +1173,32 @@ const WaitingRoom = ({ fieldsDisabled }) => {
     return emailRegex.test(email)
   }
 
-  const handleFileUpload = async (files) => {
-    const uploadedPaths = []
-    const uploadedFileObjects = []
-
-    for (const file of files) {
-      try {
-        const formData = new FormData()
-        formData.append("file", file)
-
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        })
-
-        if (response.ok) {
-          const result = await response.json()
-          uploadedPaths.push(result.filePath)
-          uploadedFileObjects.push({
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            path: result.filePath,
-          })
-        }
-      } catch (error) {
-        console.error("Error uploading file:", error)
-      }
+  const handleFileUpload = (files) => {
+    if (files.length === 0) {
+      showPopup("Please select at least one file to upload.", "warning");
+      return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      uploadedFilePaths: [...prev.uploadedFilePaths, ...uploadedPaths],
-      uploadedFiles: [...prev.uploadedFiles, ...uploadedFileObjects],
-    }))
-  }
+    const validFiles = files.filter((file) => {
+      // Add any file validation logic here if needed
+      return true;
+    });
+
+    if (validFiles.length > 0) {
+      setSelectedFiles(validFiles);
+      setFormData((prev) => ({
+        ...prev,
+        uploadedFiles: validFiles.map((file) => ({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          path: URL.createObjectURL(file), // Create a temporary URL for preview
+        })),
+      }));
+    } else {
+      showPopup("No valid files selected.", "error");
+    }
+  };
 
   // Added handleDiscard function
   const handleDiscard = () => {
@@ -1421,12 +1402,27 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                 className="hidden"
                 id="file-upload"
                 ref={fileInputRef}
+                accept="*/*" // Allow all file types
               />
               <label
                 htmlFor="file-upload"
                 className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium text-gray-700"
               >
-                Choose files
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                Choose Files
               </label>
               <span className="ml-2 text-sm text-gray-500">
                 {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : "No file chosen"}
@@ -1525,7 +1521,6 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                   <th className="border p-2 text-left">Category</th>
                   <th className="border p-2 text-left">Year</th>
                   <th className="border p-2 text-left">Email</th>
-                  <th className="border p-2 text-left">Status</th>
                   <th className="border p-2 text-left">Created Date</th>
                   <th className="border p-2 text-left">Edit</th>
                   <th className="border p-2 text-left">View</th>
@@ -1533,7 +1528,7 @@ const WaitingRoom = ({ fieldsDisabled }) => {
               </thead>
               <tbody>
                 {paginatedDocuments.map((doc, index) => (
-                  <tr key={doc.id}>
+                  <tr key={index}>
                     <td className="border p-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="border p-2">{doc.mobile}</td>
                     <td className="border p-2">{doc.employeeName}</td>
@@ -1541,7 +1536,6 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                     <td className="border p-2">{doc.categoryMaster ? doc.categoryMaster.name : "No Category"}</td>
                     <td className="border p-2">{doc.yearMaster ? doc.yearMaster.name : "No Year"}</td>
                     <td className="border p-2">{doc.email}</td>
-                    <td className="border p-2">{doc.approvalStatus || "Pending"}</td>
                     <td className="border p-2">{formatDate(doc.createdOn)}</td>
                     <td className="border p-2">
                       <button
