@@ -1140,24 +1140,23 @@ const WaitingRoom = ({ fieldsDisabled }) => {
   console.log("searchTerm", documents)
 
   const filteredDocuments = documents.filter((doc) => {
-    const search = searchTerm.toLowerCase()
-    const createdDate = new Date(doc.createdOn).toLocaleDateString("en-GB")
+    const search = searchTerm.toLowerCase();
+    const createdDate = doc.createdOn ? new Date(doc.createdOn).toLocaleDateString("en-GB") : ""; // Add null check for createdOn
 
     return (
-      doc.title.toLowerCase().includes(search) ||
-      doc.subject.toLowerCase().includes(search) ||
-      doc.fileNo.toLowerCase().includes(search) ||
-      // doc.yearMaster.name.toLowerCase().includes(search) ||
-      doc.categoryMaster.name
-        .toLowerCase()
-        .includes(search) ||
-      doc.approvalStatus.toLowerCase().includes(search) ||
-      createdDate.includes(search) ||
-      doc.mobile.toLowerCase().includes(search) || // Added mobile search
-      doc.employeeName.toLowerCase().includes(search) || // Added employeeName search
-      doc.email.toLowerCase().includes(search) // Added email search
-    )
-  })
+      (doc.title && doc.title.toLowerCase().includes(search)) ||
+      (doc.subject && doc.subject.toLowerCase().includes(search)) ||
+      // doc.fileNo was replaced by mobile, so remove or update this line
+      // (doc.fileNo && doc.fileNo.toLowerCase().includes(search)) ||
+      (doc.mobile && doc.mobile.toLowerCase().includes(search)) || // Search by mobile
+      (doc.employeeName && doc.employeeName.toLowerCase().includes(search)) || // Search by employee name
+      (doc.email && doc.email.toLowerCase().includes(search)) || // Search by email
+      (doc.categoryMaster && doc.categoryMaster.name && doc.categoryMaster.name.toLowerCase().includes(search)) ||
+      (doc.yearMaster && doc.yearMaster.name && doc.yearMaster.name.toLowerCase().includes(search)) ||
+      (doc.approvalStatus && doc.approvalStatus.toLowerCase().includes(search)) ||
+      createdDate.includes(search)
+    );
+  });
 
   const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage)
   const paginatedDocuments = filteredDocuments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
@@ -1339,8 +1338,13 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                 <select
                   value={formData.category?.id || ""}
                   onChange={(e) => {
-                    const selectedCategory = categoryOptions.find((cat) => cat.id === e.target.value)
-                    setFormData({ ...formData, category: selectedCategory || null })
+                    // Convert e.target.value to a number for comparison
+                    const selectedCategoryId = Number(e.target.value);
+                    const selectedCategory = categoryOptions.find((cat) => cat.id === selectedCategoryId);
+                    setFormData((prev) => ({
+                      ...prev,
+                      category: selectedCategory || null,
+                    }));
                   }}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   required
@@ -1360,8 +1364,13 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                 <select
                   value={formData.year?.id || ""}
                   onChange={(e) => {
-                    const selectedYear = yearOptions.find((year) => year.id === e.target.value)
-                    setFormData({ ...formData, year: selectedYear || null })
+                    // Convert e.target.value to a number for comparison
+                    const selectedYearId = Number(e.target.value);
+                    const selectedYear = yearOptions.find((year) => year.id === selectedYearId);
+                    setFormData((prev) => ({
+                      ...prev,
+                      year: selectedYear || null,
+                    }));
                   }}
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   required
