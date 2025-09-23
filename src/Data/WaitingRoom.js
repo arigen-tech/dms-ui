@@ -76,6 +76,41 @@ const WaitingRoom = ({ fieldsDisabled }) => {
   const [selectedDocument, setSelectedDocument] = useState(null) // For view modal
   const [selectedRowIds, setSelectedRowIds] = useState([]); // New state for selected checkboxes
 
+  const SAMPLE_DOCUMENTS = [
+    {
+      "id": 1,
+      "mobile": "1234567890",
+      "employeeName": "John Doe",
+      "subject": "Project Alpha",
+      "categoryMaster": {
+        "id": 101,
+        "name": "Category A"
+      },
+      "yearMaster": {
+        "id": 2023,
+        "name": "2023"
+      },
+      "email": "john.doe@example.com",
+      "createdOn": "2025-09-23T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "mobile": "0987654321",
+      "employeeName": "Jane Smith",
+      "subject": "Project Beta",
+      "categoryMaster": {
+        "id": 102,
+        "name": "Category B"
+      },
+      "yearMaster": {
+        "id": 2024,
+        "name": "2024"
+      },
+      "email": "jane.smith@example.com",
+      "createdOn": "2025-09-22T14:30:00.000Z"
+    }
+  ];
+
   console.log("formData", formData)
   useEffect(() => {
     if (data) {
@@ -190,23 +225,20 @@ const WaitingRoom = ({ fieldsDisabled }) => {
   const fetchDocuments = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.get(`${DOCUMENTHEADER_API}/pending/employee/${UserId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      setDocuments(response.data)
-      setTotalItems(response.data.length)
+      // Comment out actual API call or modify to use sample data for rendering
+      // const response = await apiClient.get(`${DOCUMENTHEADER_API}/pending/employee/${UserId}`, {
+      //   headers: { Authorization: `Bearer ${token}` },
+      // })
+      setDocuments(SAMPLE_DOCUMENTS) // Use sample data directly
+      setTotalItems(SAMPLE_DOCUMENTS.length)
     } catch (error) {
       console.error("Error fetching documents:", error)
-      // Optional: Add more detailed error handling
       if (error.response) {
-        // The request was made and the server responded with a status code
         console.error("Error response data:", error.response.data)
         console.error("Error response status:", error.response.status)
       } else if (error.request) {
-        // The request was made but no response was received
         console.error("No response received:", error.request)
       } else {
-        // Something happened in setting up the request
         console.error("Error setting up request:", error.message)
       }
     } finally {
@@ -1274,6 +1306,51 @@ const WaitingRoom = ({ fieldsDisabled }) => {
     });
   };
 
+  const handleSaveSelectedDocuments = async () => {
+    if (selectedRowIds.length === 0) {
+      showPopup("Please select at least one document to save.", "warning");
+      return;
+    }
+
+    const selectedDocumentsData = documents.filter(doc => selectedRowIds.includes(doc.id));
+    console.log("JSON for selected documents:", JSON.stringify(selectedDocumentsData, null, 2));
+
+    // Uncomment and adjust the API call below if actual saving to backend is needed
+    /*
+    try {
+      setIsUploading(true);
+      const response = await apiClient.post(`${DOCUMENTHEADER_API}/approveMultiple`, {
+        documentIds: selectedRowIds,
+        approvalStatus: "Approved",
+        approvalReason: "Approved by system",
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.status === "success") {
+          showPopup("Selected documents saved successfully!", "success");
+          fetchDocuments();
+        } else {
+          showPopup(`Failed to save selected documents: ${result.message || "Unknown error"}`, "error");
+        }
+      } else {
+        const errorData = await response.json();
+        showPopup(`Failed to save selected documents: ${errorData.message || response.statusText}`, "error");
+      }
+    } catch (error) {
+      console.error("Error saving selected documents:", error);
+      showPopup("Failed to save selected documents. Please try again.", "error");
+    } finally {
+      setIsUploading(false);
+    }
+    */
+  };
+
   if (loading) {
     return <LoadingComponent />
   }
@@ -1386,6 +1463,21 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                 ))}
               </tbody>
             </table>
+
+            {/* Save Button */}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleSaveSelectedDocuments}
+                disabled={selectedRowIds.length === 0}
+                className={`px-4 py-2 rounded-md text-sm text-white ${
+                  selectedRowIds.length === 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                Save Selected
+              </button>
+            </div>
 
             {/* Pagination Controls */}
             <div className="flex items-center mt-4">
