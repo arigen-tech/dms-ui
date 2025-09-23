@@ -74,6 +74,7 @@ const WaitingRoom = ({ fieldsDisabled }) => {
   const [filterCategory, setFilterCategory] = useState("")
   const [filterYear, setFilterYear] = useState("")
   const [selectedDocument, setSelectedDocument] = useState(null) // For view modal
+  const [selectedRowIds, setSelectedRowIds] = useState([]); // New state for selected checkboxes
 
   console.log("formData", formData)
   useEffect(() => {
@@ -1262,6 +1263,17 @@ const WaitingRoom = ({ fieldsDisabled }) => {
   const indexOfFirstDocument = indexOfLastDocument - itemsPerPage
   const currentDocuments = filteredDocuments.slice(indexOfFirstDocument, indexOfLastDocument)
 
+  // New handler for checkbox changes
+  const handleCheckboxChange = (documentId, isChecked) => {
+    setSelectedRowIds((prevSelected) => {
+      if (isChecked) {
+        return [...prevSelected, documentId];
+      } else {
+        return prevSelected.filter((id) => id !== documentId);
+      }
+    });
+  };
+
   if (loading) {
     return <LoadingComponent />
   }
@@ -1533,11 +1545,12 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                   <th className="border p-2 text-left">Created Date</th>
                   <th className="border p-2 text-left">Edit</th>
                   <th className="border p-2 text-left">View</th>
+                  <th className="border p-2 text-left">Select</th> {/* New heading */}
                 </tr>
               </thead>
               <tbody>
                 {paginatedDocuments.map((doc, index) => (
-                  <tr key={index}>
+                  <tr key={doc.id}>
                     <td className="border p-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="border p-2">{doc.mobile}</td>
                     <td className="border p-2">{doc.employeeName}</td>
@@ -1559,6 +1572,13 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                       <button onClick={() => openModal(doc)}>
                         <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
                       </button>
+                    </td>
+                    <td className="border p-2 text-center"> {/* New checkbox cell */}
+                      <input
+                        type="checkbox"
+                        checked={selectedRowIds.includes(doc.id)}
+                        onChange={(e) => handleCheckboxChange(doc.id, e.target.checked)}
+                      />
                     </td>
                   </tr>
                 ))}
