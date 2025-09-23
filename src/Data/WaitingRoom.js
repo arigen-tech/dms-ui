@@ -1285,216 +1285,18 @@ const WaitingRoom = ({ fieldsDisabled }) => {
         <h1 className="text-xl mb-4 font-semibold">Upload to Waiting Room</h1>
 
         <div className="bg-white p-4 rounded-lg shadow-sm">
+          
+
+        
+
+        {/* Table Section - keeping existing table, pagination, and search as requested */}
+        <div className="mt-6">
+
           {popupMessage && (
             <Popup message={popupMessage.message} type={popupMessage.type} onClose={() => setPopupMessage(null)} />
           )}
 
-          {/* Single Form Section */}
-          <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {/* Mobile Number */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Mobile No</label>
-                <input
-                  type="tel"
-                  value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Mobile No"
-                  required
-                />
-              </div>
-
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Title"
-                  required
-                />
-              </div>
-
-              {/* Employee Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Employee Name</label>
-                <input
-                  type="text"
-                  value={formData.employeeName}
-                  onChange={(e) => setFormData({ ...formData, employeeName: e.target.value })}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Employee Name"
-                  required
-                />
-              </div>
-
-              {/* Subject */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Subject</label>
-                <input
-                  type="text"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Subject"
-                  required
-                />
-              </div>
-
-              {/* Category Dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Category</label>
-                <select
-                  value={formData.category?.id || ""}
-                  onChange={(e) => {
-                    // Convert e.target.value to a number for comparison
-                    const selectedCategoryId = Number(e.target.value);
-                    const selectedCategory = categoryOptions.find((cat) => cat.id === selectedCategoryId);
-                    setFormData((prev) => ({
-                      ...prev,
-                      category: selectedCategory || null,
-                    }));
-                  }}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select category</option>
-                  {categoryOptions.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Year Dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Year</label>
-                <select
-                  value={formData.year?.id || ""}
-                  onChange={(e) => {
-                    // Convert e.target.value to a number for comparison
-                    const selectedYearId = Number(e.target.value);
-                    const selectedYear = yearOptions.find((year) => year.id === selectedYearId);
-                    setFormData((prev) => ({
-                      ...prev,
-                      year: selectedYear || null,
-                    }));
-                  }}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select Year</option>
-                  {yearOptions.map((year) => (
-                    <option key={year.id} value={year.id}>
-                      {year.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Email with Validation */}
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Email"
-                  required
-                />
-                {formData.email && !validateEmail(formData.email) && (
-                  <p className="text-red-500 text-sm mt-1">Please enter a valid email address</p>
-                )}
-              </div>
-            </div>
-
-            {/* File Upload Section */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Upload Files</label>
-              <input
-                type="file"
-                multiple
-                onChange={(e) => handleFileUpload(Array.from(e.target.files))}
-                className="hidden"
-                id="file-upload"
-                ref={fileInputRef}
-                accept="*/*" // Allow all file types
-              />
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium text-gray-700"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-                Choose Files
-              </label>
-              <span className="ml-2 text-sm text-gray-500">
-                {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : "No file chosen"}
-              </span>
-            </div>
-
-            {/* Uploaded Files List */}
-            {formData.uploadedFiles && formData.uploadedFiles.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Uploaded Files</h3>
-                <div className="space-y-2">
-                  {formData.uploadedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
-                      <span className="text-sm text-gray-700">{file.name}</span>
-                      <button
-                        onClick={() => handleDiscardFile(index)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleDiscardAll}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
-              >
-                Discard
-              </button>
-              <button
-                onClick={handleAddDocument}
-                disabled={!formData.uploadedFiles || formData.uploadedFiles.length === 0 || isUploading}
-                className={`px-4 py-2 rounded-md text-sm text-white ${
-                  !formData.uploadedFiles || formData.uploadedFiles.length === 0 || isUploading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
-              >
-                {isUploading ? "Adding..." : "Add File"}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Table Section - keeping existing table, pagination, and search as requested */}
-        <div className="mt-6">
+          
           {/* Search and Show Controls */}
           <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
             <div className="flex items-center bg-blue-500 rounded-lg">
@@ -1637,6 +1439,8 @@ const WaitingRoom = ({ fieldsDisabled }) => {
             </div>
           </div>
         </div>
+        </div>
+
       </div>
     </div>
   )

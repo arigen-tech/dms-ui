@@ -99,7 +99,6 @@ const protectedRoutes = [
   { path: "/Add-form-reports", element: <AddFormReportss/>, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/Assign-applications", element: <AssignApplications/>, allowedRoles: [SYSTEM_ADMIN] },
   { path: "/Role-rights", element: <RoleRightss/>, allowedRoles: [SYSTEM_ADMIN] },
-  { path: "/Waiting-room", element: <WaitingRooms/>, allowedRoles: [SYSTEM_ADMIN] },
 
 
 
@@ -129,6 +128,7 @@ function App() {
           ))}
           <Route path="/" element={<LoginPage />} />
           <Route path="/notifications" element={<Notification />} />
+          <Route path="//Waiting-room" element={<WaitingRooms />} />
         </Routes>
         
       </div>

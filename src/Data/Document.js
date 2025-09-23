@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import apiClient from "../API/apiClient";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Popup from "../Components/Popup";
 import { useDropzone } from "react-dropzone";
 import FilePreviewModal from "../Components/FilePreviewModal";
@@ -27,6 +27,8 @@ import { API_HOST, DOCUMENTHEADER_API, FILETYPE_API } from "../API/apiConfig";
 
 const DocumentManagement = ({ fieldsDisabled }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const params = useParams();
   const data = location.state;
   const [formData, setFormData] = useState({
     fileNo: "",
@@ -1372,6 +1374,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
+                <div className="flex gap-4 mt-6">
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/Waiting-room")}
+                    className="ml-4 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                  >
+                    Choose From the Waiting Room
+                  </button>
+                </div>
 
                 {/* Buttons */}
                 <div className="flex gap-4 mt-6">
