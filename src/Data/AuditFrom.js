@@ -261,8 +261,8 @@ const AuditForm = () => {
               <tr className="bg-slate-100">
                 <th className="border p-2 text-left">SR.</th>
                 <th className="border p-2 text-left">Form Name</th>
-                <th className="border p-2 text-left">Activity</th>
-                <th className="border p-2 text-left">Created Date</th>
+                <th className="border p-2 text-left">Action Name</th>
+                <th className="border p-2 text-left">Action Date & Time</th>
                 <th className="border p-2 text-left">Employee</th>
                 <th className="border p-2 text-left">Status</th>
                 <th className="border p-2 text-left">IP Address</th>
