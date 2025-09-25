@@ -68,10 +68,31 @@ const AuditForm = () => {
   const fetchForms = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${ DOCUMENTHEADER_API}/getAllDocumentsAuditLog`, {
+      const response = await axios.get(`${DOCUMENTHEADER_API}/getAllDocumentsAuditLog`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setForms(response.data);
+      
+      // Map the API response to match component expectations
+      const mappedForms = response.data.map(log => ({
+        id: log.logId,
+        name: log.formName || 'N/A',
+        type: log.activity,
+        createdOn: log.createdAt,
+        createdBy: {
+          name: log.employeeName
+        },
+        status: log.status,
+        branch: {
+          id: log.branchId
+        },
+        department: {
+          id: log.departmentId
+        },
+        // Keep original data for reference
+        originalData: log
+      }));
+      
+      setForms(mappedForms);
     } catch (error) {
       showPopup("Error fetching audit forms.", "error");
     } finally {
@@ -97,9 +118,9 @@ const AuditForm = () => {
 
   const confirmAction = async () => {
     try {
-      // Example API for approve/reject
+      // Update this API endpoint to match your actual audit log endpoints
       await axios.put(
-        `${API_HOST}/auditform/${selectedForm.id}/${actionType}`,
+        `${DOCUMENTHEADER_API}/auditlog/${selectedForm.id}/${actionType}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -117,6 +138,8 @@ const AuditForm = () => {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
 
   // Filtering
@@ -237,12 +260,13 @@ const AuditForm = () => {
             <thead>
               <tr className="bg-slate-100">
                 <th className="border p-2 text-left">SR.</th>
-                <th className="border p-2 text-left">Audit Name</th>
-                <th className="border p-2 text-left">Type</th>
-                <th className="border p-2 text-left">Created Date</th>
-                <th className="border p-2 text-left">Created By</th>
+                <th className="border p-2 text-left">Form Name</th>
+                <th className="border p-2 text-left">Action Name</th>
+                <th className="border p-2 text-left">Action Date & Time</th>
+                <th className="border p-2 text-left">Employee</th>
                 <th className="border p-2 text-left">Status</th>
-                <th className="border p-2 text-left">Action</th>
+                <th className="border p-2 text-left">IP Address</th>
+                
               </tr>
             </thead>
             <tbody>
@@ -250,31 +274,27 @@ const AuditForm = () => {
                 paginatedForms.map((form, i) => (
                   <tr key={form.id}>
                     <td className="border p-2">{(currentPage - 1) * itemsPerPage + i + 1}</td>
-                    <td className="border p-2">{form.name}</td>
+                    <td className="border p-2" title={form.name}>{form.name}</td>
                     <td className="border p-2">{form.type}</td>
                     <td className="border p-2">{formatDate(form.createdOn)}</td>
                     <td className="border p-2">{form.createdBy?.name}</td>
-                    <td className="border p-2">{form.status}</td>
-                    <td className="border p-2 flex gap-2">
-                      <button
-                        onClick={() => handleAction(form, "approve")}
-                        className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleAction(form, "reject")}
-                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                      >
-                        Reject
-                      </button>
+                    <td className="border p-2">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        form.status === 'Success' ? 'bg-green-100 text-green-800' : 
+                        form.status === 'Failure' ? 'bg-red-100 text-red-800' : 
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {form.status}
+                      </span>
                     </td>
+                    <td className="border p-2">{form.originalData?.ipAddress}</td>
+                    
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="border p-2 text-center">
-                    No forms found.
+                  <td colSpan="8" className="border p-2 text-center">
+                    No audit logs found.
                   </td>
                 </tr>
               )}
@@ -342,7 +362,7 @@ const AuditForm = () => {
               <h2 className="text-lg font-semibold mb-4">Confirm Action</h2>
               <p className="mb-4">
                 Are you sure you want to{" "}
-                <strong className="capitalize">{actionType}</strong> the form{" "}
+                <strong className="capitalize">{actionType}</strong> the audit log for{" "}
                 <strong>{selectedForm?.name}</strong>?
               </p>
               <div className="flex justify-end gap-4">
