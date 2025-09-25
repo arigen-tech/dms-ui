@@ -97,14 +97,11 @@ const ApprovedDoc = () => {
       setLoading(true);
       let response;
 
-      // Differentiate between ADMIN and USER API calls
       if (role === "USER") {
         response = await axios.get(
           `${API_HOST}/api/documents/approved/employee/${UserId}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
       } else if (
@@ -115,13 +112,15 @@ const ApprovedDoc = () => {
         response = await axios.get(`${API_HOST}/api/documents/approvedByEmp`, {
           headers: {
             Authorization: `Bearer ${token}`,
-            employeeId: UserId, // Include employeeId in headers for ADMIN role
+            employeeId: UserId,
           },
         });
       }
 
-      setDocuments(response.data);
-      console.log("doc ", response.data);
+      // ✅ response.data will already be an array
+      setDocuments(Array.isArray(response.data) ? response.data : []);
+
+      console.log("Fetched documents:", response.data);
     } catch (error) {
       console.error("Error fetching documents:", error);
       setError("Failed to fetch documents. Please try again.");
