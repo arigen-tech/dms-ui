@@ -50,6 +50,7 @@ function RejectedDoc() {
   const [viewFileTypeModel, setViewFileTypeModel] = useState(false);
   const [filesType, setFilesType] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [openingFiles, setOpeningFiles] = useState(null);
 
 
   const token = localStorage.getItem("tokenKey");
@@ -225,45 +226,31 @@ function RejectedDoc() {
   console.log("Error: ", error);
 
   const openFile = async (file) => {
-    setIsOpeningFile(true);
-    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-    const department = selectedDoc.employee.department.name.replace(
-      / /g,
-      "_"
-    );
-    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
-
-    const version = file.version;
-    const fileName = file.docName.replace(/ /g, "_");
-
-    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-      branch
-    )}/${encodeURIComponent(department)}/${encodeURIComponent(
-      year
-    )}/${encodeURIComponent(category)}/${encodeURIComponent(
-      version
-    )}/${encodeURIComponent(fileName)}`;
-
     try {
-      const response = await axios.get(fileUrl, {
+      setOpeningFiles(true);
+
+      // Encode each segment separately to preserve folder structure
+      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
+
+      const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
-      let blob = new Blob([response.data], { type: response.headers["content-type"] });
-      let url = URL.createObjectURL(blob);
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("❌ Error fetching file:", error);
       alert("Failed to fetch or preview the file.");
+    } finally {
+      setOpeningFiles(false);
     }
-    setIsOpeningFile(false);
   };
 
   const handleDownload = async (file) => {

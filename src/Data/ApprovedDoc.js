@@ -45,6 +45,7 @@ const ApprovedDoc = () => {
   const [viewFileTypeModel, setViewFileTypeModel] = useState(false);
   const [filesType, setFilesType] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [openingFiles, setOpeningFiles] = useState(null);
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
@@ -211,51 +212,29 @@ const ApprovedDoc = () => {
 
   const openFile = async (file) => {
     try {
-      setIsOpeningFile(true);
-      if (!file) {
-        throw new Error("File object is undefined.");
-      }
-      console.log(file);
+      setOpeningFiles(true);
 
-      const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-      const department = selectedDoc.employee.department.name.replace(
-        / /g,
-        "_"
-      );
-      const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-      const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+      // Encode each segment separately to preserve folder structure
+      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
 
-      const version = file.version;
-      const fileName = file.docName.replace(/ /g, "_");
-
-      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch
-      )}/${encodeURIComponent(department)}/${encodeURIComponent(
-        year
-      )}/${encodeURIComponent(category)}/${encodeURIComponent(
-        version
-      )}/${encodeURIComponent(fileName)}`;
-
-      console.log("File URL:", fileUrl);
-
-      const response = await axios.get(fileUrl, {
+      const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
-      let blob = new Blob([response.data], { type: response.headers["content-type"] });
-      let url = URL.createObjectURL(blob);
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("❌ Error fetching file:", error);
       alert("Failed to fetch or preview the file.");
     } finally {
-      setIsOpeningFile(false);
+      setOpeningFiles(false);
     }
   };
 
