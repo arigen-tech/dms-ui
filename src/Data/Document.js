@@ -417,6 +417,34 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
 
+  // Handle documents from waiting room
+  useEffect(() => {
+    if (location.state?.fromWaitingRoom && location.state?.selectedDocuments) {
+      const waitingRoomDocs = location.state.selectedDocuments;
+
+      // Convert waiting room documents to the format expected by DocumentManagement
+      const convertedFiles = waitingRoomDocs.map((doc) => ({
+        path: doc.filepath,
+        version: doc.version,
+        yearMaster: { id: null, name: doc.year }, // You might need to match this with your year options
+        displayName: doc.documentName,
+        status: "PENDING"
+      }));
+
+      // Update form data with the selected documents
+      setFormData(prevData => ({
+        ...prevData,
+        fileNo: waitingRoomDocs[0]?.documentName?.substring(0, 10) || "", // Extract from first doc
+        uploadedFilePaths: convertedFiles
+      }));
+
+      setUploadedFilePath(convertedFiles);
+      setUploadedFileNames(waitingRoomDocs.map(doc => doc.documentName));
+
+      showPopup(`${waitingRoomDocs.length} documents loaded from waiting room`, "success");
+    }
+  }, [location.state]);
+
   const handleFileChange = (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 0) {
@@ -1385,6 +1413,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   </button>
                 </div>
 
+                {/* Show indicator if documents came from waiting room */}
+                {location.state?.fromWaitingRoom && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-blue-800 text-sm">
+                      📁 Documents loaded from Waiting Room ({location.state?.selectedDocuments?.length} files)
+                    </p>
+                  </div>
+                )}
+
                 {/* Buttons */}
                 <div className="flex gap-4 mt-6">
                   <button
@@ -1580,7 +1617,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               uploadedFilePath?.map((file, index) => {
                 const displayName = uploadedFileNames[index];
                 const version = file.version;
-                const rejectionReason = file?.rejectionReason || null; 
+                const rejectionReason = file?.rejectionReason || null;
                 const status = file?.status;
 
                 const isDisabled = formData?.uploadedFilePaths?.some(

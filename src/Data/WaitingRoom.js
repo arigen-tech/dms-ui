@@ -2,162 +2,71 @@
 
 import { useRef, useState, useEffect } from "react"
 import apiClient from "../API/apiClient"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import Popup from "../Components/Popup"
 import LoadingComponent from "../Components/LoadingComponent"
-import { API_HOST, FILETYPE_API } from "../API/apiConfig"
+import { API_HOST } from "../API/apiConfig"
 import { MagnifyingGlassIcon, EyeIcon, ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid"
 
-const WaitingRoom = ({ fieldsDisabled }) => {
-  const location = useLocation()
+const WaitingRoom = () => {
   const navigate = useNavigate()
-  const data = location.state
-  const [formData, setFormData] = useState({
-    uploadedFilePaths: [],
-    uploadedFiles: [],
-  })
-  const [uploadedFileNames, setUploadedFileNames] = useState([])
-  const [uploadedFilePath, setUploadedFilePath] = useState([])
-  const [selectedFiles, setSelectedFiles] = useState([])
-  const [isOpen, setIsOpen] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedDoc, setSelectedDoc] = useState({ paths: [] })
-  const [isUploadEnabled, setIsUploadEnabled] = useState(false)
-  const [printTrue, setPrintTrue] = useState(false)
+  
+  // Essential state variables only
   const [documents, setDocuments] = useState([])
-  const fileInputRef = useRef(null)
+  const [loading, setLoading] = useState(false)
   const [totalItems, setTotalItems] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
-  const [isUploading, setIsUploading] = useState(false)
-  const [popupMessage, setPopupMessage] = useState(null)
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [searchTerm, setSearchTerm] = useState("")
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const token = localStorage.getItem("token")
-  const UserId = localStorage.getItem("userId")
-  const [error, setError] = useState("")
-  const [qrCodeUrl, setQrCodeUrl] = useState(null)
-  const [filesType, setFilesType] = useState([])
-  const [unsportFile, setUnsportFile] = useState(false)
-  const [viewFileTypeModel, setViewFileTypeModel] = useState(false)
-  const [folderUpload, setFolderUpload] = useState(false)
-  const [uploadController, setUploadController] = useState(null)
+  const [selectedRowIds, setSelectedRowIds] = useState([])
+  const [popupMessage, setPopupMessage] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedDoc, setSelectedDoc] = useState(null)
   const [blobUrl, setBlobUrl] = useState("")
   const [contentType, setContentType] = useState("")
-  const [selectedDocFile, setSelectedDocFiles] = useState(null)
-  const [searchFileTerm, setSearchFileTerm] = useState("")
-  const [openingFileIndex, setOpeningFileIndex] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [bProcess, setBProcess] = useState(false)
-  const [loadingFiles, setLoadingFiles] = useState(false)
-  const [openingFiles, setOpeningFiles] = useState(null)
-  const [deletingFiles, setDeletingFiles] = useState(null)
+  const [openingFiles, setOpeningFiles] = useState(false)
 
-  const [filterCategory, setFilterCategory] = useState("")
-  const [filterYear, setFilterYear] = useState("")
-  const [selectedRowIds, setSelectedRowIds] = useState([])
-
-  const SAMPLE_DOCUMENTS = [
-    {
-      id: 1,
-      docName: "Annual_Report_2024.pdf",
-      sourceName: "Finance_Department.pdf",
-      version: "1.0",
-      fileType: "pdf",
-      createdOn: "2025-09-23T10:00:00.000Z",
-    },
-    {
-      id: 2,
-      docName: "Project_Proposal_Marketing.docx",
-      sourceName: "Marketing_Team.docx",
-      version: "2.1",
-      fileType: "docx",
-      createdOn: "2025-09-22T14:30:00.000Z",
-    },
-    {
-      id: 3,
-      docName: "Budget_Analysis_Q3.xlsx",
-      sourceName: "Accounting_Dept.xlsx",
-      version: "1.5",
-      fileType: "xlsx",
-      createdOn: "2025-09-21T09:15:00.000Z",
-    },
-    {
-      id: 4,
-      docName: "Training_Manual_HR.pptx",
-      sourceName: "Human_Resources.pptx",
-      version: "3.0",
-      fileType: "pptx",
-      createdOn: "2025-09-20T16:45:00.000Z",
-    },
-  ]
-
-  console.log("formData", formData)
-
-  const fetchPaths = async () => {
-    // Dummy implementation to satisfy the linter. Replace with actual logic if needed.
-    console.log("Fetching paths...")
-  }
+  const token = localStorage.getItem("token")
 
   useEffect(() => {
     fetchDocuments()
-    fetchPaths()
-    fetchFilesType()
   }, [])
 
   const showPopup = (message, type = "info") => {
     setPopupMessage({
       message,
       type,
-      onClose: () => {
-        setPopupMessage(null)
-      },
+      onClose: () => setPopupMessage(null),
     })
-  }
-
-  console.log("already uploaded", uploadedFilePath)
-
-  const fetchFilesType = async () => {
-    try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      setFilesType(response?.data?.response ?? [])
-    } catch (error) {
-      console.error("Error fetching Files Types:", error)
-      setFilesType([])
-    }
   }
 
   const fetchDocuments = async () => {
     try {
       setLoading(true)
-      setDocuments(SAMPLE_DOCUMENTS)
-      setTotalItems(SAMPLE_DOCUMENTS.length)
+      const response = await apiClient.get('/home/getallwaitingroom', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      
+      const docs = response?.data?.response || []
+      setDocuments(docs)
+      setTotalItems(docs.length)
     } catch (error) {
       console.error("Error fetching documents:", error)
-      if (error.response) {
-        console.error("Error response data:", error.response.data)
-        console.error("Error response status:", error.response.status)
-      } else if (error.request) {
-        console.error("No response received:", error.request)
-      } else {
-        console.error("Error setting up request:", error.message)
-      }
+      showPopup("Failed to fetch documents", "error")
+      setDocuments([])
     } finally {
       setLoading(false)
     }
   }
 
-  console.log("all doc by user", documents)
-
-  const openFile = async (file) => {
+  const openFile = async (doc) => {
     try {
       setOpeningFiles(true)
-
-      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/")
+      
+      // Use the filepath from the API response
+      const encodedPath = doc.filepath.split("/").map(encodeURIComponent).join("/")
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`
 
       const response = await apiClient.get(fileUrl, {
@@ -170,11 +79,11 @@ const WaitingRoom = ({ fieldsDisabled }) => {
 
       setBlobUrl(url)
       setContentType(response.headers["content-type"])
-      setSearchFileTerm("")
+      setSelectedDoc(doc)
       setIsModalOpen(true)
     } catch (error) {
-      console.error("❌ Error fetching file:", error)
-      alert("Failed to fetch or preview the file.")
+      console.error("Error opening file:", error)
+      showPopup("Failed to open file", "error")
     } finally {
       setOpeningFiles(false)
     }
@@ -185,10 +94,11 @@ const WaitingRoom = ({ fieldsDisabled }) => {
     const createdDate = doc.createdOn ? new Date(doc.createdOn).toLocaleDateString("en-GB") : ""
 
     return (
-      (doc.docName && doc.docName.toLowerCase().includes(search)) ||
+      (doc.documentName && doc.documentName.toLowerCase().includes(search)) ||
       (doc.sourceName && doc.sourceName.toLowerCase().includes(search)) ||
       (doc.version && doc.version.toLowerCase().includes(search)) ||
       (doc.fileType && doc.fileType.toLowerCase().includes(search)) ||
+      (doc.year && doc.year.includes(search)) ||
       createdDate.includes(search)
     )
   })
@@ -210,8 +120,18 @@ const WaitingRoom = ({ fieldsDisabled }) => {
     }
 
     const selectedDocumentsData = documents.filter((doc) => selectedRowIds.includes(doc.id))
-    console.log("JSON for selected documents:", JSON.stringify(selectedDocumentsData, null, 2))
-    navigate("/all-documents")
+    console.log("Selected documents:", selectedDocumentsData)
+    
+    // Add your save logic here
+    showPopup(`Successfully saved ${selectedRowIds.length} documents`, "success")
+    
+    navigate("/all-documents", { 
+    state: { 
+      selectedDocuments: selectedDocumentsData,
+      fromWaitingRoom: true 
+    } 
+  })
+
   }
 
   const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage)
@@ -224,23 +144,24 @@ const WaitingRoom = ({ fieldsDisabled }) => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i)
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "--"
-    const date = new Date(dateString)
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "--"
+    const date = new Date(timestamp)
     if (isNaN(date.getTime())) return "--"
-    const options = { day: "2-digit", month: "2-digit", year: "numeric" }
-    return date.toLocaleString("en-GB", options).replace(",", "")
-  }
-
-  const openModal = (doc) => {
-    setSelectedDoc(doc)
-    fetchPaths(doc)
-    setIsOpen(true)
+    return date.toLocaleDateString("en-GB", { 
+      day: "2-digit", 
+      month: "2-digit", 
+      year: "numeric" 
+    })
   }
 
   const closeModal = () => {
-    setIsOpen(false)
+    setIsModalOpen(false)
     setSelectedDoc(null)
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl)
+      setBlobUrl("")
+    }
   }
 
   if (loading) {
@@ -253,7 +174,11 @@ const WaitingRoom = ({ fieldsDisabled }) => {
         <div className="bg-white p-4 rounded-lg shadow-sm">
           <div className="mt-6">
             {popupMessage && (
-              <Popup message={popupMessage.message} type={popupMessage.type} onClose={() => setPopupMessage(null)} />
+              <Popup 
+                message={popupMessage.message} 
+                type={popupMessage.type} 
+                onClose={() => setPopupMessage(null)} 
+              />
             )}
 
             {/* Search and Show Controls */}
@@ -281,8 +206,8 @@ const WaitingRoom = ({ fieldsDisabled }) => {
               <div className="flex items-center">
                 <input
                   type="text"
-                  placeholder="Search by document name, source name, version, file type..."
-                  className="border rounded-l-md p-1.5 outline-none"
+                  placeholder="Search by document name, source, version, type, year..."
+                  className="border rounded-l-md p-1.5 outline-none w-80"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   maxLength={50}
@@ -296,8 +221,9 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="border p-2 text-left">SR.</th>
-                    <th className="border p-2 text-left">Doc Name</th>
+                    <th className="border p-2 text-left">Document Name</th>
                     <th className="border p-2 text-left">Source Name</th>
+                    <th className="border p-2 text-left">Year</th>
                     <th className="border p-2 text-left">Version</th>
                     <th className="border p-2 text-left">File Type</th>
                     <th className="border p-2 text-left">Created Date</th>
@@ -306,28 +232,42 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedDocuments.map((doc, index) => (
-                    <tr key={doc.id}>
-                      <td className="border p-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                      <td className="border p-2">{doc.docName}</td>
-                      <td className="border p-2">{doc.sourceName}</td>
-                      <td className="border p-2">{doc.version}</td>
-                      <td className="border p-2">{doc.fileType}</td>
-                      <td className="border p-2">{formatDate(doc.createdOn)}</td>
-                      <td className="border p-2">
-                        <button onClick={() => openModal(doc)}>
-                          <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
-                        </button>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedRowIds.includes(doc.id)}
-                          onChange={(e) => handleCheckboxChange(doc.id, e.target.checked)}
-                        />
+                  {paginatedDocuments.length > 0 ? (
+                    paginatedDocuments.map((doc, index) => (
+                      <tr key={doc.id} className="hover:bg-gray-50">
+                        <td className="border p-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                        <td className="border p-2">{doc.documentName || '--'}</td>
+                        <td className="border p-2">{doc.sourceName || '--'}</td>
+                        <td className="border p-2">{doc.year || '--'}</td>
+                        <td className="border p-2">{doc.version || '--'}</td>
+                        <td className="border p-2 uppercase">{doc.fileType || '--'}</td>
+                        <td className="border p-2">{formatDate(doc.createdOn)}</td>
+                        <td className="border p-2">
+                          <button 
+                            onClick={() => openFile(doc)}
+                            disabled={openingFiles}
+                            className="disabled:opacity-50"
+                          >
+                            <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white hover:bg-green-500" />
+                          </button>
+                        </td>
+                        <td className="border p-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedRowIds.includes(doc.id)}
+                            onChange={(e) => handleCheckboxChange(doc.id, e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="9" className="border p-4 text-center text-gray-500">
+                        No documents found
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
 
@@ -340,64 +280,101 @@ const WaitingRoom = ({ fieldsDisabled }) => {
                     selectedRowIds.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
                   }`}
                 >
-                  Save Selected
+                  Save Selected ({selectedRowIds.length})
                 </button>
               </div>
 
               {/* Pagination Controls */}
-              <div className="flex items-center mt-4">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1 || totalPages === 0}
-                  className={`px-3 py-1 rounded mr-3 ${
-                    currentPage === 1 || totalPages === 0
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-slate-200 hover:bg-slate-300"
-                  }`}
-                >
-                  <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                  Previous
-                </button>
-
-                {totalPages > 0 &&
-                  getPageNumbers().map((page) => (
+              {totalPages > 0 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center">
                     <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 rounded mx-1 ${
-                        currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-1 rounded mr-3 ${
+                        currentPage === 1
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-slate-200 hover:bg-slate-300"
                       }`}
                     >
-                      {page}
+                      <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
+                      Previous
                     </button>
-                  ))}
 
-                <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+                    {getPageNumbers().map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 rounded mx-1 ${
+                          currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
 
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className={`px-3 py-1 rounded ml-3 ${
-                    currentPage === totalPages || totalPages === 0
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-slate-200 hover:bg-slate-300"
-                  }`}
-                >
-                  Next
-                  <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-                </button>
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-1 rounded ml-3 ${
+                        currentPage === totalPages
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-slate-200 hover:bg-slate-300"
+                      }`}
+                    >
+                      Next
+                      <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+                    </button>
+                  </div>
 
-                <div className="ml-4">
-                  <span className="text-sm text-gray-700">
-                    Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-                    {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
-                  </span>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-700">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <span className="text-sm text-gray-700">
+                      Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
+                      {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* File Preview Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                {selectedDoc?.documentName} - {selectedDoc?.version}
+              </h3>
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Close
+              </button>
+            </div>
+            
+            {blobUrl && (
+              <div className="w-full h-96">
+                {contentType?.includes('pdf') ? (
+                  <iframe src={blobUrl} className="w-full h-full border" />
+                ) : contentType?.includes('image') ? (
+                  <img src={blobUrl} alt="Document" className="max-w-full max-h-full" />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-gray-100">
+                    <p>Preview not available for this file type</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
