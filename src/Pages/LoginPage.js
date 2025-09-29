@@ -597,7 +597,7 @@ const LoginPage = () => {
 
       if (response.status === 200) {
         setOtpDigits(Array(6).fill(""));
-        const { token, roles, name, id } = response.data;
+        const { token, roles, currRoleId, name, id } = response.data;
 
         const decodedToken = jwtDecode(token);
         const expirationTime = decodedToken.exp;
@@ -607,6 +607,7 @@ const LoginPage = () => {
         localStorage.setItem("email", formData.username);
         localStorage.setItem("UserName", name);
         localStorage.setItem("role", roles);
+        localStorage.setItem("currRoleId", currRoleId);
         localStorage.setItem("userId", id);
 
         const redirectUrl = localStorage.getItem("redirectUrl");

@@ -343,92 +343,84 @@ const ArchiveDashboard = () => {
                     {/* 🔹 Data Table */}
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden p-4">
                         <div className="overflow-x-auto">
-                            <table className="w-full">
+                            <table className="w-full border border-gray-200 rounded-lg">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            S.N.
-                                        </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Archive Name
-                                        </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Archival Priod
-                                        </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Office Name
-                                        </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Department
-                                        </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Status
-                                        </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Scheduled Date
-                                        </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Archived Date
-                                        </th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Documents
-                                        </th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">S.N.</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Archive Name</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Archival Period</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Office Name</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Scheduled Date</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Archived Date</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Progress</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total Files</th>
                                     </tr>
                                 </thead>
+
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {paginatedFiles.map((item, idx) => (
-                                        <tr key={item.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-2 text-sm">
-                                                {idx + 1 + (currentPage - 1) * itemsPerPage}
-                                            </td>
+                                    {paginatedFiles.map((item, idx) => {
+                                        const totalFiles = item.totalFiles || 0;
+                                        const archivedFiles = item.archivedFiles || 0;
+                                        const failedFiles = item.failedFiles || 0;
 
-                                            <td className="px-4 py-2 text-sm">
-                                                {item.archiveName}
-                                            </td>
+                                        let displayStatus = item.status;
+                                        let percentage = 0;
+                                        let statusColor = "bg-gray-400";
 
-                                            <td className="px-4 py-2 text-sm">
-                                                {`${formatDate(item.fromDate)} TO ${formatDate(item.toDate)}`}
-                                            </td>
+                                        if (item.status === "WAITING" || totalFiles === 0) {
+                                            displayStatus = "WAITING";
+                                            percentage = 0;
+                                            statusColor = "bg-gray-400";
+                                        } else if (archivedFiles === 0 && failedFiles > 0) {
+                                            displayStatus = "FAILED";
+                                            percentage = 100;
+                                            statusColor = "bg-red-500";
+                                        } else if (archivedFiles > 0) {
+                                            displayStatus = "ARCHIVED";
+                                            percentage = Math.round((archivedFiles / totalFiles) * 100);
+                                            statusColor = "bg-green-500";
+                                        }
 
-                                            <td className="px-4 py-2 text-sm">
-                                                {item.branchName || "All offices"}
-                                            </td>
+                                        return (
+                                            <tr key={item.id} className="hover:bg-gray-50">
+                                                <td className="px-4 py-2 text-sm">{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
+                                                <td className="px-4 py-2 text-sm">{item.archiveName}</td>
+                                                <td className="px-4 py-2 text-sm">{`${formatDate(item.fromDate)} TO ${formatDate(item.toDate)}`}</td>
+                                                <td className="px-4 py-2 text-sm">{item.branchName || "All offices"}</td>
+                                                <td className="px-4 py-2 text-sm">{item.departmentName || "All Department"}</td>
+                                                <td className="px-4 py-2 text-sm">
+                                                    <span
+                                                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(displayStatus)}`}
+                                                    >
+                                                        {displayStatus} {percentage > 0 ? `${percentage}%` : ""}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-2 text-sm">{formatDate(item.archiveDateTime)}</td>
+                                                <td className="px-4 py-2 text-sm">{formatDate(item.archivedDateTime) || "-"}</td>
 
-                                            <td className="px-4 py-2 text-sm">
-                                                {item.departmentName || "All Department"}
-                                            </td>
+                                                {/* Progress Bar */}
+                                                <td className="px-4 py-2">
+                                                    <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`${statusColor} h-4`}
+                                                            style={{ width: `${percentage}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 mt-1">
+                                                        {archivedFiles} archived / {failedFiles} failed
+                                                    </div>
+                                                </td>
 
-                                            <td className="px-4 py-2 text-sm">
-                                                <span
-                                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                                                        item.status
-                                                    )}`}
-                                                >
-                                                    {item.status === "WAITING" ? "WAITING FOR PROCESSING" : item.status}
-                                                </span>
-                                            </td>
-
-                                            <td className="px-4 py-2 text-sm">
-                                                {formatDate(item.archiveDateTime)}
-                                            </td>
-
-                                            <td className="px-4 py-2 text-sm">
-                                                {formatDate(item.archivedDateTime) || "-"}
-                                            </td>
-
-                                            <td className="px-4 py-2 text-sm">
-                                                {item.status === "ARCHIVED"
-                                                    ? (item.archivedDocuments != null ? item.archivedDocuments : 0)
-                                                    : (item.totalFiles != null ? item.totalFiles : "-")}
-                                            </td>
-
-                                        </tr>
-                                    ))}
+                                                <td className="px-4 py-2 text-sm">{totalFiles}</td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
-
                             </table>
-
                         </div>
+
 
                         {/* Pagination */}
                         <div className="flex items-center mt-4">
