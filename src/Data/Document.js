@@ -38,6 +38,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     category: null,
     uploadedFilePaths: [],
   });
+
+  // Add after formData state
+  useEffect(() => {
+    const { fileNo, title, subject, version, category, year } = formData;
+    setIsMetadataComplete(!!(fileNo && title && subject && version && category && year));
+  }, [formData]);
+
   const [uploadedFileNames, setUploadedFileNames] = useState([]);
   const [uploadedFilePath, setUploadedFilePath] = useState([]);
   // const [uploadedFileVersion, setUploadedFileVersion] = useState([]);
@@ -82,6 +89,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [openingFiles, setOpeningFiles] = useState(null);
   const [deletingFiles, setDeletingFiles] = useState(null);
   const formSectionRef = useRef(null);
+  const [isMetadataComplete, setIsMetadataComplete] = useState(false);
 
 
 
@@ -111,6 +119,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   console.log("already uploaded", uploadedFilePath);
+
+
 
   const fetchFilesType = async () => {
     try {
@@ -418,32 +428,60 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   // Handle documents from waiting room
-  useEffect(() => {
-    if (location.state?.fromWaitingRoom && location.state?.selectedDocuments) {
-      const waitingRoomDocs = location.state.selectedDocuments;
 
-      // Convert waiting room documents to the format expected by DocumentManagement
-      const convertedFiles = waitingRoomDocs.map((doc) => ({
-        path: doc.filepath,
-        version: doc.version,
-        yearMaster: { id: null, name: doc.year }, // You might need to match this with your year options
-        displayName: doc.documentName,
-        status: "PENDING"
-      }));
+  // Add this function to generate file names using Document Management metadata
+  const generateFileNameFromMetadata = (originalName, index, metadata) => {
+    const now = new Date();
+    const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
 
-      // Update form data with the selected documents
-      setFormData(prevData => ({
-        ...prevData,
-        fileNo: waitingRoomDocs[0]?.documentName?.substring(0, 10) || "", // Extract from first doc
-        uploadedFilePaths: convertedFiles
-      }));
+    const baseName = metadata.fileNo ? metadata.fileNo.substring(0, 3) : 'DOC';
+    const originalExtension = originalName.split('.').pop() || 'pdf';
 
-      setUploadedFilePath(convertedFiles);
-      setUploadedFileNames(waitingRoomDocs.map(doc => doc.documentName));
+    return `${baseName}_${metadata.branch}_${metadata.department}_${metadata.year}_${metadata.category}_${metadata.version}_${timestamp}_${index + 1}.${originalExtension}`;
+  };
 
-      showPopup(`${waitingRoomDocs.length} documents loaded from waiting room`, "success");
-    }
-  }, [location.state]);
+  // Update the useEffect that handles waiting room documents
+ useEffect(() => {
+  if (location.state?.fromWaitingRoom && location.state?.selectedDocuments) {
+    const waitingRoomDocs = location.state.selectedDocuments;
+    const metadata = location.state.metadata;
+
+    const convertedFiles = waitingRoomDocs.map((doc, index) => {
+      const displayName = generateFileNameFromMetadata(doc.documentName, index, metadata);
+
+      // ✅ Match year from dropdown
+      const yearOption = yearOptions.find(y => y.name === metadata.year);
+
+      return {
+        path: doc.waitingRoomPath,
+        version: metadata.version,
+        yearMaster: yearOption ? { id: yearOption.id, name: yearOption.name } : null,
+        displayName,
+        status: "PENDING",
+        isWaitingRoomFile: true,
+        waitingRoomId: doc.id,
+        destinationPath: `${metadata.branch}/${metadata.department}/${yearOption ? yearOption.name : metadata.year}/${metadata.category}/${metadata.version}/${displayName}`
+      };
+    });
+
+    // ✅ Fill all metadata fields too!
+    setFormData(prev => ({
+      ...prev,
+      fileNo: metadata.fileNo || prev.fileNo,
+      title: metadata.title || prev.title || "",
+      subject: metadata.subject || prev.subject || "",
+      category: prev.category || { name: metadata.category },  // fallback if dropdown not set
+      year: yearOptions.find(y => y.name === metadata.year) || prev.year,
+      version: metadata.version || prev.version,
+      uploadedFilePaths: convertedFiles,
+    }));
+
+    setUploadedFilePath(convertedFiles);
+    setUploadedFileNames(convertedFiles.map(f => f.displayName));
+  }
+}, [location.state, yearOptions]);
+
+
 
   const handleFileChange = (event) => {
     const files = Array.from(event.target.files);
@@ -821,17 +859,31 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return;
     }
 
-    // ✅ Prepare file paths for backend
+    // Validate that all files have year selected (especially waiting room files)
+    const filesWithoutYear = formData.uploadedFilePaths.filter(file =>
+      !file.yearMaster?.id && !file.yearMaster?.name
+    );
+
+    if (filesWithoutYear.length > 0) {
+      showPopup("Please select year for all files before uploading.", "error");
+      return;
+    }
+
+    // ✅ Prepare file paths for backend - include waiting room info
     const versionedFilePaths = formData.uploadedFilePaths.map((file) => ({
-      path: file.path || file.displayName || "Unknown", // use path first
+      path: file.path || file.displayName || "Unknown",
       version: file.version || formData.version || "1.0",
       yearId: file.yearMaster?.id || formData.year?.id || null,
+      displayName: file.displayName,
+      isWaitingRoomFile: file.isWaitingRoomFile || false,
+      waitingRoomId: file.waitingRoomId || null,
+      destinationPath: file.destinationPath || null
     }));
 
     // ✅ Construct payload
     const payload = {
       documentHeader: {
-        id: formData.id || null, // only if updating
+        id: formData.id || null,
         fileNo: formData.fileNo,
         title: formData.title,
         subject: formData.subject,
@@ -886,6 +938,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       setBProcess(false);
     }
   };
+
 
   const fetchPaths = async (doc) => {
     try {
@@ -1398,6 +1451,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     accept=""
                     multiple
                     onChange={handleFileChange}
+                    disabled={location.state?.fromWaitingRoom}
                     webkitdirectory={folderUpload ? "true" : undefined}
                     className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -1406,21 +1460,37 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
                   <button
                     type="button"
-                    onClick={() => navigate("/Waiting-room")}
-                    className="ml-4 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                    onClick={() => {
+                      const metadata = {
+                        branch: userBranch,
+                        department: userDep,
+                        year: formData.year?.name,
+                        category: formData.category?.name,
+                        version: formData.version,
+                        fileNo: formData.fileNo,
+                      };
+                      navigate("/Waiting-room", { state: { metadata } });
+                    }}
+                    disabled={!isMetadataComplete || selectedFiles.length > 0}
+                    className={`ml-4 p-3 rounded-md ${(!isMetadataComplete || selectedFiles.length > 0)
+                        ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                        : "bg-blue-500 text-white"
+                      }`}
                   >
-                    Choose From the Waiting Room
+                    Choose From Waiting Room
                   </button>
+
+
                 </div>
 
                 {/* Show indicator if documents came from waiting room */}
-                {location.state?.fromWaitingRoom && (
+                {/* {location.state?.fromWaitingRoom && (
                   <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-blue-800 text-sm">
                       📁 Documents loaded from Waiting Room ({location.state?.selectedDocuments?.length} files)
                     </p>
                   </div>
-                )}
+                )} */}
 
                 {/* Buttons */}
                 <div className="flex gap-4 mt-6">
@@ -1496,6 +1566,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 const version = file.version;
                 const status = file?.status;
                 const rejectionReason = file?.rejectionReason || null;
+                const isWaitingRoomFile = file?.isWaitingRoomFile;
+
 
                 return (
                   <li
@@ -1505,17 +1577,28 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     {/* File Name */}
                     <div className="overflow-hidden whitespace-nowrap text-ellipsis">
                       <span className="font-medium text-gray-800">{displayName}</span>
+                      {isWaitingRoomFile && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                          From Waiting Room
+                        </span>
+                      )}
                     </div>
 
-                    {/* Year */}
+                    {/* Year - REQUIRED for waiting room files */}
                     <div className="text-center">
                       <label className="flex justify-center items-center gap-1">
-                        <span className="text-sm font-medium text-gray-600">Year:</span>
+                        <span className="text-sm font-medium text-gray-600">
+                          Year: {isWaitingRoomFile && <span className="text-red-500">*</span>}
+                        </span>
                         <select
                           value={file?.yearMaster?.id || ""}
                           onChange={(e) => handleYearChangeForFile(index, e.target.value)}
-                          disabled={!handleEditDocumentActive || status === "APPROVED"}
-                          className="border rounded-lg px-2 py-1 text-sm w-24 text-center bg-gray-50"
+                          disabled={!handleEditDocumentActive && !isWaitingRoomFile || status === "APPROVED"}
+                          className={`border rounded-lg px-2 py-1 text-sm w-24 text-center ${isWaitingRoomFile && !file?.yearMaster?.id
+                            ? 'border-red-500 bg-red-50'
+                            : 'bg-gray-50'
+                            }`}
+                          required={isWaitingRoomFile}
                         >
                           <option value="">Select</option>
                           {yearOptions?.map((year) => (
@@ -1527,54 +1610,38 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       </label>
                     </div>
 
-                    {/* Version */}
+                    {/* Version - REQUIRED for waiting room files */}
                     <div className="text-center">
                       <label className="flex justify-center items-center gap-2">
-                        <span className="text-sm font-medium text-gray-600">Ver:</span>
+                        <span className="text-sm font-medium text-gray-600">
+                          Ver: {isWaitingRoomFile && <span className="text-red-500">*</span>}
+                        </span>
                         <input
                           type="text"
-                          value={version}
+                          value={version || ""}
                           onChange={(e) => handleVersionChange(index, e.target.value.trim())}
-                          className="border rounded-lg px-2 py-1 text-sm w-20 text-center"
-                          disabled={!handleEditDocumentActive || status === "APPROVED"}
+                          className={`border rounded-lg px-2 py-1 text-sm w-20 text-center ${isWaitingRoomFile && !version
+                            ? 'border-red-500 bg-red-50'
+                            : ''
+                            }`}
+                          disabled={!handleEditDocumentActive && !isWaitingRoomFile || status === "APPROVED"}
                           placeholder="v1"
                           maxLength={10}
+                          required={isWaitingRoomFile}
                         />
                       </label>
                     </div>
 
+                    {/* Status */}
                     <div className="text-center">
-                      <label className="flex justify-center items-center gap-2">
-                        <span className="text-sm font-medium text-gray-600">Status:</span>
-                        <span
-                          data-tooltip-id="status-tooltip"
-                          data-tooltip-html={
-                            status === "REJECTED"
-                              ? `<strong style="color:#dc2626;">Rejected Reason:</strong> ${rejectionReason || "No reason provided"
-                              }`
-                              : ""
-                          }
-                          className={`px-2 py-1 text-xs rounded-full font-medium
-        ${status === "APPROVED"
-                              ? "bg-green-100 text-green-700"
-                              : status === "REJECTED"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}
-                        >
-                          {status || "PENDING"}
-                        </span>
-                      </label>
-
-                      {/* Custom Tooltip */}
-                      <Tooltip
-                        id="status-tooltip"
-                        place="top"
-                        className="!bg-white !text-gray-800 !p-3 !rounded-lg !shadow-lg !max-w-xs !whitespace-pre-wrap border border-gray-300"
-                        style={{ fontSize: "0.85rem" }}
-                      />
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium
+          ${status === "APPROVED" ? "bg-green-100 text-green-700" :
+                          status === "REJECTED" ? "bg-red-100 text-red-700" :
+                            "bg-yellow-100 text-yellow-700"}`}
+                      >
+                        {status || "PENDING"}
+                      </span>
                     </div>
-
 
                     {/* Actions */}
                     <div className="flex justify-end gap-2">
@@ -1607,10 +1674,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       >
                         {deletingFiles === index ? "Deleting..." : "Delete"}
                       </button>
-
                     </div>
                   </li>
-
                 );
               })
             ) : (
@@ -1669,9 +1734,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                         />
                       </label>
                     </div>
-
-
-
                     <div className="text-center">
                       <label className="flex justify-center items-center gap-2">
                         <span className="text-sm font-medium text-gray-600">Status:</span>
@@ -1766,32 +1828,35 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               )}
 
               <div className="mt-3">
-                {editingDoc === null ? (
-
+                {location.state?.fromWaitingRoom ? (
                   <button
+                    type="button"
                     onClick={handleAddDocument}
-                    disabled={bProcess}
-                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"
-                      } text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
-                    aria-label="Upload File"
+                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"}
+      text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
                   >
-                    <PlusCircleIcon className="h-5 w-5 mr-1" />
-                    {bProcess ? "Uploading..." : "Upload Document"}
+                    Upload Document
                   </button>
-
-                ) : (
+                ) : editingDoc ? (
                   <button
                     onClick={handleSaveEdit}
                     disabled={bProcess}
-
-                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"
-                      } text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
-                    aria-label="Update File"
+                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"}
+      text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
                   >
-                    <CheckCircleIcon className="h-5 w-5 mr-1" />
                     {bProcess ? "Updating..." : "Update Document"}
                   </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleAddDocument}
+                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"}
+      text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
+                  >
+                    Upload Document
+                  </button>
                 )}
+
               </div>
             </div>
           </div>
