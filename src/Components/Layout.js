@@ -6,10 +6,16 @@ import Footer from "../Components/Footer";
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
+  const [roleChanged, setRoleChanged] = useState(false);
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-  
+
+  const triggerMenuRefresh = () => {
+    setRoleChanged(prev => !prev);
+  };
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-100">
       {/* Sidebar Container */}
@@ -19,7 +25,7 @@ const Layout = ({ children }) => {
         }`}
       >
         <div className="h-full overflow-y-auto">
-          {sidebarOpen && <Sidebar />}
+          {sidebarOpen && <Sidebar roleChanged={roleChanged} />}
         </div>
       </div>
 
@@ -34,18 +40,14 @@ const Layout = ({ children }) => {
       {/* Main Content Container */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
-        <Header toggleSidebar={toggleSidebar} />
+        <Header toggleSidebar={toggleSidebar} triggerMenuRefresh={triggerMenuRefresh} />
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-auto">
-          {/* Content Wrapper */}
-          <div className="min-h-full flex flex-col"> {/* Added flex and flex-col */}
-            {/* Main Content */}
-            <main className="p-4 flex-1"> {/* Added flex-1 */}
+          <div className="min-h-full flex flex-col">
+            <main className="p-4 flex-1">
               {children}
             </main>
-
-            {/* Footer */}
             <Footer />
           </div>
         </div>

@@ -34,7 +34,7 @@ const DropdownMenu = ({ items, onSelect, emptyMessage, className }) => (
   </div>
 );
 
-function Header({ toggleSidebar, userName }) {
+function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownRoleOpen, setDropdownRoleOpen] = useState(false);
@@ -126,32 +126,39 @@ function Header({ toggleSidebar, userName }) {
     setShowConfirmationPopup(true);
   };
 
-  const confirmRoleSwitch = async () => {
-    try {
-      setIsConfSwitch(true);
-      const employeeId = localStorage.getItem("userId");
-      const response = await axios.put(
-        `${API_HOST}/employee/${employeeId}/role/switch`,
-        { targetRoleName },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("Role switch response:", response.data);
-      localStorage.setItem("role", targetRoleName);
-      setRole(targetRoleName);
-      showPopup("Role switched successfully!", "success");
-      setShowConfirmationPopup(false);
-      fetchUserRole();
-    } catch (error) {
-      showPopup("Error switching role!", "error");
-      setShowConfirmationPopup(false);
-    } finally {
-      setIsConfSwitch(false);
+const confirmRoleSwitch = async () => {
+  try {
+    setIsConfSwitch(true);
+    const employeeId = localStorage.getItem("userId");
+    const response = await axios.put(
+      `${API_HOST}/employee/${employeeId}/role/switch`,
+      { targetRoleName },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const roleId = response.data?.response?.role?.id;
+    if (roleId) {
+      localStorage.setItem("currRoleId", roleId);
+      console.log("currRoleId updated:", roleId);
     }
-  };
+
+    localStorage.setItem("role", targetRoleName);
+    setRole(targetRoleName);
+    showPopup("Role switched successfully!", "success");
+    setShowConfirmationPopup(false);
+
+    // ✅ Trigger Sidebar to refresh menu
+    triggerMenuRefresh();
+
+    fetchUserRole();
+  } catch (error) {
+    showPopup("Error switching role!", "error");
+    setShowConfirmationPopup(false);
+  } finally {
+    setIsConfSwitch(false);
+  }
+};
+
 
   const cancelRoleSwitch = () => {
     setShowConfirmationPopup(false);

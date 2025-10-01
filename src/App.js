@@ -51,6 +51,7 @@ import AssignApplications from "./Pages/AssignApplications";
 import RoleRightss from "./Pages/RoleRightss";
 import AuditForms from "./Pages/AuditForms";
 import WaitingRooms from "./Pages/WaitingRooms";
+import DashboardnEW from "./Pages/DashboardnEW";
 
 
 const protectedRoutes = [
@@ -129,6 +130,7 @@ function App() {
           <Route path="/" element={<LoginPage />} />
           <Route path="/notifications" element={<Notification />} />
           <Route path="//Waiting-room" element={<WaitingRooms />} />
+          <Route path="/newDash" element={<DashboardnEW />} />
         </Routes>
         
       </div>
