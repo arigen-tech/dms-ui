@@ -32,6 +32,7 @@ const Addformreports = () => {
         parentId: "",
         parentName: "",
         url: "",
+        sn: "",
         status: "active", // Default status set to active (will be sent as 'y')
     })
 
@@ -115,6 +116,7 @@ const Addformreports = () => {
                                 name: item.name || "",
                                 parentId: item.parentId || "",
                                 url: item.url || "",
+                                sn: item.serialNo || "",
                                 status: "active", // Always set to active since we're removing the field
                             }
                         })
@@ -230,6 +232,8 @@ const Addformreports = () => {
     }
 
     const handleAppNameSelect = (selectedApp) => {
+
+        console.log("Selected App:", selectedApp)
         // Find the parent name corresponding to the parent ID
         const parentName = parentIdOptions.find(parent => parent.id === selectedApp.parentId)?.name || '';
 
@@ -240,12 +244,14 @@ const Addformreports = () => {
             parentId: selectedApp.parentId,
             parentName: parentName,
             url: selectedApp.url,
+            sn: selectedApp.sn,
             status: "active", // Always set to active
         })
         setOriginalParentId(selectedApp.parentId)
         setIsEditDataLoaded(true)
         setIsAppNameDropdownVisible(false)
     }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
 
@@ -294,6 +300,7 @@ const Addformreports = () => {
                     name: formData.menuName,
                     parentId: originalParentId,
                     url: formData.url,
+                    serialNo: formData.sn,
                     status: "y", // Always set to "y"
                 }
                 : {
@@ -301,6 +308,7 @@ const Addformreports = () => {
                     name: formData.menuName,
                     parentId: formData.parentId || null,
                     url: formData.url,
+                    serialNo: formData.sn,
                     status: "y", // Always set to "y"
                 }
 
@@ -380,209 +388,228 @@ const Addformreports = () => {
 
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
                     {/* <div className="bg-white shadow-md rounded-lg overflow-hidden"> */}
-                        <div className="p-6">
-                            {loading ? (
-                                <LoadingComponent />
-                            ) : (
-                                <form className="space-y-6" onSubmit={handleSubmit}>
+                    <div className="p-6">
+                        {loading ? (
+                            <LoadingComponent />
+                        ) : (
+                            <form className="space-y-6" onSubmit={handleSubmit}>
 
-                                    {isEditMode && (
-                                        <div className="grid grid-cols-1 gap-4 mb-4">
-                                            <div className="relative">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    APP Name <span className="text-red-500">*</span>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                    id="appName"
-                                                    placeholder="Search Application Name"
-                                                    value={selectedAppName}
-                                                    onChange={handleAppNameChange}
-                                                    autoComplete="off"
-                                                    required
-                                                    disabled={isEditDataLoaded}
-                                                />
-                                                {isAppNameDropdownVisible && selectedAppName && (
-                                                    <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
-                                                        {appNameOptions
-                                                            .filter((app) => app.name.toLowerCase().includes(selectedAppName.toLowerCase()))
-                                                            .map((app) => (
-                                                                <li
-                                                                    key={app.id}
-                                                                    className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
-                                                                    onClick={() => handleAppNameSelect(app)}
-                                                                >
-                                                                    {app.name} (Parent: {app.parentId})
-                                                                </li>
-                                                            ))}
-                                                    </ul>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {isEditMode && (
+                                    <div className="grid grid-cols-1 gap-4 mb-4">
                                         <div className="relative">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Menu Name <span className="text-red-500">*</span>
+                                                APP Name <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="text"
                                                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                id="menuName"
-                                                placeholder="Search Menu Name"
-                                                value={formData.menuName}
-                                                onChange={handleMenuNameChange}
+                                                id="appName"
+                                                placeholder="Search Application Name"
+                                                value={selectedAppName}
+                                                onChange={handleAppNameChange}
                                                 autoComplete="off"
                                                 required
-                                                disabled={isEditMode && !isEditDataLoaded}
+                                                disabled={isEditDataLoaded}
                                             />
-                                            {isMenuNameDropdownVisible && formData.menuName && (
+                                            {isAppNameDropdownVisible && selectedAppName && (
                                                 <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
-                                                    {menuNameOptions
-                                                        .filter((menu) => menu.name.toLowerCase().includes(formData.menuName.toLowerCase()))
-                                                        .map((menu) => (
+                                                    {appNameOptions
+                                                        .filter((app) =>
+                                                            app.name.toLowerCase().includes(selectedAppName.toLowerCase()) ||
+                                                            String(app.parentId).toLowerCase().includes(selectedAppName.toLowerCase())
+                                                        )
+                                                        .map((app) => (
                                                             <li
-                                                                key={menu.id}
+                                                                key={app.id}
                                                                 className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
-                                                                onClick={() => handleMenuNameSelect(menu)}
+                                                                onClick={() => handleAppNameSelect(app)}
                                                             >
-                                                                {menu.name}
+                                                                {app.name} (Parent: {app.parentId})
                                                             </li>
                                                         ))}
+
                                                 </ul>
                                             )}
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Menu ID <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
-                                                id="menuId"
-                                                placeholder="Menu ID"
-                                                value={formData.menuId}
-                                                onChange={handleInputChange}
-                                                required
-                                                readOnly
-                                                disabled={isEditMode}
-                                            />
-                                        </div>
-
-                                        <div className="relative">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Parent ID</label>
-                                            <input
-                                                type="text"
-                                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                id="parentName"
-                                                placeholder="Search Parent ID"
-                                                value={
-                                                    isEditMode
-                                                        ? (formData.parentId ? `${formData.parentId} - ${formData.parentName}` : formData.parentName)
-                                                        : formData.parentName
-                                                }
-                                                onChange={handleParentIdChange}
-                                                autoComplete="off"
-                                                disabled={isEditMode}
-                                            />
-                                            {isParentIdDropdownVisible && formData.parentName && !isEditMode && (
-                                                <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
-                                                    {parentIdOptions
-                                                        .filter((parent) => parent.name.toLowerCase().includes(formData.parentName.toLowerCase()))
-                                                        .map((parent) => (
-                                                            <li
-                                                                key={parent.id}
-                                                                className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
-                                                                onClick={() => handleParentIdSelect(parent)}
-                                                            >
-                                                                {parent.name} (ID: {parent.id})
-                                                            </li>
-                                                        ))}
-                                                </ul>
-                                            )}
-                                            <input type="hidden" id="parentId" value={formData.parentId} />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                URL <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="w-full p-2 border border-gray-300 rounded-md"
-                                                id="url"
-                                                placeholder="URL"
-                                                value={formData.url}
-                                                onChange={handleInputChange}
-                                                required
-                                                readOnly={!isEditMode}
-                                                disabled={isEditMode && !isEditDataLoaded}
-                                            />
                                         </div>
                                     </div>
+                                )}
 
-                                    {/* Status field has been removed */}
-
-                                    <div className="flex justify-end space-x-2 mt-6">
-                                        {isEditMode ? (
-                                            <>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setIsEditMode(false)
-                                                        setIsEditDataLoaded(false)
-                                                        setSelectedAppName("")
-                                                        setOriginalParentId("")
-                                                        setFormData({
-                                                            menuId: "",
-                                                            menuName: "",
-                                                            parentId: "",
-                                                            parentName: "",
-                                                            url: "",
-                                                            status: "active", // Reset with default active
-                                                        })
-                                                    }}
-                                                    className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                                                >
-                                                    Back
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700"
-                                                    disabled={!isEditDataLoaded}
-                                                >
-                                                    Update
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button
-                                                    type="submit"
-                                                    className="px-4 py-2  bg-blue-900 text-white rounded-md hover:bg-blue-700"
-                                                >
-                                                    Add
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsEditMode(true)}
-                                                    className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                                                >
-                                                    Edit
-                                                </button>
-                                            </>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="relative">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Menu Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                            id="menuName"
+                                            placeholder="Search Menu Name"
+                                            value={formData.menuName}
+                                            onChange={handleMenuNameChange}
+                                            autoComplete="off"
+                                            required
+                                            disabled={isEditMode && !isEditDataLoaded}
+                                        />
+                                        {isMenuNameDropdownVisible && formData.menuName && (
+                                            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                                                {menuNameOptions
+                                                    .filter((menu) => menu.name.toLowerCase().includes(formData.menuName.toLowerCase()))
+                                                    .map((menu) => (
+                                                        <li
+                                                            key={menu.id}
+                                                            className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
+                                                            onClick={() => handleMenuNameSelect(menu)}
+                                                        >
+                                                            {menu.name}
+                                                        </li>
+                                                    ))}
+                                            </ul>
                                         )}
                                     </div>
-                                </form>
-                            )}
 
-                            {/* Popup Component */}
-                            {showModal && popupMessage && (
-                                <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
-                            )}
-                        </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Menu ID <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+                                            id="menuId"
+                                            placeholder="Menu ID"
+                                            value={formData.menuId}
+                                            onChange={handleInputChange}
+                                            required
+                                            readOnly
+                                            disabled={isEditMode}
+                                        />
+                                    </div>
+
+                                    <div className="relative">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Parent ID</label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                            id="parentName"
+                                            placeholder="Search Parent ID"
+                                            value={
+                                                isEditMode
+                                                    ? (formData.parentId ? `${formData.parentId} - ${formData.parentName}` : formData.parentName)
+                                                    : formData.parentName
+                                            }
+                                            onChange={handleParentIdChange}
+                                            autoComplete="off"
+                                            disabled={isEditMode}
+                                        />
+                                        {isParentIdDropdownVisible && formData.parentName && !isEditMode && (
+                                            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                                                {parentIdOptions
+                                                    .filter((parent) => parent.name.toLowerCase().includes(formData.parentName.toLowerCase()))
+                                                    .map((parent) => (
+                                                        <li
+                                                            key={parent.id}
+                                                            className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
+                                                            onClick={() => handleParentIdSelect(parent)}
+                                                        >
+                                                            {parent.name} (ID: {parent.id})
+                                                        </li>
+                                                    ))}
+                                            </ul>
+                                        )}
+                                        <input type="hidden" id="parentId" value={formData.parentId} />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            URL <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+                                            id="url"
+                                            placeholder="URL"
+                                            value={formData.url}
+                                            onChange={handleInputChange}
+                                            required
+                                            readOnly
+                                            disabled={isEditMode}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Serial No. <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border border-gray-300 rounded-md"
+                                            id="sn"
+                                            placeholder="Serial No."
+                                            value={formData.sn}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Status field has been removed */}
+
+                                <div className="flex justify-end space-x-2 mt-6">
+                                    {isEditMode ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsEditMode(false)
+                                                    setIsEditDataLoaded(false)
+                                                    setSelectedAppName("")
+                                                    setOriginalParentId("")
+                                                    setFormData({
+                                                        menuId: "",
+                                                        menuName: "",
+                                                        parentId: "",
+                                                        parentName: "",
+                                                        url: "",
+                                                        status: "active", // Reset with default active
+                                                    })
+                                                }}
+                                                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                            >
+                                                Back
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700"
+                                                disabled={!isEditDataLoaded}
+                                            >
+                                                Update
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                type="submit"
+                                                className="px-4 py-2  bg-blue-900 text-white rounded-md hover:bg-blue-700"
+                                            >
+                                                Add
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsEditMode(true)}
+                                                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                            >
+                                                Edit
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </form>
+                        )}
+
+                        {/* Popup Component */}
+                        {showModal && popupMessage && (
+                            <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
+                        )}
+                    </div>
                     {/* </div> */}
                 </div>
 

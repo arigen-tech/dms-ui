@@ -609,6 +609,8 @@ const LoginPage = () => {
         localStorage.setItem("role", roles);
         localStorage.setItem("currRoleId", currRoleId);
         localStorage.setItem("userId", id);
+        localStorage.setItem("isTokenValid", "true");
+
 
         const redirectUrl = localStorage.getItem("redirectUrl");
         if (redirectUrl) {

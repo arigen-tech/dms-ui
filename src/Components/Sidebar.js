@@ -48,7 +48,7 @@ import {
 import { UserIcon } from "lucide-react";
 import { getRequest } from "../API/apiService";
 
-function Sidebar({roleChanged }) {
+function Sidebar({ roleChanged }) {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [menuData, setMenuData] = useState([]);
@@ -253,17 +253,17 @@ function Sidebar({roleChanged }) {
         currentRole === BRANCH_ADMIN ? counts.totalPendingDocumentsById :
           currentRole === DEPARTMENT_ADMIN ? counts.totalPendingDocumentsByDepartmentId :
             counts.pendingDocsbyid,
-      "/all-documents": currentRole === USER ? counts.pendingDocsbyid :0,
+      "/all-documents": currentRole === USER ? counts.pendingDocsbyid : 0,
       "/total-approved": currentRole === SYSTEM_ADMIN ? counts.totalApprovedDocuments :
         currentRole === BRANCH_ADMIN ? counts.totalApprovedStatusDocById :
           currentRole === DEPARTMENT_ADMIN ? counts.totalApprovedStatusDocByDepartmentId : 0,
       "/approvedDocs": currentRole === USER ?
-            counts.approvedDocsbyid : 0,
+        counts.approvedDocsbyid : 0,
       "/total-rejected": currentRole === SYSTEM_ADMIN ? counts.totalRejectedDocuments :
         currentRole === BRANCH_ADMIN ? counts.totalRejectedStatusDocById :
           currentRole === DEPARTMENT_ADMIN ? counts.totalRejectedStatusDocByDepartmentId :
             counts.rejectedDocsbyid,
-      "/rejectedDocs": currentRole === USER ? counts.rejectedDocsbyid :0,
+      "/rejectedDocs": currentRole === USER ? counts.rejectedDocsbyid : 0,
       "/branchusers": counts.branchUser,
       "/Departmentusers": counts.departmentUser
     };
@@ -289,6 +289,7 @@ function Sidebar({roleChanged }) {
   );
 
   const renderMenuItems = (items) => {
+    // filter by search term first
     const filteredItems = items.filter(item =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.children && item.children.some(child =>
@@ -296,7 +297,10 @@ function Sidebar({roleChanged }) {
       ))
     );
 
-    return filteredItems.map(item => {
+    // ✅ sort by serialNo before mapping
+    const sortedItems = [...filteredItems].sort((a, b) => a.serialNo - b.serialNo);
+
+    return sortedItems.map(item => {
       const IconComponent = getIconComponent(item.name);
       const hasChildren = item.children && item.children.length > 0;
       const isOpen = openMenus[item.appId] || false;
@@ -320,6 +324,7 @@ function Sidebar({roleChanged }) {
             </button>
             {isOpen && (
               <div className="ml-2 flex flex-col space-y-1">
+                {/* ✅ recursively render children also sorted */}
                 {renderMenuItems(item.children)}
               </div>
             )}
@@ -338,6 +343,7 @@ function Sidebar({roleChanged }) {
       }
     });
   };
+
 
   const handleInputChange = (event) => {
     setSearchTerm(event.target.value);

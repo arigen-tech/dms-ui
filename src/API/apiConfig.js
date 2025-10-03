@@ -1,7 +1,7 @@
 //  export const API_HOST = 'http://103.133.215.182:8558/Dms';
 
 
- export const API_HOST = 'http://localhost:8080'; 
+ export const API_HOST = 'http://localhost:8443'; 
 //  export const API_HOST = 'http://52.66.126.151:8080/dms';
 
 //  export const API_HOST = 'http://192.168.1.12:8080';
