@@ -115,7 +115,10 @@ const ArchiveDashboard = () => {
 
                 setArchiveJobs(res.data);
                 setStats({
-                    total: res.data.length,
+                    totalJobs: res.data.length,
+                    totalDocuments: res.data.reduce((sum, item) => sum + (item.totalDocuments || 0), 0),
+                    totalVersions: res.data.reduce((sum, item) => sum + (item.totalVersion || 0), 0),
+                    totalFiles: res.data.reduce((sum, item) => sum + (item.totalFiles || 0), 0),
                     waiting: res.data.filter((j) => j.status === "WAITING").length,
                     archived: res.data.filter((j) => j.status === "ARCHIVED").length,
                     failed: res.data.filter((j) => j.status === "FAILED").length,
@@ -131,77 +134,77 @@ const ArchiveDashboard = () => {
     }, [selectedBranch, selectedDepartment, selectedStatus, token]);
 
 
-    useEffect(() => {
-        // setBranches([
-        //     { id: 1, name: "Head Office" },
-        //     { id: 2, name: "Branch Office" },
-        //     { id: 3, name: "Regional Office" }
-        // ]);
+    // useEffect(() => {
+    //     // setBranches([
+    //     //     { id: 1, name: "Head Office" },
+    //     //     { id: 2, name: "Branch Office" },
+    //     //     { id: 3, name: "Regional Office" }
+    //     // ]);
 
-        const mockJobs = [
-            {
-                id: 1,
-                archiveName: "Q1 2024 Archive",
-                branchName: "Head Office",
-                departmentName: "Finance",
-                status: "ARCHIVED",
-                fromDate: [2024, 1, 1],
-                toDate: [2024, 3, 31],
-                archiveDateTime: [2024, 4, 1, 10, 0, 0],
-                archivedDateTime: [2024, 4, 1, 15, 30, 0],
-                totalDocuments: 3,
-                totalVersions: 8,
-                totalFiles: 25,
-                archivedFiles: 25,
-                failedFiles: 0
-            },
-            {
-                id: 2,
-                archiveName: "Q2 2024 Archive",
-                branchName: "Branch Office",
-                departmentName: "HR",
-                status: "IN_PROGRESS",
-                fromDate: [2024, 4, 1],
-                toDate: [2024, 6, 30],
-                archiveDateTime: [2024, 7, 1, 9, 0, 0],
-                archivedDateTime: null,
-                totalDocuments: 2,
-                totalVersions: 5,
-                totalFiles: 18,
-                archivedFiles: 10,
-                failedFiles: 0
-            },
-            {
-                id: 3,
-                archiveName: "Annual Reports 2024",
-                branchName: "Regional Office",
-                departmentName: "Legal",
-                status: "WAITING",
-                fromDate: [2024, 1, 1],
-                toDate: [2024, 12, 31],
-                archiveDateTime: [2025, 1, 15, 8, 0, 0],
-                archivedDateTime: null,
-                totalDocuments: 4,
-                totalVersions: 12,
-                totalFiles: 40,
-                archivedFiles: 0,
-                failedFiles: 0
-            }
-        ];
+    //     const mockJobs = [
+    //         {
+    //             id: 1,
+    //             archiveName: "Q1 2024 Archive",
+    //             branchName: "Head Office",
+    //             departmentName: "Finance",
+    //             status: "ARCHIVED",
+    //             fromDate: [2024, 1, 1],
+    //             toDate: [2024, 3, 31],
+    //             archiveDateTime: [2024, 4, 1, 10, 0, 0],
+    //             archivedDateTime: [2024, 4, 1, 15, 30, 0],
+    //             totalDocuments: 3,
+    //             totalVersions: 8,
+    //             totalFiles: 25,
+    //             archivedFiles: 25,
+    //             failedFiles: 0
+    //         },
+    //         {
+    //             id: 2,
+    //             archiveName: "Q2 2024 Archive",
+    //             branchName: "Branch Office",
+    //             departmentName: "HR",
+    //             status: "IN_PROGRESS",
+    //             fromDate: [2024, 4, 1],
+    //             toDate: [2024, 6, 30],
+    //             archiveDateTime: [2024, 7, 1, 9, 0, 0],
+    //             archivedDateTime: null,
+    //             totalDocuments: 2,
+    //             totalVersions: 5,
+    //             totalFiles: 18,
+    //             archivedFiles: 10,
+    //             failedFiles: 0
+    //         },
+    //         {
+    //             id: 3,
+    //             archiveName: "Annual Reports 2024",
+    //             branchName: "Regional Office",
+    //             departmentName: "Legal",
+    //             status: "WAITING",
+    //             fromDate: [2024, 1, 1],
+    //             toDate: [2024, 12, 31],
+    //             archiveDateTime: [2025, 1, 15, 8, 0, 0],
+    //             archivedDateTime: null,
+    //             totalDocuments: 4,
+    //             totalVersions: 12,
+    //             totalFiles: 40,
+    //             archivedFiles: 0,
+    //             failedFiles: 0
+    //         }
+    //     ];
 
-        // setArchiveJobs(mockJobs);
-        setStats({
-            total: mockJobs.length,
-            waiting: mockJobs.filter((j) => j.status === "WAITING").length,
-            archived: mockJobs.filter((j) => j.status === "ARCHIVED").length,
-            failed: mockJobs.filter((j) => j.status === "FAILED").length,
-            processing: mockJobs.filter((j) => j.status === "IN_PROGRESS").length,
-            totalJobs: mockJobs.length,
-            totalDocuments: mockJobs.reduce((sum, item) => sum + (item.totalDocuments || 0), 0),
-            totalVersions: mockJobs.reduce((sum, item) => sum + (item.totalVersions || 0), 0),
-            totalFiles: mockJobs.reduce((sum, item) => sum + (item.totalFiles || 0), 0)
-        });
-    }, []);
+    //     // setArchiveJobs(mockJobs);
+    //     setStats({
+    //         total: mockJobs.length,
+    //         waiting: mockJobs.filter((j) => j.status === "WAITING").length,
+    //         archived: mockJobs.filter((j) => j.status === "ARCHIVED").length,
+    //         failed: mockJobs.filter((j) => j.status === "FAILED").length,
+    //         processing: mockJobs.filter((j) => j.status === "IN_PROGRESS").length,
+    //         totalJobs: mockJobs.length,
+    //         totalDocuments: mockJobs.reduce((sum, item) => sum + (item.totalDocuments || 0), 0),
+    //         totalVersions: mockJobs.reduce((sum, item) => sum + (item.totalVersions || 0), 0),
+    //         totalFiles: mockJobs.reduce((sum, item) => sum + (item.totalFiles || 0), 0)
+    //     });
+    // }, []);
 
     // useEffect(() => {
     //     if (selectedBranch !== "All") {
@@ -278,6 +281,19 @@ const ArchiveDashboard = () => {
         }
     };
 
+    const getStatusDisplay = (job) => {
+        const { status, totalDocuments, archivedDocuments } = job;
+
+        if (status === "FAILED") return `${status} (100%)`;
+
+        if (status === "ARCHIVED" && totalDocuments > 0) {
+            const percent = Math.round((archivedDocuments / totalDocuments) * 100);
+            return `${status} (${percent}%)`;
+        }
+
+        return status;
+    };
+
     const fetchJobDocs = async (jobId) => {
         try {
             const res = await axios.get(`${API_HOST}/archiveJob/grouped/${jobId?.id}`, {
@@ -301,52 +317,52 @@ const ArchiveDashboard = () => {
     };
 
 
-const handleDocumentClick = (document) => {
-    // Convert versions array from API into structured version objects
-    console.log("Clicked document:", document);
-    const formattedVersions = document.versions.map((v, index) => ({
-        version: v,
-        status: "Archived", // or "Approved" if you want static status
-        effectiveDate: [2025, 1, 1], // placeholder, adjust if backend adds this later
-        files: 1, // placeholder count, can be dynamic if backend supports
-        archivedOn: new Date().toISOString().split(/[-T:.Z]/).map(Number) // convert current timestamp to array
-    }));
+    const handleDocumentClick = (document) => {
+        // Convert versions array from API into structured version objects
+        console.log("Clicked document:", document);
+        const formattedVersions = document.versions.map((v, index) => ({
+            version: v,
+            status: document.status || "-", // or "Approved" if you want static status
+            effectiveDate: new Date().toISOString().split(/[-T:.Z]/).map(Number), // placeholder, adjust if backend adds this later
+            files: document.files || "-", // placeholder count, can be dynamic if backend supports
+            archivedOn: new Date().toISOString().split(/[-T:.Z]/).map(Number)
+        }));
 
-    setSelectedDocument(document);
-    setDocumentVersions(formattedVersions);
-    setDrillDownLevel(2);
-    setCurrentPage(1);
-};
-
-
-const handleVersionClick = async (version) => {
-    try {
-        // Extract params
-        const documentHeaderId = selectedDocument.documentHeaderId;
-        const archiveJobId = selectedDocument.archiveJobId;
-        const versionName = version.version; // version.version because your object has { version: "V5", ... }
-
-        // Call API
-        const res = await axios.get(`${API_HOST}/archiveJob/archived/files`, {
-            params: {
-                documentHeaderId,
-                archiveJobId,
-                version: versionName
-            },
-            headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Set response in state
-        setSelectedVersion(version);
-        setVersionFiles(res.data); // real API data instead of mockFiles
-        setDrillDownLevel(3);
+        setSelectedDocument(document);
+        setDocumentVersions(formattedVersions);
+        setDrillDownLevel(2);
         setCurrentPage(1);
-        console.log("Fetched files for version:", res.data);
+    };
 
-    } catch (err) {
-        console.error("Error fetching archived files:", err);
-    }
-};
+
+    const handleVersionClick = async (version) => {
+        try {
+            // Extract params
+            const documentHeaderId = selectedDocument.documentHeaderId;
+            const archiveJobId = selectedDocument.archiveJobId;
+            const versionName = version.version; // version.version because your object has { version: "V5", ... }
+
+            // Call API
+            const res = await axios.get(`${API_HOST}/archiveJob/archived/files`, {
+                params: {
+                    documentHeaderId,
+                    archiveJobId,
+                    version: versionName
+                },
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Set response in state
+            setSelectedVersion(version);
+            setVersionFiles(res.data); // real API data instead of mockFiles
+            setDrillDownLevel(3);
+            setCurrentPage(1);
+            console.log("Fetched files for version:", res.data);
+
+        } catch (err) {
+            console.error("Error fetching archived files:", err);
+        }
+    };
 
     const handleBack = () => {
         if (drillDownLevel === 3) {
@@ -583,10 +599,13 @@ const handleVersionClick = async (version) => {
                                                 <td className="px-4 py-3 text-sm">{job.branchName || "All"}</td>
                                                 <td className="px-4 py-3 text-sm">{job.departmentName || "All"}</td>
                                                 <td className="px-4 py-3 text-sm">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(job.status)}`}>
-                                                        {job.status}
+                                                    <span
+                                                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(job.status)}`}
+                                                    >
+                                                        {getStatusDisplay(job)}
                                                     </span>
                                                 </td>
+
                                                 <td className="px-4 py-3 text-sm">{job.totalDocuments}</td>
                                                 <td className="px-4 py-3 text-sm">{job.totalFiles}</td>
                                                 <td className="px-4 py-3 text-sm">{formatDate(job.archivedDateTime)}</td>
@@ -610,10 +629,10 @@ const handleVersionClick = async (version) => {
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Versions</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Files</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archived On</th>
+
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -627,14 +646,10 @@ const handleVersionClick = async (version) => {
                                                 <td className="px-4 py-3 text-sm font-medium">{doc.title}</td>
                                                 <td className="px-4 py-3 text-sm">{doc?.branchName?.name}</td>
                                                 <td className="px-4 py-3 text-sm">{doc?.departmentName?.name}</td>
-                                                <td className="px-4 py-3 text-sm">
-                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                                        {doc.status}
-                                                    </span>
-                                                </td>
+
                                                 <td className="px-4 py-3 text-sm">{doc.versions.length}</td>
                                                 <td className="px-4 py-3 text-sm">{doc.files}</td>
-                                                <td className="px-4 py-3 text-sm">{formatDate(doc.archivedOn)}</td>
+
                                             </tr>
                                         ))}
                                     </tbody>
@@ -653,7 +668,7 @@ const handleVersionClick = async (version) => {
                                         <tr>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Version</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Effective Date</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Scheuled On</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Files</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archived On</th>
                                         </tr>
@@ -671,9 +686,9 @@ const handleVersionClick = async (version) => {
                                                         {version.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-sm">{formatDate(version.effectiveDate)}</td>
+                                                <td className="px-4 py-3 text-sm">{formatDate(selectedJob.archiveDateTime)}</td>
                                                 <td className="px-4 py-3 text-sm">{version.files}</td>
-                                                <td className="px-4 py-3 text-sm">{formatDate(version.archivedOn)}</td>
+                                                <td className="px-4 py-3 text-sm">{formatDate(selectedJob.archivedDateTime)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -701,9 +716,9 @@ const handleVersionClick = async (version) => {
                                         {versionFiles.map((file, idx) => (
                                             <tr key={idx} className="hover:bg-gray-50">
                                                 <td className="px-4 py-3 text-sm font-medium text-gray-900">{file.docName}</td>
-                                                <td className="px-4 py-3 text-sm text-gray-600">{file.mimeType}</td>
-                                                <td className="px-4 py-3 text-sm">{file.pageCount}</td>
-                                                <td className="px-4 py-3 text-sm">{file.size}</td>
+                                                <td className="px-4 py-3 text-sm text-gray-600">{file.mimeType || "-"}</td>
+                                                <td className="px-4 py-3 text-sm">{file.pageCounts || "-"}</td>
+                                                <td className="px-4 py-3 text-sm">{file.fileSizeHuman || "-"}</td>
                                                 <td className="px-4 py-3 text-sm">
                                                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                                         {file.status}
