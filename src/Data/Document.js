@@ -519,10 +519,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   // };
 
 const handleUploadDocument = async () => {
-  if (selectedFiles.length === 0) {
-    showPopup("Please select at least one file to upload.", "warning");
-    return;
-  }
+  // if (selectedFiles.length === 0) {
+  //   showPopup("Please select at least one file to upload.", "warning");
+  //   return;
+  // }
 
   setIsUploading(true);
   setUploadProgress(0);
@@ -1448,34 +1448,39 @@ const handleUploadDocument = async () => {
                     </span>
                   </div>
                 </label>
+              </div>
 
-                {/* File/Folder Upload */}
+              {/* File/Folder Upload Section - Full Width */}
+              <div className="col-span-full mt-4">
                 <div
-        {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition
-        ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-100"}`}
-      >
-        <input {...getInputProps()} />
+                  {...getRootProps()}
+                  className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition
+                  ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-100"}`}
+                >
+                  <input {...getInputProps()} />
 
-        <label className="block text-md font-medium text-gray-700">
-          Upload {folderUpload ? "Folders" : "Files"}
-          <input
-            type="file"
-            ref={fileInputRef}
-            multiple={!folderUpload}
-            onChange={(e) => console.log("Manual select:", e.target.files)}
-            disabled={false}
-            webkitdirectory={folderUpload ? "true" : undefined}
-            className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </label>
+                  <label className="block text-md font-medium text-gray-700">
+                    Upload {folderUpload ? "Folders" : "Files"}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      multiple={!folderUpload}
+                      onChange={(e) => console.log("Manual select:", e.target.files)}
+                      disabled={false}
+                      webkitdirectory={folderUpload ? "true" : undefined}
+                      className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </label>
 
-        <p className="text-sm text-gray-500 mt-2">
-          Drag & drop {folderUpload ? "folders" : "files"} here, or choose from your device.
-        </p>
-      </div>
-                <div className="flex gap-4 mt-6">
+                  <p className="text-sm text-gray-500 mt-2">
+                    Drag & drop {folderUpload ? "folders" : "files"} here, or choose from your device.
+                  </p>
+                </div>
+              </div>
 
+              {/* Buttons Section */}
+              <div className="col-span-full mt-6">
+                <div className="flex gap-4">
                   <button
                     type="button"
                     onClick={() => {
@@ -1490,16 +1495,13 @@ const handleUploadDocument = async () => {
                       navigate("/Waiting-room", { state: { metadata } });
                     }}
                     disabled={!isMetadataComplete || selectedFiles.length > 0}
-                    className={`ml-4 p-3 rounded-md ${(!isMetadataComplete || selectedFiles.length > 0)
-                        ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                        : "bg-blue-500 text-white"
+                    className={`flex-1 text-white rounded-xl p-3 h-14 flex items-center justify-center transition-all duration-300 ${(!isMetadataComplete || selectedFiles.length > 0)
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-900 hover:bg-blue-700"
                       }`}
                   >
                     Choose From Waiting Room
                   </button>
-
-
-                </div>
 
                 {/* Show indicator if documents came from waiting room */}
                 {/* {location.state?.fromWaitingRoom && (
@@ -1510,17 +1512,15 @@ const handleUploadDocument = async () => {
                   </div>
                 )} */}
 
-                {/* Buttons */}
-                <div className="flex gap-4 mt-6">
                   <button
                     onClick={handleUploadDocument}
-                    disabled={
-                      !isUploadEnabled ||
-                      isUploading ||
-                      !fileInputRef.current ||
-                      fileInputRef.current.files.length === 0 ||
-                      !formData.version
-                    }
+                    // disabled={
+                    //   !isUploadEnabled ||
+                    //   isUploading ||
+                    //   !fileInputRef.current ||
+                    //   fileInputRef.current.files.length === 0 ||
+                    //   !formData.version
+                    // }
                     className={`flex-1 text-white rounded-xl p-3 h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
                       ? "bg-blue-600 cursor-not-allowed"
                       : isUploadEnabled
@@ -1573,8 +1573,6 @@ const handleUploadDocument = async () => {
                   )}
                 </div>
               </div>
-
-
             </div>
 
             {editingDoc === null ? (
