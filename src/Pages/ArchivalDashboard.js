@@ -119,6 +119,9 @@ const ArchiveDashboard = () => {
                     totalDocuments: res.data.reduce((sum, item) => sum + (item.totalDocuments || 0), 0),
                     totalVersions: res.data.reduce((sum, item) => sum + (item.totalVersion || 0), 0),
                     totalFiles: res.data.reduce((sum, item) => sum + (item.totalFiles || 0), 0),
+                    archivedFiles: res.data.reduce((sum, item) => sum + (item.archivedFiles || 0), 0),
+                    failedFiles: res.data.reduce((sum, item) => sum + (item.failedFiles || 0), 0),
+                    pendingFiles: res.data.reduce((sum, item) => sum + ((item.totalFiles || 0) - (item.archivedFiles || 0) - (item.failedFiles || 0)), 0),
                     waiting: res.data.filter((j) => j.status === "WAITING").length,
                     archived: res.data.filter((j) => j.status === "ARCHIVED").length,
                     failed: res.data.filter((j) => j.status === "FAILED").length,
@@ -447,7 +450,7 @@ const ArchiveDashboard = () => {
                         Archival Dashboard
                     </h1>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                         <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -460,6 +463,47 @@ const ArchiveDashboard = () => {
                         </div>
 
                         <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Archived Policy</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.archived}</p>
+                                </div>
+                                <img src={FolderGroup} alt="Folder Group" className="h-10 w-10 " />
+
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Failed Policy</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.failed}</p>
+                                </div>
+                                <img src={FolderGroup} alt="Folder Group" className="h-10 w-10 " />
+
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">In-Progress Policy</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.processing}</p>
+                                </div>
+                                <img src={FolderGroup} alt="Folder Group" className="h-10 w-10 " />
+
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Waiting Policy</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.waiting}</p>
+                                </div>
+                                <img src={FolderGroup} alt="Folder Group" className="h-10 w-10 " />
+
+                            </div>
+                        </div>
+
+                        {/* <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Documents</p>
@@ -477,17 +521,65 @@ const ArchiveDashboard = () => {
                                 </div>
                                 <Layers className="h-10 w-10 text-green-400" />
                             </div>
-                        </div>
+                        </div> */}
 
                         <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-600">Files</p>
+                                    <p className="text-sm text-gray-600">Total Files</p>
                                     <p className="text-3xl font-bold text-gray-900">{stats.totalFiles}</p>
                                 </div>
                                 <FileText className="h-10 w-10 text-purple-400" />
                             </div>
                         </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Archived Files</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.archivedFiles}</p>
+                                </div>
+                                <FileText className="h-10 w-10 text-purple-400" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Failed Files</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.failedFiles}</p>
+                                </div>
+                                <FileText className="h-10 w-10 text-purple-400" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Pending Files</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.pendingFiles}</p>
+                                </div>
+                                <FileText className="h-10 w-10 text-purple-400" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Archived Percentage</p>
+                                    <p className="text-3xl font-bold text-purple-600">
+                                        {stats.totalJobs > 0
+                                            ? `${((stats.archived / stats.totalJobs) * 100).toFixed(1)}%`
+                                            : "0%"}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {stats.archived} of {stats.totalJobs} policies
+                                    </p>
+                                </div>
+                                <FileText className="h-10 w-10 text-purple-400" />
+                            </div>
+                        </div>
+
                     </div>
 
                     {drillDownLevel === 0 && (
