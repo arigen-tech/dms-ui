@@ -7,7 +7,6 @@ import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from '../Components/LoadingComponent';
 import { Tooltip } from "react-tooltip";
 
-
 import {
   PencilIcon,
   PlusCircleIcon,
