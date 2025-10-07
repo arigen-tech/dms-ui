@@ -451,7 +451,7 @@ const ArchiveDashboard = () => {
                         <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-600">Archive Jobs</p>
+                                    <p className="text-sm text-gray-600">Total Policy</p>
                                     <p className="text-3xl font-bold text-gray-900">{stats.totalJobs}</p>
                                 </div>
                                 <img src={FolderGroup} alt="Folder Group" className="h-10 w-10 " />
@@ -577,8 +577,8 @@ const ArchiveDashboard = () => {
                                 <table className="w-full border border-gray-200 rounded-lg">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job ID</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archive Name</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Policy ID</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Policy Name</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>

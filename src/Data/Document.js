@@ -706,10 +706,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               uploadedFilePaths: [
                 ...(prevData.uploadedFilePaths || []),
                 ...result.uploadedFiles.map((fileObj, index) => ({
-                  path: fileObj.relativePath,
+                  path: fileObj.path,
                   version: `${version}`,
                   yearMaster: year,
                   status: status,
+                  fileSizeHuman: fileObj.fileSizeHuman,
+                fileSizeBytes:fileObj.fileSizeBytes,
+                fileType:fileObj.fileType || null,
+                mimeType:fileObj.contentType || null,  
+                pageCounts:fileObj.pageCount || null,
                   displayName: renamedFiles[index]?.renamed,
                 })),
               ],
@@ -985,7 +990,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       displayName: file.displayName,
       isWaitingRoomFile: file.isWaitingRoomFile || false,
       waitingRoomId: file.waitingRoomId || null,
-      destinationPath: file.destinationPath || null
+      destinationPath: file.path || null
     }));
 
     // ✅ Construct payload
