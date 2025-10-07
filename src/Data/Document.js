@@ -277,48 +277,54 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   //   return fileList;
   // };
 
-  const onDrop = useCallback(async (acceptedFiles, event) => {
-    let files = acceptedFiles;
-    console.log("Dropped Files:", acceptedFiles);
 
-    let isFolderDropped = false;
 
-    files.forEach((file) => {
-      const path = file.path || file.webkitRelativePath || file.name;
-      const slashCount = (path.match(/[\\/]/g) || []).length;
+ const onDrop = useCallback(
+    async (acceptedFiles, event) => {
+      console.log("Dropped Files:", acceptedFiles);
 
-      if (slashCount > 1) {
-        isFolderDropped = true;
+      let isFolderDropped = false;
+      acceptedFiles.forEach((file) => {
+        const path = file.path || file.webkitRelativePath || file.name;
+        const slashCount = (path.match(/[\\/]/g) || []).length;
+        if (slashCount > 1) isFolderDropped = true;
+      });
+
+      if (isFolderDropped && !folderUpload) {
+        showPopup("Please enable 'folderUpload' to upload folders.", "warning");
+        return;
       }
-    });
 
-    if (isFolderDropped && !folderUpload) {
-      showPopup("Please enable 'folderUpload' to upload folders.", "warning");
-      return;
-    }
+      if (!isFolderDropped && folderUpload) {
+        showPopup("Please disable 'folderUpload' to upload files.", "warning");
+        return;
+      }
 
-    if (!isFolderDropped && folderUpload) {
-      showPopup("Please disable 'folderUpload' to upload files.", "warning");
-      return;
-    }
+      setSelectedFiles(acceptedFiles);
 
-    setSelectedFiles(files);
-
-    const dataTransfer = new DataTransfer();
-    files.forEach((file) => dataTransfer.items.add(file));
-    if (fileInputRef.current) {
-      fileInputRef.current.files = dataTransfer.files;
-    }
-  }, [folderUpload]);
-
+      // 🔹 Also sync with file input
+      const dataTransfer = new DataTransfer();
+      acceptedFiles.forEach((file) => dataTransfer.items.add(file));
+      if (fileInputRef.current) {
+        fileInputRef.current.files = dataTransfer.files;
+      }
+    },
+    [folderUpload]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     noClick: true,
     noKeyboard: true,
-    directory: folderUpload,
     multiple: !folderUpload,
   });
+
+  // ✅ Manual file select
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    console.log("Selected manually:", files);
+    setSelectedFiles(files);
+  };
 
   const openFile = async (file) => {
     try {
@@ -518,147 +524,241 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   //   }
   // };
 
-const handleUploadDocument = async () => {
-  // if (selectedFiles.length === 0) {
-  //   showPopup("Please select at least one file to upload.", "warning");
-  //   return;
-  // }
+// const handleUploadDocument= async () => {
+//     if (selectedFiles.length === 0) {
+//       showPopup("Please select at least one file to upload.", "warning");
+//       return;
+//     }
 
-  setIsUploading(true);
-  setUploadProgress(0);
+//     const { category, year, version, fileNo } = formData;
+//     setIsUploading(true);
+//     setUploadProgress(0);
 
-  const uploadData = new FormData();
-  const { category, year, version, fileNo, status } = formData;
+//     const uploadData = new FormData();
+//     uploadData.append("category", category?.name || category);
+//     uploadData.append("year", year?.name || year);
+//     uploadData.append("version", version || 1);
+//     uploadData.append("branch", userBranch);
+//     uploadData.append("department", userDep);
 
-  uploadData.append("category", category?.name);
-  uploadData.append("year", year?.name);
-  uploadData.append("version", version || 1);
-  uploadData.append("branch", userBranch);
-  uploadData.append("department", userDep);
+//     // ✅ Rename files uniquely
+//     const renamedFiles = selectedFiles.map((file, index) => {
+//       const now = new Date();
+//       const formattedDate = `${now.getFullYear()}${String(
+//         now.getMonth() + 1
+//       ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
+//         now.getHours()
+//       ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+//         now.getSeconds()
+//       ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
 
-  // ✅ Rename files uniquely before upload
-  const renamedFiles = selectedFiles.map((file, index) => {
-    const now = new Date();
-    const formattedDate = `${now.getFullYear()}${String(
-      now.getMonth() + 1
-    ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
-      now.getHours()
-    ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
-      now.getSeconds()
-    ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
+//       const baseName = (fileNo || "DOC").split(".")[0].substring(0, 3);
+//       const extension = file.name.split(".").pop();
+//       const renamed = `${baseName}_${category?.name || category}_${year?.name || year
+//         }_${version}_${formattedDate}_${index + 1}.${extension}`;
 
-    const baseName = fileNo.split(".")[0].substring(0, 3);
-    const extension = file.name.split(".").pop();
+//       return { file, renamed };
+//     });
 
-    return {
-      file,
-      renamed: `${baseName}_${category?.name}_${year?.name}_${version}_${formattedDate}_${index + 1}.${extension}`,
-    };
-  });
+//     renamedFiles.forEach(({ file, renamed }) => {
+//       if (file instanceof File) {
+//         uploadData.append("files", file, renamed);
+//       }
+//     });
 
-  renamedFiles.forEach(({ file, renamed }) => {
-    uploadData.append("files", file, renamed);
-  });
+//     console.log("FormData check:");
+//     for (const [key, val] of uploadData.entries()) {
+//       console.log(key, val);
+//     }
 
-  const controller = new AbortController();
-  setUploadController(controller);
+//     try {
+//       const xhr = new XMLHttpRequest();
+//       xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
+//       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
-  try {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
-    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+//       xhr.upload.onprogress = (event) => {
+//         if (event.lengthComputable) {
+//           setUploadProgress(Math.round((event.loaded / event.total) * 100));
+//         }
+//       };
 
-    // Track progress
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const progress = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(progress);
-      }
-    };
+//       xhr.onload = () => {
+//         setIsUploading(false);
+//         if (xhr.status >= 200 && xhr.status < 300) {
+//           const result = JSON.parse(xhr.responseText);
+//           if (result.uploadedFiles?.length > 0)
+//             showPopup("Files uploaded successfully!", "success");
+//           if (result.errors?.length > 0)
+//             showPopup(
+//               `Some files failed:\n${result.errors
+//                 .map((e) => `${e.file}: ${e.error}`)
+//                 .join("\n")}`,
+//               "error"
+//             );
+//         } else {
+//           showPopup(`Upload failed: ${xhr.statusText}`, "error");
+//         }
+//       };
 
-    xhr.onload = () => {
-      setIsUploading(false);
-      setUploadController(null);
+//       xhr.onerror = () => {
+//         setIsUploading(false);
+//         showPopup("Network error during upload.", "error");
+//       };
 
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const result = JSON.parse(xhr.responseText);
+//       xhr.send(uploadData);
+//     } catch (err) {
+//       setIsUploading(false);
+//       showPopup(`File upload failed: ${err.message}`, "error");
+//     }
+//   };
 
-        if (result.uploadedFiles.length > 0) {
-          // ✅ Combine backend response with renamed display names
-          const enrichedFiles = result.uploadedFiles.map((fileObj, index) => ({
-            ...fileObj,
-            version: `${version}`,
-            yearMaster: year,
-            status: status,
-            displayName: renamedFiles[index]?.renamed || fileObj.storedName,
-          }));
 
-          // ✅ Store renamed file names for UI display
-          setUploadedFileNames((prevNames) => [
-            ...prevNames,
-            ...enrichedFiles.map((f) => f.displayName),
-          ]);
+    const handleUploadDocument = async () => {
+    if (selectedFiles.length === 0) {
+      showPopup("Please select at least one file to upload.", "warning");
+      return;
+    }
 
-          // ✅ Keep backend relative paths & metadata
-          setUploadedFilePath((prevPath) => [...prevPath, ...enrichedFiles]);
+    setIsUploading(true);
+    setUploadProgress(0);
 
-          // ✅ Also save in formData if needed
-          setFormData((prevData) => ({
-            ...prevData,
-            uploadedFilePaths: [
-              ...(prevData.uploadedFilePaths || []),
-              ...enrichedFiles,
-            ],
-            version: "", // reset version
-          }));
+    const uploadData = new FormData();
+    const { category, year, version, fileNo, status } = formData;
 
-          // ✅ Reset file input
-          if (fileInputRef.current) {
-            fileInputRef.current.value = null;
-          }
+    uploadData.append("category", category?.name);
+    uploadData.append("year", year?.name); // or year?.id if API expects id
+    uploadData.append("version", version || 1);
+    uploadData.append("branch", userBranch);
+    uploadData.append("department", userDep);
 
-          showPopup("Files uploaded successfully!", "success");
-        }
+    // ✅ Rename unique files name before uploading
+    const renamedFiles = selectedFiles.map((file, index) => {
+      const now = new Date();
+      const formattedDate = `${now.getFullYear()}${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
+        now.getHours()
+      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+        now.getSeconds()
+      ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
 
-        if (result.errors.length > 0) {
-          showPopup(
-            `Some files failed to upload:\n${result.errors
-              .map((err) => `${err.file}: ${err.error}`)
-              .join("\n")}`,
-            "error"
-          );
-          setUnsportFile(true);
-        }
-      } else {
-        showPopup(`File upload failed: ${xhr.statusText}`, "error");
-      }
-    };
+      const baseName = fileNo.split(".")[0].substring(0, 3);
+      const extension = file.name.split(".").pop();
 
-    xhr.onerror = () => {
-      setIsUploading(false);
-      showPopup("Upload failed due to a network error.", "error");
-    };
-
-    xhr.onabort = () => {
-      setIsUploading(false);
-      setUploadController(null);
-      showPopup("Upload has been canceled.", "warning");
-    };
-
-    controller.signal.addEventListener("abort", () => {
-      xhr.abort();
+      return {
+        file,
+        renamed: `${baseName}_${category?.name}_${year?.name}_${version}_${formattedDate}_${index + 1}.${extension}`,
+      };
     });
 
-    xhr.send(uploadData);
-  } catch (error) {
-    setIsUploading(false);
-    showPopup(`File upload failed: ${error.message}`, "error");
-  }
-};
+    renamedFiles.forEach(({ file, renamed }) => {
+      uploadData.append("files", file, renamed);
+    });
 
+    const controller = new AbortController();
+    setUploadController(controller);
 
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(progress);
+        }
+      };
 
+      xhr.onload = () => {
+        setIsUploading(false);
+        setUploadController(null);
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const result = JSON.parse(xhr.responseText);
+
+          if (result.uploadedFiles.length > 0) {
+            // ✅ Store renamed file names for display
+            setUploadedFileNames((prevNames) => [
+              ...prevNames,
+              ...renamedFiles.map((f) => f.renamed),
+            ]);
+
+            // ✅ Map backend relative paths + keep renamed display name
+            setUploadedFilePath((prevPath) => [
+              ...prevPath,
+              ...result.uploadedFiles.map((fileObj, index) => ({
+                path: fileObj.path, // actual backend path
+                version: `${version}`,
+                yearMaster: year,
+                status: status,
+                fileSizeHuman: fileObj.fileSizeHuman,
+                fileSizeBytes:fileObj.fileSizeBytes,
+                fileType:fileObj.fileType || null,
+                mimeType:fileObj.contentType || null,  
+                pageCounts:fileObj.pageCount || null,
+                displayName: renamedFiles[index]?.renamed, // your renamed name
+              })),
+            ]);
+
+            // ✅ Also save in formData if needed
+            setFormData((prevData) => ({
+              ...prevData,
+              uploadedFilePaths: [
+                ...(prevData.uploadedFilePaths || []),
+                ...result.uploadedFiles.map((fileObj, index) => ({
+                  path: fileObj.relativePath,
+                  version: `${version}`,
+                  yearMaster: year,
+                  status: status,
+                  displayName: renamedFiles[index]?.renamed,
+                })),
+              ],
+              version: "", // reset version
+            }));
+
+            if (fileInputRef.current) {
+              fileInputRef.current.value = null;
+            }
+
+            showPopup("Files uploaded successfully!", "success");
+          }
+
+          if (result.errors.length > 0) {
+            showPopup(
+              `Some files failed to upload:\n${result.errors
+                .map((err) => `${err.file}: ${err.error}`)
+                .join("\n")}`,
+              "error"
+            );
+            setUnsportFile(true);
+          }
+        } else {
+          showPopup(`File upload failed: ${xhr.statusText}`, "error");
+        }
+      };
+
+      xhr.onerror = () => {
+        setIsUploading(false);
+        showPopup("Upload failed due to a network error.", "error");
+      };
+
+      xhr.onabort = () => {
+        setIsUploading(false);
+        setUploadController(null);
+        showPopup("Upload has been canceled.", "warning");
+      };
+
+      controller.signal.addEventListener("abort", () => {
+        xhr.abort();
+      });
+
+      xhr.send(uploadData);
+    } catch (error) {
+      setIsUploading(false);
+      showPopup(`File upload failed: ${error.message}`, "error");
+    }
+  };
 
   const handleCancelUpload = () => {
     if (uploadController) {
@@ -740,9 +840,10 @@ const handleUploadDocument = async () => {
       version: file.version,
       yearId: file.yearMaster?.id,
       fileType:file.fileType || null,
-      mimeType: file.contentType || null,
+      mimeType: file.mimeType || null,
       fileSizeBytes: file.fileSizeBytes || null,
       fileSizeHuman: file.fileSizeHuman || null,
+      pageCounts: file.pageCounts || null,
     }));
 
     console.log("versionedFilePaths", uploadedFilePath);
@@ -878,7 +979,8 @@ const handleUploadDocument = async () => {
       version: file.version || formData.version || "1.0",
       yearId: file.yearMaster?.id || formData.year?.id || null,
       fileType:file.fileType || null,
-      mimeType: file.contentType || null,
+      mimeType: file.mimeType || null,
+      pageCounts: file.pageCounts || null,
       fileSizeBytes: file.fileSizeBytes || null,
       fileSizeHuman: file.fileSizeHuman || null,
       displayName: file.displayName,
@@ -1451,32 +1553,31 @@ const handleUploadDocument = async () => {
               </div>
 
               {/* File/Folder Upload Section - Full Width */}
-              <div className="col-span-full mt-4">
-                <div
-                  {...getRootProps()}
-                  className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition
-                  ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-100"}`}
-                >
-                  <input {...getInputProps()} />
+      <div className="col-span-full mt-4">
+        <div
+          {...getRootProps()}
+          className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition
+            ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-100"}`}
+        >
+          <input {...getInputProps()} />
 
-                  <label className="block text-md font-medium text-gray-700">
-                    Upload {folderUpload ? "Folders" : "Files"}
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      multiple={!folderUpload}
-                      onChange={(e) => console.log("Manual select:", e.target.files)}
-                      disabled={false}
-                      webkitdirectory={folderUpload ? "true" : undefined}
-                      className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </label>
+          <label className="block text-md font-medium text-gray-700">
+            Upload {folderUpload ? "Folders" : "Files"}
+            <input
+              type="file"
+              ref={fileInputRef}
+              multiple={!folderUpload}
+              onChange={handleFileSelect}
+              webkitdirectory={folderUpload ? "true" : undefined}
+              className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </label>
 
-                  <p className="text-sm text-gray-500 mt-2">
-                    Drag & drop {folderUpload ? "folders" : "files"} here, or choose from your device.
-                  </p>
-                </div>
-              </div>
+          <p className="text-sm text-gray-500 mt-2">
+            Drag & drop {folderUpload ? "folders" : "files"} here, or choose from your device.
+          </p>
+        </div>
+      </div>
 
               {/* Buttons Section */}
               <div className="col-span-full mt-6">
@@ -1513,55 +1614,47 @@ const handleUploadDocument = async () => {
                 )} */}
 
                   <button
-                    onClick={handleUploadDocument}
-                    // disabled={
-                    //   !isUploadEnabled ||
-                    //   isUploading ||
-                    //   !fileInputRef.current ||
-                    //   fileInputRef.current.files.length === 0 ||
-                    //   !formData.version
-                    // }
-                    className={`flex-1 text-white rounded-xl p-3 h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
-                      ? "bg-blue-600 cursor-not-allowed"
-                      : isUploadEnabled
-                        ? "bg-blue-900"
-                        : "bg-gray-400"
-                      }`}
-                  >
-                    {isUploading ? (
-                      <>
-                        <svg
-                          className="animate-spin h-5 w-5 mr-2 text-white"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                          ></path>
-                        </svg>
-                        Adding... {uploadProgress}%
-                      </>
-                    ) : (
-                      "Add File"
-                    )}
-                    {isUploading && (
-                      <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
-                        <div
-                          className="h-full bg-green-500 transition-all"
-                          style={{ width: `${uploadProgress}%` }}
-                        ></div>
-                      </div>
-                    )}
-                  </button>
+        onClick={handleUploadDocument}
+        disabled={isUploading || selectedFiles.length === 0 || !formData.version}
+        className={`flex-1 text-white rounded-xl p-3 h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
+          ? "bg-blue-600 cursor-not-allowed"
+          : "bg-blue-900"
+          }`}
+      >
+        {isUploading ? (
+          <>
+            <svg
+              className="animate-spin h-5 w-5 mr-2 text-white"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              ></path>
+            </svg>
+            Uploading... {uploadProgress}%
+          </>
+        ) : (
+          "Add File"
+        )}
+        {isUploading && (
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
+            <div
+              className="h-full bg-green-500 transition-all"
+              style={{ width: `${uploadProgress}%` }}
+            ></div>
+          </div>
+        )}
+      </button>
 
                   {isUploading && (
                     <button
