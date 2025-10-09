@@ -6,6 +6,7 @@ import { useDropzone } from "react-dropzone";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from '../Components/LoadingComponent';
 import { Tooltip } from "react-tooltip";
+import WaitingRoom from '../Data/WaitingRoom';
 
 import {
   PencilIcon,
@@ -89,6 +90,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [deletingFiles, setDeletingFiles] = useState(null);
   const formSectionRef = useRef(null);
   const [isMetadataComplete, setIsMetadataComplete] = useState(false);
+  const [isWaitingRoomModalOpen, setIsWaitingRoomModalOpen] = useState(false);
 
 
 
@@ -206,6 +208,183 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
 
+  const handleSelectFromWaitingRoom = async (selectedDocuments) => {
+    if (!selectedDocuments || selectedDocuments.length === 0) {
+      showPopup("No documents selected from Waiting Room.", "warning");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { category, year, version, fileNo, status } = formData;
+
+      if (!category || !year || !version || !fileNo) {
+        showPopup("Please fill all document metadata fields first (Category, Year, Version, File No).", "error");
+        return;
+      }
+
+      const getExtension = (doc = {}) => {
+        const tryNames = [doc.documentName, doc.originalName, doc.fileName];
+        for (const n of tryNames) {
+          if (typeof n === "string" && n.includes(".")) {
+            return n.split(".").pop();
+          }
+        }
+        if (doc.fileType) {
+          return String(doc.fileType).replace(/^\./, "");
+        }
+        if (doc.mimeType && doc.mimeType.includes("/")) {
+          return doc.mimeType.split("/").pop();
+        }
+        return "pdf";
+      };
+
+      const baseName = (fileNo || "").split(".")[0].substring(0, 3);
+      const preparedRenamedFiles = selectedDocuments.map((doc, idx) => {
+        const now = new Date();
+        const formattedDate = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
+
+        const extension = getExtension(doc);
+        const renamed = `${baseName}_${category.name}_${year.name}_${version}_${formattedDate}_${idx + 1}.${extension}`;
+        const expectedPath = `${userBranch}/${userDep}/${year.name}/${category.name}/${version}/${renamed}`;
+
+        return {
+          waitingRoomId: doc.id,
+          originalName: doc.documentName || doc.originalName || null,
+          displayName: renamed,
+          path: expectedPath,
+          version: `${version}`,
+          yearMaster: year,
+          status: status || "PENDING",
+          isWaitingRoomFile: true,
+          fileType: extension.replace(/^\./, ""),
+          mimeType: doc.mimeType || null,
+          fileSizeHuman: doc.fileSizeHuman || null,
+          fileSizeBytes: doc.fileSizeBytes || null,
+          pageCounts: doc.pageCounts ?? null,
+        };
+      });
+
+      // ✅ Store in sessionStorage for rollback on page refresh
+      sessionStorage.setItem('waitingRoomMovedFiles', JSON.stringify({
+        fileIds: selectedDocuments.map(d => d.id),
+        timestamp: Date.now()
+      }));
+
+      setUploadedFilePath((prev) => [...prev, ...preparedRenamedFiles]);
+      setFormData((prev) => ({
+        ...prev,
+        uploadedFilePaths: [...(prev.uploadedFilePaths || []), ...preparedRenamedFiles],
+      }));
+      setUploadedFileNames((prev) => [...prev, ...preparedRenamedFiles.map((f) => f.displayName)]);
+
+      // ✅ Prepare FormData with rename information
+      const uploadData = new FormData();
+      uploadData.append("category", category.name);
+      uploadData.append("year", year.name);
+      uploadData.append("version", version);
+      uploadData.append("branch", userBranch);
+      uploadData.append("department", userDep);
+
+      selectedDocuments.forEach((doc, index) => {
+        uploadData.append("waitingRoomIds", String(doc.id));
+        uploadData.append("waitingRoomRenamedNames", preparedRenamedFiles[index].displayName);
+        uploadData.append("waitingRoomDestinationPaths", preparedRenamedFiles[index].path);
+      });
+
+      uploadData.append("files", new Blob([]));
+
+      const response = await apiClient.post(`${API_HOST}/api/documents/upload`, uploadData, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+      });
+
+      const result = response.data;
+
+      if (result.errors && result.errors.length > 0) {
+        const failedIds = result.errors.map((e) => e.waitingRoomId).filter(Boolean);
+        const failedNames = preparedRenamedFiles.filter((f) => failedIds.includes(f.waitingRoomId)).map((f) => f.displayName);
+
+        setUploadedFilePath((prev) => prev.filter((p) => !failedIds.includes(p.waitingRoomId)));
+        setFormData((prev) => ({
+          ...prev,
+          uploadedFilePaths: (prev.uploadedFilePaths || []).filter((p) => !failedIds.includes(p.waitingRoomId)),
+        }));
+        setUploadedFileNames((prev) => prev.filter((n) => !failedNames.includes(n)));
+
+        const errorMessages = result.errors
+          .map((err) => (err.waitingRoomId ? `File ${err.waitingRoomId}: ${err.error}` : err.error))
+          .join("\n");
+        showPopup(`Some files failed to move:\n${errorMessages}`, "error");
+        return;
+      }
+
+      // ✅ Clear sessionStorage on successful save
+      sessionStorage.removeItem('waitingRoomMovedFiles');
+
+      if (result.uploadedFiles && Array.isArray(result.uploadedFiles) && result.uploadedFiles.length > 0) {
+        const serverMap = new Map();
+        result.uploadedFiles.forEach((f) => {
+          if (f.waitingRoomId != null) serverMap.set(String(f.waitingRoomId), f);
+          else if (f.path) serverMap.set(f.path, f);
+          else if (f.originalName) serverMap.set(f.originalName, f);
+        });
+
+        setUploadedFilePath((prev) =>
+          prev.map((item) => {
+            const server = serverMap.get(String(item.waitingRoomId)) || serverMap.get(item.path) || serverMap.get(item.originalName);
+            if (!server) return item;
+            return {
+              ...item,
+              path: server.path || item.path,
+              fileSizeHuman: server.fileSizeHuman || item.fileSizeHuman,
+              fileSizeBytes: server.fileSizeBytes || item.fileSizeBytes,
+              fileType: server.fileType || item.fileType,
+              mimeType: server.contentType || item.mimeType,
+              pageCounts: server.pageCount ?? item.pageCounts,
+              displayName: item.displayName,
+            };
+          })
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          uploadedFilePaths: (prev.uploadedFilePaths || []).map((item) => {
+            const server = serverMap.get(String(item.waitingRoomId)) || serverMap.get(item.path) || serverMap.get(item.originalName);
+            if (!server) return item;
+            return {
+              ...item,
+              path: server.path || item.path,
+              fileSizeHuman: server.fileSizeHuman || item.fileSizeHuman,
+              fileSizeBytes: server.fileSizeBytes || item.fileSizeBytes,
+              fileType: server.fileType || item.fileType,
+              mimeType: server.contentType || item.mimeType,
+              pageCounts: server.pageCount ?? item.pageCounts,
+              displayName: item.displayName,
+            };
+          }),
+        }));
+      }
+
+      showPopup(`${preparedRenamedFiles.length} file(s) moved from Waiting Room successfully! Files are ready to be saved.`, "success");
+    } catch (error) {
+      console.error("Error moving waiting room documents:", error);
+
+      const failedIds = selectedDocuments.map((d) => d.id);
+      setUploadedFilePath((prev) => prev.filter((p) => !failedIds.includes(p.waitingRoomId)));
+      setFormData((prev) => ({
+        ...prev,
+        uploadedFilePaths: (prev.uploadedFilePaths || []).filter((p) => !failedIds.includes(p.waitingRoomId)),
+      }));
+      setUploadedFileNames((prev) => prev.filter((n) => !selectedDocuments.map(d => d.id).includes(n)));
+
+      showPopup(`Failed to move files from Waiting Room: ${error.message || error}`, "error");
+    } finally {
+      setLoading(false);
+      setIsWaitingRoomModalOpen(false);
+    }
+  };
+
 
 
   const fetchUser = async () => {
@@ -278,7 +457,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
 
 
- const onDrop = useCallback(
+  const onDrop = useCallback(
     async (acceptedFiles, event) => {
       console.log("Dropped Files:", acceptedFiles);
 
@@ -446,45 +625,45 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   // Update the useEffect that handles waiting room documents
- useEffect(() => {
-  if (location.state?.fromWaitingRoom && location.state?.selectedDocuments) {
-    const waitingRoomDocs = location.state.selectedDocuments;
-    const metadata = location.state.metadata;
+  useEffect(() => {
+    if (location.state?.fromWaitingRoom && location.state?.selectedDocuments) {
+      const waitingRoomDocs = location.state.selectedDocuments;
+      const metadata = location.state.metadata;
 
-    const convertedFiles = waitingRoomDocs.map((doc, index) => {
-      const displayName = generateFileNameFromMetadata(doc.documentName, index, metadata);
+      const convertedFiles = waitingRoomDocs.map((doc, index) => {
+        const displayName = generateFileNameFromMetadata(doc.documentName, index, metadata);
 
-      // ✅ Match year from dropdown
-      const yearOption = yearOptions.find(y => y.name === metadata.year);
+        // ✅ Match year from dropdown
+        const yearOption = yearOptions.find(y => y.name === metadata.year);
 
-      return {
-        path: doc.waitingRoomPath,
-        version: metadata.version,
-        yearMaster: yearOption ? { id: yearOption.id, name: yearOption.name } : null,
-        displayName,
-        status: "PENDING",
-        isWaitingRoomFile: true,
-        waitingRoomId: doc.id,
-        destinationPath: `${metadata.branch}/${metadata.department}/${yearOption ? yearOption.name : metadata.year}/${metadata.category}/${metadata.version}/${displayName}`
-      };
-    });
+        return {
+          path: doc.waitingRoomPath,
+          version: metadata.version,
+          yearMaster: yearOption ? { id: yearOption.id, name: yearOption.name } : null,
+          displayName,
+          status: "PENDING",
+          isWaitingRoomFile: true,
+          waitingRoomId: doc.id,
+          destinationPath: `${metadata.branch}/${metadata.department}/${yearOption ? yearOption.name : metadata.year}/${metadata.category}/${metadata.version}/${displayName}`
+        };
+      });
 
-    // ✅ Fill all metadata fields too!
-    setFormData(prev => ({
-      ...prev,
-      fileNo: metadata.fileNo || prev.fileNo,
-      title: metadata.title || prev.title || "",
-      subject: metadata.subject || prev.subject || "",
-      category: prev.category || { name: metadata.category },  // fallback if dropdown not set
-      year: yearOptions.find(y => y.name === metadata.year) || prev.year,
-      version: metadata.version || prev.version,
-      uploadedFilePaths: convertedFiles,
-    }));
+      // ✅ Fill all metadata fields too!
+      setFormData(prev => ({
+        ...prev,
+        fileNo: metadata.fileNo || prev.fileNo,
+        title: metadata.title || prev.title || "",
+        subject: metadata.subject || prev.subject || "",
+        category: prev.category || { name: metadata.category },  // fallback if dropdown not set
+        year: yearOptions.find(y => y.name === metadata.year) || prev.year,
+        version: metadata.version || prev.version,
+        uploadedFilePaths: convertedFiles,
+      }));
 
-    setUploadedFilePath(convertedFiles);
-    setUploadedFileNames(convertedFiles.map(f => f.displayName));
-  }
-}, [location.state, yearOptions]);
+      setUploadedFilePath(convertedFiles);
+      setUploadedFileNames(convertedFiles.map(f => f.displayName));
+    }
+  }, [location.state, yearOptions]);
 
 
 
@@ -523,96 +702,96 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   //   }
   // };
 
-// const handleUploadDocument= async () => {
-//     if (selectedFiles.length === 0) {
-//       showPopup("Please select at least one file to upload.", "warning");
-//       return;
-//     }
+  // const handleUploadDocument= async () => {
+  //     if (selectedFiles.length === 0) {
+  //       showPopup("Please select at least one file to upload.", "warning");
+  //       return;
+  //     }
 
-//     const { category, year, version, fileNo } = formData;
-//     setIsUploading(true);
-//     setUploadProgress(0);
+  //     const { category, year, version, fileNo } = formData;
+  //     setIsUploading(true);
+  //     setUploadProgress(0);
 
-//     const uploadData = new FormData();
-//     uploadData.append("category", category?.name || category);
-//     uploadData.append("year", year?.name || year);
-//     uploadData.append("version", version || 1);
-//     uploadData.append("branch", userBranch);
-//     uploadData.append("department", userDep);
+  //     const uploadData = new FormData();
+  //     uploadData.append("category", category?.name || category);
+  //     uploadData.append("year", year?.name || year);
+  //     uploadData.append("version", version || 1);
+  //     uploadData.append("branch", userBranch);
+  //     uploadData.append("department", userDep);
 
-//     // ✅ Rename files uniquely
-//     const renamedFiles = selectedFiles.map((file, index) => {
-//       const now = new Date();
-//       const formattedDate = `${now.getFullYear()}${String(
-//         now.getMonth() + 1
-//       ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
-//         now.getHours()
-//       ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
-//         now.getSeconds()
-//       ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
+  //     // ✅ Rename files uniquely
+  //     const renamedFiles = selectedFiles.map((file, index) => {
+  //       const now = new Date();
+  //       const formattedDate = `${now.getFullYear()}${String(
+  //         now.getMonth() + 1
+  //       ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
+  //         now.getHours()
+  //       ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+  //         now.getSeconds()
+  //       ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
 
-//       const baseName = (fileNo || "DOC").split(".")[0].substring(0, 3);
-//       const extension = file.name.split(".").pop();
-//       const renamed = `${baseName}_${category?.name || category}_${year?.name || year
-//         }_${version}_${formattedDate}_${index + 1}.${extension}`;
+  //       const baseName = (fileNo || "DOC").split(".")[0].substring(0, 3);
+  //       const extension = file.name.split(".").pop();
+  //       const renamed = `${baseName}_${category?.name || category}_${year?.name || year
+  //         }_${version}_${formattedDate}_${index + 1}.${extension}`;
 
-//       return { file, renamed };
-//     });
+  //       return { file, renamed };
+  //     });
 
-//     renamedFiles.forEach(({ file, renamed }) => {
-//       if (file instanceof File) {
-//         uploadData.append("files", file, renamed);
-//       }
-//     });
+  //     renamedFiles.forEach(({ file, renamed }) => {
+  //       if (file instanceof File) {
+  //         uploadData.append("files", file, renamed);
+  //       }
+  //     });
 
-//     console.log("FormData check:");
-//     for (const [key, val] of uploadData.entries()) {
-//       console.log(key, val);
-//     }
+  //     console.log("FormData check:");
+  //     for (const [key, val] of uploadData.entries()) {
+  //       console.log(key, val);
+  //     }
 
-//     try {
-//       const xhr = new XMLHttpRequest();
-//       xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
-//       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+  //     try {
+  //       const xhr = new XMLHttpRequest();
+  //       xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
+  //       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
-//       xhr.upload.onprogress = (event) => {
-//         if (event.lengthComputable) {
-//           setUploadProgress(Math.round((event.loaded / event.total) * 100));
-//         }
-//       };
+  //       xhr.upload.onprogress = (event) => {
+  //         if (event.lengthComputable) {
+  //           setUploadProgress(Math.round((event.loaded / event.total) * 100));
+  //         }
+  //       };
 
-//       xhr.onload = () => {
-//         setIsUploading(false);
-//         if (xhr.status >= 200 && xhr.status < 300) {
-//           const result = JSON.parse(xhr.responseText);
-//           if (result.uploadedFiles?.length > 0)
-//             showPopup("Files uploaded successfully!", "success");
-//           if (result.errors?.length > 0)
-//             showPopup(
-//               `Some files failed:\n${result.errors
-//                 .map((e) => `${e.file}: ${e.error}`)
-//                 .join("\n")}`,
-//               "error"
-//             );
-//         } else {
-//           showPopup(`Upload failed: ${xhr.statusText}`, "error");
-//         }
-//       };
+  //       xhr.onload = () => {
+  //         setIsUploading(false);
+  //         if (xhr.status >= 200 && xhr.status < 300) {
+  //           const result = JSON.parse(xhr.responseText);
+  //           if (result.uploadedFiles?.length > 0)
+  //             showPopup("Files uploaded successfully!", "success");
+  //           if (result.errors?.length > 0)
+  //             showPopup(
+  //               `Some files failed:\n${result.errors
+  //                 .map((e) => `${e.file}: ${e.error}`)
+  //                 .join("\n")}`,
+  //               "error"
+  //             );
+  //         } else {
+  //           showPopup(`Upload failed: ${xhr.statusText}`, "error");
+  //         }
+  //       };
 
-//       xhr.onerror = () => {
-//         setIsUploading(false);
-//         showPopup("Network error during upload.", "error");
-//       };
+  //       xhr.onerror = () => {
+  //         setIsUploading(false);
+  //         showPopup("Network error during upload.", "error");
+  //       };
 
-//       xhr.send(uploadData);
-//     } catch (err) {
-//       setIsUploading(false);
-//       showPopup(`File upload failed: ${err.message}`, "error");
-//     }
-//   };
+  //       xhr.send(uploadData);
+  //     } catch (err) {
+  //       setIsUploading(false);
+  //       showPopup(`File upload failed: ${err.message}`, "error");
+  //     }
+  //   };
 
 
-    const handleUploadDocument = async () => {
+  const handleUploadDocument = async () => {
     if (selectedFiles.length === 0) {
       showPopup("Please select at least one file to upload.", "warning");
       return;
@@ -692,10 +871,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 yearMaster: year,
                 status: status,
                 fileSizeHuman: fileObj.fileSizeHuman,
-                fileSizeBytes:fileObj.fileSizeBytes,
-                fileType:fileObj.fileType || null,
-                mimeType:fileObj.contentType || null,  
-                pageCounts:fileObj.pageCount || null,
+                fileSizeBytes: fileObj.fileSizeBytes,
+                fileType: fileObj.fileType || null,
+                mimeType: fileObj.contentType || null,
+                pageCounts: fileObj.pageCount || null,
                 displayName: renamedFiles[index]?.renamed, // your renamed name
               })),
             ]);
@@ -711,10 +890,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   yearMaster: year,
                   status: status,
                   fileSizeHuman: fileObj.fileSizeHuman,
-                fileSizeBytes:fileObj.fileSizeBytes,
-                fileType:fileObj.fileType || null,
-                mimeType:fileObj.contentType || null,  
-                pageCounts:fileObj.pageCount || null,
+                  fileSizeBytes: fileObj.fileSizeBytes,
+                  fileType: fileObj.fileType || null,
+                  mimeType: fileObj.contentType || null,
+                  pageCounts: fileObj.pageCount || null,
                   displayName: renamedFiles[index]?.renamed,
                 })),
               ],
@@ -785,6 +964,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       status: detail.status,
       yearMaster: detail?.yearMaster || null,
       rejectionReason: detail?.rejectionReason || null,
+      waitingRoomId: detail?.waitingRoomId || null, // ✅ keep waiting room reference
+      isWaitingRoomFile: !!detail?.waitingRoomId, // ✅ flag as waiting room file
+      displayName: detail.displayName || detail.path.split("/").pop(), // ✅ keep renamed name if present
+      fileType: detail.fileType || null,
+      mimeType: detail.mimeType || null,
+      fileSizeBytes: detail.fileSizeBytes || null,
+      fileSizeHuman: detail.fileSizeHuman || null,
+      pageCounts: detail.pageCounts || null,
       isExisting: true,
     }));
 
@@ -794,63 +981,60 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       subject: doc.subject,
       version: doc.version,
       category: doc.categoryMaster || null,
-      year: null, // ✅ pick year from first file (or handle UI differently if multiple years exist)
+      year: null, // can be auto-filled from first file if needed
     });
 
-    setUploadedFileNames(
-      existingFiles.map((file) => file.name)
-    );
+    // ✅ store both names and paths properly
+    setUploadedFileNames(existingFiles.map((file) => file.name));
+    setUploadedFilePath(existingFiles);
 
-
-    setUploadedFilePath(
-      existingFiles.map((file) => ({
-        path: file.path,
-        version: file.version,
-        status: file.status,
-        yearMaster: file.yearMaster || null, // ✅ correctly preserved
-        rejectionReason: file.rejectionReason || null,
-      }))
-    );
     if (formSectionRef.current) {
-      formSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      formSectionRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
 
+
   const handleSaveEdit = async () => {
     const userId = localStorage.getItem("userId");
-
     if (!userId || !token) {
       showPopup("User not logged in. Please log in again.", "error");
       return;
     }
 
     const { fileNo, title, subject, category } = formData;
-
-    if (
-      !fileNo ||
-      !title ||
-      !subject ||
-      !category ||
-
-      uploadedFilePath.length === 0
-    ) {
-      showPopup("Please fill in all the required fields and upload files.", "error");
+    if (!fileNo || !title || !subject || !category || uploadedFilePath.length === 0) {
+      showPopup("Please fill in all required fields and upload files.", "error");
       return;
     }
 
-    const versionedFilePaths = uploadedFilePath.map((file) => ({
-      path: file.path,
-      version: file.version,
-      yearId: file.yearMaster?.id,
-      fileType:file.fileType || null,
-      mimeType: file.mimeType || null,
-      fileSizeBytes: file.fileSizeBytes || null,
-      fileSizeHuman: file.fileSizeHuman || null,
-      pageCounts: file.pageCounts || null,
-    }));
+    // ✅ Dynamic renaming logic, same as handleAddDocument
+    const versionedFilePaths = uploadedFilePath.map((file, index) => {
+      const { version = formData.version || "1.0", yearMaster, displayName } = file;
 
-    console.log("versionedFilePaths", uploadedFilePath);
+      // If displayName exists, keep it (waiting room file already renamed)
+      // const renamed = displayName || (() => {
+      //   const now = new Date();
+      //   const formattedDate = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
+      //   const baseName = fileNo.split(".")[0].substring(0, 3);
+      //   const ext = (file.originalName || file.path || "file.pdf").split(".").pop();
+      //   return `${baseName}_${category.name}_${yearMaster?.name || formData.year?.name || "NA"}_${version}_${formattedDate}_${index + 1}.${ext}`;
+      // })();
+
+      return {
+        path: file.path,  // ✅ backend will save this path
+        version: `${version}`,
+        yearId: yearMaster?.id || formData.year?.id || null,
+        fileType: file.fileType || null,
+        mimeType: file.mimeType || null,
+        pageCounts: file.pageCounts || null,
+        fileSizeBytes: file.fileSizeBytes || null,
+        fileSizeHuman: file.fileSizeHuman || null,
+        waitingRoomId: file.waitingRoomId || null,
+        isWaitingRoomFile: file.isWaitingRoomFile || false,
+        displayName: file.displayName, // ✅ this is what backend will store
+      };
+    });
 
     const payload = {
       documentHeader: {
@@ -859,7 +1043,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         title,
         subject,
         categoryMaster: { id: category.id },
-        // yearMaster: { id: year.id },
         employee: { id: parseInt(userId, 10) },
       },
       filePaths: versionedFilePaths,
@@ -879,31 +1062,24 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       const result = await response.json();
 
-      console.log("API result:", result); // For debugging
-
-      // ✅ Handle failure conditions
       if (!response.ok || result?.status === 409 || result?.message?.toLowerCase() !== "success") {
-        const warningMessage =
-          result?.response?.msg || result?.message || "Unknown error occurred";
+        const warningMessage = result?.response?.msg || result?.message || "Unknown error occurred";
         showPopup(`Document update failed: ${warningMessage}`, "warning");
         return;
       }
 
-      // ✅ Handle success case
-      const successMessage =
-        result?.response?.msg || result?.message || "Document updated successfully!";
-      showPopup(successMessage, "success");
-
+      showPopup(result?.response?.msg || "Document updated successfully!", "success");
       resetEditForm();
       fetchDocuments();
-
     } catch (error) {
       console.error("Error updating document:", error);
-      showPopup(`Document update failed: ${error.message}`, "warning");
+      showPopup(`Document update failed: ${error.message}`, "error");
     } finally {
       setBProcess(false);
     }
   };
+
+
 
 
 
@@ -967,33 +1143,43 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return;
     }
 
-    // Validate that all files have year selected (especially waiting room files)
+    // Validate that all files have year selected
     const filesWithoutYear = formData.uploadedFilePaths.filter(file =>
       !file.yearMaster?.id && !file.yearMaster?.name
     );
-
     if (filesWithoutYear.length > 0) {
       showPopup("Please select year for all files before uploading.", "error");
       return;
     }
 
-    // ✅ Prepare file paths for backend - include waiting room info
-    const versionedFilePaths = formData.uploadedFilePaths.map((file) => ({
-      path: file.path || file.displayName || "Unknown",
-      version: file.version || formData.version || "1.0",
-      yearId: file.yearMaster?.id || formData.year?.id || null,
-      fileType:file.fileType || null,
-      mimeType: file.mimeType || null,
-      pageCounts: file.pageCounts || null,
-      fileSizeBytes: file.fileSizeBytes || null,
-      fileSizeHuman: file.fileSizeHuman || null,
-      displayName: file.displayName,
-      isWaitingRoomFile: file.isWaitingRoomFile || false,
-      waitingRoomId: file.waitingRoomId || null,
-      destinationPath: file.path || null
-    }));
+    // ✅ Generate renamed display names if not already present
+    const versionedFilePaths = formData.uploadedFilePaths.map((file, index) => {
+      const { version = formData.version || "1.0", yearMaster, displayName } = file;
 
-    // ✅ Construct payload
+      // If displayName already exists, use it; otherwise generate
+      const renamed = displayName || (() => {
+        const now = new Date();
+        const formattedDate = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
+        const baseName = formData.fileNo.split(".")[0].substring(0, 3);
+        const ext = (file.originalName || file.path || "file.pdf").split(".").pop();
+        return `${baseName}_${formData.category.name}_${yearMaster?.name || formData.year?.name}_${version}_${formattedDate}_${index + 1}.${ext}`;
+      })();
+
+      return {
+        path: file.path || renamed,
+        version: `${version}`,
+        yearId: yearMaster?.id || formData.year?.id || null,
+        fileType: file.fileType || null,
+        mimeType: file.mimeType || null,
+        pageCounts: file.pageCounts || null,
+        fileSizeBytes: file.fileSizeBytes || null,
+        fileSizeHuman: file.fileSizeHuman || null,
+        waitingRoomId: file.waitingRoomId || null,
+        isWaitingRoomFile: file.isWaitingRoomFile || false,
+        displayName: renamed, // ensure the renamed name is saved
+      };
+    });
+
     const payload = {
       documentHeader: {
         id: formData.id || null,
@@ -1031,7 +1217,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       showPopup(result?.response?.msg || "Document saved successfully", "success");
 
-      // ✅ Reset form after save
+      // Reset form
       setFormData({
         fileNo: "",
         title: "",
@@ -1043,7 +1229,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       });
       setUploadedFilePath([]);
       setUploadedFileNames([]);
-      fetchDocuments(); // refresh list
+      setSelectedFiles([]);
+
+      // Refresh documents
+      fetchDocuments();
+
     } catch (error) {
       console.error("Error saving document:", error);
       showPopup(`Document save failed: ${error.message}`, "warning");
@@ -1051,6 +1241,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       setBProcess(false);
     }
   };
+
 
 
   const fetchPaths = async (doc) => {
@@ -1557,59 +1748,49 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               </div>
 
               {/* File/Folder Upload Section - Full Width */}
-      <div className="col-span-full mt-4">
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition
+              <div className="col-span-full mt-4">
+                <div
+                  {...getRootProps()}
+                  className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition
             ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-100"}`}
-        >
-          <input {...getInputProps()} />
+                >
+                  <input {...getInputProps()} />
 
-          <label className="block text-md font-medium text-gray-700">
-            Upload {folderUpload ? "Folders" : "Files"}
-            <input
-              type="file"
-              ref={fileInputRef}
-              multiple={!folderUpload}
-              onChange={handleFileSelect}
-              webkitdirectory={folderUpload ? "true" : undefined}
-              className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </label>
+                  <label className="block text-md font-medium text-gray-700">
+                    Upload {folderUpload ? "Folders" : "Files"}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      multiple={!folderUpload}
+                      onChange={handleFileSelect}
+                      webkitdirectory={folderUpload ? "true" : undefined}
+                      className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </label>
 
-          <p className="text-sm text-gray-500 mt-2">
-            Drag & drop {folderUpload ? "folders" : "files"} here, or choose from your device.
-          </p>
-        </div>
-      </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Drag & drop {folderUpload ? "folders" : "files"} here, or choose from your device.
+                  </p>
+                </div>
+              </div>
 
               {/* Buttons Section */}
               <div className="col-span-full mt-6">
                 <div className="flex gap-4">
                   <button
                     type="button"
-                    onClick={() => {
-                      const metadata = {
-                        branch: userBranch,
-                        department: userDep,
-                        year: formData.year?.name,
-                        category: formData.category?.name,
-                        version: formData.version,
-                        fileNo: formData.fileNo,
-                      };
-                      navigate("/Waiting-room", { state: { metadata } });
-                    }}
+                    onClick={() => setIsWaitingRoomModalOpen(true)}
                     disabled={!isMetadataComplete || selectedFiles.length > 0}
-                    className={`flex-1 text-white rounded-xl p-3 h-14 flex items-center justify-center transition-all duration-300 ${(!isMetadataComplete || selectedFiles.length > 0)
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-blue-900 hover:bg-blue-700"
+                    className={`ml-4 p-3 rounded-md ${(!isMetadataComplete || selectedFiles.length > 0)
+                      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                      : "bg-blue-500 text-white"
                       }`}
                   >
                     Choose From Waiting Room
                   </button>
 
-                {/* Show indicator if documents came from waiting room */}
-                {/* {location.state?.fromWaitingRoom && (
+                  {/* Show indicator if documents came from waiting room */}
+                  {/* {location.state?.fromWaitingRoom && (
                   <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-blue-800 text-sm">
                       📁 Documents loaded from Waiting Room ({location.state?.selectedDocuments?.length} files)
@@ -1618,47 +1799,47 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 )} */}
 
                   <button
-        onClick={handleUploadDocument}
-        disabled={isUploading || selectedFiles.length === 0 || !formData.version}
-        className={`flex-1 text-white rounded-xl p-3 h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
-          ? "bg-blue-600 cursor-not-allowed"
-          : "bg-blue-900"
-          }`}
-      >
-        {isUploading ? (
-          <>
-            <svg
-              className="animate-spin h-5 w-5 mr-2 text-white"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              ></path>
-            </svg>
-            Uploading... {uploadProgress}%
-          </>
-        ) : (
-          "Add File"
-        )}
-        {isUploading && (
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
-            <div
-              className="h-full bg-green-500 transition-all"
-              style={{ width: `${uploadProgress}%` }}
-            ></div>
-          </div>
-        )}
-      </button>
+                    onClick={handleUploadDocument}
+                    disabled={isUploading || selectedFiles.length === 0 || !formData.version}
+                    className={`flex-1 text-white rounded-xl p-3 h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
+                      ? "bg-blue-600 cursor-not-allowed"
+                      : "bg-blue-900"
+                      }`}
+                  >
+                    {isUploading ? (
+                      <>
+                        <svg
+                          className="animate-spin h-5 w-5 mr-2 text-white"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          ></path>
+                        </svg>
+                        Uploading... {uploadProgress}%
+                      </>
+                    ) : (
+                      "Add File"
+                    )}
+                    {isUploading && (
+                      <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
+                        <div
+                          className="h-full bg-green-500 transition-all"
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    )}
+                  </button>
 
                   {isUploading && (
                     <button
@@ -1700,15 +1881,19 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     <div className="text-center">
                       <label className="flex justify-center items-center gap-1">
                         <span className="text-sm font-medium text-gray-600">
-                          Year: {isWaitingRoomFile && <span className="text-red-500">*</span>}
+                          Year: {isWaitingRoomFile}
                         </span>
                         <select
                           value={file?.yearMaster?.id || ""}
                           onChange={(e) => handleYearChangeForFile(index, e.target.value)}
-                          disabled={!handleEditDocumentActive && !isWaitingRoomFile || status === "APPROVED"}
+                          disabled={
+                            (!handleEditDocumentActive && !isWaitingRoomFile) ||
+                            status === "APPROVED" ||
+                            (isWaitingRoomFile && file?.yearMaster?.id) // disable if auto-filled
+                          }
                           className={`border rounded-lg px-2 py-1 text-sm w-24 text-center ${isWaitingRoomFile && !file?.yearMaster?.id
-                            ? 'border-red-500 bg-red-50'
-                            : 'bg-gray-50'
+                            ? "border-red-500 bg-red-50"
+                            : "bg-gray-50"
                             }`}
                           required={isWaitingRoomFile}
                         >
@@ -1726,23 +1911,26 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     <div className="text-center">
                       <label className="flex justify-center items-center gap-2">
                         <span className="text-sm font-medium text-gray-600">
-                          Ver: {isWaitingRoomFile && <span className="text-red-500">*</span>}
+                          Ver: {isWaitingRoomFile}
                         </span>
                         <input
                           type="text"
                           value={version || ""}
                           onChange={(e) => handleVersionChange(index, e.target.value.trim())}
-                          className={`border rounded-lg px-2 py-1 text-sm w-20 text-center ${isWaitingRoomFile && !version
-                            ? 'border-red-500 bg-red-50'
-                            : ''
+                          className={`border rounded-lg px-2 py-1 text-sm w-20 text-center ${isWaitingRoomFile && !version ? "border-red-500 bg-red-50" : ""
                             }`}
-                          disabled={!handleEditDocumentActive && !isWaitingRoomFile || status === "APPROVED"}
+                          disabled={
+                            (!handleEditDocumentActive && !isWaitingRoomFile) ||
+                            status === "APPROVED" ||
+                            (isWaitingRoomFile && version) // disable if auto-filled
+                          }
                           placeholder="v1"
                           maxLength={10}
                           required={isWaitingRoomFile}
                         />
                       </label>
                     </div>
+
 
                     {/* Status */}
                     <div className="text-center">
@@ -2415,6 +2603,25 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   </div>
                 </div>
               )}
+
+              {/* Waiting Room Modal */}
+              <WaitingRoom
+                isOpen={isWaitingRoomModalOpen}
+                onClose={() => setIsWaitingRoomModalOpen(false)}
+                onSelectDocuments={handleSelectFromWaitingRoom}
+                metadata={{
+                  branch: userBranch,
+                  department: userDep,
+                  year: formData.year?.name,
+                  category: formData.category?.name,
+                  version: formData.version,
+                  fileNo: formData.fileNo,
+                  title: formData.title,
+                  subject: formData.subject,
+                }}
+                token={token}
+                showPopup={showPopup}
+              />
 
             </>
           </div>
