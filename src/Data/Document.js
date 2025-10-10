@@ -797,6 +797,30 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return;
     }
 
+     const versionToUpload = formData.version?.trim();
+  const yearToUpload = formData.year?.id || formData.year?.name;
+
+    // ✅ Check duplicate version + year combination
+    const isDuplicate = [
+      ...(uploadedFilePath || []),
+      ...(formData.uploadedFilePaths || []),
+    ].some((file) => {
+      const existingVersion = file.version?.trim();
+      const existingYear = file.yearMaster?.id || file.yearMaster?.name;
+      return (
+        existingVersion?.toLowerCase() === versionToUpload.toLowerCase() &&
+        existingYear === yearToUpload
+      );
+    });
+
+    if (isDuplicate) {
+      showPopup(
+        `Version "${versionToUpload}" already exists for year "${formData.year?.name}". Please use a new version or select a different year.`,
+        "warning"
+      );
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -1927,6 +1951,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                           placeholder="v1"
                           maxLength={10}
                           required={isWaitingRoomFile}
+                          readOnly
                         />
                       </label>
                     </div>
@@ -2031,6 +2056,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                           disabled={!handleEditDocumentActive || isDisabled || status === "APPROVED"}
                           placeholder="v1"
                           maxLength={10}
+                          readOnly
                         />
                       </label>
                     </div>

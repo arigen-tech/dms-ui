@@ -881,7 +881,7 @@ const NewRetaintionPolicy = () => {
                                 <th className="border p-2 text-left w-60">Description</th>
                                 <th className="border p-2 text-left w-28">Status</th>
                                 <th className="border p-2 text-left w-20">Edit</th>
-                                <th className="border p-2 text-left w-28">Retrieved</th>
+                                {/* <th className="border p-2 text-left w-28">Retrieved</th> */}
                             </tr>
                         </thead>
                         <tbody>
@@ -939,7 +939,7 @@ const NewRetaintionPolicy = () => {
                                             <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                                         </button>
                                     </td>
-                                    <td className="border p-2 w-28 text-center">
+                                    {/* <td className="border p-2 w-28 text-center">
                                         <button
                                             onClick={() => handleDownloadZip(policy)}
                                             disabled={policy.isActive || downloadingId === policy.id}
@@ -974,7 +974,7 @@ const NewRetaintionPolicy = () => {
                                                 <span>Download</span>
                                             )}
                                         </button>
-                                    </td>
+                                    </td> */}
 
                                 </tr>
                             ))}

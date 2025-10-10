@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import {
@@ -18,7 +18,6 @@ import {
   CalendarDaysIcon,
   UserPlusIcon,
   ComputerDesktopIcon,
-  LockClosedIcon,
   UserCircleIcon,
   ShoppingCartIcon,
   IdentificationIcon,
@@ -55,18 +54,33 @@ function Sidebar({ roleChanged }) {
   const [openMenus, setOpenMenus] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
 
+  const sidebarRef = useRef(null);
+
   const rolesId = localStorage.getItem("currRoleId") || sessionStorage.getItem("currRoleId");
   const role = localStorage.getItem("role");
 
+  const cacheKey = `menuCache-${rolesId}`;
 
+  // Fetch menu data (with caching). We avoid re-fetching if cached and role hasn't changed.
   const fetchMenuData = async () => {
     setLoading(true);
     try {
       const data = await getRequest(`/dynamic-sidebar/getAllUrlByRoles/${rolesId}`);
-      if (data.status === 200 && Array.isArray(data.response)) {
+      if (data?.status === 200 && Array.isArray(data.response)) {
         setMenuData(data.response);
+        sessionStorage.setItem(cacheKey, JSON.stringify(data.response));
 
-        // Flatten nested URLs for permission checking
+        // Initialize open menus from localStorage (or default false)
+        const initialOpenMenus = {};
+        data.response.forEach((item) => {
+          if (item.children?.length > 0) {
+            const storedState = localStorage.getItem(`menu-${item.appId}-open`);
+            initialOpenMenus[item.appId] = storedState ? JSON.parse(storedState) : false;
+          }
+        });
+        setOpenMenus(initialOpenMenus);
+
+        // Build allowed URLs once
         const extractUrls = (items) => {
           let urls = [];
           for (const item of items) {
@@ -79,19 +93,8 @@ function Sidebar({ roleChanged }) {
           }
           return urls;
         };
-
         const allowedUrls = extractUrls(data.response);
         sessionStorage.setItem("allowedUrls", JSON.stringify(allowedUrls));
-
-        // Initialize open menus from localStorage
-        const initialOpenMenus = {};
-        data.response.forEach((item) => {
-          if (item.children?.length > 0) {
-            const storedState = localStorage.getItem(`menu-${item.appId}-open`);
-            initialOpenMenus[item.appId] = storedState ? JSON.parse(storedState) : false;
-          }
-        });
-        setOpenMenus(initialOpenMenus);
       } else {
         console.error("Unexpected API response format:", data);
         setMenuData([]);
@@ -103,52 +106,119 @@ function Sidebar({ roleChanged }) {
     }
   };
 
+  // On mount / rolesId or roleChanged change: try using cache first to avoid flashing/loading
   useEffect(() => {
+    let canceled = false;
+    const cached = sessionStorage.getItem(cacheKey);
+
+    if (cached && !roleChanged && !canceled) {
+      try {
+        const parsed = JSON.parse(cached);
+        setMenuData(parsed);
+        // init open menus from localStorage
+        const initialOpenMenus = {};
+        parsed.forEach((item) => {
+          if (item.children?.length > 0) {
+            const storedState = localStorage.getItem(`menu-${item.appId}-open`);
+            initialOpenMenus[item.appId] = storedState ? JSON.parse(storedState) : false;
+          }
+        });
+        setOpenMenus(initialOpenMenus);
+        setLoading(false);
+        return () => (canceled = true);
+      } catch (err) {
+        // if cache corrupted fall back to network
+        console.warn("Menu cache parse failed, refetching", err);
+      }
+    }
+
+    // otherwise fetch fresh
     fetchMenuData();
+
+    return () => {
+      canceled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleChanged, rolesId]);
+
+  // Persist scroll position while user scrolls the sidebar
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    const handleScroll = () => {
+      try {
+        sessionStorage.setItem("sidebarScroll", String(sidebar.scrollTop || 0));
+      } catch (e) {
+        // ignore sessionStorage errors
+      }
+    };
+
+    sidebar.addEventListener("scroll", handleScroll);
+    return () => sidebar.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Restore scroll after menuData is present AND loading finished
+  useEffect(() => {
+    if (!sidebarRef.current) return;
+    if (loading) return; // wait until load finished
+    if (!menuData || menuData.length === 0) return;
+
+    const saved = sessionStorage.getItem("sidebarScroll");
+    if (saved) {
+      // Ensure DOM has painted before setting scrollTop
+      requestAnimationFrame(() => {
+        try {
+          sidebarRef.current.scrollTop = parseInt(saved, 10) || 0;
+        } catch (e) {
+          // ignore
+        }
+      });
+    }
+  }, [loading, menuData]);
 
   const [counts, setCounts] = useState(() => {
     const savedCounts = sessionStorage.getItem("counts");
     return savedCounts
       ? JSON.parse(savedCounts)
       : {
-        totalUser: 0,
-        branchUser: 0,
-        totalDocument: 0,
-        pendingDocument: 0,
-        storageUsed: 0,
-        totalBranches: 0,
-        totalDepartment: 0,
-        totalRoles: 0,
-        totalFilesType: 0,
-        documentType: 0,
-        annualYear: 0,
-        totalNullEmployeeType: 0,
-        totalCategories: 0,
-        totalApprovedDocuments: 0,
-        totalRejectedDocuments: 0,
-        totalPendingDocuments: 0,
-        totalApprovedDocumentsById: 0,
-        totalRejectedDocumentsById: 0,
-        totalPendingDocumentsById: 0,
-        totalDocumentsById: 0,
-        totalApprovedStatusDocById: 0,
-        totalRejectedStatusDocById: 0,
-        departmentCountForBranch: 0,
-        nullRoleEmployeeCountForBranch: 0,
-        departmentUser: 0,
-        rejectedDocsbyid: 0,
-        approvedDocsbyid: 0,
-        pendingDocsbyid: 0,
-        createdByCount: 0,
-        nullRoleEmployeeCountForDepartment: 0,
-        totalDocumentsByDepartmentId: 0,
-        totalPendingDocumentsByDepartmentId: 0,
-        totalApprovedStatusDocByDepartmentId: 0,
-        totalRejectedStatusDocByDepartmentId: 0,
-        totalUserApplications: 0,
-        totalTemplate: 0,
-      };
+          totalUser: 0,
+          branchUser: 0,
+          totalDocument: 0,
+          pendingDocument: 0,
+          storageUsed: 0,
+          totalBranches: 0,
+          totalDepartment: 0,
+          totalRoles: 0,
+          totalFilesType: 0,
+          documentType: 0,
+          annualYear: 0,
+          totalNullEmployeeType: 0,
+          totalCategories: 0,
+          totalApprovedDocuments: 0,
+          totalRejectedDocuments: 0,
+          totalPendingDocuments: 0,
+          totalApprovedDocumentsById: 0,
+          totalRejectedDocumentsById: 0,
+          totalPendingDocumentsById: 0,
+          totalDocumentsById: 0,
+          totalApprovedStatusDocById: 0,
+          totalRejectedStatusDocById: 0,
+          departmentCountForBranch: 0,
+          nullRoleEmployeeCountForBranch: 0,
+          departmentUser: 0,
+          rejectedDocsbyid: 0,
+          approvedDocsbyid: 0,
+          pendingDocsbyid: 0,
+          createdByCount: 0,
+          nullRoleEmployeeCountForDepartment: 0,
+          totalDocumentsByDepartmentId: 0,
+          totalPendingDocumentsByDepartmentId: 0,
+          totalApprovedStatusDocByDepartmentId: 0,
+          totalRejectedStatusDocByDepartmentId: 0,
+          totalUserApplications: 0,
+          totalTemplate: 0,
+        };
   });
 
   useEffect(() => {
@@ -180,7 +250,7 @@ function Sidebar({ roleChanged }) {
 
   const handleMenuToggle = (appId) => {
     const newState = !openMenus[appId];
-    setOpenMenus(prev => ({ ...prev, [appId]: newState }));
+    setOpenMenus((prev) => ({ ...prev, [appId]: newState }));
     localStorage.setItem(`menu-${appId}-open`, JSON.stringify(newState));
   };
 
@@ -191,18 +261,18 @@ function Sidebar({ roleChanged }) {
 
   const getIconComponent = (name) => {
     const iconMap = {
-      "Dashboard": InboxIcon,
+      Dashboard: InboxIcon,
       "Archival Dashboard": SiArchiveofourown,
-      "Users": UserGroupIcon,
+      Users: UserGroupIcon,
       "Pending Users": FaUserClock,
       "Manage Users Roles": UserPlusIcon,
       "Generate I'D Card": IdentificationIcon,
-      "Organisation": BuildingOfficeIcon,
-      "Branch": KeyIcon,
-      "Department": ComputerDesktopIcon,
-      "Role": UserCircleIcon,
-      "Category": ShoppingCartIcon,
-      "Years": CalendarDaysIcon,
+      Organisation: BuildingOfficeIcon,
+      Branch: KeyIcon,
+      Department: ComputerDesktopIcon,
+      Role: UserCircleIcon,
+      Category: ShoppingCartIcon,
+      Years: CalendarDaysIcon,
       "Manage User Applications": UserIcon,
       "Template Masters": UserIcon,
       "Add Form Reports": UserIcon,
@@ -210,7 +280,7 @@ function Sidebar({ roleChanged }) {
       "assign applications": UserIcon,
       "Role Rights": UserIcon,
       "Files Types": GiFiles,
-      "Document": DocumentIcon,
+      Document: DocumentIcon,
       "Pending Approvals": IoDocumentLock,
       "Approved Document": DocumentCheckIcon,
       "Rejected Document": DocumentMinusIcon,
@@ -227,14 +297,14 @@ function Sidebar({ roleChanged }) {
       "Upload Archive Data": RiInboxUnarchiveFill,
       "Archival Policy": ClockIcon,
       "Scan Document": MdAdfScanner,
-      "Upload Document": DocumentArrowUpIcon
+      "Upload Document": DocumentArrowUpIcon,
+      "Main Dashboard": InboxIcon,
     };
 
     return iconMap[name] || DocumentIcon;
   };
 
   const getCountForMenuItem = (url) => {
-    // Get role from localStorage directly to ensure it's current
     const currentRole = localStorage.getItem("role");
 
     const countMap = {
@@ -249,31 +319,49 @@ function Sidebar({ roleChanged }) {
       "/ManageUserApplications": counts.totalUserApplications,
       "/TemplateMasters": counts.totalTemplate,
       "/create-fileType": counts.totalFilesType,
-      "/approve-documents": currentRole === SYSTEM_ADMIN ? counts.totalPendingDocuments :
-        currentRole === BRANCH_ADMIN ? counts.totalPendingDocumentsById :
-          currentRole === DEPARTMENT_ADMIN ? counts.totalPendingDocumentsByDepartmentId :
-            counts.pendingDocsbyid,
+      "/approve-documents":
+        currentRole === SYSTEM_ADMIN
+          ? counts.totalPendingDocuments
+          : currentRole === BRANCH_ADMIN
+          ? counts.totalPendingDocumentsById
+          : currentRole === DEPARTMENT_ADMIN
+          ? counts.totalPendingDocumentsByDepartmentId
+          : counts.pendingDocsbyid,
       "/all-documents": currentRole === USER ? counts.pendingDocsbyid : 0,
-      "/total-approved": currentRole === SYSTEM_ADMIN ? counts.totalApprovedDocuments :
-        currentRole === BRANCH_ADMIN ? counts.totalApprovedStatusDocById :
-          currentRole === DEPARTMENT_ADMIN ? counts.totalApprovedStatusDocByDepartmentId : 0,
-      "/approvedDocs": currentRole === USER ?
-        counts.approvedDocsbyid : 0,
-      "/total-rejected": currentRole === SYSTEM_ADMIN ? counts.totalRejectedDocuments :
-        currentRole === BRANCH_ADMIN ? counts.totalRejectedStatusDocById :
-          currentRole === DEPARTMENT_ADMIN ? counts.totalRejectedStatusDocByDepartmentId :
-            counts.rejectedDocsbyid,
+      "/total-approved":
+        currentRole === SYSTEM_ADMIN
+          ? counts.totalApprovedDocuments
+          : currentRole === BRANCH_ADMIN
+          ? counts.totalApprovedStatusDocById
+          : currentRole === DEPARTMENT_ADMIN
+          ? counts.totalApprovedStatusDocByDepartmentId
+          : 0,
+      "/approvedDocs": currentRole === USER ? counts.approvedDocsbyid : 0,
+      "/total-rejected":
+        currentRole === SYSTEM_ADMIN
+          ? counts.totalRejectedDocuments
+          : currentRole === BRANCH_ADMIN
+          ? counts.totalRejectedStatusDocById
+          : currentRole === DEPARTMENT_ADMIN
+          ? counts.totalRejectedStatusDocByDepartmentId
+          : counts.rejectedDocsbyid,
       "/rejectedDocs": currentRole === USER ? counts.rejectedDocsbyid : 0,
       "/branchusers": counts.branchUser,
-      "/Departmentusers": counts.departmentUser
+      "/Departmentusers": counts.departmentUser,
     };
 
     return countMap[url] || 0;
   };
 
+  // Save scroll right before navigation (also scroll handler persists during scroll)
   const SidebarLink = ({ to, icon: Icon, text, count }) => (
     <Link
       to={to}
+      onClick={() => {
+        try {
+          if (sidebarRef.current) sessionStorage.setItem("sidebarScroll", String(sidebarRef.current.scrollTop || 0));
+        } catch (e) {}
+      }}
       className={`px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between ${isActive(to)}`}
     >
       <div className="flex items-center">
@@ -289,18 +377,14 @@ function Sidebar({ roleChanged }) {
   );
 
   const renderMenuItems = (items) => {
-    // filter by search term first
-    const filteredItems = items.filter(item =>
+    const filteredItems = items.filter((item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.children && item.children.some(child =>
-        child.name.toLowerCase().includes(searchTerm.toLowerCase())
-      ))
+      (item.children && item.children.some((child) => child.name.toLowerCase().includes(searchTerm.toLowerCase())))
     );
 
-    // ✅ sort by serialNo before mapping
     const sortedItems = [...filteredItems].sort((a, b) => a.serialNo - b.serialNo);
 
-    return sortedItems.map(item => {
+    return sortedItems.map((item) => {
       const IconComponent = getIconComponent(item.name);
       const hasChildren = item.children && item.children.length > 0;
       const isOpen = openMenus[item.appId] || false;
@@ -322,12 +406,7 @@ function Sidebar({ roleChanged }) {
                 <ChevronRightIcon className="h-4 w-4" />
               )}
             </button>
-            {isOpen && (
-              <div className="ml-2 flex flex-col space-y-1">
-                {/* ✅ recursively render children also sorted */}
-                {renderMenuItems(item.children)}
-              </div>
-            )}
+            {isOpen && <div className="ml-2 flex flex-col space-y-1">{renderMenuItems(item.children)}</div>}
           </div>
         );
       } else {
@@ -344,13 +423,15 @@ function Sidebar({ roleChanged }) {
     });
   };
 
-
   const handleInputChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
   return (
-    <div className="max-h-[100%] overflow-y-auto print:max-h-none print:overflow-auto h-screen flex flex-col justify-between bg-blue-verticle text-white p-1 transition-all duration-300 overflow-hidden hover:overflow-y-auto custom-scrollbar hover-scrollbar">
+    <div
+      ref={sidebarRef}
+      className="max-h-[100%] overflow-y-auto print:max-h-none print:overflow-auto h-screen flex flex-col justify-between bg-blue-verticle text-white p-1 transition-all duration-300 overflow-hidden hover:overflow-y-auto custom-scrollbar hover-scrollbar"
+    >
       <div>
         <div className="flex items-center border-b border-t justify-center mb-2">
           <img className="flex w-30 h-30" src={logo3} alt="DMS" />
@@ -368,11 +449,7 @@ function Sidebar({ roleChanged }) {
             />
           </div>
 
-          {loading ? (
-            <div className="text-center py-4">Loading menu...</div>
-          ) : (
-            renderMenuItems(menuData)
-          )}
+          {loading ? <div className="text-center py-4">Loading menu...</div> : renderMenuItems(menuData)}
         </nav>
       </div>
     </div>

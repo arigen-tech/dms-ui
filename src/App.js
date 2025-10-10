@@ -64,6 +64,8 @@ function App() {
             <Route path="/" element={<LoginPage />} />
             <Route path="/notifications" element={<Notification />} />
             <Route path="/adminOCRResponce" element={<AdminsOCRResponce />} />
+            <Route path="/profile" element={<ChangePasswordPage />} />
+            <Route path="/newDash" element={<DashboardnEW />} />
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>

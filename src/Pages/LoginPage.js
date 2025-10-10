@@ -7,6 +7,7 @@ import {
   EyeSlashIcon,
   ArrowLeftIcon,
   ClockIcon,
+  InformationCircleIcon,
   DevicePhoneMobileIcon,
   EnvelopeIcon,
 } from "@heroicons/react/24/solid";
@@ -48,6 +49,7 @@ const LoginPage = () => {
   const [otpTimer, setOtpTimer] = useState(300);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const LENGTH = 5;
@@ -705,9 +707,38 @@ const LoginPage = () => {
               }`}>
               {getViewTitle()}
             </h2>
-            <p className="text-gray-600 mt-1 text-md font-bold">
+            {/* <p className="text-gray-600 mt-1 text-md font-bold">
               {getViewSubtitle()}
-            </p>
+            </p> */}
+            <div className="flex items-center justify-between w-full">
+              {/* Centered text */}
+              <p className="flex-1 text-center text-gray-600 mt-1 text-md font-bold">
+                {getViewSubtitle()}
+              </p>
+
+              {/* "i" button on the right */}
+              <div
+                className="relative"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                onClick={() => setShowTooltip(!showTooltip)} // also supports click
+              >
+                <button
+                  type="button"
+                  className="text-gray-500 hover:text-gray-700 ml-2 mr-2"
+                >
+                  <InformationCircleIcon className="h-5 w-5" />
+                </button>
+
+                {/* Tooltip */}
+                {showTooltip && (
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-1 shadow-lg z-10 whitespace-nowrap">
+                    This website is running on Release Version 1.1, which is currently under testing.                  
+                    </div>
+                )}
+              </div>
+            </div>
+
           </div>
 
           {alertMessage && (

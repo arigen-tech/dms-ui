@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import PageNotFound from "./../Pages/PageNotFound";
 
+
 // ✅ Define all valid protected routes in your app
 const validRoutes = [
   "/dashboard",
