@@ -92,6 +92,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [isMetadataComplete, setIsMetadataComplete] = useState(false);
   const [isWaitingRoomModalOpen, setIsWaitingRoomModalOpen] = useState(false);
 
+  const [currYear, setCurrYear] = useState(null);
 
 
   console.log("formData", formData);
@@ -208,7 +209,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
 
-  const handleSelectFromWaitingRoom = async (selectedDocuments) => {
+  const handleSelectFromWaitingRoom = async (selectedDocuments, metadata = {}) => {
     if (!selectedDocuments || selectedDocuments.length === 0) {
       showPopup("No documents selected from Waiting Room.", "warning");
       return;
@@ -216,51 +217,146 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     try {
       setLoading(true);
+      console.log("🟡 Selected Documents from Waiting Room:", selectedDocuments);
+      console.log("🟡 Metadata (for hints):", metadata);
 
-      // Process the selected documents for display
+      const buildLogicalPathFromDoc = (doc) => {
+        console.log("🟡 sec dc (for hints):", doc);
+
+        const branch = editingDoc?.employee?.branch?.name || "nt";
+        const department = editingDoc?.employee?.department?.name || "nt";
+        const year =
+          metadata.year ||
+          doc.year ||
+          (doc.yearMaster && doc.yearMaster.name) ||
+          "nt";
+        const category = editingDoc?.categoryMaster?.name || "nt";
+
+        let version =
+          metadata.version ||
+          doc.version ||
+          doc.versionName ||
+          doc.versionLabel ||
+          "nt";
+
+        version = String(version).trim();
+
+        const sanitizeSegment = (segment) => {
+          if (!segment) return "";
+          return String(segment).trim().replace(/\s+/g, "_");
+        };
+
+        const segments = [
+          sanitizeSegment(branch),
+          sanitizeSegment(department),
+          sanitizeSegment(year),
+          sanitizeSegment(category),
+          sanitizeSegment(version),
+        ].filter(Boolean);
+
+        return segments.join("/");
+      };
+
       const processedDocuments = selectedDocuments.map((doc, index) => {
-        // Find the matching year from yearOptions
-        const yearOption = yearOptions.find(y => y.name === doc.year);
+        const logicalFolder = buildLogicalPathFromDoc(doc);
 
-        return {
-          path: doc.displayName, // Use the display name without extension as path
-          version: doc.version,
-          yearMaster: yearOption || { name: doc.year }, // Use actual year object
-          year: doc.year, // Keep year string as well
-          displayName: doc.displayName, // The renamed display name without extension
-          originalExtension: doc.originalExtension, // Keep original extension
+        // 🔹 Determine file name
+        let fileName = doc.displayName || doc.fileName || "";
+        let fileType =
+          (doc.fileType ||
+            doc.mimeType ||
+            doc.originalExtension ||
+            "").toString().trim();
+
+        // Normalize extension
+        fileType = fileType.replace(/^\./, ""); // remove leading dot if present
+        fileType = fileType.toLowerCase(); // normalize casing
+
+        const hasExt = /\.[a-zA-Z0-9]+$/.test(fileName);
+        const currentExt = hasExt ? fileName.split(".").pop().toLowerCase() : null;
+
+        // 🔹 Only add extension if missing or mismatched
+        if (!hasExt && fileType) {
+          fileName = `${fileName}.${fileType}`;
+        } else if (hasExt && fileType && currentExt !== fileType) {
+          // Replace wrong extension with correct one
+          fileName = fileName.replace(/\.[^.]+$/, `.${fileType}`);
+        }
+
+        const fullLogicalPath = `${logicalFolder}/${fileName}`;
+                console.log("year curr:", currYear);
+
+
+        const processedDoc = {
+          path: fullLogicalPath,
+          version: metadata.version || doc.version,
+          yearMaster: currYear,
+          displayName: fileName, // ✅ now includes correct extension
+          name: fileName,
+          originalExtension: fileType || null,
           status: "PENDING",
           isWaitingRoomFile: true,
           waitingRoomId: doc.waitingRoomId,
           fileType: doc.fileType,
-          waitingRoomPath: doc.waitingRoomPath, // Keep original path for opening
-          // Add other required fields
+          waitingRoomPath: doc.waitingRoomPath,
           fileSizeHuman: doc.fileSizeHuman || null,
           fileSizeBytes: doc.fileSizeBytes || null,
           pageCounts: doc.pageCounts || null,
           mimeType: doc.mimeType || null,
         };
+
+        console.log(`✅ Processed [${index + 1}]`, processedDoc);
+        return processedDoc;
       });
 
-      // Update the uploaded file paths and names
-      setUploadedFilePath((prev) => [...prev, ...processedDocuments]);
-      setFormData((prev) => ({
-        ...prev,
-        uploadedFilePaths: [...(prev.uploadedFilePaths || []), ...processedDocuments],
-      }));
-      setUploadedFileNames((prev) => [...prev, ...processedDocuments.map((f) => f.displayName)]);
+      console.table(
+        processedDocuments.map((p) => ({
+          Version: p.version,
+          Year: p.year,
+          Path: p.path,
+          DisplayName: p.displayName,
+        }))
+      );
 
-      showPopup(`${processedDocuments.length} file(s) added from Waiting Room! Files are ready to be saved.`, "success");
+      setUploadedFilePath((prev) => {
+        const updated = [...prev, ...processedDocuments];
+        console.log("🟢 Updated uploadedFilePath:", updated);
+        return updated;
+      });
 
+      setFormData((prev) => {
+        const updated = {
+          ...prev,
+          uploadedFilePaths: [
+            ...(prev.uploadedFilePaths || []),
+            ...processedDocuments,
+          ],
+        };
+        console.log("🟢 Updated formData.uploadedFilePaths:", updated.uploadedFilePaths);
+        return updated;
+      });
+
+      setUploadedFileNames((prev) => {
+        const updated = [...prev, ...processedDocuments.map((f) => f.displayName)];
+        console.log("🟢 Updated uploadedFileNames:", updated);
+        return updated;
+      });
+
+      showPopup(
+        `${processedDocuments.length} file(s) added from Waiting Room! Files are ready to be saved.`,
+        "success"
+      );
     } catch (error) {
-      console.error("Error processing waiting room documents:", error);
-      showPopup(`Failed to process files from Waiting Room: ${error.message || error}`, "error");
+      console.error("❌ Error processing waiting room documents:", error);
+      showPopup(
+        `Failed to process files from Waiting Room: ${error.message || error}`,
+        "error"
+      );
     } finally {
       setLoading(false);
       setIsWaitingRoomModalOpen(false);
     }
   };
-
 
 
   const fetchUser = async () => {
@@ -706,8 +802,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return;
     }
 
-     const versionToUpload = formData.version?.trim();
-  const yearToUpload = formData.year?.id || formData.year?.name;
+    const versionToUpload = formData.version?.trim();
+    const yearToUpload = formData.year?.id || formData.year?.name;
 
     // ✅ Check duplicate version + year combination
     const isDuplicate = [
@@ -1603,7 +1699,20 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   <select
                     name="year"
                     value={formData.year?.id || ""}
-                    onChange={handleYearChange}
+                    onChange={(e) => {
+                      const selectedYearId = e.target.value;
+                      const selectedYear = yearOptions.find((y) => y.id === parseInt(selectedYearId));
+
+                      // Update your form data
+                      handleYearChange(e);
+
+                      // ✅ Also update current year state
+                      if (selectedYear) {
+                        setCurrYear(selectedYear); // store full year object
+                      } else {
+                        setCurrYear(null);
+                      }
+                    }}
                     className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Select Year</option>
@@ -1614,6 +1723,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     ))}
                   </select>
                 </label>
+
 
                 {/* Version */}
                 <label className="block text-md font-medium text-gray-700">
@@ -2497,6 +2607,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   branch: userBranch,
                   department: userDep,
                   year: formData.year?.name,
+                  yearMas: formData.year,
                   category: formData.category?.name,
                   version: formData.version,
                   fileNo: formData.fileNo,

@@ -185,35 +185,28 @@ const FileCompare = () => {
     }
   }
 
-  const getFilePreviewUrl = async (file, docHeader) => {
-    try {
-      const branch = docHeader?.employee?.branch?.name?.replace(/ /g, "_") || "Unknown"
-      const department = docHeader?.employee?.department?.name?.replace(/ /g, "_") || "Unknown"
-      const year = docHeader?.yearMaster?.name?.replace(/ /g, "_") || "Unknown"
-      const category = docHeader?.categoryMaster?.name?.replace(/ /g, "_") || "Unknown"
-      const version = file?.version || ""
-      const fileName = file?.fileName?.replace(/ /g, "_") || file?.docName?.replace(/ /g, "_") || "Unknown"
+const getFilePreviewUrl = async (file, docHeader) => {
+  try {
+    const fileUrl = `${API_HOST}/api/documents/download/${file.path}`; 
 
-      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch,
-      )}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(
-        category,
-      )}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}`
+    const response = await axios.get(fileUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
+    });
 
-      const response = await axios.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      })
+    const blob = new Blob([response.data], {
+      type: response.headers["content-type"],
+    });
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] })
-      const url = URL.createObjectURL(blob)
+    const url = URL.createObjectURL(blob);
 
-      return { url, contentType: response.headers["content-type"] }
-    } catch (error) {
-      console.error("Error fetching file preview:", error)
-      return null
-    }
+    return { url, contentType: response.headers["content-type"] };
+  } catch (error) {
+    console.error("Error fetching file preview:", error);
+    return null;
   }
+};
+
 
   const getFileTypeIcon = (fileType) => {
     const type = (fileType || "").toLowerCase()
