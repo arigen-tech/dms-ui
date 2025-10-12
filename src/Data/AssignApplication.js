@@ -294,8 +294,16 @@ const AssignApplication = () => {
         try {
             setLoading(true);
 
-            const selectedChildren = childApplications.filter(item => item.checked);
-            const unselectedChildren = childApplications.filter(item => !item.checked);
+            // Validate required fields
+            if (!selectedTemplate) {
+                setPopupMessage({
+                    message: "Please select a template first.",
+                    type: "warning",
+                    onClose: () => setPopupMessage(null)
+                });
+                setLoading(false);
+                return;
+            }
 
             if (childApplications.length === 0) {
                 setPopupMessage({
@@ -314,14 +322,18 @@ const AssignApplication = () => {
             const applicationStatusUpdates = [];
             const templateApplicationAssignments = [];
 
-            if (!assignedAppIds.has(selectedParentApp)) {
+            // Process parent application
+            if (selectedParentApp && !assignedAppIds.has(selectedParentApp)) {
                 templateApplicationAssignments.push({
                     templateId: Number(selectedTemplate),
                     appId: selectedParentApp,
+                    lastChgBy: 0,
+                    orderNo: 1,
                     status: "y"
                 });
             }
 
+            // Process child applications - FIX: Add templateId to status updates
             childApplications.forEach(child => {
                 const appId = child.appId;
                 const isChecked = child.checked;
@@ -330,6 +342,7 @@ const AssignApplication = () => {
 
                 if (isAssigned) {
                     applicationStatusUpdates.push({
+                        templateId: Number(selectedTemplate), // ✅ ADD THIS
                         appId: appId,
                         status: status
                     });
@@ -343,29 +356,36 @@ const AssignApplication = () => {
                     });
                 } else {
                     applicationStatusUpdates.push({
+                        templateId: Number(selectedTemplate), // ✅ ADD THIS
                         appId: appId,
                         status: "n"
                     });
                 }
             });
 
-            const allTemplateApps = await getRequest(`${ASSIGN_TEMPLATES}/getAllTemplateById/${selectedTemplate}`);
-            if (allTemplateApps?.response) {
-                allTemplateApps.response.forEach(app => {
-                    const appId = app.appId;
-                    if (appId === selectedParentApp) return;
+            // Check for existing template assignments that need updates
+            try {
+                const allTemplateApps = await getRequest(`${ASSIGN_TEMPLATES}/getAllTemplateById/${selectedTemplate}`);
+                if (allTemplateApps?.response) {
+                    allTemplateApps.response.forEach(app => {
+                        const appId = app.appId;
+                        if (appId === selectedParentApp) return;
 
-                    const childApp = childApplications.find(child => child.appId === appId);
-                    if (childApp && !childApp.checked) {
-                        const hasUpdate = applicationStatusUpdates.some(update => update.appId === appId);
-                        if (!hasUpdate) {
+                        const childApp = childApplications.find(child => child.appId === appId);
+                        const alreadyProcessed = applicationStatusUpdates.some(update => update.appId === appId) ||
+                            templateApplicationAssignments.some(assign => assign.appId === appId);
+
+                        if (!alreadyProcessed && (!childApp || !childApp.checked)) {
                             applicationStatusUpdates.push({
+                                templateId: Number(selectedTemplate), // ✅ ADD THIS
                                 appId: appId,
                                 status: "n"
                             });
                         }
-                    }
-                });
+                    });
+                }
+            } catch (error) {
+                console.error("Error checking existing assignments:", error);
             }
 
             if (applicationStatusUpdates.length === 0 && templateApplicationAssignments.length === 0) {
@@ -383,18 +403,26 @@ const AssignApplication = () => {
                 templateApplicationAssignments: templateApplicationAssignments
             };
 
+            console.log("Saving payload:", JSON.stringify(payload, null, 2)); // Debug log
+
             const response = await postRequest(`${MAS_APPLICATION}/assignUpdateTemplate`, payload);
 
             if (response) {
                 if (response.status === 200 || response.status === 207) {
-                    const message = response.data || "Assign template to application successfully";
+                    const message = response.data || "Template assigned to applications successfully";
 
                     setPopupMessage({
                         message: message,
                         type: response.status === 200 ? "success" : "warning",
                         onClose: () => {
                             setPopupMessage(null);
-                            handleParentApplicationSelect({ target: { value: selectedParentApp } });
+                            // Refresh the data to reflect changes
+                            if (selectedTemplate) {
+                                handleTemplateSelect({ target: { value: selectedTemplate } });
+                            }
+                            if (selectedParentApp) {
+                                handleParentApplicationSelect({ target: { value: selectedParentApp } });
+                            }
                         }
                     });
                 } else {
@@ -483,15 +511,15 @@ const AssignApplication = () => {
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
 
 
-                {popupMessage && (
-                    <Popup
-                        message={popupMessage.message}
-                        type={popupMessage.type}
-                        onClose={popupMessage.onClose}
-                    />
-                )}
+                    {popupMessage && (
+                        <Popup
+                            message={popupMessage.message}
+                            type={popupMessage.type}
+                            onClose={popupMessage.onClose}
+                        />
+                    )}
 
-                
+
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
                         <div className="md:col-span-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -647,7 +675,7 @@ const AssignApplication = () => {
                             </div>
                         </div>
                     )}
-                
+
                 </div>
             </div>
         </div>
