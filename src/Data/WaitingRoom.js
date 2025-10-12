@@ -100,15 +100,16 @@ const WaitingRoom = ({ isOpen, onClose, onSelectDocuments, metadata, token }) =>
   };
 
 
-
-
-  const handleSelectDocuments = async () => {
+  
+  // In WaitingRoom component - update handleSelectDocuments
+  const handleSelectDocuments = () => {
     if (selectedRowIds.length === 0) {
       return;
     }
 
     // Validate metadata is complete
     if (!metadata.fileNo || !metadata.title || !metadata.subject || !metadata.category || !metadata.year || !metadata.version) {
+      alert("Please complete all metadata fields before selecting documents");
       return;
     }
 
@@ -121,11 +122,12 @@ const WaitingRoom = ({ isOpen, onClose, onSelectDocuments, metadata, token }) =>
           const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
 
           const baseName = metadata.fileNo.substring(0, 3);
-          const originalExtension = doc.documentName.split('.').pop() || 'pdf';
-          const displayName = `${baseName}_${metadata.category}_${metadata.year}_${metadata.version}_${timestamp}_${index + 1}.${originalExtension}`;
 
-          // Construct the destination path matching Add Document structure
-          const destinationPath = `${metadata.branch}/${metadata.department}/${metadata.year}/${metadata.category}/${metadata.version}/${displayName}`;
+          // Get original extension from the waiting room file
+          const originalExtension = doc.documentName.split('.').pop() || 'pdf';
+
+          // Generate display name WITHOUT extension (backend will add the original extension)
+          const displayNameWithoutExt = `${baseName}_${metadata.category}_${metadata.year}_${metadata.version}_${timestamp}_${index + 1}`;
 
           return {
             id: doc.id,
@@ -133,16 +135,17 @@ const WaitingRoom = ({ isOpen, onClose, onSelectDocuments, metadata, token }) =>
             documentName: doc.documentName,
             fileType: doc.fileType,
             sourceName: doc.sourceName,
-            displayName: displayName,
-            destinationPath: destinationPath,
+            displayName: displayNameWithoutExt, // Send without extension
+            originalExtension: originalExtension, // Keep original extension separately
             isWaitingRoomFile: true,
             waitingRoomId: doc.id,
             version: metadata.version,
+            year: metadata.year,
             status: "PENDING"
           };
         });
 
-      // Pass the processed documents to parent without uploading
+      // Pass the processed documents to parent
       onSelectDocuments(selectedDocumentsData);
 
       // Close modal
@@ -150,6 +153,7 @@ const WaitingRoom = ({ isOpen, onClose, onSelectDocuments, metadata, token }) =>
 
     } catch (error) {
       console.error("Error processing documents:", error);
+      alert("Failed to process documents");
     }
   };
 
