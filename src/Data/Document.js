@@ -215,6 +215,30 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return;
     }
 
+      const versionToUpload = formData.version?.trim();
+    const yearToUpload = formData.year?.id || formData.year?.name;
+
+    // ✅ Check duplicate version + year combination
+    const isDuplicate = [
+      ...(uploadedFilePath || []),
+      ...(formData.uploadedFilePaths || []),
+    ].some((file) => {
+      const existingVersion = file.version?.trim();
+      const existingYear = file.yearMaster?.id || file.yearMaster?.name;
+      return (
+        existingVersion?.toLowerCase() === versionToUpload.toLowerCase() &&
+        existingYear === yearToUpload
+      );
+    });
+
+    if (isDuplicate) {
+      showPopup(
+        `Version "${versionToUpload}" already exists for year "${formData.year?.name}". Please use a new version or select a different year.`,
+        "warning"
+      );
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -279,6 +303,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           // Replace wrong extension with correct one
           fileName = fileName.replace(/\.[^.]+$/, `.${fileType}`);
         }
+
+        
+        
 
         const fullLogicalPath = `${logicalFolder}/${fileName}`;
                 console.log("year curr:", currYear);

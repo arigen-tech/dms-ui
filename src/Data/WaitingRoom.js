@@ -100,7 +100,8 @@ const WaitingRoom = ({ isOpen, onClose, onSelectDocuments, metadata, token }) =>
   };
 
 
-  
+
+
   // In WaitingRoom component - update handleSelectDocuments
   const handleSelectDocuments = () => {
     if (selectedRowIds.length === 0) {
@@ -139,9 +140,15 @@ const WaitingRoom = ({ isOpen, onClose, onSelectDocuments, metadata, token }) =>
             originalExtension: originalExtension, // Keep original extension separately
             isWaitingRoomFile: true,
             waitingRoomId: doc.id,
-            version: metadata.version,
-            year: metadata.year,
-            status: "PENDING"
+            version: metadata.version, // Use the current form version
+            year: metadata.year, // Use the current form year
+            status: "PENDING",
+
+            // ✅ PASS FILE METADATA FROM WAITING ROOM
+            fileSizeHuman: doc.fileSizeHuman || null,
+            fileSizeBytes: doc.fileSizeBytes || null,
+            pageCounts: doc.pageCounts || null,
+            mimeType: doc.mimeType || null,
           };
         });
 
