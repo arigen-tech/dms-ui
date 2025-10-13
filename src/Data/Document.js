@@ -217,11 +217,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     try {
       setLoading(true);
-      console.log("🟡 Selected Documents from Waiting Room:", selectedDocuments);
-      console.log("🟡 Metadata (for hints):", metadata);
 
       const buildLogicalPathFromDoc = (doc) => {
-        console.log("🟡 sec dc (for hints):", doc);
 
         const branch = editingDoc?.employee?.branch?.name || "nt";
         const department = editingDoc?.employee?.department?.name || "nt";
@@ -2025,6 +2022,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                           disabled={!handleEditDocumentActive || isDisabled || status === "APPROVED"}
                           placeholder="v1"
                           maxLength={10}
+                          readOnly
                         />
                       </label>
                     </div>
