@@ -148,6 +148,32 @@ const FileCompare = () => {
     const currentSecondCount = selectedSecondFileIds.length
     const totalSelected = currentFirstCount + currentSecondCount
 
+    // Get the file being selected
+    const selectedFile = isFirst
+      ? firstFileDocuments.find(doc => doc.detailsId === fileId)
+      : secondFileDocuments.find(doc => doc.detailsId === fileId);
+
+    // If there's already one file selected, check compatibility
+    if (totalSelected === 1) {
+      let existingFile;
+
+      if (currentFirstCount === 1) {
+        existingFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0]);
+      } else if (currentSecondCount === 1) {
+        existingFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
+      }
+
+      if (existingFile && !areFilesComparable(existingFile, selectedFile)) {
+        const existingFileName = existingFile.fileName || existingFile.docName || "File";
+        const selectedFileName = selectedFile.fileName || selectedFile.docName || "File";
+        const existingExt = existingFileName.split('.').pop()?.toUpperCase() || "Unknown";
+        const selectedExt = selectedFileName.split('.').pop()?.toUpperCase() || "Unknown";
+
+        setWarningMessage(`Cannot compare ${existingExt} with ${selectedExt}. Please select files with the same format.`);
+        return;
+      }
+    }
+
     if (isFirst) {
       const isAlreadySelected = selectedFirstFileIds.includes(fileId)
       if (isAlreadySelected) {
@@ -185,27 +211,27 @@ const FileCompare = () => {
     }
   }
 
-const getFilePreviewUrl = async (file, docHeader) => {
-  try {
-    const fileUrl = `${API_HOST}/api/documents/download/${file.path}`; 
+  const getFilePreviewUrl = async (file, docHeader) => {
+    try {
+      const fileUrl = `${API_HOST}/api/documents/download/${file.path}`;
 
-    const response = await axios.get(fileUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: "blob",
-    });
+      const response = await axios.get(fileUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob",
+      });
 
-    const blob = new Blob([response.data], {
-      type: response.headers["content-type"],
-    });
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
 
-    const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
 
-    return { url, contentType: response.headers["content-type"] };
-  } catch (error) {
-    console.error("Error fetching file preview:", error);
-    return null;
-  }
-};
+      return { url, contentType: response.headers["content-type"] };
+    } catch (error) {
+      console.error("Error fetching file preview:", error);
+      return null;
+    }
+  };
 
 
   const getFileTypeIcon = (fileType) => {
@@ -226,6 +252,66 @@ const getFilePreviewUrl = async (file, docHeader) => {
     return <DocumentIcon className="h-5 w-5 text-gray-500" />
   }
 
+  // Direct DOCX Viewer Component
+  const DocxViewer = ({ fileUrl, fileName }) => {
+    const [htmlContent, setHtmlContent] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+      const convertDocxToHtml = async () => {
+        try {
+          setLoading(true);
+          const response = await fetch(fileUrl);
+          const arrayBuffer = await response.arrayBuffer();
+
+          // Import mammoth dynamically
+          const mammoth = await import('mammoth');
+          const result = await mammoth.default.convertToHtml({ arrayBuffer });
+
+          setHtmlContent(result.value);
+          setError("");
+        } catch (err) {
+          console.error("DOCX conversion error:", err);
+          setError("Failed to load DOCX document");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      convertDocxToHtml();
+    }, [fileUrl]);
+
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-full bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p className="text-sm text-gray-600">Loading document...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex items-center justify-center h-full bg-gray-50">
+          <div className="text-center">
+            <DocumentIcon className="h-12 w-12 text-red-500 mx-auto mb-2" />
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="h-full overflow-auto p-4 bg-white"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    );
+  };
+
   const renderFileViewer = (file, fileData, isFirst = true) => {
     if (!fileData || !fileData.url) {
       return (
@@ -242,6 +328,7 @@ const getFilePreviewUrl = async (file, docHeader) => {
     const fileName = file?.fileName || file?.docName || ""
     const extension = getExtension(fileName)
 
+    // For PDF files - show directly in iframe
     if (contentType.includes("pdf") || extension === "pdf") {
       return (
         <iframe
@@ -251,7 +338,15 @@ const getFilePreviewUrl = async (file, docHeader) => {
           title={`${isFirst ? "First" : "Second"} file - ${fileName}`}
         />
       )
-    } else if (contentType.includes("image") || imageExtensions.includes(extension)) {
+    }
+    // For DOCX files - use our custom viewer
+    else if (contentType.includes("word") || contentType.includes("docx") || extension === "docx") {
+      return (
+        <DocxViewer fileUrl={fileData.url} fileName={fileName} />
+      )
+    }
+    // For images - show directly
+    else if (contentType.includes("image") || imageExtensions.includes(extension)) {
       return (
         <div className="flex items-center justify-center h-full bg-gray-50">
           <img
@@ -261,7 +356,9 @@ const getFilePreviewUrl = async (file, docHeader) => {
           />
         </div>
       )
-    } else if (contentType.includes("video") || ["mp4", "avi", "mov", "wmv", "flv"].includes(extension)) {
+    }
+    // For videos - show directly
+    else if (contentType.includes("video") || ["mp4", "avi", "mov", "wmv", "flv"].includes(extension)) {
       return (
         <div className="flex items-center justify-center h-full bg-gray-50">
           <video controls className="max-w-full max-h-full">
@@ -270,7 +367,9 @@ const getFilePreviewUrl = async (file, docHeader) => {
           </video>
         </div>
       )
-    } else if (contentType.includes("audio") || ["mp3", "wav", "ogg", "aac"].includes(extension)) {
+    }
+    // For audio - show directly
+    else if (contentType.includes("audio") || ["mp3", "wav", "ogg", "aac"].includes(extension)) {
       return (
         <div className="flex items-center justify-center h-full bg-gray-50">
           <div className="text-center">
@@ -283,58 +382,105 @@ const getFilePreviewUrl = async (file, docHeader) => {
           </div>
         </div>
       )
-    } else if (
-      [
-        "doc",
-        "docx",
-        "xls",
-        "xlsx",
-        "ppt",
-        "pptx",
-        "rtf",
-        "txt",
-        "csv",
-        "html",
-        "xml",
-        "odt",
-        "ods",
-        "odp",
-        "odg",
-      ].includes(extension)
-    ) {
+    }
+    // For other file types - use iframe
+    else {
       return (
         <iframe
           src={fileData.url}
           className="w-full h-full"
-          frameBorder={0}
+          frameBorder="0"
           title={`${isFirst ? "First" : "Second"} file - ${fileName}`}
         />
-      )
-    } else {
-      return (
-        <div className="flex items-center justify-center h-full bg-gray-50">
-          <div className="text-center">
-            {getFileTypeIcon(contentType)}
-            <p className="mt-2 text-sm text-gray-600">Preview not available for this file type</p>
-            <p className="text-xs text-gray-500">{fileName}</p>
-            <a
-              href={fileData.url}
-              download={fileName}
-              className="mt-2 inline-flex items-center px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4 mr-1" /> Download
-            </a>
-          </div>
-        </div>
       )
     }
   }
 
+  // Add this function to check if files are comparable
+  const areFilesComparable = (file1, file2) => {
+    if (!file1 || !file2) return false;
+
+    const getFileExtension = (file) => {
+      const fileName = file.fileName || file.docName || "";
+      const ext = fileName.split('.').pop()?.toLowerCase() || "";
+      return ext;
+    };
+
+    const getContentTypeCategory = (contentType) => {
+      if (!contentType) return "unknown";
+
+      if (contentType.includes("pdf")) return "pdf";
+      if (contentType.includes("word") || contentType.includes("docx")) return "docx";
+      if (contentType.includes("excel") || contentType.includes("xlsx") || contentType.includes("spreadsheet")) return "excel";
+      if (contentType.includes("powerpoint") || contentType.includes("pptx") || contentType.includes("presentation")) return "powerpoint";
+      if (contentType.includes("image/")) return "image";
+      if (contentType.includes("text/")) return "text";
+      if (contentType.includes("video/")) return "video";
+      if (contentType.includes("audio/")) return "audio";
+
+      return "other";
+    };
+
+    const ext1 = getFileExtension(file1);
+    const ext2 = getFileExtension(file2);
+
+    // Get content type categories
+    const contentType1 = getContentTypeCategory(file1.fileType);
+    const contentType2 = getContentTypeCategory(file2.fileType);
+
+    // If both have the same extension, they are comparable
+    if (ext1 && ext2 && ext1 === ext2) return true;
+
+    // If extensions are different but content type categories match, they are comparable
+    if (contentType1 !== "unknown" && contentType1 === contentType2) return true;
+
+    // Specific cases for office documents
+    const officeExtensions = {
+      doc: "docx",
+      docx: "docx",
+      xls: "excel",
+      xlsx: "excel",
+      ppt: "powerpoint",
+      pptx: "powerpoint"
+    };
+
+    const category1 = officeExtensions[ext1] || contentType1;
+    const category2 = officeExtensions[ext2] || contentType2;
+
+    return category1 === category2;
+  };
+
+  // Update the compareFiles function with validation
   const compareFiles = async () => {
     const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length
     if (totalSelected !== 2) {
       setWarningMessage("Please select exactly 2 documents to compare (can be from same file or different files).")
       return
+    }
+
+    // Find the selected files
+    let firstFile, secondFile;
+
+    if (selectedFirstFileIds.length === 2) {
+      firstFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0]);
+      secondFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[1]);
+    } else if (selectedSecondFileIds.length === 2) {
+      firstFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
+      secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[1]);
+    } else if (selectedFirstFileIds.length === 1 && selectedSecondFileIds.length === 1) {
+      firstFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0]);
+      secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
+    }
+
+    // Validate file types
+    if (!areFilesComparable(firstFile, secondFile)) {
+      const fileName1 = firstFile?.fileName || firstFile?.docName || "File 1";
+      const fileName2 = secondFile?.fileName || secondFile?.docName || "File 2";
+      const ext1 = fileName1.split('.').pop()?.toUpperCase() || "Unknown";
+      const ext2 = fileName2.split('.').pop()?.toUpperCase() || "Unknown";
+
+      setWarningMessage(`Cannot compare different file types. ${ext1} files can only be compared with ${ext1} files.`);
+      return;
     }
 
     setIsComparing(true)
@@ -374,19 +520,10 @@ const getFilePreviewUrl = async (file, docHeader) => {
           firstFileDocuments.find((doc) => doc.detailsId === secondFileId) ||
           secondFileDocuments.find((doc) => doc.detailsId === secondFileId)
 
-        const docHeader1 =
-          file1 && selectedFirstFileIds.includes(firstFileId)
-            ? documentHeaders.find((h) => h.fileNo === selectedFirstFileNo)
-            : documentHeaders.find((h) => h.fileNo === selectedSecondFileNo)
-
-        const docHeader2 =
-          file2 && selectedSecondFileIds.includes(secondFileId)
-            ? documentHeaders.find((h) => h.fileNo === selectedSecondFileNo)
-            : documentHeaders.find((h) => h.fileNo === selectedFirstFileNo)
-
+        // Use the same approach as in ApprovedDoc
         const [firstFileData, secondFileData] = await Promise.all([
-          getFilePreviewUrl(file1, docHeader1),
-          getFilePreviewUrl(file2, docHeader2),
+          getFilePreviewUrl(file1),
+          getFilePreviewUrl(file2),
         ])
 
         setFileUrls({ firstFile: firstFileData, secondFile: secondFileData })
@@ -407,7 +544,8 @@ const getFilePreviewUrl = async (file, docHeader) => {
             fileType: leftFileType,
             path: apiResponse.comparisonResult?.leftFile?.filePath || file1?.path || "",
             detailsId: file1?.detailsId || null,
-            highlightedContent: apiResponse.comparisonResult?.leftFile?.highlightedContent || ""
+            highlightedContent: apiResponse.comparisonResult?.leftFile?.highlightedContent || "",
+            fileData: file1
           },
           rightFile: {
             fileName:
@@ -416,9 +554,10 @@ const getFilePreviewUrl = async (file, docHeader) => {
             fileType: rightFileType,
             path: apiResponse.comparisonResult?.rightFile?.filePath || file2?.path || "",
             detailsId: file2?.detailsId || null,
-           highlightedContent: apiResponse.comparisonResult?.rightFile?.highlightedContent || ""
+            highlightedContent: apiResponse.comparisonResult?.rightFile?.highlightedContent || "",
+            fileData: file2
           },
-          diffImagePath: apiResponse.diffImagePath, // may exist for image diffs
+          diffImagePath: apiResponse.diffImagePath,
         }
 
         setComparisonResult(next)
@@ -1195,23 +1334,23 @@ function VisualDiffPanel({
 }
 
 /* Text diff panel for text files with inline highlighted differences */
-function TextDiffPanel({ 
-  leftContent, 
-  rightContent, 
-  differences, 
-  leftName, 
-  rightName, 
+function TextDiffPanel({
+  leftContent,
+  rightContent,
+  differences,
+  leftName,
+  rightName,
   comparisonResult,
   leftHighlightedContent,
-  rightHighlightedContent 
+  rightHighlightedContent
 }) {
   const [viewMode, setViewMode] = useState('full-document'); // Default to full document view
 
   // Extract highlighted content from the comparison result
-  const leftHighlighted = leftHighlightedContent || 
-                         (comparisonResult?.leftFile?.highlightedContent || '');
-  const rightHighlighted = rightHighlightedContent || 
-                          (comparisonResult?.rightFile?.highlightedContent || '');
+  const leftHighlighted = leftHighlightedContent ||
+    (comparisonResult?.leftFile?.highlightedContent || '');
+  const rightHighlighted = rightHighlightedContent ||
+    (comparisonResult?.rightFile?.highlightedContent || '');
 
   // Function to render highlighted content with proper styling
   const renderHighlightedContent = (content, isLeft = true) => {
@@ -1226,7 +1365,7 @@ function TextDiffPanel({
     // If content is already HTML (contains span tags with diff classes)
     if (content.includes('<span class="diff-')) {
       return (
-        <div 
+        <div
           className="highlighted-content"
           dangerouslySetInnerHTML={{ __html: content }}
         />
@@ -1239,18 +1378,18 @@ function TextDiffPanel({
         <div className="full-document-content">
           {content.map((line, index) => {
             // Check if this line has differences
-            const lineDiff = differences?.find(d => 
-              (isLeft && d.leftLineNumber === index + 1) || 
+            const lineDiff = differences?.find(d =>
+              (isLeft && d.leftLineNumber === index + 1) ||
               (!isLeft && d.rightLineNumber === index + 1)
             );
-            
+
             let className = "document-line";
             if (lineDiff) {
               if (lineDiff.type === 'DELETED') className += " deleted";
               else if (lineDiff.type === 'ADDED') className += " added";
               else if (lineDiff.type === 'MODIFIED') className += " modified";
             }
-            
+
             return (
               <div key={index} className={className}>
                 {line || <span className="empty-line">&nbsp;</span>}
@@ -1308,17 +1447,15 @@ function TextDiffPanel({
       <div className="space-y-3">
         {differences && differences.length > 0 ? (
           differences.map((diff, index) => (
-            <div key={index} className={`p-3 rounded-lg border-l-4 ${
-              diff.type === 'ADDED' ? 'bg-green-100 border-green-400' :
+            <div key={index} className={`p-3 rounded-lg border-l-4 ${diff.type === 'ADDED' ? 'bg-green-100 border-green-400' :
               diff.type === 'DELETED' ? 'bg-red-100 border-red-400' :
-              'bg-yellow-100 border-yellow-400'
-            }`}>
+                'bg-yellow-100 border-yellow-400'
+              }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  diff.type === 'ADDED' ? 'bg-green-100 text-green-800' :
+                <span className={`px-2 py-1 rounded text-xs font-medium ${diff.type === 'ADDED' ? 'bg-green-100 text-green-800' :
                   diff.type === 'DELETED' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
                   {diff.type}
                 </span>
                 <div className="text-xs text-gray-600">
@@ -1365,7 +1502,7 @@ function TextDiffPanel({
             <span className="ml-3 text-red-600">({differences.length} differences found)</span>
           )}
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-xs text-gray-600">
             <div className="flex items-center">
@@ -1381,25 +1518,23 @@ function TextDiffPanel({
               <span>Modified content</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('full-document')}
-              className={`px-3 py-1 rounded text-xs ${
-                viewMode === 'full-document' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 text-gray-700'
-              }`}
+              className={`px-3 py-1 rounded text-xs ${viewMode === 'full-document'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700'
+                }`}
             >
               Full Document
             </button>
             <button
               onClick={() => setViewMode('differences-only')}
-              className={`px-3 py-1 rounded text-xs ${
-                viewMode === 'differences-only' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 text-gray-700'
-              }`}
+              className={`px-3 py-1 rounded text-xs ${viewMode === 'differences-only'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700'
+                }`}
             >
               Differences Only
             </button>
@@ -1491,7 +1626,7 @@ function TextDiffPanel({
           }
         `}
       </style>
-      
+
       <div className="flex-1 overflow-hidden bg-gray-50">
         {viewMode === 'full-document' ? renderFullDocumentView() : renderDifferencesOnlyView()}
       </div>
