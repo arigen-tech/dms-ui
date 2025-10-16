@@ -804,212 +804,251 @@ const FileCompare = () => {
   }, [comparisonResult, fileUrls.firstFile, fileUrls.secondFile])
 
 
+// Replace your FileSearchDropdown component with this FIXED version
+const FileSearchDropdown = ({ isFirst = true }) => {
+  const dropdownRef = useRef(null)
+  const inputRef = useRef(null)
 
+  // Determine which state to use
+  const searchTerm = isFirst ? firstSearchTerm : secondSearchTerm
+  const setSearchTerm = isFirst ? setFirstSearchTerm : setSecondSearchTerm
+  const selectedCategory = isFirst ? firstSelectedCategory : secondSelectedCategory
+  const setSelectedCategory = isFirst ? setFirstSelectedCategory : setSecondSelectedCategory
+  const showDropdown = isFirst ? firstShowDropdown : secondShowDropdown
+  const setShowDropdown = isFirst ? setFirstShowDropdown : setSecondShowDropdown
+  const selectedFileNo = isFirst ? selectedFirstFileNo : selectedSecondFileNo
+  const filteredHeaders = isFirst ? filteredFirstFileHeaders : filteredSecondFileHeaders
 
-  // Simple File Search Dropdown Component
-  const FileSearchDropdown = ({ isFirst = true }) => {
-    const dropdownRef = useRef(null)
-    const inputRef = useRef(null)
-    const categoryRef = useRef(null)
+  // Keep input focused while typing - THIS IS THE CRITICAL FIX
+  useEffect(() => {
+    if (showDropdown && inputRef.current && document.activeElement !== inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [showDropdown, searchTerm])
 
-    // Determine which state to use based on isFirst prop
-    const searchTerm = isFirst ? firstSearchTerm : secondSearchTerm
-    const setSearchTerm = isFirst ? setFirstSearchTerm : setSecondSearchTerm
-    const selectedCategory = isFirst ? firstSelectedCategory : secondSelectedCategory
-    const setSelectedCategory = isFirst ? setFirstSelectedCategory : setSecondSelectedCategory
-    const showDropdown = isFirst ? firstShowDropdown : secondShowDropdown
-    const setShowDropdown = isFirst ? setFirstShowDropdown : setSecondShowDropdown
-    const filteredHeaders = isFirst ? filteredFirstFileHeaders : filteredSecondFileHeaders
-    const selectedFileNo = isFirst ? selectedFirstFileNo : selectedSecondFileNo
-
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-          setShowDropdown(false)
-        }
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false)
       }
+    }
 
+    if (showDropdown) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [setShowDropdown])
+    }
+  }, [showDropdown, setShowDropdown])
 
-    const handleSelectFile = (fileNo) => {
-      if (isFirst) {
-        setSelectedFirstFileNo(fileNo)
-        setFirstShowDropdown(false)
-        if (fileNo) {
-          fetchDocumentsByFileNo(fileNo, true)
-        }
-      } else {
-        setSelectedSecondFileNo(fileNo)
-        setSecondShowDropdown(false)
-        if (fileNo) {
-          fetchDocumentsByFileNo(fileNo, false)
-        }
+  // Handle input change
+  const handleInputChange = (e) => {
+    const value = e.target.value
+    setSearchTerm(value)
+    if (!showDropdown) {
+      setShowDropdown(true)
+    }
+  }
+
+  // Handle input focus
+  const handleInputFocus = () => {
+    setShowDropdown(true)
+  }
+
+  // Handle category change
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value)
+    setShowDropdown(true)
+    // Keep focus on input after changing category
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
+    }, 0)
+  }
+
+  // Handle file selection
+  const handleSelectFile = (fileNo) => {
+    if (isFirst) {
+      setSelectedFirstFileNo(fileNo)
+      setFirstSearchTerm("")
+      setFirstSelectedCategory("")
+      if (fileNo) {
+        fetchDocumentsByFileNo(fileNo, true)
+      }
+    } else {
+      setSelectedSecondFileNo(fileNo)
+      setSecondSearchTerm("")
+      setSecondSelectedCategory("")
+      if (fileNo) {
+        fetchDocumentsByFileNo(fileNo, false)
       }
     }
+    setShowDropdown(false)
+  }
 
-    const handleSearchChange = (e) => {
-      setSearchTerm(e.target.value)
-      setShowDropdown(true)
+  // Clear selection
+  const clearSelection = () => {
+    if (isFirst) {
+      setSelectedFirstFileNo("")
+      setFirstSearchTerm("")
+      setFirstSelectedCategory("")
+      setFirstFileDocuments([])
+      setSelectedFirstFileIds([])
+    } else {
+      setSelectedSecondFileNo("")
+      setSecondSearchTerm("")
+      setSecondSelectedCategory("")
+      setSecondFileDocuments([])
+      setSelectedSecondFileIds([])
     }
+    setShowDropdown(false)
+  }
 
-    const handleCategoryChange = (e) => {
-      setSelectedCategory(e.target.value)
-      setShowDropdown(true)
+  // Get category name
+  const getCategoryName = (header) => {
+    return header.categoryMaster?.name || header.category?.name || "Unknown Category"
+  }
+
+  // Handle Enter key
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && filteredHeaders.length > 0) {
+      handleSelectFile(filteredHeaders[0].fileNo)
     }
+  }
 
-    // Only show dropdown when search input is clicked/focused
-    const handleInputClick = () => {
-      setShowDropdown(true)
-    }
+  // Prevent dropdown from stealing focus
+  const handleDropdownMouseDown = (e) => {
+    e.preventDefault()
+  }
 
-    const handleInputFocus = () => {
-      setShowDropdown(true)
-    }
-
-    // Category dropdown should NOT trigger the main dropdown
-    const handleCategoryClick = (e) => {
-      // Stop propagation but don't show the file list dropdown
-      e.stopPropagation()
-      // Don't setShowDropdown(true) here - we don't want file list to show when clicking category
-    }
-
-    const handleCategoryFocus = (e) => {
-      // Don't show file dropdown when category gets focus
-      e.stopPropagation()
-    }
-
-    // Prevent dropdown from closing when clicking inside it
-    const handleDropdownClick = (e) => {
-      e.stopPropagation()
-    }
-
-    const clearSelection = () => {
-      if (isFirst) {
-        setSelectedFirstFileNo("")
-        setFirstSearchTerm("")
-        setFirstSelectedCategory("")
-        setFirstFileDocuments([])
-        setSelectedFirstFileIds([])
-      } else {
-        setSelectedSecondFileNo("")
-        setSecondSearchTerm("")
-        setSecondSelectedCategory("")
-        setSecondFileDocuments([])
-        setSelectedSecondFileIds([])
-      }
-    }
-
-    // Get category name for display
-    const getCategoryName = (header) => {
-      return header.categoryMaster?.name || header.category?.name || "Unknown Category";
-    }
-
-    return (
-      <div className="relative" ref={dropdownRef}>
-        <div className="flex gap-2 mb-2">
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Search by file no, title, subject..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              onClick={handleInputClick}
-              onFocus={handleInputFocus}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Category Filter - Standalone, doesn't trigger file dropdown */}
-          <select
-            ref={categoryRef}
-            value={selectedCategory}
-            onChange={handleCategoryChange}
-            onClick={handleCategoryClick}
-            onFocus={handleCategoryFocus}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none min-w-32 bg-white"
-          >
-            <option value="">All Categories</option>
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      {/* Search and Category Row */}
+      <div className="flex gap-2 mb-2">
+        {/* Search Input */}
+        <div className="flex-1 relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search files by name..."
+            value={searchTerm}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            onKeyDown={handleKeyDown}
+            autoComplete="off"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
-        {/* Selected File Display */}
-        {selectedFileNo && (
-          <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex justify-between items-center">
-              <div>
-                <span className="font-medium text-blue-800">{selectedFileNo}</span>
-                <span className="text-sm text-blue-600 ml-2">
-                  - {documentHeaders.find(h => h.fileNo === selectedFileNo)?.title || 'Unknown'}
-                </span>
-              </div>
-              <button
-                onClick={clearSelection}
-                className="text-red-500 hover:text-red-700 p-1"
-              >
-                <XMarkIcon className="h-4 w-4" />
-              </button>
+        {/* Category Filter */}
+        <select
+          value={selectedCategory}
+          onChange={handleCategoryChange}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 min-w-max"
+        >
+          <option value="">All Categories</option>
+          {categoryOptions.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Selected File Badge */}
+      {selectedFileNo && (
+        <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
+          <div>
+            <div className="font-semibold text-blue-900">{selectedFileNo}</div>
+            <div className="text-xs text-blue-700">
+              {documentHeaders.find(h => h.fileNo === selectedFileNo)?.title || 'Unknown'}
             </div>
           </div>
-        )}
-
-        {/* Dropdown Results - Only shown when search input is active */}
-        {showDropdown && (
-          <div
-            className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-            onClick={handleDropdownClick}
+          <button
+            onClick={clearSelection}
+            className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-100 rounded"
           >
-            {/* Show current filters info */}
-            {(searchTerm || selectedCategory) && (
-              <div className="p-2 bg-gray-50 border-b text-xs text-gray-600">
-                {searchTerm && `Search: "${searchTerm}"`}
-                {searchTerm && selectedCategory && " • "}
-                {selectedCategory && `Category: ${categoryOptions.find(cat => cat.id.toString() === selectedCategory)?.name || selectedCategory}`}
-              </div>
-            )}
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+      )}
 
+      {/* Dropdown List */}
+      {showDropdown && !selectedFileNo && (
+        <div 
+          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col"
+          onMouseDown={handleDropdownMouseDown}
+        >
+          {/* Search Info Header */}
+          {(searchTerm || selectedCategory) && (
+            <div className="px-3 py-2 bg-gray-50 border-b text-xs text-gray-600 sticky top-0">
+              {searchTerm && (
+                <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-1">
+                  Search: "{searchTerm}"
+                </span>
+              )}
+              {selectedCategory && (
+                <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded">
+                  {categoryOptions.find(cat => cat.id.toString() === selectedCategory)?.name}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Results Container */}
+          <div className="overflow-y-auto flex-1">
             {filteredHeaders.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">
-                {documentHeaders.length === 0
-                  ? "No documents available"
-                  : "No files found matching your criteria"
-                }
+              <div className="p-6 text-center">
+                <DocumentIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm font-medium">
+                  {searchTerm.trim().length > 0 ? "No files found" : "Start typing to search"}
+                </p>
               </div>
             ) : (
               filteredHeaders.map((header) => (
                 <div
                   key={header.fileNo}
                   onClick={() => handleSelectFile(header.fileNo)}
-                  className={`p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${selectedFileNo === header.fileNo ? 'bg-blue-100' : ''
-                    }`}
+                  className="px-3 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{header.fileNo}</div>
-                      <div className="text-sm text-gray-600 mt-1">{header.title || 'No title'}</div>
-                      <div className="text-xs text-gray-500 mt-1">{header.subject || 'No subject'}</div>
-                      <div className="text-xs text-blue-600 mt-1">
-                        Category: {getCategoryName(header)}
-                      </div>
-                    </div>
+                  <div className="font-semibold text-gray-900 text-sm">
+                    {header.fileNo}
+                  </div>
+                  <div className="text-sm text-gray-700 mt-0.5 truncate">
+                    {header.title || 'No title'}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1 truncate">
+                    {header.subject || 'No subject'}
+                  </div>
+                  <div className="text-xs text-blue-600 mt-1">
+                    {getCategoryName(header)}
                   </div>
                 </div>
               ))
             )}
           </div>
-        )}
-      </div>
-    )
-  }
+
+          {/* Footer with count */}
+          {filteredHeaders.length > 0 && (
+            <div className="px-3 py-2 bg-gray-50 border-t text-xs text-gray-600 text-center">
+              {filteredHeaders.length} result{filteredHeaders.length !== 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 
   return (
     <div className="px-2">
