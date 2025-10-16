@@ -12,6 +12,7 @@ import {
   SpeakerWaveIcon,
   ExclamationTriangleIcon,
   CodeBracketIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid"
 import axios from "axios"
 
@@ -92,10 +93,20 @@ const FileCompare = () => {
 
   const [warningMessage, setWarningMessage] = useState("")
 
+  const [categoryOptions, setCategoryOptions] = useState([])
+  const [firstSearchTerm, setFirstSearchTerm] = useState("")
+  const [firstSelectedCategory, setFirstSelectedCategory] = useState("")
+  const [firstShowDropdown, setFirstShowDropdown] = useState(false)
+
+  const [secondSearchTerm, setSecondSearchTerm] = useState("")
+  const [secondSelectedCategory, setSecondSelectedCategory] = useState("")
+  const [secondShowDropdown, setSecondShowDropdown] = useState(false)
+
   const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null
 
   useEffect(() => {
     fetchAllDocumentHeaders()
+    fetchCategory()
   }, [])
 
   useEffect(() => {
@@ -117,6 +128,20 @@ const FileCompare = () => {
       showPopup("Failed to fetch document headers", "error")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchCategory = async () => {
+    try {
+      const response = await axios.get(
+        `${API_HOST}/CategoryMaster/findActiveCategory`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      setCategoryOptions(response.data)
+    } catch (error) {
+      console.error("Error fetching categories:", error)
     }
   }
 
@@ -142,6 +167,69 @@ const FileCompare = () => {
       showPopup("Failed to fetch documents", "error")
     }
   }
+
+  // Fixed filtering logic - correctly handles the category structure from your API response
+  const filteredFirstFileHeaders = useMemo(() => {
+    let filtered = documentHeaders
+
+    // Apply search filter
+    if (firstSearchTerm) {
+      const searchLower = firstSearchTerm.toLowerCase()
+      filtered = filtered.filter(header =>
+        header.fileNo?.toLowerCase().includes(searchLower) ||
+        header.title?.toLowerCase().includes(searchLower) ||
+        header.subject?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Apply category filter - FIXED: Check both category and categoryMaster structures
+    if (firstSelectedCategory) {
+      filtered = filtered.filter(header => {
+        // Check if header has categoryMaster and matches selected category
+        if (header.categoryMaster && header.categoryMaster.id) {
+          return header.categoryMaster.id.toString() === firstSelectedCategory.toString()
+        }
+        // Fallback to category if categoryMaster doesn't exist
+        if (header.category && header.category.id) {
+          return header.category.id.toString() === firstSelectedCategory.toString()
+        }
+        return false
+      })
+    }
+
+    return filtered
+  }, [documentHeaders, firstSearchTerm, firstSelectedCategory])
+
+  const filteredSecondFileHeaders = useMemo(() => {
+    let filtered = documentHeaders
+
+    // Apply search filter
+    if (secondSearchTerm) {
+      const searchLower = secondSearchTerm.toLowerCase()
+      filtered = filtered.filter(header =>
+        header.fileNo?.toLowerCase().includes(searchLower) ||
+        header.title?.toLowerCase().includes(searchLower) ||
+        header.subject?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Apply category filter - FIXED: Check both category and categoryMaster structures
+    if (secondSelectedCategory) {
+      filtered = filtered.filter(header => {
+        // Check if header has categoryMaster and matches selected category
+        if (header.categoryMaster && header.categoryMaster.id) {
+          return header.categoryMaster.id.toString() === secondSelectedCategory.toString()
+        }
+        // Fallback to category if categoryMaster doesn't exist
+        if (header.category && header.category.id) {
+          return header.category.id.toString() === secondSelectedCategory.toString()
+        }
+        return false
+      })
+    }
+
+    return filtered
+  }, [documentHeaders, secondSearchTerm, secondSelectedCategory])
 
   const handleFileSelection = (fileId, isFirst = true) => {
     const currentFirstCount = selectedFirstFileIds.length
@@ -232,7 +320,6 @@ const FileCompare = () => {
       return null;
     }
   };
-
 
   const getFileTypeIcon = (fileType) => {
     const type = (fileType || "").toLowerCase()
@@ -396,7 +483,7 @@ const FileCompare = () => {
     }
   }
 
-  // Add this function to check if files are comparable
+  // Add this function - it's referenced but missing
   const areFilesComparable = (file1, file2) => {
     if (!file1 || !file2) return false;
 
@@ -716,6 +803,214 @@ const FileCompare = () => {
     return !!(leftIsText && rightIsText && fileUrls.firstFile?.url && fileUrls.secondFile?.url)
   }, [comparisonResult, fileUrls.firstFile, fileUrls.secondFile])
 
+
+
+
+  // Simple File Search Dropdown Component
+  const FileSearchDropdown = ({ isFirst = true }) => {
+    const dropdownRef = useRef(null)
+    const inputRef = useRef(null)
+    const categoryRef = useRef(null)
+
+    // Determine which state to use based on isFirst prop
+    const searchTerm = isFirst ? firstSearchTerm : secondSearchTerm
+    const setSearchTerm = isFirst ? setFirstSearchTerm : setSecondSearchTerm
+    const selectedCategory = isFirst ? firstSelectedCategory : secondSelectedCategory
+    const setSelectedCategory = isFirst ? setFirstSelectedCategory : setSecondSelectedCategory
+    const showDropdown = isFirst ? firstShowDropdown : secondShowDropdown
+    const setShowDropdown = isFirst ? setFirstShowDropdown : setSecondShowDropdown
+    const filteredHeaders = isFirst ? filteredFirstFileHeaders : filteredSecondFileHeaders
+    const selectedFileNo = isFirst ? selectedFirstFileNo : selectedSecondFileNo
+
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          setShowDropdown(false)
+        }
+      }
+
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [setShowDropdown])
+
+    const handleSelectFile = (fileNo) => {
+      if (isFirst) {
+        setSelectedFirstFileNo(fileNo)
+        setFirstShowDropdown(false)
+        if (fileNo) {
+          fetchDocumentsByFileNo(fileNo, true)
+        }
+      } else {
+        setSelectedSecondFileNo(fileNo)
+        setSecondShowDropdown(false)
+        if (fileNo) {
+          fetchDocumentsByFileNo(fileNo, false)
+        }
+      }
+    }
+
+    const handleSearchChange = (e) => {
+      setSearchTerm(e.target.value)
+      setShowDropdown(true)
+    }
+
+    const handleCategoryChange = (e) => {
+      setSelectedCategory(e.target.value)
+      setShowDropdown(true)
+    }
+
+    // Only show dropdown when search input is clicked/focused
+    const handleInputClick = () => {
+      setShowDropdown(true)
+    }
+
+    const handleInputFocus = () => {
+      setShowDropdown(true)
+    }
+
+    // Category dropdown should NOT trigger the main dropdown
+    const handleCategoryClick = (e) => {
+      // Stop propagation but don't show the file list dropdown
+      e.stopPropagation()
+      // Don't setShowDropdown(true) here - we don't want file list to show when clicking category
+    }
+
+    const handleCategoryFocus = (e) => {
+      // Don't show file dropdown when category gets focus
+      e.stopPropagation()
+    }
+
+    // Prevent dropdown from closing when clicking inside it
+    const handleDropdownClick = (e) => {
+      e.stopPropagation()
+    }
+
+    const clearSelection = () => {
+      if (isFirst) {
+        setSelectedFirstFileNo("")
+        setFirstSearchTerm("")
+        setFirstSelectedCategory("")
+        setFirstFileDocuments([])
+        setSelectedFirstFileIds([])
+      } else {
+        setSelectedSecondFileNo("")
+        setSecondSearchTerm("")
+        setSecondSelectedCategory("")
+        setSecondFileDocuments([])
+        setSelectedSecondFileIds([])
+      }
+    }
+
+    // Get category name for display
+    const getCategoryName = (header) => {
+      return header.categoryMaster?.name || header.category?.name || "Unknown Category";
+    }
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <div className="flex gap-2 mb-2">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Search by file no, title, subject..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              onClick={handleInputClick}
+              onFocus={handleInputFocus}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+          </div>
+
+          {/* Category Filter - Standalone, doesn't trigger file dropdown */}
+          <select
+            ref={categoryRef}
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            onClick={handleCategoryClick}
+            onFocus={handleCategoryFocus}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none min-w-32 bg-white"
+          >
+            <option value="">All Categories</option>
+            {categoryOptions.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Selected File Display */}
+        {selectedFileNo && (
+          <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex justify-between items-center">
+              <div>
+                <span className="font-medium text-blue-800">{selectedFileNo}</span>
+                <span className="text-sm text-blue-600 ml-2">
+                  - {documentHeaders.find(h => h.fileNo === selectedFileNo)?.title || 'Unknown'}
+                </span>
+              </div>
+              <button
+                onClick={clearSelection}
+                className="text-red-500 hover:text-red-700 p-1"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Dropdown Results - Only shown when search input is active */}
+        {showDropdown && (
+          <div
+            className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+            onClick={handleDropdownClick}
+          >
+            {/* Show current filters info */}
+            {(searchTerm || selectedCategory) && (
+              <div className="p-2 bg-gray-50 border-b text-xs text-gray-600">
+                {searchTerm && `Search: "${searchTerm}"`}
+                {searchTerm && selectedCategory && " • "}
+                {selectedCategory && `Category: ${categoryOptions.find(cat => cat.id.toString() === selectedCategory)?.name || selectedCategory}`}
+              </div>
+            )}
+
+            {filteredHeaders.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">
+                {documentHeaders.length === 0
+                  ? "No documents available"
+                  : "No files found matching your criteria"
+                }
+              </div>
+            ) : (
+              filteredHeaders.map((header) => (
+                <div
+                  key={header.fileNo}
+                  onClick={() => handleSelectFile(header.fileNo)}
+                  className={`p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${selectedFileNo === header.fileNo ? 'bg-blue-100' : ''
+                    }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{header.fileNo}</div>
+                      <div className="text-sm text-gray-600 mt-1">{header.title || 'No title'}</div>
+                      <div className="text-xs text-gray-500 mt-1">{header.subject || 'No subject'}</div>
+                      <div className="text-xs text-blue-600 mt-1">
+                        Category: {getCategoryName(header)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="px-2">
       <h1 className="text-2xl mb-1 font-semibold">File Comparison</h1>
@@ -730,36 +1025,17 @@ const FileCompare = () => {
         {/* File Selection */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* First */}
+            {/* First File Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-700">First File</h3>
                 <span className="text-sm text-gray-500">Selected: {selectedFirstFileIds.length}/2</span>
               </div>
 
-              <label className="block text-md font-medium text-gray-700">
-                Select File Number <span className="text-red-500">*</span>
-                <select
-                  value={selectedFirstFileNo}
-                  onChange={(e) => {
-                    setSelectedFirstFileNo(e.target.value)
-                    if (e.target.value) {
-                      fetchDocumentsByFileNo(e.target.value, true)
-                    } else {
-                      setFirstFileDocuments([])
-                      setSelectedFirstFileIds([])
-                    }
-                  }}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select File Number</option>
-                  {documentHeaders.map((header) => (
-                    <option key={header.id} value={header.fileNo}>
-                      {header.fileNo} - {header.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="block text-md font-medium text-gray-700">
+                Select File <span className="text-red-500">*</span>
+                <FileSearchDropdown isFirst={true} />
+              </div>
 
               <div className="block text-md font-medium text-gray-700">
                 Select Documents <span className="text-red-500">*</span>
@@ -793,42 +1069,25 @@ const FileCompare = () => {
                       )
                     })
                   ) : (
-                    <p className="text-sm text-gray-500 p-2">No documents available</p>
+                    <p className="text-sm text-gray-500 p-2">
+                      {selectedFirstFileNo ? "No documents available" : "Select a file to see documents"}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Second */}
+            {/* Second File Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-700">Second File</h3>
                 <span className="text-sm text-gray-500">Selected: {selectedSecondFileIds.length}/2</span>
               </div>
 
-              <label className="block text-md font-medium text-gray-700">
-                Select File Number <span className="text-red-500">*</span>
-                <select
-                  value={selectedSecondFileNo}
-                  onChange={(e) => {
-                    setSelectedSecondFileNo(e.target.value)
-                    if (e.target.value) {
-                      fetchDocumentsByFileNo(e.target.value, false)
-                    } else {
-                      setSecondFileDocuments([])
-                      setSelectedSecondFileIds([])
-                    }
-                  }}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select File Number</option>
-                  {documentHeaders.map((header) => (
-                    <option key={header.id} value={header.fileNo}>
-                      {header.fileNo} - {header.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="block text-md font-medium text-gray-700">
+                Select File <span className="text-red-500">*</span>
+                <FileSearchDropdown isFirst={false} />
+              </div>
 
               <div className="block text-md font-medium text-gray-700">
                 Select Documents <span className="text-red-500">*</span>
@@ -862,7 +1121,9 @@ const FileCompare = () => {
                       )
                     })
                   ) : (
-                    <p className="text-sm text-gray-500 p-2">No documents available</p>
+                    <p className="text-sm text-gray-500 p-2">
+                      {selectedSecondFileNo ? "No documents available" : "Select a file to see documents"}
+                    </p>
                   )}
                 </div>
               </div>
@@ -893,7 +1154,7 @@ const FileCompare = () => {
           </div>
         </div>
 
-        {/* Modal */}
+        {/* Rest of the modal and comparison code remains the same */}
         {showComparisonModal && comparisonResult && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-5/6 flex flex-col">
@@ -989,7 +1250,7 @@ const FileCompare = () => {
                       <div className="ml-2">
                         <h3 className="font-medium text-gray-800">{extractFileName(comparisonResult.rightFile.fileName)}</h3>
                         <p className="text-xs text-gray-600">
-                          Version: {comparisonResult.rightFile.version} | fileType:{" "}
+                          Version: {comparisonResult.rightFile.version} | fileType: {" "}
                           {comparisonResult.rightFile.fileType}
                         </p>
                       </div>
@@ -1129,6 +1390,7 @@ const FileCompare = () => {
 }
 
 export default FileCompare
+
 
 /* Visual diff panel for images with Overlay and Pixel Diff modes */
 function VisualDiffPanel({
