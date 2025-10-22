@@ -733,7 +733,7 @@ const LoginPage = () => {
                 {/* Tooltip */}
                 {showTooltip && (
                   <div className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-1 shadow-lg z-10 whitespace-nowrap">
-                    This website is running on Release Version 1.12, which is currently under testing.                  
+                    This website is running on Release Version 1.13, which is currently under testing.                  
                     </div>
                 )}
               </div>
