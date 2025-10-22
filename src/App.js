@@ -65,11 +65,11 @@ function App() {
             <Route path="/notifications" element={<Notification />} />
             <Route path="/adminOCRResponce" element={<AdminsOCRResponce />} />
             <Route path="/profile" element={<ChangePasswordPage />} />
-            <Route path="/newDash" element={<DashboardnEW />} />
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/newDash" element={<Dashboard />} />
+              <Route path="/dashboard" element={<DashboardnEW />} />
               <Route path="/inbox" element={<Inbox />} />
               <Route path="/users" element={<Users />} />
               <Route path="/branchusers" element={<BranchUsers />} />

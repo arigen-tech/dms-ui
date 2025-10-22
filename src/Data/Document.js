@@ -39,7 +39,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     uploadedFilePaths: [],
   });
 
-  // Add after formData state
   useEffect(() => {
     const { fileNo, title, subject, version, category, year } = formData;
     setIsMetadataComplete(!!(fileNo && title && subject && version && category && year));
@@ -215,7 +214,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       return;
     }
 
-      const versionToUpload = formData.version?.trim();
+    const versionToUpload = formData.version?.trim();
     const yearToUpload = formData.year?.id || formData.year?.name;
 
     // ✅ Check duplicate version + year combination
@@ -304,11 +303,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           fileName = fileName.replace(/\.[^.]+$/, `.${fileType}`);
         }
 
-        
-        
+
+
 
         const fullLogicalPath = `${logicalFolder}/${fileName}`;
-                console.log("year curr:", currYear);
+        console.log("year curr:", currYear);
 
 
         const processedDoc = {
@@ -1975,22 +1974,20 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       >
                         {openingFiles === index ? "Opening..." : "Open"}
                       </button>
-
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          if (deletingFiles !== index && status !== "APPROVED") {
-                            handleDiscardFile(index);
-                          }
+                          const updatedFiles = formData.uploadedFilePaths.filter((_, i) => i !== index);
+                          setFormData((prev) => ({
+                            ...prev,
+                            uploadedFilePaths: updatedFiles,
+                          }));
                         }}
-                        disabled={deletingFiles === index || status === "APPROVED"}
-                        className={`rounded-lg px-3 py-1 text-sm transition ${deletingFiles === index || status === "APPROVED"
-                          ? "bg-gray-400 text-white cursor-not-allowed"
-                          : "bg-red-500 text-white hover:bg-red-600"
-                          }`}
+                        className="rounded-lg px-3 py-1 text-sm bg-red-500 text-white hover:bg-red-600 transition"
                       >
-                        {deletingFiles === index ? "Deleting..." : "Delete"}
+                        Delete
                       </button>
+
                     </div>
                   </li>
 
