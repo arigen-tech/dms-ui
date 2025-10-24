@@ -52,6 +52,7 @@ const RoleRightss = React.lazy(() => import("./Pages/RoleRightss"));
 const AuditForms = React.lazy(() => import("./Pages/AuditForms"));
 const WaitingRooms = React.lazy(() => import("./Pages/WaitingRooms"));
 const DashboardnEW = React.lazy(() => import("./Pages/DashboardnEW"));
+const ExportDatas =React.lazy(() => import( "./Pages/ExportDatas"));
 
 function App() {
   return (
@@ -115,6 +116,7 @@ function App() {
               <Route path="/Role-rights" element={<RoleRightss />} />
               <Route path="/Waiting-room" element={<WaitingRooms />} />
               <Route path="/newDash" element={<DashboardnEW />} />
+              <Route path="/export" element={<ExportDatas />} />
             </Route>
 
             {/* Fallback */}
