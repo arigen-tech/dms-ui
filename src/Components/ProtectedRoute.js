@@ -51,7 +51,8 @@ const validRoutes = [
   "/Role-rights",
   "/Waiting-room",
   "/newDash",
-  "/export"
+  "/export",
+  "/import"
 ];
 
 const NotAuthorized = () => {
