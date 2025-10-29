@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
-import { Upload, Download, Database, Folder, CheckCircle, AlertCircle, Home, FileText, Settings } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import {
+  Upload, Database, Folder, CheckCircle, AlertCircle,
+  Settings, ChevronDown, ChevronUp, Server,
+  Archive, HardDrive, CloudUpload, X, Loader, Search, FileSearch,
+  CheckCircle2, FileArchive, Shield, File, FileText
+} from 'lucide-react';
 
 const Import = () => {
   const [importing, setImporting] = useState(false);
@@ -8,59 +13,204 @@ const Import = () => {
   const [progress, setProgress] = useState(0);
   const [importOptions, setImportOptions] = useState({
     importDatabase: true,
-    importFiles: true,
+    importFiles: false,
     overwriteExisting: false
   });
+  const [availableTables, setAvailableTables] = useState([]);
+  const [selectedTables, setSelectedTables] = useState(new Set());
+  const [availableFiles, setAvailableFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState(new Set());
+  const [showTableSelector, setShowTableSelector] = useState(false);
+  const [showFileSelector, setShowFileSelector] = useState(false);
+  const [importResults, setImportResults] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [fileError, setFileError] = useState('');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successData, setSuccessData] = useState({});
+  const [fileContentType, setFileContentType] = useState(null);
+  const [fileStructure, setFileStructure] = useState({});
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+  const fileInputRef = useRef(null);
 
-  const handleFileSelect = (event) => {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+  const getAuthToken = () => {
+    return localStorage.getItem('tokenKey') || localStorage.getItem('authToken');
+  };
+
+  const handleFileSelect = async (selectedFile) => {
+    if (!selectedFile) return;
+
+    setFileError('');
+    setFileContentType(null);
+    setFileStructure({});
+
+    if (!selectedFile.name.toLowerCase().endsWith('.zip')) {
+      setFileError('Please select a ZIP file exported from DMS system.');
+      setStatus({
+        type: 'error',
+        message: 'Invalid file type. Please select a ZIP file.'
+      });
+      return;
+    }
+
+    const maxSize = 100 * 1024 * 1024 * 1024;
+    if (selectedFile.size > maxSize) {
+      setFileError('File size exceeds 100GB limit.');
+      setStatus({
+        type: 'error',
+        message: 'File too large. Maximum size is 100GB.'
+      });
+      return;
+    }
+
+    if (selectedFile.size === 0) {
+      setFileError('File is empty.');
+      setStatus({
+        type: 'error',
+        message: 'The selected file is empty.'
+      });
+      return;
+    }
+
+    console.log('Selected file:', selectedFile.name, 'Size:', formatFileSize(selectedFile.size));
+
+    setFile(selectedFile);
+    setStatus({
+      type: 'info',
+      message: `File selected: ${selectedFile.name} (${formatFileSize(selectedFile.size)})`
+    });
+    setSelectedTables(new Set());
+    setAvailableTables([]);
+    setSelectedFiles(new Set());
+    setAvailableFiles([]);
+    setImportResults(null);
+
+    await validateFile(selectedFile);
+  };
+
+  const handleFileInputChange = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
-      if (selectedFile.name.toLowerCase().endsWith('.zip')) {
-        setFile(selectedFile);
-        setStatus({});
-        validateFile(selectedFile);
-      } else {
-        setStatus({
-          type: 'error',
-          message: 'Please select a ZIP file exported from DMS system.'
-        });
-      }
+      handleFileSelect(selectedFile);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) {
+      handleFileSelect(droppedFile);
+    }
+  };
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
   const validateFile = async (fileToValidate) => {
     try {
+      setStatus({
+        type: 'info',
+        message: 'Validating file structure...'
+      });
+
+      const token = getAuthToken();
       const formData = new FormData();
       formData.append('file', fileToValidate);
+
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
       const response = await fetch(`${API_BASE_URL}/import/validate`, {
         method: 'POST',
         body: formData,
+        headers: headers
       });
 
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        const errorText = await response.text();
+        throw new Error(`Validation failed: ${response.status} - ${errorText}`);
+      }
+
       const result = await response.json();
-      
+
       if (result.success) {
+        const details = result.details || {};
+        const tables = details.availableTables || [];
+        const files = details.availableFiles || [];
+        const hasDatabase = details.hasDatabase || false;
+        const hasFiles = details.hasFiles || false;
+        const fileStructure = details.fileStructure || {};
+
+        let contentType = 'unknown';
+        if (hasDatabase && hasFiles) contentType = 'both';
+        else if (hasDatabase) contentType = 'database';
+        else if (hasFiles) contentType = 'files';
+        setFileContentType(contentType);
+        setFileStructure(fileStructure);
+
+        setImportOptions(prev => ({
+          ...prev,
+          importDatabase: hasDatabase,
+          importFiles: hasFiles
+        }));
+
+        let message = `✅ File validated successfully! `;
+        if (hasDatabase) message += `Found ${tables.length} tables. `;
+        if (hasFiles) message += `Contains files. `;
+
         setStatus({
           type: 'success',
-          message: `File validated successfully! Size: ${(fileToValidate.size / (1024 * 1024)).toFixed(2)}MB`,
-          details: result.details
+          message: message,
+          details: details
         });
+
+        if (tables.length > 0) {
+          setAvailableTables(tables);
+          setSelectedTables(new Set(tables));
+        } else {
+          setAvailableTables([]);
+          setSelectedTables(new Set());
+        }
+
+        if (files.length > 0) {
+          setAvailableFiles(files);
+          setSelectedFiles(new Set(files));
+        } else {
+          setAvailableFiles([]);
+          setSelectedFiles(new Set());
+        }
       } else {
-        setStatus({
-          type: 'error',
-          message: result.message
-        });
-        setFile(null);
+        throw new Error(result.message || 'File validation failed');
       }
     } catch (error) {
+      console.error('Validation error:', error);
       setStatus({
         type: 'error',
-        message: `Validation failed: ${error.message}`
+        message: `❌ Validation failed: ${error.message}`
       });
       setFile(null);
+      setFileError(error.message);
+      setFileContentType(null);
     }
   };
 
@@ -68,71 +218,134 @@ const Import = () => {
     setProgress(0);
     const interval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 80) {
+        if (prev >= 90) {
           clearInterval(interval);
-          return 80;
+          return 90;
         }
-        return prev + 5;
+        return prev + Math.random() * 15;
       });
-    }, 200);
+    }, 300);
     return interval;
+  };
+
+  const showSuccessPopupMessage = (data) => {
+    setSuccessData(data);
+    setShowSuccessPopup(true);
   };
 
   const handleImport = async (importType = 'full') => {
     if (!file) {
       setStatus({
         type: 'error',
-        message: 'Please select a file to import.'
+        message: '❌ Please select a file to import.'
+      });
+      return;
+    }
+
+    if (importType === 'database' && (!importOptions.importDatabase || selectedTables.size === 0)) {
+      setStatus({
+        type: 'error',
+        message: '❌ Please select at least one table to import for database import.'
+      });
+      return;
+    }
+
+    if (importType === 'files' && (!importOptions.importFiles || selectedFiles.size === 0)) {
+      setStatus({
+        type: 'error',
+        message: '❌ Please select at least one file category to import for file import.'
+      });
+      return;
+    }
+
+    if (importType === 'full' && ((importOptions.importDatabase && selectedTables.size === 0) || (importOptions.importFiles && selectedFiles.size === 0))) {
+      setStatus({
+        type: 'error',
+        message: '❌ Please configure import options properly.'
       });
       return;
     }
 
     setImporting(true);
+    setImportResults(null);
     const progressInterval = simulateProgress();
 
     try {
+      const token = getAuthToken();
       const formData = new FormData();
       formData.append('file', file);
 
-      let endpoint = '/import/restore';
-      let params = '';
+      const params = new URLSearchParams();
 
-      switch (importType) {
-        case 'database':
-          params = '?importDatabase=true&importFiles=false';
-          break;
-        case 'files':
-          params = '?importDatabase=false&importFiles=true';
-          break;
-        case 'full':
-        default:
-          params = `?importDatabase=${importOptions.importDatabase}&importFiles=${importOptions.importFiles}&overwriteExisting=${importOptions.overwriteExisting}`;
-          break;
+      if (importType === 'database') {
+        params.append('importDatabase', 'true');
+        params.append('importFiles', 'false');
+      } else if (importType === 'files') {
+        params.append('importDatabase', 'false');
+        params.append('importFiles', 'true');
+      } else {
+        params.append('importDatabase', importOptions.importDatabase.toString());
+        params.append('importFiles', importOptions.importFiles.toString());
       }
 
-      const response = await fetch(`${API_BASE_URL}${endpoint}${params}`, {
+      params.append('overwriteExisting', importOptions.overwriteExisting.toString());
+
+      if (importOptions.importDatabase && selectedTables.size > 0) {
+        params.append('selectedTables', Array.from(selectedTables).join(','));
+      }
+
+      if (importOptions.importFiles && selectedFiles.size > 0) {
+        params.append('selectedFiles', Array.from(selectedFiles).join(','));
+      }
+
+      console.log('Starting import with params:', params.toString());
+
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/import/restore?${params.toString()}`, {
         method: 'POST',
         body: formData,
+        headers: headers
       });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        const errorText = await response.text();
+        throw new Error(`Import failed: ${response.status} - ${errorText}`);
+      }
 
       const result = await response.json();
       setProgress(100);
 
       if (result.success) {
-        setStatus({
-          type: 'success',
-          message: `Import completed successfully!`,
-          details: result
-        });
-        
-        // Show import summary
-        if (result.databaseImported) {
-          console.log(`Database: ${result.databaseTables} tables, ${result.databaseRecords} records`);
-        }
-        if (result.filesImported) {
-          console.log(`Files: ${result.filesImportedCount} imported, ${result.filesSkipped} skipped`);
-        }
-        
+        setImportResults(result);
+
+        const successData = {
+          type: getImportTypeDisplayName(importType),
+          databaseTables: result.databaseTables || 0,
+          databaseRecords: result.databaseRecords || 0,
+          filesImported: result.filesImportedCount || 0,
+          filesReplaced: result.filesReplaced || 0,
+          filesSkipped: result.filesSkipped || 0,
+          selectedTables: result.selectedTables || Array.from(selectedTables),
+          selectedFiles: result.selectedFiles || Array.from(selectedFiles),
+          source: result.metadata?.databaseName || 'DMS System',
+          period: result.metadata?.dateRange || 'Unknown period',
+          timestamp: new Date().toLocaleString(),
+          importId: result.importId,
+          overwrite: importOptions.overwriteExisting,
+          recordsAdded: result.details?.recordsAdded || 0,
+          recordsUpdated: result.details?.recordsUpdated || 0
+        };
+
+        showSuccessPopupMessage(successData);
+        console.log('Import Results:', result);
+
       } else {
         throw new Error(result.message || 'Import failed');
       }
@@ -142,12 +355,61 @@ const Import = () => {
       setProgress(0);
       setStatus({
         type: 'error',
-        message: `Import failed: ${error.message}`
+        message: `❌ Import failed: ${error.message}`
       });
     } finally {
       clearInterval(progressInterval);
-      setImporting(false);
+      setTimeout(() => setImporting(false), 1000);
     }
+  };
+
+  const getImportTypeDisplayName = (type) => {
+    switch (type) {
+      case 'database': return 'Database';
+      case 'files': return 'Files & Documents';
+      case 'full': return 'Complete System';
+      default: return type;
+    }
+  };
+
+  const handleTableSelection = (tableName) => {
+    setSelectedTables(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(tableName)) {
+        newSelection.delete(tableName);
+      } else {
+        newSelection.add(tableName);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleFileCategorySelection = (fileCategory) => {
+    setSelectedFiles(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(fileCategory)) {
+        newSelection.delete(fileCategory);
+      } else {
+        newSelection.add(fileCategory);
+      }
+      return newSelection;
+    });
+  };
+
+  const selectAllTables = () => {
+    setSelectedTables(new Set(availableTables));
+  };
+
+  const clearTableSelection = () => {
+    setSelectedTables(new Set());
+  };
+
+  const selectAllFiles = () => {
+    setSelectedFiles(new Set(availableFiles));
+  };
+
+  const clearFileSelection = () => {
+    setSelectedFiles(new Set());
   };
 
   const handleOptionChange = (option) => {
@@ -157,244 +419,898 @@ const Import = () => {
     }));
   };
 
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    setStatus({});
+    setAvailableTables([]);
+    setSelectedTables(new Set());
+    setAvailableFiles([]);
+    setSelectedFiles(new Set());
+    setImportResults(null);
+    setFileError('');
+    setFileContentType(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const isImportDisabled = (importType) => {
+    if (importing || !file || !fileContentType) return true;
+
+    switch (importType) {
+      case 'database':
+        return fileContentType !== 'database' && fileContentType !== 'both' || selectedTables.size === 0;
+      case 'files':
+        return fileContentType !== 'files' && fileContentType !== 'both' || selectedFiles.size === 0;
+      case 'full':
+        if (fileContentType !== 'both') return true;
+        if (importOptions.importDatabase && selectedTables.size === 0) return true;
+        if (importOptions.importFiles && selectedFiles.size === 0) return true;
+        return false;
+      default:
+        return true;
+    }
+  };
+
+  const getButtonVariant = (importType) => {
+    const isDisabled = isImportDisabled(importType);
+
+    switch (importType) {
+      case 'database':
+        return {
+          bg: isDisabled ? 'bg-gray-100' : 'bg-blue-50',
+          border: isDisabled ? 'border-gray-300' : 'border-blue-200 hover:border-blue-300',
+          text: isDisabled ? 'text-gray-500' : 'text-blue-900',
+          icon: isDisabled ? 'text-gray-400' : 'text-blue-600',
+          hover: isDisabled ? '' : 'hover:bg-blue-100 hover:shadow-lg transform hover:-translate-y-1'
+        };
+      case 'files':
+        return {
+          bg: isDisabled ? 'bg-gray-100' : 'bg-green-50',
+          border: isDisabled ? 'border-gray-300' : 'border-green-200 hover:border-green-300',
+          text: isDisabled ? 'text-gray-500' : 'text-green-900',
+          icon: isDisabled ? 'text-gray-400' : 'text-green-600',
+          hover: isDisabled ? '' : 'hover:bg-green-100 hover:shadow-lg transform hover:-translate-y-1'
+        };
+      case 'full':
+        return {
+          bg: isDisabled ? 'bg-gray-100' : 'bg-purple-50',
+          border: isDisabled ? 'border-gray-300' : 'border-purple-200 hover:border-purple-300',
+          text: isDisabled ? 'text-gray-500' : 'text-purple-900',
+          icon: isDisabled ? 'text-gray-400' : 'text-purple-600',
+          hover: isDisabled ? '' : 'hover:bg-purple-100 hover:shadow-lg transform hover:-translate-y-1'
+        };
+      default:
+        return {};
+    }
+  };
+
+  const SuccessPopup = () => {
+    if (!showSuccessPopup) return null;
+
+    // Calculate totals based on import type
+    const isDatabaseImport = successData.type === 'Database' || successData.type === 'Complete System';
+    const isFilesImport = successData.type === 'Files & Documents' || successData.type === 'Complete System';
+
+    // Get actual counts from backend response
+    const actualTableCount = successData.selectedTables?.length ||
+      successData.databaseTables ||
+      0;
+
+    const totalFilesProcessed = (successData.filesImported || 0) +
+      (successData.filesReplaced || 0) +
+      (successData.filesSkipped || 0);
+
+    // Format display data
+    const formatSource = (source) => {
+      if (!source || source === 'Unknown Source') return 'DMS System';
+      return source;
+    };
+
+    const formatPeriod = (period) => {
+      if (!period) return 'Recent export';
+      if (period.toLowerCase().includes('unknown')) return 'Recent backup';
+      return period;
+    };
+
+    // Determine what to show based on import type
+    const showDatabaseSection = isDatabaseImport && actualTableCount > 0;
+    const showFilesSection = isFilesImport && totalFilesProcessed > 0;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-300 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl border border-green-200 max-w-2xl w-full max-h-[90vh] overflow-hidden mx-auto animate-in zoom-in duration-300">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                <CheckCircle2 className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold mb-1">🎉 Import Successful!</h3>
+                <p className="text-green-100 text-lg font-medium">
+                  {successData.type === 'Database' && 'Database restoration completed'}
+                  {successData.type === 'Files & Documents' && 'Files import completed'}
+                  {successData.type === 'Complete System' && 'System restoration completed'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {showDatabaseSection && (
+                <>
+                  {/* <div className="text-center p-3 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="text-blue-600 text-sm font-semibold mb-1">Tables</div>
+                    <div className="text-2xl font-bold text-blue-700">{actualTableCount}</div>
+                  </div> */}
+                  {successData.databaseRecords > 0 && (
+                    <div className="text-center p-3 bg-indigo-50 rounded-xl border border-indigo-200">
+                      <div className="text-indigo-600 text-sm font-semibold mb-1">Records</div>
+                      <div className="text-2xl font-bold text-indigo-700">{successData.databaseRecords?.toLocaleString()}</div>
+                    </div>
+                  )}
+                </>
+              )}
+              {showFilesSection && (
+                <>
+                  {/* <div className="text-center p-3 bg-green-50 rounded-xl border border-green-200">
+                    <div className="text-green-600 text-sm font-semibold mb-1">Files</div>
+                    <div className="text-2xl font-bold text-green-700">{totalFilesProcessed}</div>
+                  </div>
+                  <div className="text-center p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <div className="text-amber-600 text-sm font-semibold mb-1">Duplicates</div>
+                    <div className={`text-lg font-bold ${successData.overwrite ? 'text-amber-600' : 'text-green-600'}`}>
+                      {successData.overwrite ? 'Replaced' : 'Skipped'}
+                    </div>
+                  </div> */}
+                </>
+              )}
+            </div>
+
+            {/* Database Results */}
+            {showDatabaseSection && (
+              <div className="mb-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Database className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-lg">Database Import</h4>
+                  {successData.type === 'Complete System' && (
+                    <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">
+                      Completed
+                    </span>
+                  )}
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                      <div className="text-blue-600 text-xs font-semibold uppercase tracking-wide mb-1">Total Tables</div>
+                      <div className="text-2xl font-bold text-blue-700">{actualTableCount}</div>
+                    </div>
+                    {successData.databaseRecords > 0 && (
+                      <div>
+                        <div className="text-indigo-600 text-xs font-semibold uppercase tracking-wide mb-1">Total Records</div>
+                        <div className="text-2xl font-bold text-indigo-700">{successData.databaseRecords?.toLocaleString()}</div>
+                      </div>
+                    )}
+                    {successData.recordsAdded > 0 && (
+                      <div>
+                        <div className="text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-1">Added</div>
+                        <div className="text-xl font-bold text-emerald-700">{successData.recordsAdded?.toLocaleString()}</div>
+                      </div>
+                    )}
+                    {successData.recordsUpdated > 0 && (
+                      <div>
+                        <div className="text-amber-600 text-xs font-semibold uppercase tracking-wide mb-1">Updated</div>
+                        <div className="text-xl font-bold text-amber-700">{successData.recordsUpdated?.toLocaleString()}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Files Results */}
+            {showFilesSection && (
+              <div className="mb-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Folder className="w-5 h-5 text-green-600" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-lg">Files Import</h4>
+                  {successData.type === 'Complete System' && (
+                    <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">
+                      Completed
+                    </span>
+                  )}
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                      <div className="text-green-600 text-xs font-semibold uppercase tracking-wide mb-1">Total Files</div>
+                      <div className="text-2xl font-bold text-green-700">{totalFilesProcessed}</div>
+                    </div>
+                    {successData.filesImported > 0 && (
+                      <div>
+                        <div className="text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-1">Imported</div>
+                        <div className="text-xl font-bold text-emerald-700">{successData.filesImported}</div>
+                      </div>
+                    )}
+                    {successData.filesReplaced > 0 && (
+                      <div>
+                        <div className="text-amber-600 text-xs font-semibold uppercase tracking-wide mb-1">Replaced</div>
+                        <div className="text-xl font-bold text-amber-700">{successData.filesReplaced}</div>
+                      </div>
+                    )}
+                    {successData.filesSkipped > 0 && (
+                      <div>
+                        <div className="text-gray-600 text-xs font-semibold uppercase tracking-wide mb-1">Skipped</div>
+                        <div className="text-xl font-bold text-gray-700">{successData.filesSkipped}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Import Summary */}
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl border border-purple-200">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <FileArchive className="w-5 h-5 text-purple-600" />
+                </div>
+                <h4 className="font-bold text-gray-900 text-lg">Import Summary</h4>
+              </div>
+
+              {/* Compact Grid Layout */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
+                    <span className="text-purple-700 font-medium text-sm">Type:</span>
+                    <span className="font-bold text-purple-900">{successData.type}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
+                    <span className="text-purple-700 font-medium text-sm">Source:</span>
+                    <span className="font-bold text-purple-900 truncate ml-2" title={formatSource(successData.source)}>
+                      {formatSource(successData.source)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
+                    <span className="text-purple-700 font-medium text-sm">Period:</span>
+                    <span className="font-bold text-purple-900">{formatPeriod(successData.period)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
+                    <span className="text-purple-700 font-medium text-sm">Completed:</span>
+                    <span className="font-bold text-purple-900 text-sm">{successData.timestamp}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Import-specific highlights */}
+              <div className="mt-4 pt-4 border-t border-purple-200">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
+                  {successData.type === 'Database' && (
+                    <>
+                      <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
+                        <div className="text-purple-600 text-xs font-semibold mb-1">Tables</div>
+                        <div className="text-lg font-bold text-purple-700">{actualTableCount}</div>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
+                        <div className="text-purple-600 text-xs font-semibold mb-1">Duplicates</div>
+                        <div className={`text-sm font-bold ${successData.overwrite ? 'text-amber-600' : 'text-green-600'}`}>
+                          {successData.overwrite ? 'Replace' : 'Skip '}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {successData.type === 'Files & Documents' && (
+                    <>
+                      <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
+                        <div className="text-purple-600 text-xs font-semibold mb-1">Files</div>
+                        <div className="text-lg font-bold text-purple-700">{totalFilesProcessed}</div>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
+                        <div className="text-purple-600 text-xs font-semibold mb-1">Duplicates</div>
+                        <div className={`text-sm font-bold ${successData.overwrite ? 'text-amber-600' : 'text-green-600'}`}>
+                          {successData.overwrite ? 'Replace' : 'Skip '}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {successData.type === 'Complete System' && (
+                    <>
+                      <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
+                        <div className="text-purple-600 text-xs font-semibold mb-1">Tables</div>
+                        <div className="text-lg font-bold text-purple-700">{actualTableCount}</div>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
+                        <div className="text-purple-600 text-xs font-semibold mb-1">Files</div>
+                        <div className="text-lg font-bold text-purple-700">{totalFilesProcessed}</div>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
+                        <div className="text-purple-600 text-xs font-semibold mb-1">Duplicates</div>
+                        <div className={`text-sm font-bold ${successData.overwrite ? 'text-amber-600' : 'text-green-600'}`}>
+                          {successData.overwrite ? 'Replace' : 'Skip '}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Success Message */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+              <div className="flex items-center space-x-3">
+                <Shield className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div>
+                  <div className="font-bold text-green-800 text-sm mb-1">✅ System Ready</div>
+                  <p className="text-green-700 text-sm">
+                    {successData.type === 'Database' && 'Your database has been successfully restored and is ready for use.'}
+                    {successData.type === 'Files & Documents' && 'All selected files and documents have been imported successfully.'}
+                    {successData.type === 'Complete System' && 'Your complete Document Management System has been restored and is ready for use.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <button
+              onClick={() => setShowSuccessPopup(false)}
+              className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              Continue to DMS
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const FileDetails = ({ file, status }) => {
     if (!file || !status.details) return null;
 
     return (
       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-4">
-        <h4 className="font-medium text-gray-900 mb-2">File Details:</h4>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <span className="text-gray-600">Name:</span>
-            <span className="ml-2 font-medium">{file.name}</span>
+        <h4 className="font-medium text-gray-900 mb-2">📊 File Analysis:</h4>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-2">
+            <div>
+              <span className="text-gray-600">Name:</span>
+              <span className="ml-2 font-medium">{file.name}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Size:</span>
+              <span className="ml-2 font-medium">{formatFileSize(file.size)}</span>
+            </div>
           </div>
-          <div>
-            <span className="text-gray-600">Size:</span>
-            <span className="ml-2 font-medium">{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+          <div className="space-y-2">
+            <div>
+              <span className="text-gray-600">Content Type:</span>
+              <span className={`ml-2 font-medium ${fileContentType === 'both' ? 'text-purple-600' :
+                fileContentType === 'database' ? 'text-blue-600' :
+                  fileContentType === 'files' ? 'text-green-600' : 'text-gray-500'
+                }`}>
+                {fileContentType === 'both' ? 'Database + Files' :
+                  fileContentType === 'database' ? 'Database Only' :
+                    fileContentType === 'files' ? 'Files Only' : 'Unknown'}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600">Tables Found:</span>
+              <span className="ml-2 font-medium text-blue-600">
+                {status.details.availableTables?.length || 0}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-gray-600">Has Database:</span>
-            <span className="ml-2 font-medium">
-              {status.details.hasDatabase ? 'Yes' : 'No'}
-            </span>
+        </div>
+
+        {status.details.availableTables && status.details.availableTables.length > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-600">Available Tables:</span>
+              <span className="font-medium text-blue-600">
+                {status.details.availableTables.length} tables • {selectedTables.size} selected
+              </span>
+            </div>
+            <button
+              onClick={() => setShowTableSelector(!showTableSelector)}
+              className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              <span>{showTableSelector ? 'Hide Table Selection' : 'Select Tables to Import'}</span>
+              {showTableSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
           </div>
-          <div>
-            <span className="text-gray-600">Has Files:</span>
-            <span className="ml-2 font-medium">
-              {status.details.hasFiles ? 'Yes' : 'No'}
-            </span>
+        )}
+
+        {status.details.availableFiles && status.details.availableFiles.length > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-600">Available File Categories:</span>
+              <span className="font-medium text-green-600">
+                {status.details.availableFiles.length} categories • {selectedFiles.size} selected
+              </span>
+            </div>
+            <button
+              onClick={() => setShowFileSelector(!showFileSelector)}
+              className="flex items-center space-x-2 text-sm text-green-600 hover:text-green-800 font-medium"
+            >
+              <span>{showFileSelector ? 'Hide File Selection' : 'Select File Categories to Import'}</span>
+              {showFileSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const TableSelector = () => {
+    if (!showTableSelector || availableTables.length === 0) return null;
+
+    const allSelected = selectedTables.size === availableTables.length;
+    const someSelected = selectedTables.size > 0 && !allSelected;
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mt-4 max-h-80 overflow-y-auto">
+        <div className="flex items-center justify-between mb-3">
+          <h5 className="font-medium text-gray-900">Select Tables to Import</h5>
+          <div className="flex space-x-2">
+            <button
+              onClick={selectAllTables}
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 border border-blue-200 rounded"
+            >
+              Select All
+            </button>
+            <button
+              onClick={clearTableSelection}
+              className="text-xs text-gray-600 hover:text-gray-800 font-medium px-2 py-1 border border-gray-200 rounded"
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+
+        <label className="flex items-center space-x-2 p-2 border-b border-gray-200 mb-2">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            ref={input => {
+              if (input) {
+                input.indeterminate = someSelected;
+              }
+            }}
+            onChange={() => allSelected ? clearTableSelection() : selectAllTables()}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium text-gray-900">
+            {allSelected ? 'All tables selected' : someSelected ? 'Some tables selected' : 'Select all tables'}
+          </span>
+        </label>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          {availableTables.map(table => (
+            <label key={table} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded">
+              <input
+                type="checkbox"
+                checked={selectedTables.has(table)}
+                onChange={() => handleTableSelection(table)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700 truncate" title={table}>{table}</span>
+            </label>
+          ))}
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="text-sm text-gray-600">
+            Selected: <span className="font-medium">{selectedTables.size}</span> of {availableTables.length} tables
           </div>
         </div>
       </div>
     );
   };
 
-  const ImportResults = ({ status }) => {
-    if (!status.details || !status.details.databaseImported) return null;
+  const FileSelector = () => {
+    if (!showFileSelector || availableFiles.length === 0) return null;
 
-    const details = status.details;
-    
+    const allSelected = selectedFiles.size === availableFiles.length;
+    const someSelected = selectedFiles.size > 0 && !allSelected;
+
+    const fileCategoryIcons = {
+      'documents': <FileText className="w-4 h-4 text-blue-600" />,
+      'waiting_room': <Folder className="w-4 h-4 text-orange-600" />,
+      'profiles': <File className="w-4 h-4 text-green-600" />,
+      'archive': <Archive className="w-4 h-4 text-purple-600" />
+    };
+
+    const fileCategoryNames = {
+      'documents': 'Documents',
+      'waiting_room': 'Waiting Room',
+      'profiles': 'User Profiles',
+      'archive': 'Archives'
+    };
+
     return (
-      <div className="bg-green-50 p-4 rounded-lg border border-green-200 mt-4">
-        <h4 className="font-medium text-green-900 mb-3">Import Results:</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          {details.databaseImported && (
-            <div className="bg-white p-3 rounded border border-green-200">
-              <div className="flex items-center space-x-2 text-green-700 mb-2">
-                <Database className="w-4 h-4" />
-                <span className="font-medium">Database Import</span>
-              </div>
-              <div className="text-green-600">
-                <div>Tables: {details.databaseTables}</div>
-                <div>Records: {details.databaseRecords}</div>
-              </div>
-            </div>
-          )}
-          
-          {details.filesImported && (
-            <div className="bg-white p-3 rounded border border-green-200">
-              <div className="flex items-center space-x-2 text-green-700 mb-2">
-                <Folder className="w-4 h-4" />
-                <span className="font-medium">Files Import</span>
-              </div>
-              <div className="text-green-600">
-                <div>Files Imported: {details.filesImportedCount}</div>
-                <div>Files Skipped: {details.filesSkipped}</div>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {details.pathMappings && (
-          <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
-            <div className="flex items-center space-x-2 text-blue-700 mb-2">
-              <Settings className="w-4 h-4" />
-              <span className="font-medium">Path Mappings Applied</span>
-            </div>
-            <div className="text-blue-600 text-xs">
-              Files have been restored to their original directory structure.
-            </div>
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mt-4">
+        <div className="flex items-center justify-between mb-3">
+          <h5 className="font-medium text-gray-900">Select File Categories to Import</h5>
+          <div className="flex space-x-2">
+            <button
+              onClick={selectAllFiles}
+              className="text-xs text-green-600 hover:text-green-800 font-medium px-2 py-1 border border-green-200 rounded"
+            >
+              Select All
+            </button>
+            <button
+              onClick={clearFileSelection}
+              className="text-xs text-gray-600 hover:text-gray-800 font-medium px-2 py-1 border border-gray-200 rounded"
+            >
+              Clear All
+            </button>
           </div>
-        )}
+        </div>
+
+        <label className="flex items-center space-x-2 p-2 border-b border-gray-200 mb-2">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            ref={input => {
+              if (input) {
+                input.indeterminate = someSelected;
+              }
+            }}
+            onChange={() => allSelected ? clearFileSelection() : selectAllFiles()}
+            className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+          />
+          <span className="text-sm font-medium text-gray-900">
+            {allSelected ? 'All file categories selected' : someSelected ? 'Some categories selected' : 'Select all file categories'}
+          </span>
+        </label>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {availableFiles.map(category => (
+            <label key={category} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedFiles.has(category)}
+                onChange={() => handleFileCategorySelection(category)}
+                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <div className="flex items-center space-x-2">
+                {fileCategoryIcons[category] || <File className="w-4 h-4 text-gray-600" />}
+                <div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {fileCategoryNames[category] || category}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {fileStructure[category]?.fileCount || 0}
+                  </div>
+                </div>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="text-sm text-gray-600">
+            Selected: <span className="font-medium">{selectedFiles.size}</span> of {availableFiles.length} file categories
+          </div>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/30 py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+
+        <SuccessPopup />
+
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <Upload className="w-8 h-8 text-green-600 mr-3" />
-            <h1 className="text-3xl font-bold text-gray-900">
-              DMS Import System
-            </h1>
+          <div className="flex items-center justify-center mb-6">
+            <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200/50">
+              <CloudUpload className="w-10 h-10 text-green-600" />
+            </div>
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Restore your Document Management System from previously exported backup files. 
-            Import database tables, files, or complete system backups.
+          <h1 className="text-4xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            DMS Data Import
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Restore your Document Management System from backup files. Supports files up to 100GB with selective table and file import.
           </p>
         </div>
 
-        {/* Progress Bar */}
         {importing && (
-          <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span className="font-medium">Importing DMS data...</span>
-              <span>{progress}%</span>
+          <div className="mb-8 bg-white rounded-2xl shadow-xl border border-green-200 p-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  {progress < 100 ? (
+                    <Loader className="w-5 h-5 text-green-600 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    {progress < 100 ? '🔄 Importing DMS Data' : '✅ Import Complete'}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {importOptions.importDatabase && `${selectedTables.size} tables`}
+                    {importOptions.importDatabase && importOptions.importFiles ? ' and ' : ''}
+                    {importOptions.importFiles && `${selectedFiles.size} file categories`}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xl font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg">
+                {Math.round(progress)}%
+              </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
+
+            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
               <div
-                className="bg-green-600 h-3 rounded-full transition-all duration-300 ease-out"
+                className="h-4 rounded-full bg-gradient-to-r from-green-500 via-green-600 to-blue-600 transition-all duration-300 ease-out relative"
                 style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Please wait while we restore your DMS data. This may take several minutes for large imports.
-            </p>
-          </div>
-        )}
-
-        {/* Status Message */}
-        {status.message && (
-          <div
-            className={`flex items-start space-x-3 p-4 rounded-md mb-6 ${
-              status.type === 'error' 
-                ? 'bg-red-50 text-red-700 border border-red-200' 
-                : 'bg-green-50 text-green-700 border border-green-200'
-            }`}
-          >
-            {status.type === 'error' ? (
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            ) : (
-              <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            )}
-            <div className="flex-1">
-              <span className="text-sm">{status.message}</span>
-              <FileDetails file={file} status={status} />
-              <ImportResults status={status} />
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* File Upload Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8 max-w-4xl mx-auto">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <FileSearch className="w-6 h-6 text-blue-600" />
               </div>
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Select DMS Export File
               </h3>
-              <p className="text-gray-600 mb-4 text-sm">
-                Choose a ZIP file that was previously exported from the DMS system. 
-                The file should contain database CSV files and/or document files with preserved structure.
+              <p className="text-gray-600 mb-4">
+                Choose a ZIP file that was exported from your DMS system.
+                The system will automatically detect available content (database, files, or both).
               </p>
-              
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  id="import-file"
-                  accept=".zip"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  disabled={importing}
-                />
-                <label
-                  htmlFor="import-file"
-                  className={`cursor-pointer inline-flex items-center space-x-2 px-4 py-2 rounded-md font-medium text-sm ${
-                    importing
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+
+              <input
+                type="file"
+                id="import-file"
+                ref={fileInputRef}
+                accept=".zip"
+                onChange={handleFileInputChange}
+                className="hidden"
+                disabled={importing}
+              />
+
+              <div
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${dragOver
+                  ? 'border-blue-400 bg-blue-50'
+                  : fileError
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-gray-300 hover:border-blue-400'
                   }`}
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>{file ? 'Change File' : 'Choose ZIP File'}</span>
-                </label>
-                {file && (
-                  <div className="mt-3 text-sm text-gray-600">
-                    Selected: <span className="font-medium">{file.name}</span>
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                {fileError && (
+                  <div className="mb-4 p-3 bg-red-100 border border-red-200 rounded-lg">
+                    <div className="flex items-center space-x-2 text-red-700">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">{fileError}</span>
+                    </div>
                   </div>
                 )}
-                <p className="text-xs text-gray-500 mt-2">
-                  Maximum file size: 500MB • ZIP format only
-                </p>
+
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Upload className="w-8 h-8 text-blue-600" />
+                  </div>
+
+                  <div>
+                    <button
+                      onClick={triggerFileInput}
+                      disabled={importing}
+                      className={`inline-flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${importing
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+                        }`}
+                    >
+                      <Search className="w-4 h-4" />
+                      <span>Browse for Export ZIP File</span>
+                    </button>
+                  </div>
+
+                  <div className="text-sm text-gray-500">
+                    or drag and drop your file here
+                  </div>
+                </div>
+
+                {file ? (
+                  <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Archive className="w-5 h-5 text-green-600" />
+                        <div>
+                          <div className="font-medium text-gray-900">{file.name}</div>
+                          <div className="text-sm text-gray-600">
+                            {formatFileSize(file.size)} • {fileContentType ?
+                              fileContentType === 'both' ? 'Database + Files' :
+                                fileContentType === 'database' ? 'Database Only' :
+                                  fileContentType === 'files' ? 'Files Only' : 'Ready for import'
+                              : 'Ready for import'}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={clearFile}
+                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        disabled={importing}
+                        title="Remove file"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className=""></div>
+                )}
+
+                <div className="mt-4 text-xs text-gray-400">
+                  Maximum file size: 100GB • DMS Export ZIP format only
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Import Options */}
-        {file && (
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Settings className="w-5 h-5 mr-2" />
-              Import Options
+        {file && fileContentType && (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8 max-w-4xl mx-auto">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <Settings className="w-6 h-6 mr-3 text-blue-600" />
+              Import Configuration
             </h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                <div>
-                  <div className="font-medium text-gray-900">Import Database</div>
-                  <div className="text-sm text-gray-600">Restore all database tables and records</div>
+
+            <div className="space-y-6">
+              <div className={`flex items-start justify-between p-4 border rounded-xl transition-colors ${fileContentType === 'database' || fileContentType === 'both'
+                ? 'border-blue-200 hover:border-blue-300'
+                : 'border-gray-200 bg-gray-50 opacity-60'
+                }`}>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Database className={`w-5 h-5 ${fileContentType === 'database' || fileContentType === 'both' ? 'text-blue-600' : 'text-gray-400'
+                      }`} />
+                    <div className={`font-semibold ${fileContentType === 'database' || fileContentType === 'both' ? 'text-gray-900' : 'text-gray-500'
+                      }`}>
+                      Import Database
+                    </div>
+                    {!(fileContentType === 'database' || fileContentType === 'both') && (
+                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Not available</span>
+                    )}
+                  </div>
+                  <div className={`text-sm ml-8 ${fileContentType === 'database' || fileContentType === 'both' ? 'text-gray-600' : 'text-gray-400'
+                    }`}>
+                    Restore database tables and records. Select specific tables or import all.
+                    {importOptions.importDatabase && availableTables.length > 0 && (
+                      <div className="mt-1 text-blue-600 font-medium">
+                        {availableTables.length} tables available • {selectedTables.size} selected
+                      </div>
+                    )}
+                  </div>
+
+                  {importOptions.importDatabase && availableTables.length > 0 && (
+                    <button
+                      onClick={() => setShowTableSelector(!showTableSelector)}
+                      className="ml-8 mt-2 flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      <span>{showTableSelector ? 'Hide Table Selection' : 'Select Specific Tables'}</span>
+                      {showTableSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className={`relative inline-flex items-center cursor-pointer ${!(fileContentType === 'database' || fileContentType === 'both') ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}>
                   <input
                     type="checkbox"
                     checked={importOptions.importDatabase}
-                    onChange={() => handleOptionChange('importDatabase')}
+                    onChange={() => fileContentType === 'database' || fileContentType === 'both' ? handleOptionChange('importDatabase') : null}
                     className="sr-only peer"
-                    disabled={importing}
+                    disabled={importing || !(fileContentType === 'database' || fileContentType === 'both')}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className={`w-12 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${fileContentType === 'database' || fileContentType === 'both'
+                    ? 'bg-gray-200 peer-checked:bg-blue-600 after:border-gray-300'
+                    : 'bg-gray-100 after:border-gray-200'
+                    }`}></div>
                 </label>
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                <div>
-                  <div className="font-medium text-gray-900">Import Files</div>
-                  <div className="text-sm text-gray-600">Restore documents, profiles, and archive files</div>
+              <div className={`flex items-start justify-between p-4 border rounded-xl transition-colors ${fileContentType === 'files' || fileContentType === 'both'
+                ? 'border-green-200 hover:border-green-300'
+                : 'border-gray-200 bg-gray-50 opacity-60'
+                }`}>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <HardDrive className={`w-5 h-5 ${fileContentType === 'files' || fileContentType === 'both' ? 'text-green-600' : 'text-gray-400'
+                      }`} />
+                    <div className={`font-semibold ${fileContentType === 'files' || fileContentType === 'both' ? 'text-gray-900' : 'text-gray-500'
+                      }`}>
+                      Import Files & Documents
+                    </div>
+                    {!(fileContentType === 'files' || fileContentType === 'both') && (
+                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Not available</span>
+                    )}
+                  </div>
+                  <div className={`text-sm ml-8 ${fileContentType === 'files' || fileContentType === 'both' ? 'text-gray-600' : 'text-gray-400'
+                    }`}>
+                    Restore documents, profiles, waiting room files, and archives with automatic directory creation.
+                    {importOptions.importFiles && availableFiles.length > 0 && (
+                      <div className="mt-1 text-green-600 font-medium">
+                        {availableFiles.length} categories available • {selectedFiles.size} selected
+                      </div>
+                    )}
+                  </div>
+
+                  {importOptions.importFiles && availableFiles.length > 0 && (
+                    <button
+                      onClick={() => setShowFileSelector(!showFileSelector)}
+                      className="ml-8 mt-2 flex items-center space-x-2 text-sm text-green-600 hover:text-green-800 font-medium"
+                    >
+                      <span>{showFileSelector ? 'Hide File Selection' : 'Select File Categories'}</span>
+                      {showFileSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className={`relative inline-flex items-center cursor-pointer ${!(fileContentType === 'files' || fileContentType === 'both') ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}>
                   <input
                     type="checkbox"
                     checked={importOptions.importFiles}
-                    onChange={() => handleOptionChange('importFiles')}
+                    onChange={() => fileContentType === 'files' || fileContentType === 'both' ? handleOptionChange('importFiles') : null}
                     className="sr-only peer"
-                    disabled={importing}
+                    disabled={importing || !(fileContentType === 'files' || fileContentType === 'both')}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className={`w-12 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${fileContentType === 'files' || fileContentType === 'both'
+                    ? 'bg-gray-200 peer-checked:bg-green-600 after:border-gray-300'
+                    : 'bg-gray-100 after:border-gray-200'
+                    }`}></div>
                 </label>
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                <div>
-                  <div className="font-medium text-gray-900">Overwrite Existing</div>
-                  <div className="text-sm text-gray-600">Replace existing data and files (use with caution)</div>
+              <div className="flex items-start justify-between p-4 border border-amber-200 rounded-xl hover:border-amber-300 transition-colors">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                    <div className="font-semibold text-gray-900">Duplicate Data Handling</div>
+                  </div>
+                  <div className="text-sm text-gray-600 ml-8">
+                    {importOptions.overwriteExisting
+                      ? "Replace existing records and files when duplicates are found."
+                      : "Skip existing records and files, only add new data."
+                    }
+                  </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -404,108 +1320,94 @@ const Import = () => {
                     className="sr-only peer"
                     disabled={importing}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  <div className="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
                 </label>
               </div>
             </div>
+
+            <TableSelector />
+            <FileSelector />
           </div>
         )}
 
-        {/* Import Actions */}
-        {file && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {file && fileContentType && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
             <button
               onClick={() => handleImport('database')}
-              disabled={importing || !importOptions.importDatabase}
-              className={`flex flex-col items-center p-4 rounded-lg border-2 ${
-                importing || !importOptions.importDatabase
-                  ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
-                  : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-              }`}
+              disabled={isImportDisabled('database')}
+              className={`flex flex-col items-center p-6 rounded-2xl border-2 transition-all duration-300 ${getButtonVariant('database').bg + ' ' +
+                getButtonVariant('database').border + ' ' +
+                getButtonVariant('database').hover + ' ' +
+                (isImportDisabled('database') ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')
+                }`}
             >
-              <Database className="w-8 h-8 text-blue-600 mb-2" />
-              <span className="font-medium text-blue-900">Import Database Only</span>
-              <span className="text-xs text-blue-700 mt-1">CSV tables and records</span>
+              <Database className={`w-10 h-10 mb-3 ${getButtonVariant('database').icon}`} />
+              <span className={`font-semibold text-lg ${getButtonVariant('database').text}`}>
+                Database Only
+              </span>
+              <span className={`text-sm mt-2 text-center ${isImportDisabled('database') ? 'text-gray-400' : getButtonVariant('database').text.replace('900', '700')
+                }`}>
+                {selectedTables.size > 0
+                  ? `${selectedTables.size} tables selected`
+                  : 'No tables selected'
+                }
+              </span>
+              <span className={`text-xs mt-1 ${isImportDisabled('database') ? 'text-gray-400' : getButtonVariant('database').text.replace('900', '600')
+                }`}>
+                Import selected tables only
+              </span>
             </button>
 
             <button
               onClick={() => handleImport('files')}
-              disabled={importing || !importOptions.importFiles}
-              className={`flex flex-col items-center p-4 rounded-lg border-2 ${
-                importing || !importOptions.importFiles
-                  ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
-                  : 'bg-green-50 border-green-200 hover:bg-green-100'
-              }`}
+              disabled={isImportDisabled('files')}
+              className={`flex flex-col items-center p-6 rounded-2xl border-2 transition-all duration-300 ${getButtonVariant('files').bg + ' ' +
+                getButtonVariant('files').border + ' ' +
+                getButtonVariant('files').hover + ' ' +
+                (isImportDisabled('files') ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')
+                }`}
             >
-              <Folder className="w-8 h-8 text-green-600 mb-2" />
-              <span className="font-medium text-green-900">Import Files Only</span>
-              <span className="text-xs text-green-700 mt-1">Documents and folders</span>
+              <HardDrive className={`w-10 h-10 mb-3 ${getButtonVariant('files').icon}`} />
+              <span className={`font-semibold text-lg ${getButtonVariant('files').text}`}>
+                Files Only
+              </span>
+              <span className={`text-sm mt-2 text-center ${isImportDisabled('files') ? 'text-gray-400' : getButtonVariant('files').text.replace('900', '700')
+                }`}>
+                {selectedFiles.size > 0
+                  ? `${selectedFiles.size} categories selected`
+                  : 'No categories selected'
+                }
+              </span>
+              <span className={`text-xs mt-1 ${isImportDisabled('files') ? 'text-gray-400' : getButtonVariant('files').text.replace('900', '600')
+                }`}>
+                Import selected file categories
+              </span>
             </button>
 
             <button
               onClick={() => handleImport('full')}
-              disabled={importing}
-              className={`flex flex-col items-center p-4 rounded-lg border-2 ${
-                importing
-                  ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
-                  : 'bg-purple-50 border-purple-200 hover:bg-purple-100'
-              }`}
+              disabled={isImportDisabled('full')}
+              className={`flex flex-col items-center p-6 rounded-2xl border-2 transition-all duration-300 ${getButtonVariant('full').bg + ' ' +
+                getButtonVariant('full').border + ' ' +
+                getButtonVariant('full').hover + ' ' +
+                (isImportDisabled('full') ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')
+                }`}
             >
-              <Download className="w-8 h-8 text-purple-600 mb-2" />
-              <span className="font-medium text-purple-900">Full System Import</span>
-              <span className="text-xs text-purple-700 mt-1">Database + Files</span>
+              <Server className={`w-10 h-10 mb-3 ${getButtonVariant('full').icon}`} />
+              <span className={`font-semibold text-lg ${getButtonVariant('full').text}`}>
+                Complete System
+              </span>
+              <span className={`text-sm mt-2 text-center ${isImportDisabled('full') ? 'text-gray-400' : getButtonVariant('full').text.replace('900', '700')
+                }`}>
+                {selectedTables.size} tables + {selectedFiles.size} categories
+              </span>
+              <span className={`text-xs mt-1 ${isImportDisabled('full') ? 'text-gray-400' : getButtonVariant('full').text.replace('900', '600')
+                }`}>
+                Import everything selected
+              </span>
             </button>
           </div>
         )}
-
-        {/* Information Section */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">Import Instructions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-blue-800">
-            <div>
-              <h4 className="font-medium mb-2 text-blue-900">📋 Before You Import:</h4>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Ensure you have a recent backup</li>
-                <li>Verify the export file was created from this DMS version</li>
-                <li>Check available disk space</li>
-                <li>Stop any active DMS operations</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2 text-blue-900">⚙️ Import Features:</h4>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Automatic path mapping restoration</li>
-                <li>Preserved directory structure</li>
-                <li>Database relationship integrity</li>
-                <li>Duplicate file handling</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
-            <p className="text-sm text-yellow-800">
-              ⚠️ <strong>Warning:</strong> Overwriting existing data cannot be undone. 
-              Always test imports in a staging environment first.
-            </p>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        {/* <div className="mt-8 flex justify-center space-x-4">
-          <button
-            onClick={() => window.location.href = '/'}
-            className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <Home className="w-4 h-4" />
-            <span>Back to Home</span>
-          </button>
-          <button
-            onClick={() => window.location.href = '/export'}
-            className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:text-blue-800 transition-colors"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Go to Export</span>
-          </button>
-        </div> */}
       </div>
     </div>
   );
