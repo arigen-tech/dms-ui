@@ -33,7 +33,7 @@ const ExportData = () => {
       const history = JSON.parse(savedHistory).filter(item => item.status === 'completed' || item.status === 'failed');
       setExportHistory(history);
     }
-    
+
     // Load backend export history
     loadBackendExportHistory();
   }, []);
@@ -48,7 +48,7 @@ const ExportData = () => {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (response.ok) {
         const history = await response.json();
         setBackendExportHistory(history);
@@ -108,10 +108,10 @@ const ExportData = () => {
 
       // Check if the new range is COMPLETELY within existing range
       const completelyWithin = fromDate >= existingFrom && toDate <= existingTo;
-      
+
       // Check if the new range is exactly the same as existing range
       const exactlySame = fromDate.getTime() === existingFrom.getTime() && toDate.getTime() === existingTo.getTime();
-      
+
       return completelyWithin || exactlySame;
     });
   };
@@ -151,7 +151,7 @@ const ExportData = () => {
 
   const showDuplicateBlockPopup = (type) => {
     setPendingExport(type);
-    
+
     // Get the specific duplicate warning for this type
     const duplicateForType = duplicateWarning && duplicateWarning[type];
     if (duplicateForType) {
@@ -179,12 +179,12 @@ const ExportData = () => {
       fileSize,
       timestamp: new Date().toISOString(),
     };
-    
+
     setExportHistory(prev => {
       if (status === 'processing') {
         return prev; // Don't add processing items to history
       }
-      
+
       const filteredHistory = prev.filter(item => item.id !== exportId);
       return [newExport, ...filteredHistory.slice(0, 9)];
     });
@@ -196,7 +196,7 @@ const ExportData = () => {
       [field]: value
     };
     setDateRange(newDateRange);
-    
+
     const hasDates = newDateRange.fromDate || newDateRange.toDate;
     setIsFilterActive(hasDates);
   };
@@ -219,14 +219,14 @@ const ExportData = () => {
     if (dateRange.fromDate && dateRange.toDate) {
       const fromDate = new Date(dateRange.fromDate);
       const toDate = new Date(dateRange.toDate);
-      
+
       if (fromDate > toDate) {
         errors.push('Start date cannot be after end date');
       }
 
       const oneYearAgo = new Date();
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-      
+
       if (fromDate < oneYearAgo) {
         errors.push('Start date cannot be more than 1 year ago');
       }
@@ -258,17 +258,21 @@ const ExportData = () => {
   };
 
   const blockExport = (type) => {
-    const key = `${type}_${dateRange.fromDate}_${dateRange.toDate}`;
-    setBlockedExports(prev => new Set([...prev, key]));
-    
-    setTimeout(() => {
-      setBlockedExports(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(key);
-        return newSet;
-      });
-    }, 30000);
-  };
+  // FIXED: For Quick Backup, use a different key format
+  const key = activeTab === 'quick' 
+    ? `${type}_quick_export` 
+    : `${type}_${dateRange.fromDate}_${dateRange.toDate}`;
+  
+  setBlockedExports(prev => new Set([...prev, key]));
+  
+  setTimeout(() => {
+    setBlockedExports(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(key);
+      return newSet;
+    });
+  }, 30000);
+};
 
   const performExport = async (type) => {
     // BLOCK THE EXPORT if it's a duplicate range for this specific type
@@ -287,7 +291,8 @@ const ExportData = () => {
       return;
     }
 
-    const validationErrors = validateDateRange(true);
+    // FIXED: Only validate date range for Advanced tab
+    const validationErrors = activeTab === 'advanced' ? validateDateRange(true) : [];
     if (validationErrors.length > 0) {
       showPopup(validationErrors.join(', '), 'error');
       return;
@@ -321,16 +326,21 @@ const ExportData = () => {
       }
 
       const params = new URLSearchParams();
-      if (dateRange.fromDate) params.append('fromDate', dateRange.fromDate);
-      if (dateRange.toDate) params.append('toDate', dateRange.toDate);
-
-      if (activeTab === 'quick' && !dateRange.fromDate && !dateRange.toDate) {
-        const today = new Date().toISOString().split('T')[0];
-        params.append('fromDate', today);
-        params.append('toDate', today);
+      
+      // FIXED: Only add date parameters for Advanced tab with actual date selection
+      if (activeTab === 'advanced' && dateRange.fromDate && dateRange.toDate) {
+        params.append('fromDate', dateRange.fromDate);
+        params.append('toDate', dateRange.toDate);
       }
+      // For Quick Backup: DO NOT add any date parameters at all
 
       const url = `${EXPORT_API}${endpoint}${params.toString() ? `?${params.toString()}` : ''}`;
+
+      console.log(`🔧 DEBUG - Export Details:`);
+      console.log(`🔧 Active Tab: ${activeTab}`);
+      console.log(`🔧 Date Range: from=${dateRange.fromDate}, to=${dateRange.toDate}`);
+      console.log(`🔧 Final URL: ${url}`);
+      console.log(`🔧 Query Params: ${params.toString()}`);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -371,8 +381,14 @@ const ExportData = () => {
 
       const contentDisposition = response.headers.get('Content-Disposition');
       const exportIdHeader = response.headers.get('X-Export-ID');
+      const dateRangeHeader = response.headers.get('X-Date-Range');
       
-      // Generate filename with both from and to dates
+      console.log(`🔧 Response Headers:`);
+      console.log(`🔧 Content-Disposition: ${contentDisposition}`);
+      console.log(`🔧 X-Date-Range: ${dateRangeHeader}`);
+      console.log(`🔧 X-Export-ID: ${exportIdHeader}`);
+
+      // FIXED: Generate filename based on actual export mode
       let fileName = generateFileName(type, dateRange.fromDate, dateRange.toDate);
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/);
@@ -390,16 +406,18 @@ const ExportData = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(urlObject);
 
-      const dateRangeText = isFilterActive || activeTab === 'advanced'
+      // FIXED: Update success message based on actual export mode
+      const dateRangeText = activeTab === 'advanced' && dateRange.fromDate && dateRange.toDate
         ? ` for period ${formatDateDisplay(dateRange.fromDate)} to ${formatDateDisplay(dateRange.toDate)}`
-        : ' (Today\'s Data)';
+        : ' (Complete Data - No Date Filter)';
 
       const successData = {
         type: exportTypeName,
         fileName,
         fileSize: formatFileSize(blob.size),
         dateRange: dateRangeText,
-        timestamp: new Date().toLocaleTimeString()
+        timestamp: new Date().toLocaleTimeString(),
+        exportMode: activeTab === 'quick' ? 'Complete System Export' : 'Date Range Export'
       };
 
       setStatus({
@@ -408,7 +426,11 @@ const ExportData = () => {
       });
 
       // Only add to history when completed
-      addToExportHistory(type, dateRange.fromDate, dateRange.toDate, 'completed', fileName, exportIdHeader || exportId, blob.size);
+      // FIXED: For Quick Backup, store null dates in history
+      const historyFromDate = activeTab === 'advanced' ? dateRange.fromDate : null;
+      const historyToDate = activeTab === 'advanced' ? dateRange.toDate : null;
+      
+      addToExportHistory(type, historyFromDate, historyToDate, 'completed', fileName, exportIdHeader || exportId, blob.size);
       
       // Reload backend history to include this new export
       loadBackendExportHistory();
@@ -432,7 +454,9 @@ const ExportData = () => {
         });
 
         // Add failed export to history
-        addToExportHistory(type, dateRange.fromDate, dateRange.toDate, 'failed', null, exportId);
+        const historyFromDate = activeTab === 'advanced' ? dateRange.fromDate : null;
+        const historyToDate = activeTab === 'advanced' ? dateRange.toDate : null;
+        addToExportHistory(type, historyFromDate, historyToDate, 'failed', null, exportId);
         showPopup(errorMessage, 'error');
       }
     } finally {
@@ -462,17 +486,22 @@ const ExportData = () => {
 
   const generateFileName = (type, fromDate, toDate) => {
     const exportTypeName = getExportTypeDisplayName(type).replace(/\s+/g, '_');
+    const timestamp = new Date().toISOString().split('T')[0];
     
-    if (activeTab === 'quick' || !fromDate || !toDate) {
-      const today = new Date().toISOString().split('T')[0];
-      return `DMS_${exportTypeName}_Backup_${today}.zip`;
+    // FIXED: For Quick Backup, use "Full_Export" without dates
+    if (activeTab === 'quick') {
+      return `DMS_${exportTypeName}_Full_Export_${timestamp}.zip`;
     }
     
-    // Format dates for filename (YYYY-MM-DD format)
-    const fromFormatted = fromDate.replace(/-/g, '');
-    const toFormatted = toDate.replace(/-/g, '');
+    // For Advanced Backup with date range
+    if (fromDate && toDate) {
+      const fromFormatted = fromDate.replace(/-/g, '');
+      const toFormatted = toDate.replace(/-/g, '');
+      return `DMS_${exportTypeName}_Export_${fromFormatted}_to_${toFormatted}.zip`;
+    }
     
-    return `DMS_${exportTypeName}_Backup_${fromFormatted}_to_${toFormatted}.zip`;
+    // For Advanced Backup without dates (shouldn't normally happen)
+    return `DMS_${exportTypeName}_Full_Export_${timestamp}.zip`;
   };
 
   const getExportTypeDisplayName = (type) => {
@@ -525,16 +554,13 @@ const ExportData = () => {
     const style = variantStyles[variant];
 
     return (
-      <div className={`bg-white rounded-xl border ${
-        isDateRangeInvalid || isDuplicateBlocked ? 'border-gray-200 opacity-75' : style.border
-      } p-6 hover:shadow-lg transition-all duration-300 group flex flex-col h-full`}>
+      <div className={`bg-white rounded-xl border ${isDateRangeInvalid || isDuplicateBlocked ? 'border-gray-200 opacity-75' : style.border
+        } p-6 hover:shadow-lg transition-all duration-300 group flex flex-col h-full`}>
         <div className="flex items-start space-x-4 mb-4">
-          <div className={`p-3 rounded-xl ${
-            isDuplicateBlocked ? 'bg-gray-100' : style.light
-          } group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
-            <Icon className={`w-6 h-6 ${
-              isDuplicateBlocked ? 'text-gray-400' : style.text
-            }`} />
+          <div className={`p-3 rounded-xl ${isDuplicateBlocked ? 'bg-gray-100' : style.light
+            } group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
+            <Icon className={`w-6 h-6 ${isDuplicateBlocked ? 'text-gray-400' : style.text
+              }`} />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
@@ -556,11 +582,10 @@ const ExportData = () => {
           <button
             onClick={() => handleExport(type)}
             disabled={isDisabled || (activeTab === 'advanced' && (isDateRangeInvalid || isDuplicateBlocked))}
-            className={`w-full flex items-center justify-center space-x-3 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
-              isDisabled || (activeTab === 'advanced' && (isDateRangeInvalid || isDuplicateBlocked))
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : `${style.bg} ${style.hover} text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`
-            }`}
+            className={`w-full flex items-center justify-center space-x-3 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 ${isDisabled || (activeTab === 'advanced' && (isDateRangeInvalid || isDuplicateBlocked))
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : `${style.bg} ${style.hover} text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`
+              }`}
           >
             {exporting === type ? (
               <>
@@ -673,7 +698,7 @@ const ExportData = () => {
                   <h4 className="font-semibold text-gray-900 mb-2 text-lg">
                     {getExportTypeDisplayName(showDuplicatePopup.type)} Backup Blocked - Duplicate Date Range
                   </h4>
-                  
+
                   <div className="space-y-3 text-sm mb-4">
                     <div className="flex justify-between items-start">
                       <span className="text-gray-500 font-medium">Selected Range:</span>
@@ -741,21 +766,19 @@ const ExportData = () => {
           <div className="flex space-x-1">
             <button
               onClick={() => setActiveTab('quick')}
-              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                activeTab === 'quick'
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === 'quick'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
             >
               Quick Backup
             </button>
             <button
               onClick={() => setActiveTab('advanced')}
-              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                activeTab === 'advanced'
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === 'advanced'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
             >
               Date Range Export
             </button>
@@ -773,7 +796,7 @@ const ExportData = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900">Creating {getExportTypeDisplayName(exporting)} Backup</h3>
                   <p className="text-sm text-gray-600">
-                    {activeTab === 'advanced' 
+                    {activeTab === 'advanced'
                       ? `${formatDateDisplay(dateRange.fromDate)} to ${formatDateDisplay(dateRange.toDate)}`
                       : "Today's complete data"
                     }
@@ -784,10 +807,10 @@ const ExportData = () => {
                 {Math.round(progress)}%
               </span>
             </div>
-            
+
             {/* Enhanced Progress Bar */}
             <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
-              <div 
+              <div
                 className="h-4 rounded-full bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 transition-all duration-300 ease-out relative"
                 style={{ width: `${progress}%` }}
               >
@@ -795,7 +818,7 @@ const ExportData = () => {
                 <div className="absolute right-0 top-0 w-2 h-4 bg-white/60 animate-pulse"></div>
               </div>
             </div>
-            
+
             <div className="flex justify-between text-xs text-gray-500 mt-3 font-medium">
               <span className={`${progress > 0 ? 'text-blue-600' : ''}`}>Initializing</span>
               <span className={`${progress > 25 ? 'text-blue-600' : ''}`}>Collecting Data</span>
@@ -886,7 +909,7 @@ const ExportData = () => {
                   </button>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -901,7 +924,7 @@ const ExportData = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
                     End Date *
@@ -1011,9 +1034,8 @@ const ExportData = () => {
               }))].slice(0, 5).map((exportItem) => (
                 <div key={exportItem.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:bg-white transition-all duration-300 group">
                   <div className="flex items-center space-x-4 flex-1">
-                    <div className={`p-2 rounded-lg ${
-                      exportItem.status === 'completed' ? 'bg-emerald-100' : 'bg-red-100'
-                    }`}>
+                    <div className={`p-2 rounded-lg ${exportItem.status === 'completed' ? 'bg-emerald-100' : 'bg-red-100'
+                      }`}>
                       {exportItem.status === 'completed' ? (
                         <CheckCircle className="w-5 h-5 text-emerald-600" />
                       ) : (
@@ -1023,9 +1045,8 @@ const ExportData = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-1">
                         <span className="font-semibold text-gray-900 capitalize">{exportItem.type} Backup</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          exportItem.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${exportItem.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                          }`}>
                           {exportItem.status}
                         </span>
                       </div>
