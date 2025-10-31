@@ -258,21 +258,21 @@ const ExportData = () => {
   };
 
   const blockExport = (type) => {
-  // FIXED: For Quick Backup, use a different key format
-  const key = activeTab === 'quick' 
-    ? `${type}_quick_export` 
-    : `${type}_${dateRange.fromDate}_${dateRange.toDate}`;
-  
-  setBlockedExports(prev => new Set([...prev, key]));
-  
-  setTimeout(() => {
-    setBlockedExports(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(key);
-      return newSet;
-    });
-  }, 30000);
-};
+    // FIXED: For Quick Backup, use a different key format
+    const key = activeTab === 'quick'
+      ? `${type}_quick_export`
+      : `${type}_${dateRange.fromDate}_${dateRange.toDate}`;
+
+    setBlockedExports(prev => new Set([...prev, key]));
+
+    setTimeout(() => {
+      setBlockedExports(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(key);
+        return newSet;
+      });
+    }, 30000);
+  };
 
   const performExport = async (type) => {
     // BLOCK THE EXPORT if it's a duplicate range for this specific type
@@ -302,7 +302,7 @@ const ExportData = () => {
 
     const exportId = `export_${Date.now()}`;
     const exportTypeName = getExportTypeDisplayName(type);
-    
+
     setExporting(type);
     setStatus({});
 
@@ -326,7 +326,7 @@ const ExportData = () => {
       }
 
       const params = new URLSearchParams();
-      
+
       // FIXED: Only add date parameters for Advanced tab with actual date selection
       if (activeTab === 'advanced' && dateRange.fromDate && dateRange.toDate) {
         params.append('fromDate', dateRange.fromDate);
@@ -382,7 +382,7 @@ const ExportData = () => {
       const contentDisposition = response.headers.get('Content-Disposition');
       const exportIdHeader = response.headers.get('X-Export-ID');
       const dateRangeHeader = response.headers.get('X-Date-Range');
-      
+
       console.log(`🔧 Response Headers:`);
       console.log(`🔧 Content-Disposition: ${contentDisposition}`);
       console.log(`🔧 X-Date-Range: ${dateRangeHeader}`);
@@ -429,25 +429,25 @@ const ExportData = () => {
       // FIXED: For Quick Backup, store null dates in history
       const historyFromDate = activeTab === 'advanced' ? dateRange.fromDate : null;
       const historyToDate = activeTab === 'advanced' ? dateRange.toDate : null;
-      
+
       addToExportHistory(type, historyFromDate, historyToDate, 'completed', fileName, exportIdHeader || exportId, blob.size);
-      
+
       // Reload backend history to include this new export
       loadBackendExportHistory();
-      
+
       showSuccessPopupMessage(successData);
 
     } catch (error) {
       setProgress(0);
       clearInterval(interval);
-      
+
       // Handle duplicate backup error from backend
       if (error.message.includes('DUPLICATE_BACKUP')) {
         const errorMessage = error.message.replace('DUPLICATE_BACKUP: ', '');
         showDuplicateBlockPopup(type);
       } else {
         const errorMessage = `Backup operation failed: ${error.message}`;
-        
+
         setStatus({
           type: 'error',
           message: errorMessage
@@ -474,6 +474,23 @@ const ExportData = () => {
     }
   };
 
+  const resetPage = () => {
+    setShowSuccessPopup(false);
+    // Reset all form states
+    setDateRange({ fromDate: '', toDate: '' });
+    setIsFilterActive(false);
+    setExporting('');
+    setProgress(0);
+    setStatus({});
+    // Clear any progress interval
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      setProgressInterval(null);
+    }
+    // Reload backend history to get latest data
+    loadBackendExportHistory();
+  };
+
   const handleExport = async (type) => {
     // Check for duplicate backup warning - if completely within existing range for this type, BLOCK IT
     if (duplicateWarning && duplicateWarning[type] && activeTab === 'advanced') {
@@ -487,19 +504,19 @@ const ExportData = () => {
   const generateFileName = (type, fromDate, toDate) => {
     const exportTypeName = getExportTypeDisplayName(type).replace(/\s+/g, '_');
     const timestamp = new Date().toISOString().split('T')[0];
-    
+
     // FIXED: For Quick Backup, use "Full_Export" without dates
     if (activeTab === 'quick') {
       return `DMS_${exportTypeName}_Full_Export_${timestamp}.zip`;
     }
-    
+
     // For Advanced Backup with date range
     if (fromDate && toDate) {
       const fromFormatted = fromDate.replace(/-/g, '');
       const toFormatted = toDate.replace(/-/g, '');
       return `DMS_${exportTypeName}_Export_${fromFormatted}_to_${toFormatted}.zip`;
     }
-    
+
     // For Advanced Backup without dates (shouldn't normally happen)
     return `DMS_${exportTypeName}_Full_Export_${timestamp}.zip`;
   };
@@ -578,13 +595,17 @@ const ExportData = () => {
           </div>
         </div>
 
-        <div className="mt-auto">
+        <div className="mt-auto w-full">
           <button
             onClick={() => handleExport(type)}
-            disabled={isDisabled || (activeTab === 'advanced' && (isDateRangeInvalid || isDuplicateBlocked))}
-            className={`w-full flex items-center justify-center space-x-3 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 ${isDisabled || (activeTab === 'advanced' && (isDateRangeInvalid || isDuplicateBlocked))
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : `${style.bg} ${style.hover} text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`
+            disabled={
+              isDisabled ||
+              (activeTab === 'advanced' && (isDateRangeInvalid || isDuplicateBlocked))
+            }
+            className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${isDisabled ||
+              (activeTab === 'advanced' && (isDateRangeInvalid || isDuplicateBlocked))
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : `${style.bg} ${style.hover} text-white shadow-md hover:shadow-lg hover:-translate-y-0.5`
               }`}
           >
             {exporting === type ? (
@@ -610,6 +631,7 @@ const ExportData = () => {
             )}
           </button>
         </div>
+
       </div>
     );
   };
@@ -633,203 +655,205 @@ const ExportData = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={popupMessage.onClose}
-          />
-        )}
+    <div className="bg-white p-4 rounded-lg shadow-sm">
+      <div className="min-h-screen bg-gradient-to-br bg-slate-100 py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          {popupMessage && (
+            <Popup
+              message={popupMessage.message}
+              type={popupMessage.type}
+              onClose={popupMessage.onClose}
+            />
+          )}
 
-        {/* Centered Success Popup */}
-        {showSuccessPopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-300">
-            <div className="bg-white rounded-2xl shadow-2xl border border-emerald-200 p-6 max-w-md mx-4 animate-in zoom-in duration-300">
-              <div className="flex items-start space-x-4">
-                <div className="p-2 bg-emerald-100 rounded-full flex-shrink-0">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-2 text-lg">Backup Completed Successfully!</h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {successData.type} backup has been generated and downloaded.
-                  </p>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between items-start">
-                      <span className="text-gray-500 font-medium">File:</span>
-                      <span className="font-medium text-gray-700 text-right max-w-[200px] break-words">{successData.fileName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 font-medium">Size:</span>
-                      <span className="font-medium text-gray-700">{successData.fileSize}</span>
-                    </div>
-                    <div className="flex justify-between items-start">
-                      <span className="text-gray-500 font-medium">Period:</span>
-                      <span className="font-medium text-gray-700 text-right max-w-[150px]">{successData.dateRange}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 font-medium">Time:</span>
-                      <span className="font-medium text-gray-700">{successData.timestamp}</span>
-                    </div>
+
+          {/* Success Popup */}
+          {showSuccessPopup && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-300">
+              <div className="bg-white rounded-2xl shadow-2xl border border-emerald-200 p-6 max-w-md mx-4 animate-in zoom-in duration-300">
+                <div className="flex items-start space-x-4">
+                  <div className="p-2 bg-emerald-100 rounded-full flex-shrink-0">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                   </div>
-                  <button
-                    onClick={() => setShowSuccessPopup(false)}
-                    className="w-full mt-6 px-4 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-transform"
-                  >
-                    Got it!
-                  </button>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 mb-2 text-lg">Backup Completed Successfully!</h4>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {successData.type} backup has been generated and downloaded.
+                    </p>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between items-start">
+                        <span className="text-gray-500 font-medium">File:</span>
+                        <span className="font-medium text-gray-700 text-right max-w-[200px] break-words">{successData.fileName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 font-medium">Size:</span>
+                        <span className="font-medium text-gray-700">{successData.fileSize}</span>
+                      </div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-gray-500 font-medium">Period:</span>
+                        <span className="font-medium text-gray-700 text-right max-w-[150px]">{successData.dateRange}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 font-medium">Time:</span>
+                        <span className="font-medium text-gray-700">{successData.timestamp}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={resetPage}
+                      className="w-full mt-6 px-4 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-transform"
+                    >
+                      Got it!
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Duplicate Block Popup */}
-        {showDuplicatePopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-300">
-            <div className="bg-white rounded-2xl shadow-2xl border border-red-200 p-6 max-w-md mx-4 animate-in zoom-in duration-300">
-              <div className="flex items-start space-x-4">
-                <div className="p-2 bg-red-100 rounded-full flex-shrink-0">
-                  <Ban className="w-6 h-6 text-red-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-2 text-lg">
-                    {getExportTypeDisplayName(showDuplicatePopup.type)} Backup Blocked - Duplicate Date Range
-                  </h4>
+          {/* Duplicate Block Popup */}
+          {showDuplicatePopup && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-300">
+              <div className="bg-white rounded-2xl shadow-2xl border border-red-200 p-6 max-w-md mx-4 animate-in zoom-in duration-300">
+                <div className="flex items-start space-x-4">
+                  <div className="p-2 bg-red-100 rounded-full flex-shrink-0">
+                    <Ban className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 mb-2 text-lg">
+                      {getExportTypeDisplayName(showDuplicatePopup.type)} Backup Blocked - Duplicate Date Range
+                    </h4>
 
-                  <div className="space-y-3 text-sm mb-4">
-                    <div className="flex justify-between items-start">
-                      <span className="text-gray-500 font-medium">Selected Range:</span>
-                      <span className="font-medium text-gray-700 text-right">
-                        {formatDateDisplay(dateRange.fromDate)} to {formatDateDisplay(dateRange.toDate)}
-                      </span>
+                    <div className="space-y-3 text-sm mb-4">
+                      <div className="flex justify-between items-start">
+                        <span className="text-gray-500 font-medium">Selected Range:</span>
+                        <span className="font-medium text-gray-700 text-right">
+                          {formatDateDisplay(dateRange.fromDate)} to {formatDateDisplay(dateRange.toDate)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-gray-500 font-medium">Existing {getExportTypeDisplayName(showDuplicatePopup.type)} Backup:</span>
+                        <span className="font-medium text-gray-700 text-right">
+                          {showDuplicatePopup.existingFrom} to {showDuplicatePopup.existingTo}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-start">
-                      <span className="text-gray-500 font-medium">Existing {getExportTypeDisplayName(showDuplicatePopup.type)} Backup:</span>
-                      <span className="font-medium text-gray-700 text-right">
-                        {showDuplicatePopup.existingFrom} to {showDuplicatePopup.existingTo}
-                      </span>
+
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                      <p className="text-red-700 text-sm font-medium">
+                        This {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backup already exists for the selected date range.
+                      </p>
+                      <p className="text-red-600 text-xs mt-1">
+                        You cannot create duplicate {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backups for the same date range.
+                      </p>
                     </div>
-                  </div>
 
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                    <p className="text-red-700 text-sm font-medium">
-                      This {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backup already exists for the selected date range.
-                    </p>
-                    <p className="text-red-600 text-xs mt-1">
-                      You cannot create duplicate {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backups for the same date range.
-                    </p>
-                  </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                      <p className="text-blue-700 text-sm font-medium mb-1">
+                        To create a new {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backup, please:
+                      </p>
+                      <ul className="text-blue-600 text-xs list-disc list-inside space-y-1">
+                        <li>Select a different date range</li>
+                        <li>Or try a different backup type (Database, Files, or Complete)</li>
+                        <li>Or use Quick Backup for today's data only</li>
+                      </ul>
+                    </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                    <p className="text-blue-700 text-sm font-medium mb-1">
-                      To create a new {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backup, please:
-                    </p>
-                    <ul className="text-blue-600 text-xs list-disc list-inside space-y-1">
-                      <li>Select a different date range</li>
-                      <li>Or try a different backup type (Database, Files, or Complete)</li>
-                      <li>Or use Quick Backup for today's data only</li>
-                    </ul>
+                    <button
+                      onClick={handleDuplicateClose}
+                      className="w-full mt-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-transform"
+                    >
+                      Got it - I'll select different dates
+                    </button>
                   </div>
-
-                  <button
-                    onClick={handleDuplicateClose}
-                    className="w-full mt-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-transform"
-                  >
-                    Got it - I'll select different dates
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-6">
-            <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200/50">
-              <Server className="w-10 h-10 text-blue-600" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Data Management & Backup
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Secure and reliable backup solutions for your database and document files
-          </p>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-1 mb-8 max-w-md mx-auto">
-          <div className="flex space-x-1">
-            <button
-              onClick={() => setActiveTab('quick')}
-              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === 'quick'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Quick Backup
-            </button>
-            <button
-              onClick={() => setActiveTab('advanced')}
-              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === 'advanced'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Date Range Export
-            </button>
-          </div>
-        </div>
-
-        {/* Dynamic Progress Bar - Centered */}
-        {exporting && (
-          <div className="mb-8 bg-white rounded-2xl shadow-xl border border-blue-200 p-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <CloudDownload className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Creating {getExportTypeDisplayName(exporting)} Backup</h3>
-                  <p className="text-sm text-gray-600">
-                    {activeTab === 'advanced'
-                      ? `${formatDateDisplay(dateRange.fromDate)} to ${formatDateDisplay(dateRange.toDate)}`
-                      : "Today's complete data"
-                    }
-                  </p>
-                </div>
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center mb-6">
+              <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200/50">
+                <Server className="w-8 h-8 text-blue-600" />
               </div>
-              <span className="text-xl font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
-                {Math.round(progress)}%
-              </span>
             </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Data Management & Backup
+            </h1>
+            <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Secure and reliable backup solutions for your database and document files
+            </p>
+          </div>
 
-            {/* Enhanced Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
-              <div
-                className="h-4 rounded-full bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 transition-all duration-300 ease-out relative"
-                style={{ width: `${progress}%` }}
+          {/* Tab Navigation */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-1 mb-8 max-w-md mx-auto">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setActiveTab('quick')}
+                className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === 'quick'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
-                <div className="absolute right-0 top-0 w-2 h-4 bg-white/60 animate-pulse"></div>
-              </div>
-            </div>
-
-            <div className="flex justify-between text-xs text-gray-500 mt-3 font-medium">
-              <span className={`${progress > 0 ? 'text-blue-600' : ''}`}>Initializing</span>
-              <span className={`${progress > 25 ? 'text-blue-600' : ''}`}>Collecting Data</span>
-              <span className={`${progress > 50 ? 'text-blue-600' : ''}`}>Processing Files</span>
-              <span className={`${progress > 75 ? 'text-blue-600' : ''}`}>Finalizing</span>
+                Quick Backup
+              </button>
+              <button
+                onClick={() => setActiveTab('advanced')}
+                className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === 'advanced'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+              >
+                Date Range Export
+              </button>
             </div>
           </div>
-        )}
 
-        {/* Status Message */}
-        {/* {status.message && !exporting && (
+          {/* Dynamic Progress Bar - Centered */}
+          {exporting && (
+            <div className="mb-8 bg-white rounded-2xl shadow-xl border border-blue-200 p-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <CloudDownload className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Creating {getExportTypeDisplayName(exporting)} Backup</h3>
+                    <p className="text-sm text-gray-600">
+                      {activeTab === 'advanced'
+                        ? `${formatDateDisplay(dateRange.fromDate)} to ${formatDateDisplay(dateRange.toDate)}`
+                        : "Today's complete data"
+                      }
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xl font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
+                  {Math.round(progress)}%
+                </span>
+              </div>
+
+              {/* Enhanced Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+                <div
+                  className="h-4 rounded-full bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 transition-all duration-300 ease-out relative"
+                  style={{ width: `${progress}%` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
+                  <div className="absolute right-0 top-0 w-2 h-4 bg-white/60 animate-pulse"></div>
+                </div>
+              </div>
+
+              <div className="flex justify-between text-xs text-gray-500 mt-3 font-medium">
+                <span className={`${progress > 0 ? 'text-blue-600' : ''}`}>Initializing</span>
+                <span className={`${progress > 25 ? 'text-blue-600' : ''}`}>Collecting Data</span>
+                <span className={`${progress > 50 ? 'text-blue-600' : ''}`}>Processing Files</span>
+                <span className={`${progress > 75 ? 'text-blue-600' : ''}`}>Finalizing</span>
+              </div>
+            </div>
+          )}
+
+          {/* Status Message */}
+          {/* {status.message && !exporting && (
           <div
             className={`flex items-center space-x-4 p-4 rounded-2xl mb-6 animate-in fade-in duration-500 max-w-2xl mx-auto ${
               status.type === 'error' 
@@ -846,233 +870,247 @@ const ExportData = () => {
           </div>
         )} */}
 
-        {/* Quick Backup Section */}
-        {activeTab === 'quick' && (
-          <div className="space-y-8 mb-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">Quick System Backup</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Complete system backups for today's data. No date selection required.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <ExportActionCard
-                type="database"
-                icon={Database}
-                title="Database Backup"
-                description="Export complete database with all tables, relationships, and metadata for today's data"
-                variant="success"
-              />
-              <ExportActionCard
-                type="files"
-                icon={FileArchive}
-                title="Documents Backup"
-                description="Backup all document files, images, and attachments with folder structure for today"
-                variant="warning"
-              />
-              <ExportActionCard
-                type="complete"
-                icon={Server}
-                title="Full System Backup"
-                description="Complete backup including database, files, and system configuration for today"
-                variant="primary"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Advanced Date Range Section */}
-        {activeTab === 'advanced' && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">Selective Data Export</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Export data from specific time periods for compliance or analysis
-              </p>
-            </div>
-
-            {/* Date Range Selector */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 max-w-2xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                  <Calendar className="w-6 h-6 text-blue-600" />
-                  <h3 className="text-xl font-semibold text-gray-900">Define Export Period</h3>
-                </div>
-                {isFilterActive && (
-                  <button
-                    onClick={clearDateRange}
-                    className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
-                  >
-                    <X className="w-4 h-4" />
-                    <span>Clear Dates</span>
-                  </button>
-                )}
+          {/* Quick Backup Section */}
+          {activeTab === 'quick' && (
+            <div className="space-y-8 mb-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">Quick System Backup</h2>
+                <p className="text-gray-600 max-w-2xl mx-auto">
+                  Complete system backups for today's data. No date selection required.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Start Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={dateRange.fromDate}
-                    onChange={(e) => handleDateChange('fromDate', e.target.value)}
-                    max={dateRange.toDate || new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-700 font-medium"
-                    required
-                  />
-                </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <ExportActionCard
+                  type="database"
+                  icon={Database}
+                  title="Database Backup"
+                  description="Export complete database with all tables, relationships, and metadata for today's data"
+                  variant="success"
+                />
+                <ExportActionCard
+                  type="files"
+                  icon={FileArchive}
+                  title="Documents Backup"
+                  description="Backup all document files, images, and attachments with folder structure for today"
+                  variant="warning"
+                />
+                <ExportActionCard
+                  type="complete"
+                  icon={Server}
+                  title="Full System Backup"
+                  description="Complete backup including database, files, and system configuration for today"
+                  variant="primary"
+                />
+              </div>
+            </div>
+          )}
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    End Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={dateRange.toDate}
-                    onChange={(e) => handleDateChange('toDate', e.target.value)}
-                    min={dateRange.fromDate || undefined}
-                    max={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-700 font-medium"
-                    required
-                  />
-                </div>
+          {/* Advanced Date Range Section */}
+          {activeTab === 'advanced' && (
+            <div className="space-y-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">Selective Data Export</h2>
+                <p className="text-gray-600 max-w-2xl mx-auto">
+                  Export data from specific time periods for compliance or analysis
+                </p>
               </div>
 
-              {/* Duplicate Detection Information */}
-              {/* <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <div className="flex items-start space-x-3">
-                  <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              {/* Date Range Selector */}
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 max-w-2xl mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                    <h3 className="text-xl font-semibold text-gray-900">Define Export Period</h3>
+                  </div>
+                  {isFilterActive && (
+                    <button
+                      onClick={clearDateRange}
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                    >
+                      <X className="w-4 h-4" />
+                      <span>Clear Dates</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-blue-800 text-sm font-medium mb-2">
-                      Duplicate Detection Rules
-                    </p>
-                    <ul className="text-blue-700 text-sm space-y-1">
-                      <li>• <strong>Separate checks</strong> for Database, Files, and Complete backups</li>
-                      <li>• <strong>Blocked</strong>: Same backup type with same date range</li>
-                      <li>• <strong>Allowed</strong>: Different backup types with same date range</li>
-                    </ul>
-                    <p className="text-blue-600 text-xs mt-2">
-                      Example: You can have Database backup AND Files backup for the same date range
-                    </p>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Start Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={dateRange.fromDate}
+                      onChange={(e) => handleDateChange('fromDate', e.target.value)}
+                      max={dateRange.toDate || new Date().toISOString().split('T')[0]}
+                      className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-700 font-medium"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      End Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={dateRange.toDate}
+                      onChange={(e) => handleDateChange('toDate', e.target.value)}
+                      min={dateRange.fromDate || undefined}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-700 font-medium"
+                      required
+                    />
                   </div>
                 </div>
-              </div> */}
+              </div>
 
-              {/* Individual Duplicate Warnings */}
-              {/* <div className="mt-4 space-y-3">
-                {duplicateWarning && duplicateWarning.database && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-amber-700 text-sm font-medium">
-                      ⚠️ Database backup already exists for {formatDateDisplay(dateRange.fromDate)} to {formatDateDisplay(dateRange.toDate)}
-                    </p>
-                  </div>
-                )}
-                {duplicateWarning && duplicateWarning.files && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-amber-700 text-sm font-medium">
-                      ⚠️ Files backup already exists for {formatDateDisplay(dateRange.fromDate)} to {formatDateDisplay(dateRange.toDate)}
-                    </p>
-                  </div>
-                )}
-                {duplicateWarning && duplicateWarning.complete && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-amber-700 text-sm font-medium">
-                      ⚠️ Complete backup already exists for {formatDateDisplay(dateRange.fromDate)} to {formatDateDisplay(dateRange.toDate)}
-                    </p>
-                  </div>
-                )}
-              </div> */}
+              {/* Export Options */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <ExportActionCard
+                  type="database"
+                  icon={FileText}
+                  title="Database Export"
+                  description="Export structured database data for selected period with full relationships and integrity"
+                  variant="success"
+                />
+                <ExportActionCard
+                  type="files"
+                  icon={HardDrive}
+                  title="Files Export"
+                  description="Export documents and media files modified within the specified date range"
+                  variant="warning"
+                />
+                <ExportActionCard
+                  type="complete"
+                  icon={Archive}
+                  title="Complete Export"
+                  description="Full system backup including both database and files for the selected period"
+                  variant="primary"
+                />
+              </div>
             </div>
+          )}
 
-            {/* Export Options */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <ExportActionCard
-                type="database"
-                icon={FileText}
-                title="Database Export"
-                description="Export structured database data for selected period with full relationships and integrity"
-                variant="success"
-              />
-              <ExportActionCard
-                type="files"
-                icon={HardDrive}
-                title="Files Export"
-                description="Export documents and media files modified within the specified date range"
-                variant="warning"
-              />
-              <ExportActionCard
-                type="complete"
-                icon={Archive}
-                title="Complete Export"
-                description="Full system backup including both database and files for the selected period"
-                variant="primary"
-              />
-            </div>
-          </div>
-        )}
 
-        {/* Recent Activity - Only shows completed/failed exports */}
-        {(exportHistory.length > 0 || backendExportHistory.length > 0) && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mt-12">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-              <Clock className="w-6 h-6 mr-3 text-gray-600" />
-              Recent Backup Operations
-            </h3>
-            <div className="space-y-4">
-              {[...exportHistory, ...backendExportHistory.map(item => ({
-                id: item.exportId,
-                type: item.type,
-                fromDate: item.fromDate,
-                toDate: item.toDate,
-                status: 'completed',
-                fileName: item.fileName,
-                fileSize: item.fileSize,
-                timestamp: item.exportTime
-              }))].slice(0, 5).map((exportItem) => (
-                <div key={exportItem.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:bg-white transition-all duration-300 group">
-                  <div className="flex items-center space-x-4 flex-1">
-                    <div className={`p-2 rounded-lg ${exportItem.status === 'completed' ? 'bg-emerald-100' : 'bg-red-100'
-                      }`}>
-                      {exportItem.status === 'completed' ? (
-                        <CheckCircle className="w-5 h-5 text-emerald-600" />
-                      ) : (
-                        <AlertCircle className="w-5 h-5 text-red-600" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-1">
-                        <span className="font-semibold text-gray-900 capitalize">{exportItem.type} Backup</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${exportItem.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                          {exportItem.status}
-                        </span>
+          {/* Recent Activity - Only shows completed/failed exports */}
+          {(exportHistory.length > 0 || backendExportHistory.length > 0) && (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mt-12">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                <Clock className="w-6 h-6 mr-3 text-gray-600" />
+                Recent Backup Operations
+              </h3>
+              <div className="space-y-4">
+                {[...exportHistory, ...backendExportHistory.map(item => ({
+                  id: item.exportId,
+                  type: item.type,
+                  fromDate: item.fromDate,
+                  toDate: item.toDate,
+                  status: 'completed',
+                  fileName: item.fileName,
+                  fileSize: item.fileSize,
+                  timestamp: item.exportTime || item.timestamp || new Date().toISOString()
+                }))].slice(0, 5).map((exportItem) => {
+                  const safeFormatDate = (dateString) => {
+                    if (!dateString) return 'All Records';
+                    try {
+                      const date = new Date(dateString);
+                      return isNaN(date.getTime()) ? 'All Records' : date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      });
+                    } catch (error) {
+                      return 'All Records';
+                    }
+                  };
+
+                  // Safe datetime formatting function
+
+                  const safeFormatDateTime = (timestamp) => {
+                    // Handle empty, null, undefined, or invalid timestamps
+                    if (!timestamp || timestamp === 'null' || timestamp === 'undefined' || timestamp === 'Invalid Date') {
+                      return 'Recent';
+                    }
+
+                    try {
+                      // Create date object from timestamp
+                      const date = new Date(timestamp);
+
+                      // Check if the date is valid
+                      if (isNaN(date.getTime())) {
+                        // Try alternative parsing for different date formats
+                        const dateFromString = new Date(timestamp.toString().replace(/-/g, '/'));
+                        if (!isNaN(dateFromString.getTime())) {
+                          return dateFromString.toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
+                        }
+                        return 'Recent';
+                      }
+
+                      // Return formatted date for valid timestamps
+                      return date.toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      });
+                    } catch (error) {
+                      console.warn('Failed to parse timestamp:', timestamp, error);
+                      return 'Recent';
+                    }
+                  };
+
+                  return (
+                    <div key={exportItem.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:bg-white transition-all duration-300 group">
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div className={`p-2 rounded-lg ${exportItem.status === 'completed' ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                          {exportItem.status === 'completed' ? (
+                            <CheckCircle className="w-5 h-5 text-emerald-600" />
+                          ) : (
+                            <AlertCircle className="w-5 h-5 text-red-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3 mb-1">
+                            <span className="font-semibold text-gray-900 capitalize">{exportItem.type} Backup</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${exportItem.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                              {exportItem.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {exportItem.fromDate && exportItem.toDate
+                              ? `${safeFormatDate(exportItem.fromDate)} to ${safeFormatDate(exportItem.toDate)}`
+                              : 'Complete Data - No Date Filter'}
+                          </p>
+                          {exportItem.fileName && (
+                            <p className="text-xs text-gray-500 mt-1 truncate">{exportItem.fileName}</p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600">
-                        {formatDateDisplay(exportItem.fromDate)} to {formatDateDisplay(exportItem.toDate)}
-                      </p>
-                      {exportItem.fileName && (
-                        <p className="text-xs text-gray-500 mt-1 truncate">{exportItem.fileName}</p>
-                      )}
+                      <div className="text-right">
+                        <span className="text-sm font-medium text-gray-900 block">
+                          {safeFormatDateTime(exportItem.timestamp || exportItem.exportTime)}
+                        </span>
+                        {exportItem.fileSize && (
+                          <span className="text-xs text-gray-500">{formatFileSize(exportItem.fileSize)}</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-medium text-gray-900 block">
-                      {formatDateTime(exportItem.timestamp)}
-                    </span>
-                    {exportItem.fileSize && (
-                      <span className="text-xs text-gray-500">{formatFileSize(exportItem.fileSize)}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
+
   );
 };
 

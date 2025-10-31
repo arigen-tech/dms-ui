@@ -131,7 +131,7 @@ const Import = () => {
 
   const validateFile = async (fileToValidate) => {
     try {
-      
+
 
       const token = getAuthToken();
       const formData = new FormData();
@@ -201,7 +201,7 @@ const Import = () => {
         // Show success popup
         showPopup(popupMessage, 'success');
 
-        
+
 
         if (tables.length > 0) {
           setAvailableTables(tables);
@@ -715,15 +715,33 @@ const Import = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
-                    <span className="text-purple-700 font-medium text-sm">Period:</span>
-                    <span className="font-bold text-purple-900">{formatPeriod(successData.period)}</span>
+                  {/* Period Box */}
+                  <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg border border-purple-100">
+                    <span className="text-purple-700 font-medium text-sm whitespace-nowrap">
+                      Period:
+                    </span>
+                    <span
+                      className="font-bold text-purple-900 text-sm text-right truncate max-w-[60%]"
+                      title={formatPeriod(successData.period)}
+                    >
+                      {formatPeriod(successData.period)}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
-                    <span className="text-purple-700 font-medium text-sm">Completed:</span>
-                    <span className="font-bold text-purple-900 text-sm">{successData.timestamp}</span>
+
+                  {/* Completed Box */}
+                  <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg border border-purple-100">
+                    <span className="text-purple-700 font-medium text-sm whitespace-nowrap">
+                      Completed:
+                    </span>
+                    <span
+                      className="font-bold text-purple-900 text-sm text-right truncate max-w-[60%]"
+                      title={successData.timestamp}
+                    >
+                      {successData.timestamp}
+                    </span>
                   </div>
                 </div>
+
               </div>
 
               {/* Import-specific highlights */}
@@ -1057,459 +1075,459 @@ const Import = () => {
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm">
-    <div className="min-h-screen bg-gradient-to-br bg-slate-100 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br bg-slate-100 py-8 px-4">
+        <div className="max-w-6xl mx-auto">
 
-        {/* Popup Component */}
-        {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={popupMessage.onClose}
-          />
-        )}
+          {/* Popup Component */}
+          {popupMessage && (
+            <Popup
+              message={popupMessage.message}
+              type={popupMessage.type}
+              onClose={popupMessage.onClose}
+            />
+          )}
 
-        <SuccessPopup />
+          <SuccessPopup />
 
-        <div className="text-center mb-4">
-          <div className="flex items-center justify-center mb-6">
-            <div className="p-2 bg-white rounded-2xl shadow-lg border border-gray-200/50">
-              <CloudUpload className="w-8 h-8 text-green-600" />
+          <div className="text-center mb-4">
+            <div className="flex items-center justify-center mb-6">
+              <div className="p-2 bg-white rounded-2xl shadow-lg border border-gray-200/50">
+                <CloudUpload className="w-8 h-8 text-green-600" />
+              </div>
             </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              DMS Data Import
+            </h1>
+            <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Restore your Document Management System from backup files. Supports files up to 100GB with selective table and file import.
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-            DMS Data Import
-          </h1>
-          <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Restore your Document Management System from backup files. Supports files up to 100GB with selective table and file import.
-          </p>
-        </div>
 
-        {importing && (
-          <div className="mb-4 bg-white rounded-2xl shadow-xl border border-green-200 p-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  {progress < 100 ? (
-                    <Loader className="w-5 h-5 text-green-600 animate-spin" />
-                  ) : (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+          {importing && (
+            <div className="mb-4 bg-white rounded-2xl shadow-xl border border-green-200 p-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    {progress < 100 ? (
+                      <Loader className="w-5 h-5 text-green-600 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {progress < 100 ? '🔄 Importing DMS Data' : '✅ Import Complete'}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {importOptions.importDatabase && `${selectedTables.size} tables`}
+                      {importOptions.importDatabase && importOptions.importFiles ? ' and ' : ''}
+                      {importOptions.importFiles && `${selectedFiles.size} file categories`}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xl font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg">
+                  {Math.round(progress)}%
+                </span>
+              </div>
+
+              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+                <div
+                  className="h-4 rounded-full bg-gradient-to-r from-green-500 via-green-600 to-blue-600 transition-all duration-300 ease-out relative"
+                  style={{ width: `${progress}%` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Status Messages */}
+          {status.message && (
+            <div className={`mb-6 p-4 rounded-xl border max-w-4xl mx-auto ${status.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+              status.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+                'bg-blue-50 border-blue-200 text-blue-800'
+              }`}>
+              <div className="flex items-center space-x-2">
+                {status.type === 'error' && <AlertCircle className="w-5 h-5" />}
+                {status.type === 'success' && <CheckCircle className="w-5 h-5" />}
+                <span className="font-medium">{status.message}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8 max-w-4xl mx-auto">
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <FileSearch className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Select DMS Export File
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Choose a ZIP file that was exported from your DMS system.
+                  The system will automatically detect available content (database, files, or both).
+                </p>
+
+                <input
+                  type="file"
+                  id="import-file"
+                  ref={fileInputRef}
+                  accept=".zip"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                  disabled={importing}
+                />
+
+                <div
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${dragOver
+                    ? 'border-blue-400 bg-blue-50'
+                    : fileError
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-300 hover:border-blue-400'
+                    }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  {fileError && (
+                    <div className="mb-4 p-3 bg-red-100 border border-red-200 rounded-lg">
+                      <div className="flex items-center space-x-2 text-red-700">
+                        <AlertCircle className="w-4 h-4" />
+                        <span className="text-sm font-medium">{fileError}</span>
+                      </div>
+                    </div>
                   )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {progress < 100 ? '🔄 Importing DMS Data' : '✅ Import Complete'}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {importOptions.importDatabase && `${selectedTables.size} tables`}
-                    {importOptions.importDatabase && importOptions.importFiles ? ' and ' : ''}
-                    {importOptions.importFiles && `${selectedFiles.size} file categories`}
-                  </p>
-                </div>
-              </div>
-              <span className="text-xl font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg">
-                {Math.round(progress)}%
-              </span>
-            </div>
 
-            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
-              <div
-                className="h-4 rounded-full bg-gradient-to-r from-green-500 via-green-600 to-blue-600 transition-all duration-300 ease-out relative"
-                style={{ width: `${progress}%` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        )}
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="p-3 bg-blue-100 rounded-full">
+                      <Upload className="w-8 h-8 text-blue-600" />
+                    </div>
 
-        {/* Status Messages */}
-        {status.message && (
-          <div className={`mb-6 p-4 rounded-xl border max-w-4xl mx-auto ${status.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
-            status.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
-              'bg-blue-50 border-blue-200 text-blue-800'
-            }`}>
-            <div className="flex items-center space-x-2">
-              {status.type === 'error' && <AlertCircle className="w-5 h-5" />}
-              {status.type === 'success' && <CheckCircle className="w-5 h-5" />}
-              <span className="font-medium">{status.message}</span>
-            </div>
-          </div>
-        )}
+                    <div>
+                      <button
+                        onClick={triggerFileInput}
+                        disabled={importing}
+                        className={`inline-flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${importing
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+                          }`}
+                      >
+                        <Search className="w-4 h-4" />
+                        <span>Browse for Export ZIP File</span>
+                      </button>
+                    </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8 max-w-4xl mx-auto">
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0">
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <FileSearch className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Select DMS Export File
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Choose a ZIP file that was exported from your DMS system.
-                The system will automatically detect available content (database, files, or both).
-              </p>
-
-              <input
-                type="file"
-                id="import-file"
-                ref={fileInputRef}
-                accept=".zip"
-                onChange={handleFileInputChange}
-                className="hidden"
-                disabled={importing}
-              />
-
-              <div
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${dragOver
-                  ? 'border-blue-400 bg-blue-50'
-                  : fileError
-                    ? 'border-red-300 bg-red-50'
-                    : 'border-gray-300 hover:border-blue-400'
-                  }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                {fileError && (
-                  <div className="mb-4 p-3 bg-red-100 border border-red-200 rounded-lg">
-                    <div className="flex items-center space-x-2 text-red-700">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="text-sm font-medium">{fileError}</span>
+                    <div className="text-sm text-gray-500">
+                      or drag and drop your file here
                     </div>
                   </div>
-                )}
 
-                <div className="flex flex-col items-center justify-center space-y-4">
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <Upload className="w-8 h-8 text-blue-600" />
-                  </div>
+                  {file ? (
+                    <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Archive className="w-5 h-5 text-green-600" />
+                          <div>
+                            <div className="font-medium text-gray-900">{file.name}</div>
+                            <div className="text-sm text-gray-600">
+                              {formatFileSize(file.size)} • {fileContentType ?
+                                fileContentType === 'both' ? 'Database + Files' :
+                                  fileContentType === 'database' ? 'Database Only' :
+                                    fileContentType === 'files' ? 'Files Only' : 'Ready for import'
+                                : 'Ready for import'}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={clearFile}
+                          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                          disabled={importing}
+                          title="Remove file"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className=""></div>
+                  )}
 
-                  <div>
-                    <button
-                      onClick={triggerFileInput}
-                      disabled={importing}
-                      className={`inline-flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${importing
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
-                        }`}
-                    >
-                      <Search className="w-4 h-4" />
-                      <span>Browse for Export ZIP File</span>
-                    </button>
-                  </div>
-
-                  <div className="text-sm text-gray-500">
-                    or drag and drop your file here
+                  <div className="mt-4 text-xs text-gray-400">
+                    Maximum file size: 100GB • DMS Export ZIP format only
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                {file ? (
-                  <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Archive className="w-5 h-5 text-green-600" />
-                        <div>
-                          <div className="font-medium text-gray-900">{file.name}</div>
-                          <div className="text-sm text-gray-600">
-                            {formatFileSize(file.size)} • {fileContentType ?
-                              fileContentType === 'both' ? 'Database + Files' :
-                                fileContentType === 'database' ? 'Database Only' :
-                                  fileContentType === 'files' ? 'Files Only' : 'Ready for import'
-                              : 'Ready for import'}
-                          </div>
+          {file && fileContentType && (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8 max-w-4xl mx-auto">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                <Settings className="w-6 h-6 mr-3 text-blue-600" />
+                Import Configuration
+              </h3>
+
+              <div className="space-y-6">
+                <div className={`flex items-start justify-between p-4 border rounded-xl transition-colors ${fileContentType === 'database' || fileContentType === 'both'
+                  ? 'border-blue-200 hover:border-blue-300'
+                  : 'border-gray-200 bg-gray-50 opacity-60'
+                  }`}>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Database className={`w-5 h-5 ${fileContentType === 'database' || fileContentType === 'both' ? 'text-blue-600' : 'text-gray-400'
+                        }`} />
+                      <div className={`font-semibold ${fileContentType === 'database' || fileContentType === 'both' ? 'text-gray-900' : 'text-gray-500'
+                        }`}>
+                        Import Database
+                      </div>
+                      {!(fileContentType === 'database' || fileContentType === 'both') && (
+                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Not available</span>
+                      )}
+                    </div>
+                    <div className={`text-sm ml-8 ${fileContentType === 'database' || fileContentType === 'both' ? 'text-gray-600' : 'text-gray-400'
+                      }`}>
+                      Restore database tables and records. Select specific tables or import all.
+                      {importOptions.importDatabase && availableTables.length > 0 && (
+                        <div className="mt-1 text-blue-600 font-medium">
+                          {availableTables.length} tables available • {selectedTables.size} selected
+                        </div>
+                      )}
+                    </div>
+
+                    {importOptions.importDatabase && availableTables.length > 0 && (
+                      <button
+                        onClick={() => setShowTableSelector(!showTableSelector)}
+                        className="ml-8 mt-2 flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        <span>{showTableSelector ? 'Hide Table Selection' : 'Select Specific Tables'}</span>
+                        {showTableSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
+                  <label className={`relative inline-flex items-center cursor-pointer ${!(fileContentType === 'database' || fileContentType === 'both') ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}>
+                    <input
+                      type="checkbox"
+                      checked={importOptions.importDatabase}
+                      onChange={() => fileContentType === 'database' || fileContentType === 'both' ? handleOptionChange('importDatabase') : null}
+                      className="sr-only peer"
+                      disabled={importing || !(fileContentType === 'database' || fileContentType === 'both')}
+                    />
+                    <div className={`w-12 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${fileContentType === 'database' || fileContentType === 'both'
+                      ? 'bg-gray-200 peer-checked:bg-blue-600 after:border-gray-300'
+                      : 'bg-gray-100 after:border-gray-200'
+                      }`}></div>
+                  </label>
+                </div>
+
+                <div className={`flex items-start justify-between p-4 border rounded-xl transition-colors ${fileContentType === 'files' || fileContentType === 'both'
+                  ? 'border-green-200 hover:border-green-300'
+                  : 'border-gray-200 bg-gray-50 opacity-60'
+                  }`}>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <HardDrive className={`w-5 h-5 ${fileContentType === 'files' || fileContentType === 'both' ? 'text-green-600' : 'text-gray-400'
+                        }`} />
+                      <div className={`font-semibold ${fileContentType === 'files' || fileContentType === 'both' ? 'text-gray-900' : 'text-gray-500'
+                        }`}>
+                        Import Files & Documents
+                      </div>
+                      {!(fileContentType === 'files' || fileContentType === 'both') && (
+                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Not available</span>
+                      )}
+                    </div>
+                    <div className={`text-sm ml-8 ${fileContentType === 'files' || fileContentType === 'both' ? 'text-gray-600' : 'text-gray-400'
+                      }`}>
+                      Restore documents, profiles, waiting room files, and archives with automatic directory creation.
+                      {importOptions.importFiles && availableFiles.length > 0 && (
+                        <div className="mt-1 text-green-600 font-medium">
+                          {availableFiles.length} categories available • {selectedFiles.size} selected
+                        </div>
+                      )}
+                    </div>
+
+                    {importOptions.importFiles && availableFiles.length > 0 && (
+                      <button
+                        onClick={() => setShowFileSelector(!showFileSelector)}
+                        className="ml-8 mt-2 flex items-center space-x-2 text-sm text-green-600 hover:text-green-800 font-medium"
+                      >
+                        <span>{showFileSelector ? 'Hide File Selection' : 'Select File Categories'}</span>
+                        {showFileSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
+                  <label className={`relative inline-flex items-center cursor-pointer ${!(fileContentType === 'files' || fileContentType === 'both') ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}>
+                    <input
+                      type="checkbox"
+                      checked={importOptions.importFiles}
+                      onChange={() => fileContentType === 'files' || fileContentType === 'both' ? handleOptionChange('importFiles') : null}
+                      className="sr-only peer"
+                      disabled={importing || !(fileContentType === 'files' || fileContentType === 'both')}
+                    />
+                    <div className={`w-12 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${fileContentType === 'files' || fileContentType === 'both'
+                      ? 'bg-gray-200 peer-checked:bg-green-600 after:border-gray-300'
+                      : 'bg-gray-100 after:border-gray-200'
+                      }`}></div>
+                  </label>
+                </div>
+
+                <div className="flex items-start justify-between p-4 border border-amber-200 rounded-xl hover:border-amber-300 transition-colors">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                      <div className="font-semibold text-gray-900">Duplicate Data Handling</div>
+                    </div>
+                    <div className="text-sm text-gray-600 ml-8">
+                      {importOptions.overwriteExisting
+                        ? "Replace existing records and files when duplicates are found."
+                        : "Skip existing records and files, only add new data."
+                      }
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={importOptions.overwriteExisting}
+                      onChange={() => handleOptionChange('overwriteExisting')}
+                      className="sr-only peer"
+                      disabled={importing}
+                    />
+                    <div className="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              <TableSelector />
+              <FileSelector />
+            </div>
+          )}
+
+          {file && fileContentType && (
+            <div className="max-w-4xl mx-auto">
+
+
+
+              {/* Import Cards - Styled like Backup Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {/* Database Import Card */}
+                <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('database') || isSubmitting
+                  ? 'border-gray-200 opacity-50 cursor-not-allowed'
+                  : 'border-blue-200 hover:border-blue-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
+                  }`}
+                  onClick={() => !isImportDisabled('database') && !isSubmitting && handleImport('database')}
+                >
+                  <div className="flex flex-col items-center text-center h-full">
+                    <div className="p-4 bg-blue-100 rounded-2xl mb-4">
+                      <Database className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">Database Import</h3>
+                    <p className="text-gray-600 mb-4 flex-1">
+                      Import database tables and records only
+                    </p>
+                    <div className="w-full space-y-3">
+                      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                        <div className="text-blue-700 font-semibold text-sm">
+                          {selectedTables.size > 0
+                            ? `${selectedTables.size} tables selected`
+                            : 'No tables selected'
+                          }
                         </div>
                       </div>
                       <button
-                        onClick={clearFile}
-                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                        disabled={importing}
-                        title="Remove file"
+                        disabled={isImportDisabled('database') || isSubmitting}
+                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('database') || isSubmitting
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                          }`}
                       >
-                        <X className="w-4 h-4" />
+                        {isSubmitting ? 'Importing...' : 'Start Database Import'}
                       </button>
                     </div>
                   </div>
-                ) : (
-                  <div className=""></div>
-                )}
+                </div>
 
-                <div className="mt-4 text-xs text-gray-400">
-                  Maximum file size: 100GB • DMS Export ZIP format only
+                {/* Files Import Card */}
+                <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('files') || isSubmitting
+                  ? 'border-gray-200 opacity-50 cursor-not-allowed'
+                  : 'border-green-200 hover:border-green-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
+                  }`}
+                  onClick={() => !isImportDisabled('files') && !isSubmitting && handleImport('files')}
+                >
+                  <div className="flex flex-col items-center text-center h-full">
+                    <div className="p-4 bg-green-100 rounded-2xl mb-4">
+                      <HardDrive className="w-8 h-8 text-green-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">Files & Documents Import</h3>
+                    <p className="text-gray-600 mb-4 flex-1">
+                      Import documents, files, and attachments only
+                    </p>
+                    <div className="w-full space-y-3">
+                      <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                        <div className="text-green-700 font-semibold text-sm">
+                          {selectedFiles.size > 0
+                            ? `${selectedFiles.size} categories selected`
+                            : 'No categories selected'
+                          }
+                        </div>
+                      </div>
+                      <button
+                        disabled={isImportDisabled('files') || isSubmitting}
+                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('files') || isSubmitting
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl'
+                          }`}
+                      >
+                        {isSubmitting ? 'Importing...' : 'Start Files Import'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Complete System Import Card */}
+                <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('full') || isSubmitting
+                  ? 'border-gray-200 opacity-50 cursor-not-allowed'
+                  : 'border-purple-200 hover:border-purple-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
+                  }`}
+                  onClick={() => !isImportDisabled('full') && !isSubmitting && handleImport('full')}
+                >
+                  <div className="flex flex-col items-center text-center h-full">
+                    <div className="p-4 bg-purple-100 rounded-2xl mb-4">
+                      <Server className="w-8 h-8 text-purple-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">Complete System Import</h3>
+                    <p className="text-gray-600 mb-4 flex-1">
+                      Import both database and files for complete system restoration
+                    </p>
+                    <div className="w-full space-y-3">
+                      <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                        <div className="text-purple-700 font-semibold text-sm">
+                          {importOptions.importDatabase ? `${selectedTables.size} tables` : ''}
+                          {importOptions.importDatabase && importOptions.importFiles ? ' + ' : ''}
+                          {importOptions.importFiles ? `${selectedFiles.size} categories` : ''}
+                          {!importOptions.importDatabase && !importOptions.importFiles ? 'Nothing selected' : ''}
+                        </div>
+                      </div>
+                      <button
+                        disabled={isImportDisabled('full') || isSubmitting}
+                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('full') || isSubmitting
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
+                          }`}
+                      >
+                        {isSubmitting ? 'Importing...' : 'Start Full System Import'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
-
-        {file && fileContentType && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8 max-w-4xl mx-auto">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-              <Settings className="w-6 h-6 mr-3 text-blue-600" />
-              Import Configuration
-            </h3>
-
-            <div className="space-y-6">
-              <div className={`flex items-start justify-between p-4 border rounded-xl transition-colors ${fileContentType === 'database' || fileContentType === 'both'
-                ? 'border-blue-200 hover:border-blue-300'
-                : 'border-gray-200 bg-gray-50 opacity-60'
-                }`}>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <Database className={`w-5 h-5 ${fileContentType === 'database' || fileContentType === 'both' ? 'text-blue-600' : 'text-gray-400'
-                      }`} />
-                    <div className={`font-semibold ${fileContentType === 'database' || fileContentType === 'both' ? 'text-gray-900' : 'text-gray-500'
-                      }`}>
-                      Import Database
-                    </div>
-                    {!(fileContentType === 'database' || fileContentType === 'both') && (
-                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Not available</span>
-                    )}
-                  </div>
-                  <div className={`text-sm ml-8 ${fileContentType === 'database' || fileContentType === 'both' ? 'text-gray-600' : 'text-gray-400'
-                    }`}>
-                    Restore database tables and records. Select specific tables or import all.
-                    {importOptions.importDatabase && availableTables.length > 0 && (
-                      <div className="mt-1 text-blue-600 font-medium">
-                        {availableTables.length} tables available • {selectedTables.size} selected
-                      </div>
-                    )}
-                  </div>
-
-                  {importOptions.importDatabase && availableTables.length > 0 && (
-                    <button
-                      onClick={() => setShowTableSelector(!showTableSelector)}
-                      className="ml-8 mt-2 flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      <span>{showTableSelector ? 'Hide Table Selection' : 'Select Specific Tables'}</span>
-                      {showTableSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                  )}
-                </div>
-                <label className={`relative inline-flex items-center cursor-pointer ${!(fileContentType === 'database' || fileContentType === 'both') ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}>
-                  <input
-                    type="checkbox"
-                    checked={importOptions.importDatabase}
-                    onChange={() => fileContentType === 'database' || fileContentType === 'both' ? handleOptionChange('importDatabase') : null}
-                    className="sr-only peer"
-                    disabled={importing || !(fileContentType === 'database' || fileContentType === 'both')}
-                  />
-                  <div className={`w-12 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${fileContentType === 'database' || fileContentType === 'both'
-                    ? 'bg-gray-200 peer-checked:bg-blue-600 after:border-gray-300'
-                    : 'bg-gray-100 after:border-gray-200'
-                    }`}></div>
-                </label>
-              </div>
-
-              <div className={`flex items-start justify-between p-4 border rounded-xl transition-colors ${fileContentType === 'files' || fileContentType === 'both'
-                ? 'border-green-200 hover:border-green-300'
-                : 'border-gray-200 bg-gray-50 opacity-60'
-                }`}>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <HardDrive className={`w-5 h-5 ${fileContentType === 'files' || fileContentType === 'both' ? 'text-green-600' : 'text-gray-400'
-                      }`} />
-                    <div className={`font-semibold ${fileContentType === 'files' || fileContentType === 'both' ? 'text-gray-900' : 'text-gray-500'
-                      }`}>
-                      Import Files & Documents
-                    </div>
-                    {!(fileContentType === 'files' || fileContentType === 'both') && (
-                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Not available</span>
-                    )}
-                  </div>
-                  <div className={`text-sm ml-8 ${fileContentType === 'files' || fileContentType === 'both' ? 'text-gray-600' : 'text-gray-400'
-                    }`}>
-                    Restore documents, profiles, waiting room files, and archives with automatic directory creation.
-                    {importOptions.importFiles && availableFiles.length > 0 && (
-                      <div className="mt-1 text-green-600 font-medium">
-                        {availableFiles.length} categories available • {selectedFiles.size} selected
-                      </div>
-                    )}
-                  </div>
-
-                  {importOptions.importFiles && availableFiles.length > 0 && (
-                    <button
-                      onClick={() => setShowFileSelector(!showFileSelector)}
-                      className="ml-8 mt-2 flex items-center space-x-2 text-sm text-green-600 hover:text-green-800 font-medium"
-                    >
-                      <span>{showFileSelector ? 'Hide File Selection' : 'Select File Categories'}</span>
-                      {showFileSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                  )}
-                </div>
-                <label className={`relative inline-flex items-center cursor-pointer ${!(fileContentType === 'files' || fileContentType === 'both') ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}>
-                  <input
-                    type="checkbox"
-                    checked={importOptions.importFiles}
-                    onChange={() => fileContentType === 'files' || fileContentType === 'both' ? handleOptionChange('importFiles') : null}
-                    className="sr-only peer"
-                    disabled={importing || !(fileContentType === 'files' || fileContentType === 'both')}
-                  />
-                  <div className={`w-12 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${fileContentType === 'files' || fileContentType === 'both'
-                    ? 'bg-gray-200 peer-checked:bg-green-600 after:border-gray-300'
-                    : 'bg-gray-100 after:border-gray-200'
-                    }`}></div>
-                </label>
-              </div>
-
-              <div className="flex items-start justify-between p-4 border border-amber-200 rounded-xl hover:border-amber-300 transition-colors">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <AlertCircle className="w-5 h-5 text-amber-600" />
-                    <div className="font-semibold text-gray-900">Duplicate Data Handling</div>
-                  </div>
-                  <div className="text-sm text-gray-600 ml-8">
-                    {importOptions.overwriteExisting
-                      ? "Replace existing records and files when duplicates are found."
-                      : "Skip existing records and files, only add new data."
-                    }
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={importOptions.overwriteExisting}
-                    onChange={() => handleOptionChange('overwriteExisting')}
-                    className="sr-only peer"
-                    disabled={importing}
-                  />
-                  <div className="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
-                </label>
-              </div>
-            </div>
-
-            <TableSelector />
-            <FileSelector />
-          </div>
-        )}
-
-        {file && fileContentType && (
-          <div className="max-w-4xl mx-auto">
-           
-            
-
-            {/* Import Cards - Styled like Backup Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {/* Database Import Card */}
-              <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('database') || isSubmitting
-                ? 'border-gray-200 opacity-50 cursor-not-allowed'
-                : 'border-blue-200 hover:border-blue-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
-                }`}
-                onClick={() => !isImportDisabled('database') && !isSubmitting && handleImport('database')}
-              >
-                <div className="flex flex-col items-center text-center h-full">
-                  <div className="p-4 bg-blue-100 rounded-2xl mb-4">
-                    <Database className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Database Import</h3>
-                  <p className="text-gray-600 mb-4 flex-1">
-                    Import database tables and records only
-                  </p>
-                  <div className="w-full space-y-3">
-                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                      <div className="text-blue-700 font-semibold text-sm">
-                        {selectedTables.size > 0
-                          ? `${selectedTables.size} tables selected`
-                          : 'No tables selected'
-                        }
-                      </div>
-                    </div>
-                    <button
-                      disabled={isImportDisabled('database') || isSubmitting}
-                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('database') || isSubmitting
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
-                        }`}
-                    >
-                      {isSubmitting ? 'Importing...' : 'Start Database Import'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Files Import Card */}
-              <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('files') || isSubmitting
-                ? 'border-gray-200 opacity-50 cursor-not-allowed'
-                : 'border-green-200 hover:border-green-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
-                }`}
-                onClick={() => !isImportDisabled('files') && !isSubmitting && handleImport('files')}
-              >
-                <div className="flex flex-col items-center text-center h-full">
-                  <div className="p-4 bg-green-100 rounded-2xl mb-4">
-                    <HardDrive className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Files & Documents Import</h3>
-                  <p className="text-gray-600 mb-4 flex-1">
-                    Import documents, files, and attachments only
-                  </p>
-                  <div className="w-full space-y-3">
-                    <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                      <div className="text-green-700 font-semibold text-sm">
-                        {selectedFiles.size > 0
-                          ? `${selectedFiles.size} categories selected`
-                          : 'No categories selected'
-                        }
-                      </div>
-                    </div>
-                    <button
-                      disabled={isImportDisabled('files') || isSubmitting}
-                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('files') || isSubmitting
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl'
-                        }`}
-                    >
-                      {isSubmitting ? 'Importing...' : 'Start Files Import'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Complete System Import Card */}
-              <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('full') || isSubmitting
-                ? 'border-gray-200 opacity-50 cursor-not-allowed'
-                : 'border-purple-200 hover:border-purple-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
-                }`}
-                onClick={() => !isImportDisabled('full') && !isSubmitting && handleImport('full')}
-              >
-                <div className="flex flex-col items-center text-center h-full">
-                  <div className="p-4 bg-purple-100 rounded-2xl mb-4">
-                    <Server className="w-8 h-8 text-purple-600" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Complete System Import</h3>
-                  <p className="text-gray-600 mb-4 flex-1">
-                    Import both database and files for complete system restoration
-                  </p>
-                  <div className="w-full space-y-3">
-                    <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                      <div className="text-purple-700 font-semibold text-sm">
-                        {importOptions.importDatabase ? `${selectedTables.size} tables` : ''}
-                        {importOptions.importDatabase && importOptions.importFiles ? ' + ' : ''}
-                        {importOptions.importFiles ? `${selectedFiles.size} categories` : ''}
-                        {!importOptions.importDatabase && !importOptions.importFiles ? 'Nothing selected' : ''}
-                      </div>
-                    </div>
-                    <button
-                      disabled={isImportDisabled('full') || isSubmitting}
-                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('full') || isSubmitting
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
-                        }`}
-                    >
-                      {isSubmitting ? 'Importing...' : 'Start Full System Import'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
     </div>
   );
 };
