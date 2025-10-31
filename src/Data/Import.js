@@ -5,6 +5,7 @@ import {
   Archive, HardDrive, CloudUpload, X, Loader, Search, FileSearch,
   CheckCircle2, FileArchive, Shield, File, FileText
 } from 'lucide-react';
+import Popup from '../Components/Popup';
 
 const Import = () => {
   const [importing, setImporting] = useState(false);
@@ -13,7 +14,7 @@ const Import = () => {
   const [progress, setProgress] = useState(0);
   const [importOptions, setImportOptions] = useState({
     importDatabase: true,
-    importFiles: false,
+    importFiles: true,
     overwriteExisting: false
   });
   const [availableTables, setAvailableTables] = useState([]);
@@ -29,6 +30,11 @@ const Import = () => {
   const [successData, setSuccessData] = useState({});
   const [fileContentType, setFileContentType] = useState(null);
   const [fileStructure, setFileStructure] = useState({});
+  const [validationDetails, setValidationDetails] = useState(null);
+
+  // Popup state management
+  const [popupMessage, setPopupMessage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -38,53 +44,55 @@ const Import = () => {
     return localStorage.getItem('tokenKey') || localStorage.getItem('authToken');
   };
 
+  // Popup function like in Branch component
+  const showPopup = (message, type = 'info') => {
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+      }
+    });
+  };
+
   const handleFileSelect = async (selectedFile) => {
     if (!selectedFile) return;
 
     setFileError('');
     setFileContentType(null);
     setFileStructure({});
+    setValidationDetails(null);
+    setAvailableTables([]);
+    setSelectedTables(new Set());
+    setAvailableFiles([]);
+    setSelectedFiles(new Set());
 
     if (!selectedFile.name.toLowerCase().endsWith('.zip')) {
       setFileError('Please select a ZIP file exported from DMS system.');
-      setStatus({
-        type: 'error',
-        message: 'Invalid file type. Please select a ZIP file.'
-      });
+      showPopup('Invalid file type. Please select a ZIP file.', 'error');
       return;
     }
 
     const maxSize = 100 * 1024 * 1024 * 1024;
     if (selectedFile.size > maxSize) {
       setFileError('File size exceeds 100GB limit.');
-      setStatus({
-        type: 'error',
-        message: 'File too large. Maximum size is 100GB.'
-      });
+      showPopup('File too large. Maximum size is 100GB.', 'error');
       return;
     }
 
     if (selectedFile.size === 0) {
       setFileError('File is empty.');
-      setStatus({
-        type: 'error',
-        message: 'The selected file is empty.'
-      });
+      showPopup('The selected file is empty.', 'error');
       return;
     }
 
     console.log('Selected file:', selectedFile.name, 'Size:', formatFileSize(selectedFile.size));
 
     setFile(selectedFile);
-    setStatus({
-      type: 'info',
-      message: `File selected: ${selectedFile.name} (${formatFileSize(selectedFile.size)})`
-    });
-    setSelectedTables(new Set());
-    setAvailableTables([]);
-    setSelectedFiles(new Set());
-    setAvailableFiles([]);
-    setImportResults(null);
+    // setStatus({
+    //   type: 'info',
+    //   message: `File selected: ${selectedFile.name} (${formatFileSize(selectedFile.size)}) - Validating...`
+    // });
 
     await validateFile(selectedFile);
   };
@@ -123,10 +131,7 @@ const Import = () => {
 
   const validateFile = async (fileToValidate) => {
     try {
-      setStatus({
-        type: 'info',
-        message: 'Validating file structure...'
-      });
+      
 
       const token = getAuthToken();
       const formData = new FormData();
@@ -136,6 +141,8 @@ const Import = () => {
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
+
+      console.log('Sending validation request for file:', fileToValidate.name);
 
       const response = await fetch(`${API_BASE_URL}/import/validate`, {
         method: 'POST',
@@ -153,6 +160,8 @@ const Import = () => {
 
       const result = await response.json();
 
+      console.log('Validation response:', result);
+
       if (result.success) {
         const details = result.details || {};
         const tables = details.availableTables || [];
@@ -161,32 +170,43 @@ const Import = () => {
         const hasFiles = details.hasFiles || false;
         const fileStructure = details.fileStructure || {};
 
+        console.log('Validation details:', details);
+
         let contentType = 'unknown';
-        if (hasDatabase && hasFiles) contentType = 'both';
-        else if (hasDatabase) contentType = 'database';
-        else if (hasFiles) contentType = 'files';
+        if (hasDatabase && hasFiles) {
+          contentType = 'both';
+        } else if (hasDatabase) {
+          contentType = 'database';
+        } else if (hasFiles) {
+          contentType = 'files';
+        }
+
         setFileContentType(contentType);
         setFileStructure(fileStructure);
+        setValidationDetails(details);
 
+        // Auto-set import options based on content type
         setImportOptions(prev => ({
           ...prev,
           importDatabase: hasDatabase,
           importFiles: hasFiles
         }));
 
-        let message = `✅ File validated successfully! `;
-        if (hasDatabase) message += `Found ${tables.length} tables. `;
-        if (hasFiles) message += `Contains files. `;
+        // Build the success message for popup
+        let popupMessage = `✅ File validated successfully! `;
+        if (hasDatabase) popupMessage += `Found ${tables.length} tables. `;
+        if (hasFiles) popupMessage += `Found file system content (${files.length} categories). `;
+        if (hasDatabase && hasFiles) popupMessage += `Complete system backup detected.`;
 
-        setStatus({
-          type: 'success',
-          message: message,
-          details: details
-        });
+        // Show success popup
+        showPopup(popupMessage, 'success');
+
+        
 
         if (tables.length > 0) {
           setAvailableTables(tables);
           setSelectedTables(new Set(tables));
+          console.log('Tables available:', tables);
         } else {
           setAvailableTables([]);
           setSelectedTables(new Set());
@@ -195,19 +215,24 @@ const Import = () => {
         if (files.length > 0) {
           setAvailableFiles(files);
           setSelectedFiles(new Set(files));
+          console.log('File categories available:', files);
         } else {
           setAvailableFiles([]);
           setSelectedFiles(new Set());
         }
+
       } else {
         throw new Error(result.message || 'File validation failed');
       }
     } catch (error) {
       console.error('Validation error:', error);
+      const errorMessage = `❌ Validation failed: ${error.message}`;
       setStatus({
         type: 'error',
-        message: `❌ Validation failed: ${error.message}`
+        message: errorMessage
       });
+      // Show error in popup too
+      showPopup(errorMessage, 'error');
       setFile(null);
       setFileError(error.message);
       setFileContentType(null);
@@ -235,37 +260,52 @@ const Import = () => {
 
   const handleImport = async (importType = 'full') => {
     if (!file) {
-      setStatus({
-        type: 'error',
-        message: '❌ Please select a file to import.'
-      });
+      showPopup('Please select a file to import.', 'warning');
       return;
     }
 
-    if (importType === 'database' && (!importOptions.importDatabase || selectedTables.size === 0)) {
-      setStatus({
-        type: 'error',
-        message: '❌ Please select at least one table to import for database import.'
-      });
+    // Determine what to import based on type and available content
+    let importDatabase = false;
+    let importFiles = false;
+    let tablesToImport = [];
+    let filesToImport = [];
+
+    switch (importType) {
+      case 'database':
+        importDatabase = importOptions.importDatabase && selectedTables.size > 0;
+        tablesToImport = Array.from(selectedTables);
+        break;
+
+      case 'files':
+        importFiles = importOptions.importFiles && selectedFiles.size > 0;
+        filesToImport = Array.from(selectedFiles);
+        break;
+
+      case 'full':
+        importDatabase = importOptions.importDatabase;
+        importFiles = importOptions.importFiles;
+        tablesToImport = importDatabase ? Array.from(selectedTables) : [];
+        filesToImport = importFiles ? Array.from(selectedFiles) : [];
+        break;
+    }
+
+    // Validation checks with popup messages
+    if (importDatabase && tablesToImport.length === 0) {
+      showPopup('Please select at least one table to import for database import.', 'warning');
       return;
     }
 
-    if (importType === 'files' && (!importOptions.importFiles || selectedFiles.size === 0)) {
-      setStatus({
-        type: 'error',
-        message: '❌ Please select at least one file category to import for file import.'
-      });
+    if (importFiles && filesToImport.length === 0) {
+      showPopup('Please select at least one file category to import for file import.', 'warning');
       return;
     }
 
-    if (importType === 'full' && ((importOptions.importDatabase && selectedTables.size === 0) || (importOptions.importFiles && selectedFiles.size === 0))) {
-      setStatus({
-        type: 'error',
-        message: '❌ Please configure import options properly.'
-      });
+    if (!importDatabase && !importFiles) {
+      showPopup('Please enable and select at least one table or file category to import.', 'warning');
       return;
     }
 
+    setIsSubmitting(true);
     setImporting(true);
     setImportResults(null);
     const progressInterval = simulateProgress();
@@ -276,29 +316,27 @@ const Import = () => {
       formData.append('file', file);
 
       const params = new URLSearchParams();
-
-      if (importType === 'database') {
-        params.append('importDatabase', 'true');
-        params.append('importFiles', 'false');
-      } else if (importType === 'files') {
-        params.append('importDatabase', 'false');
-        params.append('importFiles', 'true');
-      } else {
-        params.append('importDatabase', importOptions.importDatabase.toString());
-        params.append('importFiles', importOptions.importFiles.toString());
-      }
-
+      params.append('importDatabase', importDatabase.toString());
+      params.append('importFiles', importFiles.toString());
       params.append('overwriteExisting', importOptions.overwriteExisting.toString());
 
-      if (importOptions.importDatabase && selectedTables.size > 0) {
-        params.append('selectedTables', Array.from(selectedTables).join(','));
+      // Only add selected tables if we're importing database
+      if (importDatabase && tablesToImport.length > 0) {
+        params.append('selectedTables', tablesToImport.join(','));
       }
 
-      if (importOptions.importFiles && selectedFiles.size > 0) {
-        params.append('selectedFiles', Array.from(selectedFiles).join(','));
+      // Only add selected files if we're importing files
+      if (importFiles && filesToImport.length > 0) {
+        params.append('selectedFiles', filesToImport.join(','));
       }
 
-      console.log('Starting import with params:', params.toString());
+      console.log('Starting import with params:', {
+        importDatabase,
+        importFiles,
+        tablesToImport,
+        filesToImport,
+        overwrite: importOptions.overwriteExisting
+      });
 
       const headers = {};
       if (token) {
@@ -332,8 +370,8 @@ const Import = () => {
           filesImported: result.filesImportedCount || 0,
           filesReplaced: result.filesReplaced || 0,
           filesSkipped: result.filesSkipped || 0,
-          selectedTables: result.selectedTables || Array.from(selectedTables),
-          selectedFiles: result.selectedFiles || Array.from(selectedFiles),
+          selectedTables: result.selectedTables || tablesToImport,
+          selectedFiles: result.selectedFiles || filesToImport,
           source: result.metadata?.databaseName || 'DMS System',
           period: result.metadata?.dateRange || 'Unknown period',
           timestamp: new Date().toLocaleString(),
@@ -353,13 +391,38 @@ const Import = () => {
     } catch (error) {
       console.error('Import error:', error);
       setProgress(0);
-      setStatus({
-        type: 'error',
-        message: `❌ Import failed: ${error.message}`
-      });
+      showPopup(`Import failed: ${error.message}`, 'error');
     } finally {
       clearInterval(progressInterval);
-      setTimeout(() => setImporting(false), 1000);
+      setTimeout(() => {
+        setImporting(false);
+        setIsSubmitting(false);
+      }, 1000);
+    }
+  };
+
+  // Reset function to clear all states after import
+  const resetImportState = () => {
+    setFile(null);
+    setStatus({});
+    setProgress(0);
+    setAvailableTables([]);
+    setSelectedTables(new Set());
+    setAvailableFiles([]);
+    setSelectedFiles(new Set());
+    setImportResults(null);
+    setFileError('');
+    setFileContentType(null);
+    setValidationDetails(null);
+    setShowTableSelector(false);
+    setShowFileSelector(false);
+    setImportOptions({
+      importDatabase: true,
+      importFiles: true,
+      overwriteExisting: false
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -437,59 +500,32 @@ const Import = () => {
     setImportResults(null);
     setFileError('');
     setFileContentType(null);
+    setValidationDetails(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const isImportDisabled = (importType) => {
-    if (importing || !file || !fileContentType) return true;
+    if (importing || !file) return true;
+
+    const hasDatabaseContent = availableTables.length > 0;
+    const hasFilesContent = availableFiles.length > 0;
 
     switch (importType) {
       case 'database':
-        return fileContentType !== 'database' && fileContentType !== 'both' || selectedTables.size === 0;
+        return !(importOptions.importDatabase && hasDatabaseContent && selectedTables.size > 0);
+
       case 'files':
-        return fileContentType !== 'files' && fileContentType !== 'both' || selectedFiles.size === 0;
+        return !(importOptions.importFiles && hasFilesContent && selectedFiles.size > 0);
+
       case 'full':
-        if (fileContentType !== 'both') return true;
-        if (importOptions.importDatabase && selectedTables.size === 0) return true;
-        if (importOptions.importFiles && selectedFiles.size === 0) return true;
-        return false;
+        const dbReady = importOptions.importDatabase && hasDatabaseContent && selectedTables.size > 0;
+        const filesReady = importOptions.importFiles && hasFilesContent && selectedFiles.size > 0;
+        return !(dbReady || filesReady);
+
       default:
         return true;
-    }
-  };
-
-  const getButtonVariant = (importType) => {
-    const isDisabled = isImportDisabled(importType);
-
-    switch (importType) {
-      case 'database':
-        return {
-          bg: isDisabled ? 'bg-gray-100' : 'bg-blue-50',
-          border: isDisabled ? 'border-gray-300' : 'border-blue-200 hover:border-blue-300',
-          text: isDisabled ? 'text-gray-500' : 'text-blue-900',
-          icon: isDisabled ? 'text-gray-400' : 'text-blue-600',
-          hover: isDisabled ? '' : 'hover:bg-blue-100 hover:shadow-lg transform hover:-translate-y-1'
-        };
-      case 'files':
-        return {
-          bg: isDisabled ? 'bg-gray-100' : 'bg-green-50',
-          border: isDisabled ? 'border-gray-300' : 'border-green-200 hover:border-green-300',
-          text: isDisabled ? 'text-gray-500' : 'text-green-900',
-          icon: isDisabled ? 'text-gray-400' : 'text-green-600',
-          hover: isDisabled ? '' : 'hover:bg-green-100 hover:shadow-lg transform hover:-translate-y-1'
-        };
-      case 'full':
-        return {
-          bg: isDisabled ? 'bg-gray-100' : 'bg-purple-50',
-          border: isDisabled ? 'border-gray-300' : 'border-purple-200 hover:border-purple-300',
-          text: isDisabled ? 'text-gray-500' : 'text-purple-900',
-          icon: isDisabled ? 'text-gray-400' : 'text-purple-600',
-          hover: isDisabled ? '' : 'hover:bg-purple-100 hover:shadow-lg transform hover:-translate-y-1'
-        };
-      default:
-        return {};
     }
   };
 
@@ -551,10 +587,6 @@ const Import = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {showDatabaseSection && (
                 <>
-                  {/* <div className="text-center p-3 bg-blue-50 rounded-xl border border-blue-200">
-                    <div className="text-blue-600 text-sm font-semibold mb-1">Tables</div>
-                    <div className="text-2xl font-bold text-blue-700">{actualTableCount}</div>
-                  </div> */}
                   {successData.databaseRecords > 0 && (
                     <div className="text-center p-3 bg-indigo-50 rounded-xl border border-indigo-200">
                       <div className="text-indigo-600 text-sm font-semibold mb-1">Records</div>
@@ -565,16 +597,7 @@ const Import = () => {
               )}
               {showFilesSection && (
                 <>
-                  {/* <div className="text-center p-3 bg-green-50 rounded-xl border border-green-200">
-                    <div className="text-green-600 text-sm font-semibold mb-1">Files</div>
-                    <div className="text-2xl font-bold text-green-700">{totalFilesProcessed}</div>
-                  </div>
-                  <div className="text-center p-3 bg-amber-50 rounded-xl border border-amber-200">
-                    <div className="text-amber-600 text-sm font-semibold mb-1">Duplicates</div>
-                    <div className={`text-lg font-bold ${successData.overwrite ? 'text-amber-600' : 'text-green-600'}`}>
-                      {successData.overwrite ? 'Replaced' : 'Skipped'}
-                    </div>
-                  </div> */}
+                  {/* File stats can be added here if needed */}
                 </>
               )}
             </div>
@@ -775,12 +798,23 @@ const Import = () => {
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex gap-3">
             <button
-              onClick={() => setShowSuccessPopup(false)}
-              className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              onClick={() => {
+                setShowSuccessPopup(false);
+                resetImportState();
+              }}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
             >
               Continue to DMS
+            </button>
+            <button
+              onClick={() => {
+                setShowSuccessPopup(false);
+              }}
+              className="px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all duration-300"
+            >
+              Import Another
             </button>
           </div>
         </div>
@@ -1004,7 +1038,7 @@ const Import = () => {
                     {fileCategoryNames[category] || category}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {fileStructure[category]?.fileCount || 0}
+                    {fileStructure[category]?.fileCount || 0} files
                   </div>
                 </div>
               </div>
@@ -1022,27 +1056,37 @@ const Import = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/30 py-8 px-4">
+    <div className="bg-white p-4 rounded-lg shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br bg-slate-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
+
+        {/* Popup Component */}
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={popupMessage.onClose}
+          />
+        )}
 
         <SuccessPopup />
 
-        <div className="text-center mb-12">
+        <div className="text-center mb-4">
           <div className="flex items-center justify-center mb-6">
-            <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200/50">
-              <CloudUpload className="w-10 h-10 text-green-600" />
+            <div className="p-2 bg-white rounded-2xl shadow-lg border border-gray-200/50">
+              <CloudUpload className="w-8 h-8 text-green-600" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
             DMS Data Import
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Restore your Document Management System from backup files. Supports files up to 100GB with selective table and file import.
           </p>
         </div>
 
         {importing && (
-          <div className="mb-8 bg-white rounded-2xl shadow-xl border border-green-200 p-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
+          <div className="mb-4 bg-white rounded-2xl shadow-xl border border-green-200 p-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-green-100 rounded-lg">
@@ -1075,6 +1119,20 @@ const Import = () => {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Status Messages */}
+        {status.message && (
+          <div className={`mb-6 p-4 rounded-xl border max-w-4xl mx-auto ${status.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+            status.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+              'bg-blue-50 border-blue-200 text-blue-800'
+            }`}>
+            <div className="flex items-center space-x-2">
+              {status.type === 'error' && <AlertCircle className="w-5 h-5" />}
+              {status.type === 'success' && <CheckCircle className="w-5 h-5" />}
+              <span className="font-medium">{status.message}</span>
             </div>
           </div>
         )}
@@ -1331,84 +1389,127 @@ const Import = () => {
         )}
 
         {file && fileContentType && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
-            <button
-              onClick={() => handleImport('database')}
-              disabled={isImportDisabled('database')}
-              className={`flex flex-col items-center p-6 rounded-2xl border-2 transition-all duration-300 ${getButtonVariant('database').bg + ' ' +
-                getButtonVariant('database').border + ' ' +
-                getButtonVariant('database').hover + ' ' +
-                (isImportDisabled('database') ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')
-                }`}
-            >
-              <Database className={`w-10 h-10 mb-3 ${getButtonVariant('database').icon}`} />
-              <span className={`font-semibold text-lg ${getButtonVariant('database').text}`}>
-                Database Only
-              </span>
-              <span className={`text-sm mt-2 text-center ${isImportDisabled('database') ? 'text-gray-400' : getButtonVariant('database').text.replace('900', '700')
-                }`}>
-                {selectedTables.size > 0
-                  ? `${selectedTables.size} tables selected`
-                  : 'No tables selected'
-                }
-              </span>
-              <span className={`text-xs mt-1 ${isImportDisabled('database') ? 'text-gray-400' : getButtonVariant('database').text.replace('900', '600')
-                }`}>
-                Import selected tables only
-              </span>
-            </button>
+          <div className="max-w-4xl mx-auto">
+           
+            
 
-            <button
-              onClick={() => handleImport('files')}
-              disabled={isImportDisabled('files')}
-              className={`flex flex-col items-center p-6 rounded-2xl border-2 transition-all duration-300 ${getButtonVariant('files').bg + ' ' +
-                getButtonVariant('files').border + ' ' +
-                getButtonVariant('files').hover + ' ' +
-                (isImportDisabled('files') ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')
+            {/* Import Cards - Styled like Backup Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Database Import Card */}
+              <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('database') || isSubmitting
+                ? 'border-gray-200 opacity-50 cursor-not-allowed'
+                : 'border-blue-200 hover:border-blue-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
                 }`}
-            >
-              <HardDrive className={`w-10 h-10 mb-3 ${getButtonVariant('files').icon}`} />
-              <span className={`font-semibold text-lg ${getButtonVariant('files').text}`}>
-                Files Only
-              </span>
-              <span className={`text-sm mt-2 text-center ${isImportDisabled('files') ? 'text-gray-400' : getButtonVariant('files').text.replace('900', '700')
-                }`}>
-                {selectedFiles.size > 0
-                  ? `${selectedFiles.size} categories selected`
-                  : 'No categories selected'
-                }
-              </span>
-              <span className={`text-xs mt-1 ${isImportDisabled('files') ? 'text-gray-400' : getButtonVariant('files').text.replace('900', '600')
-                }`}>
-                Import selected file categories
-              </span>
-            </button>
+                onClick={() => !isImportDisabled('database') && !isSubmitting && handleImport('database')}
+              >
+                <div className="flex flex-col items-center text-center h-full">
+                  <div className="p-4 bg-blue-100 rounded-2xl mb-4">
+                    <Database className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Database Import</h3>
+                  <p className="text-gray-600 mb-4 flex-1">
+                    Import database tables and records only
+                  </p>
+                  <div className="w-full space-y-3">
+                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                      <div className="text-blue-700 font-semibold text-sm">
+                        {selectedTables.size > 0
+                          ? `${selectedTables.size} tables selected`
+                          : 'No tables selected'
+                        }
+                      </div>
+                    </div>
+                    <button
+                      disabled={isImportDisabled('database') || isSubmitting}
+                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('database') || isSubmitting
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                        }`}
+                    >
+                      {isSubmitting ? 'Importing...' : 'Start Database Import'}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-            <button
-              onClick={() => handleImport('full')}
-              disabled={isImportDisabled('full')}
-              className={`flex flex-col items-center p-6 rounded-2xl border-2 transition-all duration-300 ${getButtonVariant('full').bg + ' ' +
-                getButtonVariant('full').border + ' ' +
-                getButtonVariant('full').hover + ' ' +
-                (isImportDisabled('full') ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')
+              {/* Files Import Card */}
+              <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('files') || isSubmitting
+                ? 'border-gray-200 opacity-50 cursor-not-allowed'
+                : 'border-green-200 hover:border-green-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
                 }`}
-            >
-              <Server className={`w-10 h-10 mb-3 ${getButtonVariant('full').icon}`} />
-              <span className={`font-semibold text-lg ${getButtonVariant('full').text}`}>
-                Complete System
-              </span>
-              <span className={`text-sm mt-2 text-center ${isImportDisabled('full') ? 'text-gray-400' : getButtonVariant('full').text.replace('900', '700')
-                }`}>
-                {selectedTables.size} tables + {selectedFiles.size} categories
-              </span>
-              <span className={`text-xs mt-1 ${isImportDisabled('full') ? 'text-gray-400' : getButtonVariant('full').text.replace('900', '600')
-                }`}>
-                Import everything selected
-              </span>
-            </button>
+                onClick={() => !isImportDisabled('files') && !isSubmitting && handleImport('files')}
+              >
+                <div className="flex flex-col items-center text-center h-full">
+                  <div className="p-4 bg-green-100 rounded-2xl mb-4">
+                    <HardDrive className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Files & Documents Import</h3>
+                  <p className="text-gray-600 mb-4 flex-1">
+                    Import documents, files, and attachments only
+                  </p>
+                  <div className="w-full space-y-3">
+                    <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                      <div className="text-green-700 font-semibold text-sm">
+                        {selectedFiles.size > 0
+                          ? `${selectedFiles.size} categories selected`
+                          : 'No categories selected'
+                        }
+                      </div>
+                    </div>
+                    <button
+                      disabled={isImportDisabled('files') || isSubmitting}
+                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('files') || isSubmitting
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl'
+                        }`}
+                    >
+                      {isSubmitting ? 'Importing...' : 'Start Files Import'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Complete System Import Card */}
+              <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${isImportDisabled('full') || isSubmitting
+                ? 'border-gray-200 opacity-50 cursor-not-allowed'
+                : 'border-purple-200 hover:border-purple-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer'
+                }`}
+                onClick={() => !isImportDisabled('full') && !isSubmitting && handleImport('full')}
+              >
+                <div className="flex flex-col items-center text-center h-full">
+                  <div className="p-4 bg-purple-100 rounded-2xl mb-4">
+                    <Server className="w-8 h-8 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Complete System Import</h3>
+                  <p className="text-gray-600 mb-4 flex-1">
+                    Import both database and files for complete system restoration
+                  </p>
+                  <div className="w-full space-y-3">
+                    <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                      <div className="text-purple-700 font-semibold text-sm">
+                        {importOptions.importDatabase ? `${selectedTables.size} tables` : ''}
+                        {importOptions.importDatabase && importOptions.importFiles ? ' + ' : ''}
+                        {importOptions.importFiles ? `${selectedFiles.size} categories` : ''}
+                        {!importOptions.importDatabase && !importOptions.importFiles ? 'Nothing selected' : ''}
+                      </div>
+                    </div>
+                    <button
+                      disabled={isImportDisabled('full') || isSubmitting}
+                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isImportDisabled('full') || isSubmitting
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
+                        }`}
+                    >
+                      {isSubmitting ? 'Importing...' : 'Start Full System Import'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };
