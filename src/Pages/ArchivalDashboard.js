@@ -189,6 +189,64 @@ const ArchiveDashboard = () => {
     }
   }
 
+  const handleExport = async (job) => {
+    try {
+      const token = localStorage.getItem("tokenKey");
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.get(`${API_HOST}/archiveJob/export/${job.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: "blob", // because it's a CSV file
+      });
+
+      // ✅ Create file download
+      const blob = new Blob([response.data], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `archive_job_${job.id}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error("❌ Export failed:", error);
+    }
+  };
+
+  // 🟩 Handle Retry (POST)
+  const handleRetry = async (job) => {
+    try {
+      const token = localStorage.getItem("tokenKey");
+      if (!token) {
+        return;
+      }
+
+      const response = await axios.post(
+        `${API_HOST}/archiveJob/retry/${job.id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+      } else {
+        throw new Error("Retry request failed");
+      }
+    } catch (error) {
+      console.error("❌ Retry failed:", error);
+    }
+  };
+
+
   const getStatusDisplay = (job) => {
     const { status, totalDocuments, archivedDocuments } = job
     if (status === "FAILED") return `${status} (100%)`
@@ -579,10 +637,16 @@ const ArchiveDashboard = () => {
                           Documents
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Files
+                          Total Files
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                           Archived On
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          Export
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          Retry
                         </th>
                       </tr>
                     </thead>
@@ -609,6 +673,33 @@ const ArchiveDashboard = () => {
                           <td className="px-4 py-3 text-sm text-gray-700">{job.totalDocuments}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{job.totalFiles}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{formatDate(job.archivedDateTime)}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleExport(job);
+                              }}
+                              disabled={job.status !== "ARCHIVED"}
+                              className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition"
+                            >
+                              Export
+                            </button>
+                          </td>
+
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRetry(job);
+                              }}
+                              disabled={job.status !== "FAILED"}
+                              className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition"
+                            >
+                              Retry
+                            </button>
+                          </td>
+
+
                         </tr>
                       ))}
                     </tbody>
@@ -621,11 +712,10 @@ const ArchiveDashboard = () => {
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                       disabled={currentPage === 1}
-                      className={`px-4 py-2 rounded-md text-sm font-medium ${
-                        currentPage === 1
-                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
+                      className={`px-4 py-2 rounded-md text-sm font-medium ${currentPage === 1
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                        }`}
                     >
                       Previous
                     </button>
@@ -635,11 +725,10 @@ const ArchiveDashboard = () => {
                         <button
                           key={p}
                           onClick={() => setCurrentPage(p)}
-                          className={`px-3 py-1 rounded-md text-sm font-medium ${
-                            currentPage === p
-                              ? "bg-blue-600 text-white"
-                              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
-                          }`}
+                          className={`px-3 py-1 rounded-md text-sm font-medium ${currentPage === p
+                            ? "bg-blue-600 text-white"
+                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                            }`}
                         >
                           {p}
                         </button>
@@ -649,11 +738,10 @@ const ArchiveDashboard = () => {
                     <button
                       onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className={`px-4 py-2 rounded-md text-sm font-medium ${
-                        currentPage === totalPages
-                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
+                      className={`px-4 py-2 rounded-md text-sm font-medium ${currentPage === totalPages
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                        }`}
                     >
                       Next
                     </button>
@@ -687,10 +775,10 @@ const ArchiveDashboard = () => {
                           Department
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Versions
+                          Total Versions
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Files
+                          Total Files
                         </th>
                       </tr>
                     </thead>
@@ -737,7 +825,7 @@ const ArchiveDashboard = () => {
                           Scheuled On
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Files
+                          Total Files
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                           Archived On
