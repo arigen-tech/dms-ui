@@ -6,6 +6,7 @@ import {
   CheckCircle2, FileArchive, Shield, File, FileText
 } from 'lucide-react';
 import Popup from '../Components/Popup';
+import { API_HOST } from '../API/apiConfig';
 
 const Import = () => {
   const [importing, setImporting] = useState(false);
@@ -36,9 +37,7 @@ const Import = () => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fileInputRef = useRef(null);
-
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  
 
   const getAuthToken = () => {
     return localStorage.getItem('tokenKey') || localStorage.getItem('authToken');
@@ -144,7 +143,7 @@ const Import = () => {
 
       console.log('Sending validation request for file:', fileToValidate.name);
 
-      const response = await fetch(`${API_BASE_URL}/import/validate`, {
+      const response = await fetch(`${API_HOST}/import/validate`, {
         method: 'POST',
         body: formData,
         headers: headers
@@ -343,7 +342,7 @@ const Import = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}/import/restore?${params.toString()}`, {
+      const response = await fetch(`${API_HOST}/import/restore?${params.toString()}`, {
         method: 'POST',
         body: formData,
         headers: headers
