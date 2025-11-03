@@ -692,7 +692,7 @@ const ArchiveDashboard = () => {
                                 e.stopPropagation();
                                 handleRetry(job);
                               }}
-                              disabled={job.status !== "FAILED"}
+                              disabled={job.status === "ARCHIVED" || job.status === "IN_PROGRESS" || job.status === "WAITING" || job.status === undefined}
                               className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition"
                             >
                               Retry
