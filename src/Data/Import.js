@@ -38,7 +38,7 @@ const Import = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   
-
+  const fileInputRef = useRef(null);
   const getAuthToken = () => {
     return localStorage.getItem('tokenKey') || localStorage.getItem('authToken');
   };
