@@ -1,0 +1,27 @@
+{
+  "login": {
+    "title": "Login",
+    "email": "Email",
+    "password": "Password",
+    "captcha": "Captcha",
+    "requestOtp": "Request OTP",
+    "otpSent": "OTP sent to your mobile number",
+    "enterOtp": "Enter OTP",
+    "verify": "Verify",
+    "resendOtp": "Resend OTP",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "language": "Language",
+    "back": "Back",
+    "loginSuccess": "Login successful",
+    "invalidCredentials": "Invalid credentials"
+  },
+  "dashboard": {
+    "title": "DASHBOARD",
+    "selectYear": "Select Year:",
+    "monthlyStatus": "Monthly Documents Status",
+    "topOffice": "Top 10 Offices",
+    "topFileTypes": "Top 10 File Types",
+    "userStatus": "Users Status"
+  }
+}

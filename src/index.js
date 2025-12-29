@@ -4,6 +4,12 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Apply saved language preference on startup
+const savedLanguage = localStorage.getItem('uiLanguage');
+if (!savedLanguage) {
+  localStorage.setItem('uiLanguage', 'en'); // Default to English
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

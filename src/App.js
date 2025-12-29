@@ -6,6 +6,7 @@ import ChatBotPopup from "./Components/ChatBotPopup";
 import PageNotFound from "./Pages/PageNotFound";
 import LoginPage from "./Pages/LoginPage";
 import Notification from "./Data/Notification";
+import { LanguageProvider } from "./i18n/LanguageContext";
 const Dashboard = React.lazy(() => import("./Pages/Dashboard"));
 const Inbox = React.lazy(() => import("./Pages/Inbox"));
 const Users = React.lazy(() => import("./Pages/Users"));
@@ -57,7 +58,9 @@ const Imports =React.lazy(() => import( "./Pages/Imports"));
 
 function App() {
   return (
+     
     <MenuProvider>
+      <LanguageProvider>
       <Router>
         <ChatBotPopup />
         <Suspense fallback={<div>Loading...</div>}>
@@ -126,7 +129,9 @@ function App() {
           </Routes>
         </Suspense>
       </Router>
+       </LanguageProvider>
     </MenuProvider>
+    
   );
 }
 

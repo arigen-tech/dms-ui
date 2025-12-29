@@ -13,16 +13,17 @@ import {
 } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { LOGIN_API, LOGIN_API_verify, FORGATE_PASS_API, VERIFY_FORGATE_OTP, RESET_PASS_API } from "../API/apiConfig";
+import { LOGIN_API, LOGIN_API_verify, FORGATE_PASS_API, VERIFY_FORGATE_OTP, RESET_PASS_API, API_HOST } from "../API/apiConfig";
 import image from "../Assets/image.png";
 import logo2 from "../Assets/logo2.jpg";
 import { jwtDecode } from "jwt-decode";
+import AutoTranslate from "../i18n/AutoTranslate";
+import { useLanguage } from "../i18n/LanguageContext";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isOtpRequested, setIsOtpRequested] = useState(false);
   const [currentView, setCurrentView] = useState("login");
-  const [otp, setOtp] = useState("");
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -51,12 +52,48 @@ const LoginPage = () => {
   const [resendTimer, setResendTimer] = useState(30);
   const [showTooltip, setShowTooltip] = useState(false);
 
+  // Use language context
+  const { 
+    availableLanguages, 
+    isLoadingLanguages, 
+    currentLanguage,
+    changeLanguage 
+  } = useLanguage();
+  
+  const [selectedLanguageId, setSelectedLanguageId] = useState(null);
+  
   const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const LENGTH = 5;
 
+  // Load languages and set selected language
   useEffect(() => {
     setCaptcha(generateCaptcha());
-  }, []);
+    
+    // Set selected language based on current language in context
+    if (availableLanguages.length > 0) {
+      // First try to use saved language from localStorage
+      const savedLang = localStorage.getItem('uilanguage');
+      
+      if (savedLang) {
+        const savedLangObj = availableLanguages.find(l => l.code === savedLang);
+        if (savedLangObj) {
+          setSelectedLanguageId(savedLangObj.id);
+          // Also update context if different
+          if (currentLanguage !== savedLang) {
+            changeLanguage(savedLang);
+          }
+        }
+      }
+      
+      // If no saved language or not found, use English
+      if (!selectedLanguageId) {
+        const englishLang = availableLanguages.find(l => l.code === 'en');
+        if (englishLang) {
+          setSelectedLanguageId(englishLang.id);
+        }
+      }
+    }
+  }, [availableLanguages]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -136,7 +173,6 @@ const LoginPage = () => {
   const resetToLogin = () => {
     setCurrentView("login");
     setIsOtpRequested(false);
-    setOtp("");
     setForgotPasswordData({
       identifier: "",
       identifierType: "email",
@@ -158,7 +194,6 @@ const LoginPage = () => {
       setCurrentView("forgot-otp");
     } else {
       setIsOtpRequested(false);
-      setOtp("");
       setOtpTimer(300);
       setCanResendOtp(false);
       setResendTimer(30);
@@ -198,7 +233,6 @@ const LoginPage = () => {
     });
   };
 
-
   const handleOtpChange = (e, index) => {
     const { value } = e.target;
     const digits = value.replace(/\D/g, "");
@@ -221,7 +255,6 @@ const LoginPage = () => {
     }
   };
 
-
   const handleKeyDown = (e, index) => {
     if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
       document.getElementById(`otp-${index - 1}`).focus();
@@ -241,7 +274,6 @@ const LoginPage = () => {
       }, 10);
     }
   };
-
 
   useEffect(() => {
     setForgotPasswordData(prev => ({
@@ -291,7 +323,6 @@ const LoginPage = () => {
     setForgotPasswordData((prev) => ({ ...prev, otp }));
   };
 
-
   const handleForgotKeyDown = (e, index) => {
     const key = e.key;
 
@@ -308,7 +339,6 @@ const LoginPage = () => {
     }
   };
 
-
   const handleForgotPaste = (e) => {
     e.preventDefault();
     const paste = e.clipboardData.getData("text").replace(/\D/g, "");
@@ -321,11 +351,9 @@ const LoginPage = () => {
     }
   };
 
-
   const handleCaptchaPaste = (e) => {
     e.preventDefault();
   };
-
 
   const initiateForgotPassword = async () => {
     const { identifier, identifierType } = forgotPasswordData;
@@ -381,10 +409,6 @@ const LoginPage = () => {
       setIsButtonDisabled(false);
     }
   };
-
-
-
-
 
   const verifyForgotPasswordOtp = async () => {
     if (!forgotPasswordData.otp) {
@@ -471,7 +495,6 @@ const LoginPage = () => {
     }
   };
 
-
   const clearOtpFields = () => {
     setOtpDigits(Array(6).fill(""));
   };
@@ -479,7 +502,6 @@ const LoginPage = () => {
   const clearForgotOtpFields = () => {
     setForgotOtpDigits(Array(6).fill(""));
   };
-
 
   const resendForgotPasswordOtp = async () => {
     if (!canResendOtp) return;
@@ -504,7 +526,7 @@ const LoginPage = () => {
     }
   };
 
-  // Existing login functions
+  // Request OTP function with languageId
   const requestOtp = async () => {
     if (!formData.username || !formData.password || !formData.captcha) {
       showAlert("Please fill in all fields before requesting OTP.");
@@ -524,6 +546,7 @@ const LoginPage = () => {
       const response = await axios.post(LOGIN_API, {
         email: formData.username,
         password: formData.password,
+        languageId: selectedLanguageId  // Send selected language ID
       });
 
       if (response.status === 200) {
@@ -555,6 +578,7 @@ const LoginPage = () => {
       const response = await axios.post(LOGIN_API, {
         email: formData.username,
         password: formData.password,
+        languageId: selectedLanguageId  // Send selected language ID
       });
 
       if (response.status === 200) {
@@ -570,6 +594,7 @@ const LoginPage = () => {
     }
   };
 
+  // Updated handleLogin function to save language code
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -599,7 +624,21 @@ const LoginPage = () => {
 
       if (response.status === 200) {
         setOtpDigits(Array(6).fill(""));
-        const { token, roles, currRoleId, name, id } = response.data;
+        const { token, roles, currRoleId, name, id, languageCode } = response.data;
+
+        // IMPORTANT: Save language preference BEFORE navigating
+        if (languageCode) {
+          console.log(`🔤 Login: Received languageCode: ${languageCode}`);
+          
+          // Update language in context - this will trigger translations
+          await changeLanguage(languageCode);
+          
+          // Also update dropdown selection
+          const selectedLang = availableLanguages.find(l => l.code === languageCode);
+          if (selectedLang) {
+            setSelectedLanguageId(selectedLang.id);
+          }
+        }
 
         const decodedToken = jwtDecode(token);
         const expirationTime = decodedToken.exp;
@@ -612,7 +651,6 @@ const LoginPage = () => {
         localStorage.setItem("currRoleId", currRoleId);
         localStorage.setItem("userId", id);
         localStorage.setItem("isTokenValid", "true");
-
 
         const redirectUrl = localStorage.getItem("redirectUrl");
         if (redirectUrl) {
@@ -629,7 +667,7 @@ const LoginPage = () => {
     }
   };
 
-
+  // Helper functions for view titles
   const getViewTitle = () => {
     switch (currentView) {
       case "forgot-password":
@@ -678,9 +716,6 @@ const LoginPage = () => {
             alt="AGT Document Management System"
             className="mx-auto w-86 object-cover mb-2"
           />
-          {/* <h2 className="text-lg text-blue-800 font-semibold">
-            Document Management System
-          </h2> */}
         </div>
 
         <div className="w-full max-w-lg bg-gray-50 rounded-lg shadow-lg border border-gray-200 p-4">
@@ -691,7 +726,7 @@ const LoginPage = () => {
                 className="flex items-center text-blue-600 hover:text-blue-700 transition-colors text-sm"
               >
                 <ArrowLeftIcon className="w-4 h-4 mr-1" />
-                Back
+                <AutoTranslate>Back</AutoTranslate>
               </button>
               {(currentView === "forgot-otp" || currentView === "reset-password" || isOtpRequested) && (
                 <div className="flex items-center text-sm text-gray-600">
@@ -705,23 +740,18 @@ const LoginPage = () => {
           <div className="mb-4 text-center">
             <h2 className={`text-xl font-bold ${currentView === "login" && !isOtpRequested ? "text-indigo-600" : "text-gray-900"
               }`}>
-              {getViewTitle()}
+              <AutoTranslate>{getViewTitle()}</AutoTranslate>
             </h2>
-            {/* <p className="text-gray-600 mt-1 text-md font-bold">
-              {getViewSubtitle()}
-            </p> */}
             <div className="flex items-center justify-between w-full">
-              {/* Centered text */}
               <p className="flex-1 text-center text-gray-600 mt-1 text-md font-bold">
-                {getViewSubtitle()}
+                <AutoTranslate>{getViewSubtitle()}</AutoTranslate>
               </p>
 
-              {/* "i" button on the right */}
               <div
                 className="relative"
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
-                onClick={() => setShowTooltip(!showTooltip)} // also supports click
+                onClick={() => setShowTooltip(!showTooltip)}
               >
                 <button
                   type="button"
@@ -730,15 +760,13 @@ const LoginPage = () => {
                   <InformationCircleIcon className="h-5 w-5" />
                 </button>
 
-                {/* Tooltip */}
                 {showTooltip && (
                   <div className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-1 shadow-lg z-10 whitespace-nowrap">
-                    This website is running on Release Version 1.20, which is currently under testing.                  
-                    </div>
+                    <AutoTranslate>This website is running on Release Version 1.20, which is currently under testing.</AutoTranslate>
+                  </div>
                 )}
               </div>
             </div>
-
           </div>
 
           {alertMessage && (
@@ -746,7 +774,45 @@ const LoginPage = () => {
               ? "bg-green-50 text-green-700 border-green-200"
               : "bg-red-50 text-red-700 border-red-200"
               }`}>
-              {alertMessage}
+              <AutoTranslate>{alertMessage}</AutoTranslate>
+            </div>
+          )}
+
+          {/* Language Dropdown */}
+          {currentView === "login" && !isOtpRequested && (
+            <div className="space-y-1 mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                <AutoTranslate>Language</AutoTranslate>
+              </label>
+              {isLoadingLanguages ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                  <span className="text-sm text-gray-500">
+                    <AutoTranslate>Loading languages...</AutoTranslate>
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={selectedLanguageId || ""}
+                  onChange={(e) => {
+                    const langId = e.target.value;
+                    const selectedLang = availableLanguages.find(l => l.id == langId);
+                    if (selectedLang) {
+                      setSelectedLanguageId(selectedLang.id);
+                      changeLanguage(selectedLang.code); // Update language in context
+                      console.log(`🔤 Language changed to: ${selectedLang.code}`);
+                    }
+                  }}
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                >
+                  <option value=""><AutoTranslate>Select Language</AutoTranslate></option>
+                  {availableLanguages.map((lang) => (
+                    <option key={lang.id} value={lang.id}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 
@@ -755,7 +821,7 @@ const LoginPage = () => {
             <form onSubmit={handleLogin} className="space-y-3">
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  Username
+                  <AutoTranslate>Username</AutoTranslate>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -775,7 +841,7 @@ const LoginPage = () => {
 
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  Password
+                  <AutoTranslate>Password</AutoTranslate>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -805,12 +871,13 @@ const LoginPage = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Captcha</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  <AutoTranslate>Captcha</AutoTranslate>
+                </label>
 
                 <div className="flex items-center space-x-2">
                   {/* CAPTCHA BOX */}
                   <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
-                    {/* Noisy Background */}
                     <div className="absolute inset-0 pointer-events-none">
                       <svg className="w-full h-full opacity-20">
                         <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1" />
@@ -819,7 +886,6 @@ const LoginPage = () => {
                       </svg>
                     </div>
 
-                    {/* CAPTCHA CHARACTERS */}
                     <div className="relative flex justify-evenly items-center h-full z-10">
                       {captcha.map((item, index) => (
                         <span
@@ -841,7 +907,6 @@ const LoginPage = () => {
                     </div>
                   </div>
 
-                  {/* REFRESH BUTTON */}
                   <button
                     type="button"
                     onClick={handleRefresh}
@@ -852,7 +917,6 @@ const LoginPage = () => {
                   </button>
                 </div>
 
-                {/* CAPTCHA INPUT FIELD */}
                 <input
                   type="text"
                   name="captcha"
@@ -865,14 +929,15 @@ const LoginPage = () => {
                 />
               </div>
 
-
               <button
                 type="button"
                 onClick={requestOtp}
                 disabled={isButtonDisabled}
                 className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
-                {isButtonDisabled ? "Requesting OTP..." : "Request OTP"}
+                <AutoTranslate>
+                  {isButtonDisabled ? "Requesting OTP..." : "Request OTP"}
+                </AutoTranslate>
               </button>
 
               <div className="text-center">
@@ -881,7 +946,7 @@ const LoginPage = () => {
                   onClick={() => setCurrentView("forgot-password")}
                   className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
                 >
-                  Forgot Password?
+                  <AutoTranslate>Forgot Password?</AutoTranslate>
                 </button>
               </div>
             </form>
@@ -891,7 +956,6 @@ const LoginPage = () => {
           {currentView === "login" && isOtpRequested && (
             <form onSubmit={handleLogin} className="space-y-3">
               <div className="space-y-1">
-
                 <div className="flex justify-between gap-2">
                   {otpDigits.map((digit, index) => (
                     <input
@@ -907,10 +971,8 @@ const LoginPage = () => {
                       className="w-12 h-12 text-center border border-gray-300 rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={otpTimer === 0}
                     />
-
                   ))}
                 </div>
-
               </div>
 
               <div className="flex space-x-2">
@@ -919,7 +981,9 @@ const LoginPage = () => {
                   disabled={isButtonDisabled || otpTimer === 0}
                   className={`flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm`}
                 >
-                  {isButtonDisabled ? "Logging in..." : otpTimer === 0 ? "OTP Expired" : "Login"}
+                  <AutoTranslate>
+                    {isButtonDisabled ? "Logging in..." : otpTimer === 0 ? "OTP Expired" : "Login"}
+                  </AutoTranslate>
                 </button>
 
                 <button
@@ -928,7 +992,9 @@ const LoginPage = () => {
                   disabled={!canResendOtp || isButtonDisabled}
                   className="px-3 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
                 >
-                  {!canResendOtp ? `Resend (${resendTimer}s)` : "Resend OTP"}
+                  <AutoTranslate>
+                    {!canResendOtp ? `Resend (${resendTimer}s)` : "Resend OTP"}
+                  </AutoTranslate>
                 </button>
               </div>
             </form>
@@ -939,7 +1005,7 @@ const LoginPage = () => {
             <div className="space-y-4">
               <div className="space-y-3">
                 <label className="block text-sm font-medium text-gray-700">
-                  Reset password using
+                  <AutoTranslate>Reset password using</AutoTranslate>
                 </label>
                 <div className="flex space-x-4">
                   <label className="flex items-center">
@@ -952,7 +1018,7 @@ const LoginPage = () => {
                       className="mr-2 text-blue-600 focus:ring-blue-500"
                     />
                     <EnvelopeIcon className="w-4 h-4 mr-1 text-blue-600" />
-                    <span className="text-sm">Email</span>
+                    <span className="text-sm"><AutoTranslate>Email</AutoTranslate></span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -964,14 +1030,16 @@ const LoginPage = () => {
                       className="mr-2 text-blue-600 focus:ring-blue-500"
                     />
                     <DevicePhoneMobileIcon className="w-4 h-4 mr-1 text-blue-600" />
-                    <span className="text-sm">Mobile</span>
+                    <span className="text-sm"><AutoTranslate>Mobile</AutoTranslate></span>
                   </label>
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  {forgotPasswordData.identifierType === "email" ? "Email Address" : "Mobile Number"}
+                  <AutoTranslate>
+                    {forgotPasswordData.identifierType === "email" ? "Email Address" : "Mobile Number"}
+                  </AutoTranslate>
                 </label>
 
                 <div className="relative">
@@ -1016,14 +1084,15 @@ const LoginPage = () => {
                 </div>
               </div>
 
-
               <button
                 type="button"
                 onClick={initiateForgotPassword}
                 disabled={isButtonDisabled}
                 className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
-                {isButtonDisabled ? "Sending OTP..." : "Send OTP"}
+                <AutoTranslate>
+                  {isButtonDisabled ? "Sending OTP..." : "Send OTP"}
+                </AutoTranslate>
               </button>
             </div>
           )}
@@ -1049,7 +1118,6 @@ const LoginPage = () => {
                     />
                   ))}
                 </div>
-
               </div>
 
               <div className="flex space-x-2">
@@ -1059,7 +1127,9 @@ const LoginPage = () => {
                   disabled={isButtonDisabled || otpTimer === 0}
                   className={`flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm`}
                 >
-                  {isButtonDisabled ? "Verifying..." : otpTimer === 0 ? "OTP Expired" : "Verify OTP"}
+                  <AutoTranslate>
+                    {isButtonDisabled ? "Verifying..." : otpTimer === 0 ? "OTP Expired" : "Verify OTP"}
+                  </AutoTranslate>
                 </button>
 
                 <button
@@ -1068,7 +1138,9 @@ const LoginPage = () => {
                   disabled={!canResendOtp || isButtonDisabled}
                   className="px-3 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm whitespace-nowrap"
                 >
-                  {!canResendOtp ? `Resend (${resendTimer}s)` : "Resend"}
+                  <AutoTranslate>
+                    {!canResendOtp ? `Resend (${resendTimer}s)` : "Resend"}
+                  </AutoTranslate>
                 </button>
               </div>
             </div>
@@ -1079,7 +1151,7 @@ const LoginPage = () => {
             <div className="space-y-3">
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  New Password
+                  <AutoTranslate>New Password</AutoTranslate>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1112,7 +1184,7 @@ const LoginPage = () => {
 
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  Confirm New Password
+                  <AutoTranslate>Confirm New Password</AutoTranslate>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1146,11 +1218,11 @@ const LoginPage = () => {
               {forgotPasswordData.newPassword && (
                 <div className="text-xs text-gray-600 space-y-1">
                   <p className={forgotPasswordData.newPassword.length >= 8 ? "text-green-600" : "text-red-600"}>
-                    • At least 8 characters
+                    • <AutoTranslate>At least 8 characters</AutoTranslate>
                   </p>
                   {forgotPasswordData.confirmPassword && (
                     <p className={forgotPasswordData.newPassword === forgotPasswordData.confirmPassword ? "text-green-600" : "text-red-600"}>
-                      • Passwords match
+                      • <AutoTranslate>Passwords match</AutoTranslate>
                     </p>
                   )}
                 </div>
@@ -1162,7 +1234,9 @@ const LoginPage = () => {
                 disabled={isButtonDisabled || otpTimer === 0}
                 className={`w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm`}
               >
-                {isButtonDisabled ? "Resetting Password..." : otpTimer === 0 ? "Session Expired" : "Reset Password"}
+                <AutoTranslate>
+                  {isButtonDisabled ? "Resetting Password..." : otpTimer === 0 ? "Session Expired" : "Reset Password"}
+                </AutoTranslate>
               </button>
 
               {otpTimer > 0 && (
@@ -1173,7 +1247,9 @@ const LoginPage = () => {
                     disabled={!canResendOtp || isButtonDisabled}
                     className="text-sm text-blue-600 hover:text-blue-700 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
-                    {!canResendOtp ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                    <AutoTranslate>
+                      {!canResendOtp ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                    </AutoTranslate>
                   </button>
                 </div>
               )}
@@ -1183,7 +1259,7 @@ const LoginPage = () => {
 
         {/* Footer */}
         <div className="mt-4 text-center text-xs text-gray-500">
-          <p>© 2025 AGT. All rights reserved.</p>
+          <p>© 2025 AGT. <AutoTranslate>All rights reserved</AutoTranslate>.</p>
         </div>
       </div>
     </div>

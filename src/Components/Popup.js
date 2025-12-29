@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
+import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
 
 const Popup = ({
   message,
@@ -76,7 +77,7 @@ const Popup = ({
           font-semibold
           mb-4
         `}>
-          {message}
+          <AutoTranslate>{message}</AutoTranslate> {/* Wrap message in AutoTranslate */}
         </h3>
         <button
           className={`
@@ -94,7 +95,7 @@ const Popup = ({
           `}
           onClick={handleClose}
         >
-          OK
+          <AutoTranslate>OK</AutoTranslate> {/* Wrap button text in AutoTranslate */}
         </button>
       </div>
     </div>,
