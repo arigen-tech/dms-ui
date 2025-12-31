@@ -46,13 +46,17 @@ import {
 } from "../API/apiConfig";
 import { UserIcon } from "lucide-react";
 import { getRequest } from "../API/apiService";
+import AutoTranslate from "../i18n/AutoTranslate";
+import { useLanguage } from "../i18n/LanguageContext";
 
 function Sidebar({ roleChanged }) {
   const location = useLocation();
+  const { currentLanguage } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [menuData, setMenuData] = useState([]);
   const [openMenus, setOpenMenus] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchPlaceholder, setSearchPlaceholder] = useState("Search Menu...");
 
   const sidebarRef = useRef(null);
 
@@ -60,6 +64,17 @@ function Sidebar({ roleChanged }) {
   const role = localStorage.getItem("role");
 
   const cacheKey = `menuCache-${rolesId}`;
+
+  // Update search placeholder when language changes - IMMEDIATE FALLBACK
+  useEffect(() => {
+    const placeholders = {
+      'en': 'Search Menu...',
+      'hi': 'मेनू खोजें...',
+      'or': 'ମେନୁ ଖୋଜନ୍ତୁ...',
+      'mr': 'मेनू शोध...'
+    };
+    setSearchPlaceholder(placeholders[currentLanguage] || "Search Menu...");
+  }, [currentLanguage]);
 
   // Fetch menu data (with caching). We avoid re-fetching if cached and role hasn't changed.
   const fetchMenuData = async () => {
@@ -366,7 +381,9 @@ function Sidebar({ roleChanged }) {
     >
       <div className="flex items-center">
         <Icon className="h-5 w-5 mr-3" />
-        <span>{text}</span>
+        <span>
+          <AutoTranslate>{text}</AutoTranslate>
+        </span>
       </div>
       {count > 0 && (
         <span className="bg-red-600 text-white rounded-2xl px-2 text-sm font-semibold">
@@ -398,7 +415,7 @@ function Sidebar({ roleChanged }) {
             >
               <div className="flex items-center">
                 <IconComponent className="h-5 w-5 mr-3" />
-                {item.name}
+                <AutoTranslate>{item.name}</AutoTranslate>
               </div>
               {isOpen ? (
                 <ChevronDownIcon className="h-4 w-4" />
@@ -440,7 +457,7 @@ function Sidebar({ roleChanged }) {
           <div>
             <input
               type="text"
-              placeholder="Search Menu..."
+              placeholder={searchPlaceholder}
               name="name"
               value={searchTerm}
               onChange={handleInputChange}
@@ -449,7 +466,13 @@ function Sidebar({ roleChanged }) {
             />
           </div>
 
-          {loading ? <div className="text-center py-4">Loading menu...</div> : renderMenuItems(menuData)}
+          {loading ? (
+            <div className="text-center py-4">
+              <AutoTranslate>Loading menu...</AutoTranslate>
+            </div>
+          ) : (
+            renderMenuItems(menuData)
+          )}
         </nav>
       </div>
     </div>

@@ -41,7 +41,22 @@ const fallbackTranslations = {
     'Department': 'विभाग',
     'All Branches': 'सभी शाखाएँ',
     'Select Branch': 'शाखा चुनें',
+    'Branch': 'शाखा',
+    'Category': 'वर्ग',
+    'Email': 'ईमेल',
+    'Select Department': 'विभाग चुनें',
+    'CreatedBy': 'निर्माता',
+    'Mobile Number': 'मोबाइल नंबर',
+    'UpdatedBy': 'अपडेटकर्ता',
+    'Updated Date': 'अपडेट तारीख',
+    'Assign Role': 'भूमिका सौंपें',
 
+
+
+    // Placeholders
+    'Enter Mobile Number': 'मोबाइल नंबर दर्ज करें',
+    'Enter Email': 'ईमेल दर्ज करें',
+    
 
 
 

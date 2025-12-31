@@ -8,9 +8,32 @@ import {
 } from "@heroicons/react/24/solid";
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
-
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const EmployeeRole = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
+  // State for translated placeholders
+  const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
+    search: 'Search...',
+    show: 'Show:',
+    branch: 'Branch:',
+    department: 'Department:',
+    selectRole: 'Select Role'
+  });
+
   // State Management
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -30,6 +53,51 @@ const EmployeeRole = () => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
 
   const token = localStorage.getItem("tokenKey");
+
+  // Function to translate placeholder text
+  const translatePlaceholder = async (text) => {
+    if (isTranslationNeeded()) {
+      try {
+        return await translate(text);
+      } catch (error) {
+        console.error('Error translating placeholder:', error);
+        return text;
+      }
+    }
+    return text;
+  };
+
+  // Update placeholders when language changes
+  useEffect(() => {
+    const updatePlaceholders = async () => {
+      if (!isTranslationNeeded()) {
+        setTranslatedPlaceholders({
+          search: 'Search...',
+          show: 'Show:',
+          branch: 'Branch:',
+          department: 'Department:',
+          selectRole: 'Select Role'
+        });
+        return;
+      }
+
+      const searchPlaceholder = await translatePlaceholder('Search...');
+      const showPlaceholder = await translatePlaceholder('Show:');
+      const branchPlaceholder = await translatePlaceholder('Branch:');
+      const departmentPlaceholder = await translatePlaceholder('Department:');
+      const selectRolePlaceholder = await translatePlaceholder('Select Role');
+
+      setTranslatedPlaceholders({
+        search: searchPlaceholder,
+        show: showPlaceholder,
+        branch: branchPlaceholder,
+        department: departmentPlaceholder,
+        selectRole: selectRolePlaceholder
+      });
+    };
+
+    updatePlaceholders();
+  }, [currentLanguage, isTranslationNeeded, translatePlaceholder]);
 
   // Initial Data Fetching
   useEffect(() => {
@@ -80,7 +148,6 @@ const EmployeeRole = () => {
     setIsLoading(true);
 
     try {
-
       const response = await axios.get(`${API_HOST}/employee/pending-by-branch`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -89,7 +156,6 @@ const EmployeeRole = () => {
       showPopup("Error fetching users. Please try again.", "error");
     } finally {
       setIsLoading(false);
-
     }
   };
 
@@ -106,7 +172,6 @@ const EmployeeRole = () => {
       showPopup("Error fetching employee details.", "error");
     } finally {
       setIsLoading(false);
-
     }
   };
 
@@ -184,7 +249,6 @@ const EmployeeRole = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-
       }
     });
   };
@@ -199,36 +263,34 @@ const EmployeeRole = () => {
   };
 
   // Filtering and Pagination
-const filteredUsers = users.filter((user) => {
-  // --- Apply Branch Filter ---
-  if (selectedBranch && String(user.branch?.id) !== String(selectedBranch)) {
-    return false;
-  }
+  const filteredUsers = users.filter((user) => {
+    // --- Apply Branch Filter ---
+    if (selectedBranch && String(user.branch?.id) !== String(selectedBranch)) {
+      return false;
+    }
 
-  // --- Apply Department Filter ---
-  if (selectedDepartment && String(user.department?.id) !== String(selectedDepartment)) {
-    return false;
-  }
+    // --- Apply Department Filter ---
+    if (selectedDepartment && String(user.department?.id) !== String(selectedDepartment)) {
+      return false;
+    }
 
-  // --- Apply Search Filter ---
-  const searchFields = {
-    name: user.name?.toLowerCase() || "",
-    email: user.email?.toLowerCase() || "",
-    mobile: user.mobile?.toLowerCase() || "",
-    branch: user.branch?.name?.toLowerCase() || "",
-    department: user.department?.name?.toLowerCase() || "",
-    createdBy: user.createdBy?.name?.toLowerCase() || "",
-    role: user.role?.toLowerCase() || "",
-    createdOn: user.createdOn ? formatDate(user.createdOn).toLowerCase() : ""
-  };
+    // --- Apply Search Filter ---
+    const searchFields = {
+      name: user.name?.toLowerCase() || "",
+      email: user.email?.toLowerCase() || "",
+      mobile: user.mobile?.toLowerCase() || "",
+      branch: user.branch?.name?.toLowerCase() || "",
+      department: user.department?.name?.toLowerCase() || "",
+      createdBy: user.createdBy?.name?.toLowerCase() || "",
+      role: user.role?.toLowerCase() || "",
+      createdOn: user.createdOn ? formatDate(user.createdOn).toLowerCase() : ""
+    };
 
-  const lowerSearchTerm = searchTerm.toLowerCase();
-  return Object.values(searchFields).some((value) =>
-    value.includes(lowerSearchTerm)
-  );
-});
-
-
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return Object.values(searchFields).some((value) =>
+      value.includes(lowerSearchTerm)
+    );
+  });
 
   const totalItems = filteredUsers.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -246,14 +308,16 @@ const filteredUsers = users.filter((user) => {
 
   return (
     <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">Pending Users</h1>
+      <h1 className="text-2xl mb-1 font-semibold">
+        <AutoTranslate>Pending Users</AutoTranslate>
+      </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         {/* Search and Items Per Page Controls */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
             <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
-              Show:
+              <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
@@ -275,7 +339,7 @@ const filteredUsers = users.filter((user) => {
           {/* Branch Filter */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
             <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
-              Branch:
+              <AutoTranslate>Branch</AutoTranslate>
             </label>
             <select
               id="branchFilter"
@@ -287,7 +351,7 @@ const filteredUsers = users.filter((user) => {
                 setCurrentPage(1);
               }}
             >
-              <option value="">All</option>
+              <option value=""><AutoTranslate>All</AutoTranslate></option>
               {branchData.map((branch) => (
                 <option key={branch.id} value={branch.id}>
                   {branch.name}
@@ -296,11 +360,10 @@ const filteredUsers = users.filter((user) => {
             </select>
           </div>
 
-
           {/* Department Filter */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
             <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
-              Department:
+              <AutoTranslate>Department</AutoTranslate>
             </label>
             <select
               id="departmentFilter"
@@ -312,7 +375,7 @@ const filteredUsers = users.filter((user) => {
               }}
               disabled={!selectedBranch}
             >
-              <option value="">All</option>
+              <option value=""><AutoTranslate>All</AutoTranslate></option>
               {departmentData.map((dept) => (
                 <option key={dept.id} value={dept.id}>
                   {dept.name}
@@ -321,13 +384,11 @@ const filteredUsers = users.filter((user) => {
             </select>
           </div>
 
-
-
           {/* Search */}
           <div className="flex items-center w-full md:w-1/4 flex-1">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={translatedPlaceholders.search}
               className="border rounded-l-md p-1 outline-none w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -341,16 +402,16 @@ const filteredUsers = users.filter((user) => {
           <table className="w-full border-collapse border">
             <thead>
               <tr className="bg-slate-100">
-                <th className="border p-2 text-left">SR.</th>
-                <th className="border p-2 text-left">Name</th>
-                <th className="border p-2 text-left">Email</th>
-                <th className="border p-2 text-left">Mobile No.</th>
-                <th className="border p-2 text-left">Branch</th>
-                <th className="border p-2 text-left">Department</th>
-                <th className="border p-2 text-left">Created Date</th>
-                <th className="border p-2 text-left">Created By</th>
-                <th className="border p-2 text-left">Role</th>
-                <th className="border p-2 text-left">Assign Role</th>
+                <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Name</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Email</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Mobile No.</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Branch</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Department</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Created Date</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>CreatedBy</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Role</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Assign Role</AutoTranslate></th>
               </tr>
             </thead>
             <tbody>
@@ -365,14 +426,14 @@ const filteredUsers = users.filter((user) => {
                     <td className="border p-2">{user.department?.name || "N/A"}</td>
                     <td className="border p-2">{formatDate(user.createdOn)}</td>
                     <td className="border p-2">{user.createdBy.name}</td>
-                    <td className="border p-2">{user.employeeType || "No Role"}</td>
+                    <td className="border p-2">{user.employeeType || <AutoTranslate>No Role</AutoTranslate>}</td>
                     <td className="border p-2">
                       <select
                         value={selectedUser === user.id ? selectedRole : ""}
                         onChange={(e) => handleRoleChange(user.id, e.target.value)}
                         className="w-full p-1 border rounded"
                       >
-                        <option value="" disabled>Select Role</option>
+                        <option value="" disabled><AutoTranslate>Select Role</AutoTranslate></option>
                         {roles.map((role) => (
                           <option key={role.id} value={role.role}>
                             {role.role}
@@ -385,14 +446,13 @@ const filteredUsers = users.filter((user) => {
               ) : (
                 <tr>
                   <td colSpan="10" className="border p-2 text-center">
-                    No users found.
+                    <AutoTranslate>No users found.</AutoTranslate>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-
 
         {/* Pagination Controls */}
         <div className="flex items-center mt-4">
@@ -404,7 +464,7 @@ const filteredUsers = users.filter((user) => {
               }`}
           >
             <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            Previous
+            <AutoTranslate>Previous</AutoTranslate>
           </button>
 
           {/* Page Number Buttons */}
@@ -420,7 +480,9 @@ const filteredUsers = users.filter((user) => {
           ))}
 
           {/* Page Count Info */}
-          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+          <span className="text-sm text-gray-700 mx-2">
+            <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
+          </span>
 
           {/* Next Button */}
           <button
@@ -429,14 +491,14 @@ const filteredUsers = users.filter((user) => {
             className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
               }`}
           >
-            Next
+            <AutoTranslate>Next</AutoTranslate>
             <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
           </button>
           <div className="ml-4">
             <span className="text-sm text-gray-700">
-              Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-              {totalItems} entries
+              <AutoTranslate>
+                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}`}
+              </AutoTranslate>
             </span>
           </div>
         </div>
@@ -445,9 +507,12 @@ const filteredUsers = users.filter((user) => {
         {modalVisible && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">Confirm Role Assignment</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                <AutoTranslate>Confirm Role Assignment</AutoTranslate>
+              </h2>
               <p className="mb-4">
-                Are you sure you want to assign the role <strong>{selectedRole}</strong> to{" "}
+                <AutoTranslate>Are you sure you want to assign the role</AutoTranslate>{" "}
+                <strong>{selectedRole}</strong> <AutoTranslate>to</AutoTranslate>{" "}
                 <strong>{users.find((user) => user.id === selectedUser)?.name}</strong>?
               </p>
               <div className="flex justify-end gap-4">
@@ -456,7 +521,7 @@ const filteredUsers = users.filter((user) => {
                   className="bg-gray-300 p-2 rounded-lg hover:bg-gray-400"
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  <AutoTranslate>Cancel</AutoTranslate>
                 </button>
                 <button
                   onClick={confirmRoleAssignment}
@@ -464,7 +529,7 @@ const filteredUsers = users.filter((user) => {
                     } text-white p-2 rounded-lg`}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Processing..." : "Confirm"}
+                  {isSubmitting ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
                 </button>
               </div>
             </div>

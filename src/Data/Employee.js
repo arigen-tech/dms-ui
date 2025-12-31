@@ -10,18 +10,41 @@ import {
   PencilIcon,
   PlusCircleIcon,
 } from "@heroicons/react/24/solid";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import {
   REGISTER_API,
   EMPLOYEE_API,
   BRANCH_API,
   DEPAETMENT_API,
-
 } from "../API/apiConfig";
 import { API_HOST } from "../API/apiConfig";
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const UserAddEmployee = () => {
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
+  // State for translated placeholders
+  const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
+    enterName: 'Enter name',
+    enterEmail: 'Enter email',
+    enterPhone: 'Enter phone number',
+    selectBranch: 'Select Branch',
+    selectDepartment: 'Select Department',
+    search: 'Search...'
+  });
+
   const [employees, setEmployees] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -60,7 +83,55 @@ const UserAddEmployee = () => {
   const [mobileError, setMobileError] = useState("");
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
-  const formRef = useRef(null); // Ref for the form section
+  const formRef = useRef(null);
+
+  // Function to translate placeholder text
+  const translatePlaceholder = useCallback(async (text) => {
+    if (isTranslationNeeded()) {
+      try {
+        return await translate(text);
+      } catch (error) {
+        console.error('Error translating placeholder:', error);
+        return text;
+      }
+    }
+    return text;
+  }, [isTranslationNeeded, translate]);
+
+  // Update placeholders when language changes
+  useEffect(() => {
+    const updatePlaceholders = async () => {
+      if (!isTranslationNeeded()) {
+        setTranslatedPlaceholders({
+          enterName: 'Enter name',
+          enterEmail: 'Enter email',
+          enterPhone: 'Enter phone number',
+          selectBranch: 'Select Branch',
+          selectDepartment: 'Select Department',
+          search: 'Search...'
+        });
+        return;
+      }
+
+      const namePlaceholder = await translatePlaceholder('Enter name');
+      const emailPlaceholder = await translatePlaceholder('Enter email');
+      const phonePlaceholder = await translatePlaceholder('Enter phone number');
+      const branchPlaceholder = await translatePlaceholder('Select Branch');
+      const departmentPlaceholder = await translatePlaceholder('Select Department');
+      const searchPlaceholder = await translatePlaceholder('Search...');
+
+      setTranslatedPlaceholders({
+        enterName: namePlaceholder,
+        enterEmail: emailPlaceholder,
+        enterPhone: phonePlaceholder,
+        selectBranch: branchPlaceholder,
+        selectDepartment: departmentPlaceholder,
+        search: searchPlaceholder
+      });
+    };
+
+    updatePlaceholders();
+  }, [currentLanguage, translatePlaceholder, isTranslationNeeded]);
 
   useEffect(() => {
     fetchEmployees();
@@ -104,48 +175,30 @@ const UserAddEmployee = () => {
   };
 
   const validateEmail = (email) => {
-    // More comprehensive email validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const invalidPatterns = [/\.\.+/, /^\./, /\.$/, /@\./, /\.@/, /@@/, /@.*@/];
 
-    // Additional checks to prevent common invalid patterns
-    const invalidPatterns = [
-      /\.\.+/, // Multiple consecutive dots
-      /^\./, // Starting with dot
-      /\.$/, // Ending with dot
-      /@\./, // @ followed immediately by dot
-      /\.@/, // Dot followed immediately by @
-      /@@/, // Multiple @ symbols
-      /@.*@/, // Multiple @ symbols anywhere
-    ];
-
-    // First check basic regex
     if (!emailRegex.test(email)) {
       return false;
     }
 
-    // Then check for invalid patterns
     for (let pattern of invalidPatterns) {
       if (pattern.test(email)) {
         return false;
       }
     }
 
-    // Additional domain validation
     const parts = email.split('@');
     if (parts.length !== 2) return false;
 
     const [localPart, domain] = parts;
-
-    // Local part validation
     if (localPart.length === 0 || localPart.length > 64) return false;
     if (localPart.startsWith('.') || localPart.endsWith('.')) return false;
 
-    // Domain validation
     if (domain.length === 0 || domain.length > 255) return false;
     if (domain.startsWith('.') || domain.endsWith('.')) return false;
     if (domain.startsWith('-') || domain.endsWith('-')) return false;
 
-    // Check for valid domain extension
     const domainParts = domain.split('.');
     if (domainParts.length < 2) return false;
 
@@ -191,16 +244,13 @@ const UserAddEmployee = () => {
 
       const isAdmin = userData.role?.role?.toUpperCase() === "ADMIN";
 
-      // Set form data based on user role
       if (isAdmin) {
-        // For admin, start with empty form
         setFormData((prevData) => ({
           ...prevData,
           branch: { id: "", name: "" },
           department: { id: "", name: "" },
         }));
       } else {
-        // For non-admin users, pre-fill with their branch/department
         setFormData((prevData) => ({
           ...prevData,
           branch: userBranch,
@@ -291,7 +341,6 @@ const UserAddEmployee = () => {
     const { name, value } = e.target;
 
     if (name === "email") {
-      // Real-time validation with more specific error messages
       let errorMessage = "";
 
       if (value === "") {
@@ -339,7 +388,7 @@ const UserAddEmployee = () => {
     }
 
     if (name === "name") {
-      const regex = /^[A-Za-z\s]*$/; // Only letters and spaces
+      const regex = /^[A-Za-z\s]*$/;
       if (value === "" || (regex.test(value) && value.length <= 30)) {
         setFormData(prev => ({ ...prev, [name]: value }));
       }
@@ -365,20 +414,17 @@ const UserAddEmployee = () => {
     }));
 
     if (key === "branch") {
-      // Reset department selection when branch changes
       setFormData((prevData) => ({
         ...prevData,
         branch: {
           id: value,
           name: selectedName,
         },
-        department: { id: "", name: "" }, // Reset department to empty
+        department: { id: "", name: "" },
       }));
       fetchDepartments(value);
     }
   };
-
-
 
   const validateForm = () => {
     let isValid = true;
@@ -482,8 +528,8 @@ const UserAddEmployee = () => {
 
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || // Extract message from response object
-        error.response?.data ||          // Fallback to entire response if no message
+        error.response?.data?.message ||
+        error.response?.data ||
         "Failed to add employee. Please try again.";
 
       setShowPopup(true);
@@ -538,7 +584,6 @@ const UserAddEmployee = () => {
         fetchDepartments(employeeToEdit.branch.id);
       }
 
-      // Scroll to form section
       if (formRef.current) {
         formRef.current.scrollIntoView({ behavior: 'smooth' });
       }
@@ -720,11 +765,9 @@ const UserAddEmployee = () => {
       return false;
     }
 
-    // --- Apply Department Filter ---
     if (selectedDepartment && String(employee.department?.id) !== String(selectedDepartment)) {
       return false;
     }
-
 
     const name = employee.name?.toLowerCase() || "";
     const email = employee.email?.toLowerCase() || "";
@@ -791,7 +834,9 @@ const UserAddEmployee = () => {
 
   return (
     <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">USERS</h1>
+      <h1 className="text-2xl mb-1 font-semibold">
+        <AutoTranslate>USERS</AutoTranslate>
+      </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         {error && <p className="text-red-500">{error}</p>}
         {showPopup && (
@@ -805,10 +850,10 @@ const UserAddEmployee = () => {
         <div ref={formRef} className="mb-4 bg-slate-100 p-6 rounded-lg shadow-md">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <label className="block text-md font-medium text-gray-700">
-              Name <span className="text-red-500">*</span>
+              <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
               <input
                 type="text"
-                placeholder="Enter name"
+                placeholder={translatedPlaceholders.enterName}
                 name="name"
                 value={formData.name || ""}
                 onChange={handleInputChange}
@@ -819,16 +864,15 @@ const UserAddEmployee = () => {
             </label>
 
             <label className="block text-md font-medium text-gray-700">
-              Email <span className="text-red-500">*</span>
+              <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
               <input
                 type="email"
-                placeholder="Enter email"
-                name="email"
+                placeholder={getFallbackTranslation('Enter Email', currentLanguage) || 'Enter Email'}
+                name="email" 
                 value={formData.email || ""}
                 onChange={handleInputChange}
                 maxLength={30}
-                className={`mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 ${emailError ? "border-red-500" : ""
-                  }`}
+                className={`mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 ${emailError ? "border-red-500" : ""}`}
                 required
               />
               {emailError && (
@@ -837,21 +881,21 @@ const UserAddEmployee = () => {
             </label>
 
             <label className="block text-md font-medium text-gray-700">
-              Phone <span className="text-red-500">*</span>
+              <AutoTranslate>Mobile Number</AutoTranslate> <span className="text-red-500">*</span>
               <div className="flex mt-1">
                 <span className="w-20 p-2 border rounded-l-md bg-gray-100 text-center text-gray-700">
                   +91
                 </span>
                 <input
                   type="tel"
-                  placeholder="Enter phone number"
+                  placeholder={getFallbackTranslation('Enter Mobile Number', currentLanguage) || 'Enter Mobile Number'}
+
                   name="mobile"
                   value={formData.mobile || ""}
                   onChange={handleInputChange}
                   maxLength={10}
                   minLength={10}
-                  className={`flex-1 p-2 border rounded-r-md outline-none focus:ring-2 focus:ring-blue-500 ${mobileError ? "border-red-500" : ""
-                    }`}
+                  className={`flex-1 p-2 border rounded-r-md outline-none focus:ring-2 focus:ring-blue-500 ${mobileError ? "border-red-500" : ""}`}
                   required
                 />
               </div>
@@ -861,7 +905,7 @@ const UserAddEmployee = () => {
             </label>
 
             <label className="block text-md font-medium text-gray-700">
-              Branch <span className="text-red-500">*</span>
+              <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
               {role === "ADMIN" ? (
                 <select
                   name="branch"
@@ -870,9 +914,7 @@ const UserAddEmployee = () => {
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="" disabled>
-                    Select Branch
-                  </option>
+                  <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
                   {branchOptions.map((branch) => (
                     <option key={branch.id} value={branch.id}>
                       {branch.name}
@@ -891,7 +933,7 @@ const UserAddEmployee = () => {
             </label>
 
             <label className="block text-md font-medium text-gray-700">
-              Department <span className="text-red-500">*</span>
+              <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
               {role === "ADMIN" ? (
                 <select
                   name="department"
@@ -900,9 +942,7 @@ const UserAddEmployee = () => {
                   className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="" disabled>
-                    Select Department
-                  </option>
+                  <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
                   {departmentOptions.map((department) => (
                     <option key={department.id} value={department.id}>
                       {department.name}
@@ -928,7 +968,7 @@ const UserAddEmployee = () => {
                   }`}
               >
                 <PlusCircleIcon className="h-5 w-5 mr-2" />
-                {isSubmitting ? "Submitting..." : "Add User"}
+                {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Add User</AutoTranslate>}
               </button>
             ) : (
               <button
@@ -940,7 +980,7 @@ const UserAddEmployee = () => {
                   }`}
               >
                 <CheckCircleIcon className="h-5 w-5 mr-2" />
-                {isSubmitting ? "Submitting..." : "Update"}
+                {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Update</AutoTranslate>}
               </button>
             )}
           </div>
@@ -950,11 +990,8 @@ const UserAddEmployee = () => {
           <>
             <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
-                <label
-                  htmlFor="itemsPerPage"
-                  className="mr-2 ml-2 text-white text-sm"
-                >
-                  Show:
+                <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
+                  <AutoTranslate>Show:</AutoTranslate>
                 </label>
                 <select
                   id="itemsPerPage"
@@ -973,10 +1010,9 @@ const UserAddEmployee = () => {
                 </select>
               </div>
 
-              {/* Branch Filter */}
               <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
                 <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
-                  Branch:
+                  <AutoTranslate>Branch</AutoTranslate>
                 </label>
                 <select
                   id="branchFilter"
@@ -984,11 +1020,11 @@ const UserAddEmployee = () => {
                   value={selectedBranch}
                   onChange={(e) => {
                     setSelectedBranch(e.target.value);
-                    setSelectedDepartment(""); // reset department when branch changes
+                    setSelectedDepartment("");
                     setCurrentPage(1);
                   }}
                 >
-                  <option value="">All</option>
+                  <option value=""><AutoTranslate>All</AutoTranslate></option>
                   {branchData.map((branch) => (
                     <option key={branch.id} value={branch.id}>
                       {branch.name}
@@ -997,11 +1033,9 @@ const UserAddEmployee = () => {
                 </select>
               </div>
 
-
-              {/* Department Filter */}
               <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
                 <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
-                  Department:
+                  <AutoTranslate>Department</AutoTranslate>
                 </label>
                 <select
                   id="departmentFilter"
@@ -1013,7 +1047,7 @@ const UserAddEmployee = () => {
                   }}
                   disabled={!selectedBranch}
                 >
-                  <option value="">All</option>
+                  <option value=""><AutoTranslate>All</AutoTranslate></option>
                   {departmentData.map((dept) => (
                     <option key={dept.id} value={dept.id}>
                       {dept.name}
@@ -1022,13 +1056,10 @@ const UserAddEmployee = () => {
                 </select>
               </div>
 
-
-
-              {/* Search */}
               <div className="flex items-center w-full md:w-1/4 flex-1">
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder={translatedPlaceholders.search}
                   className="border rounded-l-md p-1 outline-none w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -1041,25 +1072,25 @@ const UserAddEmployee = () => {
               <table className="w-full border-collapse border">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border p-2 text-left">SR.</th>
-                    <th className="border p-2 text-left">Name</th>
-                    <th className="border p-2 text-left">Email</th>
-                    <th className="border p-2 text-left">Phone No.</th>
-                    <th className="border p-2 text-left">Branch</th>
-                    <th className="border p-2 text-left">Department</th>
-                    <th className="border p-2 text-left">Role</th>
-                    <th className="border p-2 text-left">Created Date</th>
-                    <th className="border p-2 text-left">Updated Date</th>
-                    <th className="border p-2 text-left">Created By</th>
+                    <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>Name</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>Email</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>Mobile Number</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>Branch</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>Department</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>Role</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>Created Date</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>Updated Date</AutoTranslate></th>
+                    <th className="border p-2 text-left"><AutoTranslate>CreatedBy</AutoTranslate></th>
                     {role === "ADMIN" && (
                       <>
-                        <th className="border p-2 text-left">Updated By</th>
-                        <th className="border p-2 text-left">Status</th>
+                        <th className="border p-2 text-left"><AutoTranslate>UpdatedBy</AutoTranslate></th>
+                        <th className="border p-2 text-left"><AutoTranslate>Status</AutoTranslate></th>
                       </>
                     )}
-                    <th className="border p-2 text-left">Edit</th>
+                    <th className="border p-2 text-left"><AutoTranslate>Edit</AutoTranslate></th>
                     {role === "ADMIN" && (
-                      <th className="border p-2 text-left">Access</th>
+                      <th className="border p-2 text-left"><AutoTranslate>Action</AutoTranslate></th>
                     )}
                   </tr>
                 </thead>
@@ -1100,9 +1131,8 @@ const UserAddEmployee = () => {
                           <td className="border p-2">
                             {employee.updatedBy?.name || "Unknown"}
                           </td>
-                          <td className="border p-2">
-                            {employee.active ? "Active" : "Inactive"}
-                          </td>
+                          <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
+
                         </>
                       )}
 
@@ -1149,7 +1179,7 @@ const UserAddEmployee = () => {
                   }`}
               >
                 <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                Previous
+                <AutoTranslate>Previous</AutoTranslate>
               </button>
 
               {totalPages > 0 &&
@@ -1167,7 +1197,7 @@ const UserAddEmployee = () => {
                 ))}
 
               <span className="text-sm text-gray-700 mx-2">
-                of {totalPages} pages
+                <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
               </span>
 
               <button
@@ -1180,15 +1210,14 @@ const UserAddEmployee = () => {
                   : "bg-slate-200 hover:bg-slate-300"
                   }`}
               >
-                Next
+                <AutoTranslate>Next</AutoTranslate>
                 <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
               </button>
               <div className="ml-4">
                 <span className="text-sm text-gray-700">
-                  Showing{" "}
-                  {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-                  {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                  {totalItems} entries
+                  <AutoTranslate>
+                    {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}`}
+                  </AutoTranslate>
                 </span>
               </div>
             </div>
@@ -1200,21 +1229,21 @@ const UserAddEmployee = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
             <h2 className="text-lg font-semibold mb-4">
-              Confirm Status Change
+              <AutoTranslate>Confirm Status Change</AutoTranslate>
             </h2>
             <p>
-              Are you sure you want to{" "}
+              <AutoTranslate>Are you sure you want to</AutoTranslate>{" "}
               <strong>
-                {employeeToToggle.active === true ? "deactivate" : "activate"}
+                {employeeToToggle?.active === true ? <AutoTranslate>deactivate</AutoTranslate> : <AutoTranslate>activate</AutoTranslate>}
               </strong>{" "}
-              the employee <strong>{employeeToToggle.name}</strong> ?
+              <AutoTranslate>the employee</AutoTranslate> <strong>{employeeToToggle?.name}</strong>?
             </p>
             <div className="flex justify-end space-x-4 mt-4">
               <button
                 onClick={() => setModalVisible(false)}
                 className="bg-gray-500 text-white rounded-md px-4 py-2"
               >
-                Cancel
+                <AutoTranslate>Cancel</AutoTranslate>
               </button>
               <button
                 onClick={confirmToggleActive}
@@ -1222,7 +1251,7 @@ const UserAddEmployee = () => {
                 className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? "opacity-50 cursor-not-allowed" : ""
                   }`}
               >
-                {isConfirmDisabled ? "Processing..." : "Confirm"}
+                {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
               </button>
             </div>
           </div>

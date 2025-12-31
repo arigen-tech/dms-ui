@@ -1,9 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Popup from "../Components/Popup"
-
-import { API_HOST, MAS_TEMPLATE } from "../API/apiConfig";
+import { MAS_TEMPLATE } from "../API/apiConfig";
 import LoadingComponent from '../Components/LoadingComponent';
-
 import { postRequest, putRequest, getRequest } from "../API/apiService";
 import {
   ArrowLeftIcon,
@@ -16,12 +14,36 @@ import {
   PlusCircleIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/solid';
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Templatemaster = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
+  // State for tracking data loading only
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // State for translated placeholders
+  const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
+    search: 'Search...',
+    show: 'Show:',
+    enterTemplateCode: 'Enter template code',
+    enterTemplateName: 'Enter template name',
+  });
+
   const [templateData, setTemplateData] = useState([]);
   const [formData, setFormData] = useState({ templateCode: "", templateName: "" });
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
@@ -36,8 +58,65 @@ const Templatemaster = () => {
   const TEMPLATE_CODE_MAX_LENGTH = 48;
   const TEMPLATE_NAME_MAX_LENGTH = 120;
 
+  // Debug log
+  useEffect(() => {
+    console.log('🔍 Templatemaster Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
+
+  // Function to translate placeholder text
+  const translatePlaceholder = useCallback(async (text) => {
+    if (isTranslationNeeded()) {
+      try {
+        return await translate(text);
+      } catch (error) {
+        console.error('Error translating placeholder:', error);
+        return text;
+      }
+    }
+    return text;
+  }, [isTranslationNeeded, translate]);
+
+  // Update placeholders when language changes - optimized
+  useEffect(() => {
+    const updatePlaceholders = async () => {
+      // Don't translate if English
+      if (!isTranslationNeeded()) {
+        setTranslatedPlaceholders({
+          search: 'Search...',
+          show: 'Show:',
+          enterTemplateCode: 'Enter template code',
+          enterTemplateName: 'Enter template name',
+        });
+        return;
+      }
+
+      // Only update if language changed
+      const searchPlaceholder = await translatePlaceholder('Search...');
+      const showPlaceholder = await translatePlaceholder('Show:');
+      const enterTemplateCodePlaceholder = await translatePlaceholder('Enter template code');
+      const enterTemplateNamePlaceholder = await translatePlaceholder('Enter template name');
+
+      setTranslatedPlaceholders({
+        search: searchPlaceholder,
+        show: showPlaceholder,
+        enterTemplateCode: enterTemplateCodePlaceholder,
+        enterTemplateName: enterTemplateNamePlaceholder,
+      });
+    };
+    
+    updatePlaceholders();
+  }, [currentLanguage, translatePlaceholder, isTranslationNeeded]);
+
+  // Fetch templates - runs only once on mount
   const fetchTemplates = async (flag = 0) => {
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     try {
       const response = await getRequest(`${MAS_TEMPLATE}/getAll/${flag}`);
@@ -51,11 +130,12 @@ const Templatemaster = () => {
       }));
 
       setTemplateData(mappedTemplates);
+      console.log('✅ Templates loaded');
     } catch (err) {
       console.error("Error fetching templates:", err);
       showPopup("Failed to fetch templates. Please try again later.", "error");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -204,7 +284,7 @@ const Templatemaster = () => {
 
     if (templateToToggle) {
       try {
-        setLoading(true);
+        setIsLoading(true);
         const newStatus = templateToToggle.status === "y" ? "n" : "y";
         const response = await putRequest(
           `${MAS_TEMPLATE}/status/${templateToToggle.id}?status=${newStatus}`
@@ -237,7 +317,7 @@ const Templatemaster = () => {
         console.error("Error updating status:", err);
         showPopup("Failed to change status", "error");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
         setModalVisible(false);
         setTemplateToToggle(null);
         setIsConfirmDisabled(false);
@@ -246,8 +326,13 @@ const Templatemaster = () => {
   };
 
   // Pagination calculations
-  const filteredTotalPages = Math.ceil(filteredTemplateData.length / itemsPerPage);
-  const currentItems = filteredTemplateData.slice(
+  const sortedTemplates = filteredTemplateData.sort((a, b) => 
+    (b.status === "y" ? 1 : 0) - (a.status === "y" ? 1 : 0)
+  );
+  
+  const totalItems = sortedTemplates.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedTemplates = sortedTemplates.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -255,17 +340,21 @@ const Templatemaster = () => {
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
     const startPage = Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
-    const endPage = Math.min(startPage + maxPageNumbers - 1, filteredTotalPages);
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-  if (loading) {
+  // Show loading only if initial data is loading
+  if (isLoading) {
     return <LoadingComponent />;
   }
 
   return (
     <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">Template Master</h1>
+      <h1 className="text-2xl mb-1 font-semibold">
+        <AutoTranslate>Template Master</AutoTranslate>
+      </h1>
+
       <div className="bg-white p-4 rounded-lg shadow-sm">
 
         {popupMessage && (
@@ -281,10 +370,10 @@ const Templatemaster = () => {
           <div className="flex gap-6">
             <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <label className="block text-md font-medium text-gray-700">
-                Template Code <span className="text-red-500">*</span>
+                <AutoTranslate>Template Code</AutoTranslate> <span className="text-red-500">*</span>
                 <input
                   type="text"
-                  placeholder="Enter template code"
+                  placeholder={translatedPlaceholders.enterTemplateCode}
                   name="templateCode"
                   value={formData.templateCode || ""}
                   onChange={handleInputChange}
@@ -295,10 +384,10 @@ const Templatemaster = () => {
               </label>
 
               <label className="block text-md font-medium text-gray-700">
-                Template Name <span className="text-red-500">*</span>
+                <AutoTranslate>Template</AutoTranslate><AutoTranslate> Name</AutoTranslate> <span className="text-red-500">*</span>
                 <input
                   type="text"
-                  placeholder="Enter template name"
+                  placeholder={translatedPlaceholders.enterTemplateName}
                   name="templateName"
                   value={formData.templateName || ""}
                   onChange={handleInputChange}
@@ -317,10 +406,10 @@ const Templatemaster = () => {
                   className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${!isFormValid || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isSubmitting ? (
-                    'Adding...'
+                    <AutoTranslate>Adding...</AutoTranslate>
                   ) : (
                     <>
-                      <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Template
+                      <PlusCircleIcon className="h-5 w-5 mr-1" /> <AutoTranslate>Add Template</AutoTranslate>
                     </>
                   )}
                 </button>
@@ -331,10 +420,10 @@ const Templatemaster = () => {
                   className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${!isFormValid || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isSubmitting ? (
-                    'Updating...'
+                    <AutoTranslate>Updating...</AutoTranslate>
                   ) : (
                     <>
-                      <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                      <CheckCircleIcon className="h-5 w-5 mr-1" /> <AutoTranslate>Update</AutoTranslate>
                     </>
                   )}
                 </button>
@@ -346,7 +435,7 @@ const Templatemaster = () => {
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
-              Show:
+              <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
@@ -368,41 +457,36 @@ const Templatemaster = () => {
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={translatedPlaceholders.search}
               className="border rounded-l-md p-1 outline-none w-full"
               value={searchQuery}
               onChange={handleSearchChange}
             />
             <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
-          
-          {/* <button
-            onClick={() => fetchTemplates(0)}
-            className="bg-blue-900 text-white rounded-2xl p-2 text-sm flex items-center justify-center"
-          >
-            <ArrowPathIcon className="h-5 w-5 mr-1" /> Refresh
-          </button> */}
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border">
             <thead>
               <tr className="bg-slate-100">
-                <th className="border p-2 text-left">SR.</th>
-                <th className="border p-2 text-left">Template Code</th>
-                <th className="border p-2 text-left">Template Name</th>
-                <th className="border p-2 text-left">Status</th>
-                <th className="border p-2 text-left">Edit</th>
-                <th className="border p-2 text-left">Access</th>
+                <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Template Code</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Template</AutoTranslate><AutoTranslate> Name</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Status</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Edit</AutoTranslate></th>
+                <th className="border p-2 text-left"><AutoTranslate>Action</AutoTranslate></th>
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((template, index) => (
+              {paginatedTemplates.map((template, index) => (
                 <tr key={template.id}>
                   <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
-                  <td className="border p-2">{template.templateCode || "No Code"}</td>
-                  <td className="border p-2">{template.templateName || "No Name"}</td>
-                  <td className="border p-2">{template.status === "y" ? 'Active' : 'Inactive'}</td>
+                  <td className="border p-2">{template.templateCode || <AutoTranslate>No Code</AutoTranslate>}</td>
+                  <td className="border p-2">{template.templateName || <AutoTranslate>No Name</AutoTranslate>}</td>
+                  <td className="border p-2">
+                    <AutoTranslate>{template.status === "y" ? 'Active' : 'Inactive'}</AutoTranslate>
+                  </td>
                   <td className="border p-2 text-center">
                     <button
                       onClick={() => handleTemplateEdit(template)}
@@ -430,25 +514,25 @@ const Templatemaster = () => {
           </table>
         </div>
 
-        {filteredTemplateData.length === 0 && (
+        {templateData.length === 0 && (
           <div className="text-center p-4 bg-slate-100 rounded-lg mt-4">
-            No templates found.
+            <AutoTranslate>No templates found.</AutoTranslate>
           </div>
         )}
 
-        {filteredTemplateData.length > 0 && (
+        {templateData.length > 0 && (
           <div className="flex items-center mt-4">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1 || filteredTotalPages === 0}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || filteredTotalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              disabled={currentPage === 1 || totalPages === 0}
+              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
                 }`}
             >
               <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              Previous
+              <AutoTranslate>Previous</AutoTranslate>
             </button>
 
-            {filteredTotalPages > 0 && getPageNumbers().map((page) => (
+            {totalPages > 0 && getPageNumbers().map((page) => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
@@ -459,22 +543,24 @@ const Templatemaster = () => {
               </button>
             ))}
 
-            <span className="text-sm text-gray-700 mx-2">of {filteredTotalPages} pages</span>
+            <span className="text-sm text-gray-700 mx-2">
+              <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
+            </span>
 
             <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, filteredTotalPages))}
-              disabled={currentPage === filteredTotalPages || filteredTotalPages === 0}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === filteredTotalPages || filteredTotalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
                 }`}
             >
-              Next
+              <AutoTranslate>Next</AutoTranslate>
               <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
             </button>
             <div className="ml-4">
               <span className="text-sm text-gray-700">
-                Showing {filteredTemplateData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-                {Math.min(currentPage * itemsPerPage, filteredTemplateData.length)} of{" "}
-                {filteredTemplateData.length} entries
+                <AutoTranslate>
+                  {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+                </AutoTranslate>
               </span>
             </div>
           </div>
@@ -484,17 +570,25 @@ const Templatemaster = () => {
       {modalVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">Confirm Status Change</h2>
-            <p className="mb-4">Are you sure you want to {templateToToggle?.status === 'y' ? 'deactivate' : 'activate'} this template <strong>{templateToToggle?.templateName}</strong>?</p>
+            <h2 className="text-lg font-semibold mb-4">
+              <AutoTranslate>Confirm Status Change</AutoTranslate>
+            </h2>
+            <p className="mb-4">
+              <AutoTranslate>Are you sure you want to</AutoTranslate> {templateToToggle?.status === 'y' ? 
+                <AutoTranslate>deactivate</AutoTranslate> : 
+                <AutoTranslate>activate</AutoTranslate>} <AutoTranslate>this template</AutoTranslate> <strong>{templateToToggle?.templateName}</strong>?
+            </p>
             <div className="flex justify-end gap-4">
-              <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">Cancel</button>
+              <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">
+                <AutoTranslate>Cancel</AutoTranslate>
+              </button>
               <button
                 onClick={confirmToggleStatus}
                 disabled={isConfirmDisabled}
                 className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
               >
-                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+                {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
               </button>
             </div>
           </div>
