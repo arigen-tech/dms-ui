@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef,useEffect } from 'react';
 import {
   Upload, Database, Folder, CheckCircle, AlertCircle,
   Settings, ChevronDown, ChevronUp, Server,
@@ -7,8 +7,22 @@ import {
 } from 'lucide-react';
 import Popup from '../Components/Popup';
 import { API_HOST } from '../API/apiConfig';
+import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
+import { useLanguage } from '../i18n/LanguageContext'; // Import useLanguage hook
 
 const Import = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const [importing, setImporting] = useState(false);
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState({});
@@ -37,11 +51,21 @@ const Import = () => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  
   const fileInputRef = useRef(null);
+  
   const getAuthToken = () => {
     return localStorage.getItem('tokenKey') || localStorage.getItem('authToken');
   };
+
+  // Debug language status
+  useEffect(() => {
+    console.log('🔍 Import Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded]);
 
   // Popup function like in Branch component
   const showPopup = (message, type = 'info') => {
@@ -88,11 +112,7 @@ const Import = () => {
     console.log('Selected file:', selectedFile.name, 'Size:', formatFileSize(selectedFile.size));
 
     setFile(selectedFile);
-    // setStatus({
-    //   type: 'info',
-    //   message: `File selected: ${selectedFile.name} (${formatFileSize(selectedFile.size)}) - Validating...`
-    // });
-
+    
     await validateFile(selectedFile);
   };
 
@@ -130,8 +150,6 @@ const Import = () => {
 
   const validateFile = async (fileToValidate) => {
     try {
-
-
       const token = getAuthToken();
       const formData = new FormData();
       formData.append('file', fileToValidate);
@@ -199,8 +217,6 @@ const Import = () => {
 
         // Show success popup
         showPopup(popupMessage, 'success');
-
-
 
         if (tables.length > 0) {
           setAvailableTables(tables);
@@ -570,11 +586,11 @@ const Import = () => {
                 <CheckCircle2 className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-bold mb-1">🎉 Import Successful!</h3>
+                <h3 className="text-2xl font-bold mb-1">🎉 <AutoTranslate>Import Successful!</AutoTranslate></h3>
                 <p className="text-green-100 text-lg font-medium">
-                  {successData.type === 'Database' && 'Database restoration completed'}
-                  {successData.type === 'Files & Documents' && 'Files import completed'}
-                  {successData.type === 'Complete System' && 'System restoration completed'}
+                  {successData.type === 'Database' && <AutoTranslate>Database restoration completed</AutoTranslate>}
+                  {successData.type === 'Files & Documents' && <AutoTranslate>Files import completed</AutoTranslate>}
+                  {successData.type === 'Complete System' && <AutoTranslate>System restoration completed</AutoTranslate>}
                 </p>
               </div>
             </div>
@@ -588,7 +604,7 @@ const Import = () => {
                 <>
                   {successData.databaseRecords > 0 && (
                     <div className="text-center p-3 bg-indigo-50 rounded-xl border border-indigo-200">
-                      <div className="text-indigo-600 text-sm font-semibold mb-1">Records</div>
+                      <div className="text-indigo-600 text-sm font-semibold mb-1"><AutoTranslate>Records</AutoTranslate></div>
                       <div className="text-2xl font-bold text-indigo-700">{successData.databaseRecords?.toLocaleString()}</div>
                     </div>
                   )}
@@ -608,10 +624,10 @@ const Import = () => {
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <Database className="w-5 h-5 text-blue-600" />
                   </div>
-                  <h4 className="font-bold text-gray-900 text-lg">Database Import</h4>
+                  <h4 className="font-bold text-gray-900 text-lg"><AutoTranslate>Database Import</AutoTranslate></h4>
                   {successData.type === 'Complete System' && (
                     <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">
-                      Completed
+                      <AutoTranslate>Completed</AutoTranslate>
                     </span>
                   )}
                 </div>
@@ -619,24 +635,24 @@ const Import = () => {
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
-                      <div className="text-blue-600 text-xs font-semibold uppercase tracking-wide mb-1">Total Tables</div>
+                      <div className="text-blue-600 text-xs font-semibold uppercase tracking-wide mb-1"><AutoTranslate>Total Tables</AutoTranslate></div>
                       <div className="text-2xl font-bold text-blue-700">{actualTableCount}</div>
                     </div>
                     {successData.databaseRecords > 0 && (
                       <div>
-                        <div className="text-indigo-600 text-xs font-semibold uppercase tracking-wide mb-1">Total Records</div>
+                        <div className="text-indigo-600 text-xs font-semibold uppercase tracking-wide mb-1"><AutoTranslate>Total Records</AutoTranslate></div>
                         <div className="text-2xl font-bold text-indigo-700">{successData.databaseRecords?.toLocaleString()}</div>
                       </div>
                     )}
                     {successData.recordsAdded > 0 && (
                       <div>
-                        <div className="text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-1">Added</div>
+                        <div className="text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-1"><AutoTranslate>Added</AutoTranslate></div>
                         <div className="text-xl font-bold text-emerald-700">{successData.recordsAdded?.toLocaleString()}</div>
                       </div>
                     )}
                     {successData.recordsUpdated > 0 && (
                       <div>
-                        <div className="text-amber-600 text-xs font-semibold uppercase tracking-wide mb-1">Updated</div>
+                        <div className="text-amber-600 text-xs font-semibold uppercase tracking-wide mb-1"><AutoTranslate>Updated</AutoTranslate></div>
                         <div className="text-xl font-bold text-amber-700">{successData.recordsUpdated?.toLocaleString()}</div>
                       </div>
                     )}
@@ -652,10 +668,10 @@ const Import = () => {
                   <div className="p-2 bg-green-100 rounded-lg">
                     <Folder className="w-5 h-5 text-green-600" />
                   </div>
-                  <h4 className="font-bold text-gray-900 text-lg">Files Import</h4>
+                  <h4 className="font-bold text-gray-900 text-lg"><AutoTranslate>Files Import</AutoTranslate></h4>
                   {successData.type === 'Complete System' && (
                     <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">
-                      Completed
+                      <AutoTranslate>Completed</AutoTranslate>
                     </span>
                   )}
                 </div>
@@ -663,24 +679,24 @@ const Import = () => {
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
-                      <div className="text-green-600 text-xs font-semibold uppercase tracking-wide mb-1">Total Files</div>
+                      <div className="text-green-600 text-xs font-semibold uppercase tracking-wide mb-1"><AutoTranslate>Total Files</AutoTranslate></div>
                       <div className="text-2xl font-bold text-green-700">{totalFilesProcessed}</div>
                     </div>
                     {successData.filesImported > 0 && (
                       <div>
-                        <div className="text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-1">Imported</div>
+                        <div className="text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-1"><AutoTranslate>Imported</AutoTranslate></div>
                         <div className="text-xl font-bold text-emerald-700">{successData.filesImported}</div>
                       </div>
                     )}
                     {successData.filesReplaced > 0 && (
                       <div>
-                        <div className="text-amber-600 text-xs font-semibold uppercase tracking-wide mb-1">Replaced</div>
+                        <div className="text-amber-600 text-xs font-semibold uppercase tracking-wide mb-1"><AutoTranslate>Replaced</AutoTranslate></div>
                         <div className="text-xl font-bold text-amber-700">{successData.filesReplaced}</div>
                       </div>
                     )}
                     {successData.filesSkipped > 0 && (
                       <div>
-                        <div className="text-gray-600 text-xs font-semibold uppercase tracking-wide mb-1">Skipped</div>
+                        <div className="text-gray-600 text-xs font-semibold uppercase tracking-wide mb-1"><AutoTranslate>Skipped</AutoTranslate></div>
                         <div className="text-xl font-bold text-gray-700">{successData.filesSkipped}</div>
                       </div>
                     )}
@@ -695,18 +711,18 @@ const Import = () => {
                 <div className="p-2 bg-purple-100 rounded-lg">
                   <FileArchive className="w-5 h-5 text-purple-600" />
                 </div>
-                <h4 className="font-bold text-gray-900 text-lg">Import Summary</h4>
+                <h4 className="font-bold text-gray-900 text-lg"><AutoTranslate>Import Summary</AutoTranslate></h4>
               </div>
 
               {/* Compact Grid Layout */}
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
-                    <span className="text-purple-700 font-medium text-sm">Type:</span>
+                    <span className="text-purple-700 font-medium text-sm"><AutoTranslate>Type:</AutoTranslate></span>
                     <span className="font-bold text-purple-900">{successData.type}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
-                    <span className="text-purple-700 font-medium text-sm">Source:</span>
+                    <span className="text-purple-700 font-medium text-sm"><AutoTranslate>Source:</AutoTranslate></span>
                     <span className="font-bold text-purple-900 truncate ml-2" title={formatSource(successData.source)}>
                       {formatSource(successData.source)}
                     </span>
@@ -717,7 +733,7 @@ const Import = () => {
                   {/* Period Box */}
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg border border-purple-100">
                     <span className="text-purple-700 font-medium text-sm whitespace-nowrap">
-                      Period:
+                      <AutoTranslate>Period:</AutoTranslate>
                     </span>
                     <span
                       className="font-bold text-purple-900 text-sm text-right truncate max-w-[60%]"
@@ -730,7 +746,7 @@ const Import = () => {
                   {/* Completed Box */}
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg border border-purple-100">
                     <span className="text-purple-700 font-medium text-sm whitespace-nowrap">
-                      Completed:
+                      <AutoTranslate>Completed:</AutoTranslate>
                     </span>
                     <span
                       className="font-bold text-purple-900 text-sm text-right truncate max-w-[60%]"
@@ -749,13 +765,13 @@ const Import = () => {
                   {successData.type === 'Database' && (
                     <>
                       <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
-                        <div className="text-purple-600 text-xs font-semibold mb-1">Tables</div>
+                        <div className="text-purple-600 text-xs font-semibold mb-1"><AutoTranslate>Tables</AutoTranslate></div>
                         <div className="text-lg font-bold text-purple-700">{actualTableCount}</div>
                       </div>
                       <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
-                        <div className="text-purple-600 text-xs font-semibold mb-1">Duplicates</div>
+                        <div className="text-purple-600 text-xs font-semibold mb-1"><AutoTranslate>Duplicates</AutoTranslate></div>
                         <div className={`text-sm font-bold ${successData.overwrite ? 'text-amber-600' : 'text-green-600'}`}>
-                          {successData.overwrite ? 'Replace' : 'Skip '}
+                          {successData.overwrite ? <AutoTranslate>Replace</AutoTranslate> : <AutoTranslate>Skip</AutoTranslate>}
                         </div>
                       </div>
                     </>
@@ -764,13 +780,13 @@ const Import = () => {
                   {successData.type === 'Files & Documents' && (
                     <>
                       <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
-                        <div className="text-purple-600 text-xs font-semibold mb-1">Files</div>
+                        <div className="text-purple-600 text-xs font-semibold mb-1"><AutoTranslate>Files</AutoTranslate></div>
                         <div className="text-lg font-bold text-purple-700">{totalFilesProcessed}</div>
                       </div>
                       <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
-                        <div className="text-purple-600 text-xs font-semibold mb-1">Duplicates</div>
+                        <div className="text-purple-600 text-xs font-semibold mb-1"><AutoTranslate>Duplicates</AutoTranslate></div>
                         <div className={`text-sm font-bold ${successData.overwrite ? 'text-amber-600' : 'text-green-600'}`}>
-                          {successData.overwrite ? 'Replace' : 'Skip '}
+                          {successData.overwrite ? <AutoTranslate>Replace</AutoTranslate> : <AutoTranslate>Skip</AutoTranslate>}
                         </div>
                       </div>
                     </>
@@ -779,17 +795,17 @@ const Import = () => {
                   {successData.type === 'Complete System' && (
                     <>
                       <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
-                        <div className="text-purple-600 text-xs font-semibold mb-1">Tables</div>
+                        <div className="text-purple-600 text-xs font-semibold mb-1"><AutoTranslate>Tables</AutoTranslate></div>
                         <div className="text-lg font-bold text-purple-700">{actualTableCount}</div>
                       </div>
                       <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
-                        <div className="text-purple-600 text-xs font-semibold mb-1">Files</div>
+                        <div className="text-purple-600 text-xs font-semibold mb-1"><AutoTranslate>Files</AutoTranslate></div>
                         <div className="text-lg font-bold text-purple-700">{totalFilesProcessed}</div>
                       </div>
                       <div className="bg-white/70 p-2 rounded-lg border border-purple-100">
-                        <div className="text-purple-600 text-xs font-semibold mb-1">Duplicates</div>
+                        <div className="text-purple-600 text-xs font-semibold mb-1"><AutoTranslate>Duplicates</AutoTranslate></div>
                         <div className={`text-sm font-bold ${successData.overwrite ? 'text-amber-600' : 'text-green-600'}`}>
-                          {successData.overwrite ? 'Replace' : 'Skip '}
+                          {successData.overwrite ? <AutoTranslate>Replace</AutoTranslate> : <AutoTranslate>Skip</AutoTranslate>}
                         </div>
                       </div>
                     </>
@@ -803,11 +819,11 @@ const Import = () => {
               <div className="flex items-center space-x-3">
                 <Shield className="w-5 h-5 text-green-600 flex-shrink-0" />
                 <div>
-                  <div className="font-bold text-green-800 text-sm mb-1">✅ System Ready</div>
+                  <div className="font-bold text-green-800 text-sm mb-1">✅ <AutoTranslate>System Ready</AutoTranslate></div>
                   <p className="text-green-700 text-sm">
-                    {successData.type === 'Database' && 'Your database has been successfully restored and is ready for use.'}
-                    {successData.type === 'Files & Documents' && 'All selected files and documents have been imported successfully.'}
-                    {successData.type === 'Complete System' && 'Your complete Document Management System has been restored and is ready for use.'}
+                    {successData.type === 'Database' && <AutoTranslate>Your database has been successfully restored and is ready for use.</AutoTranslate>}
+                    {successData.type === 'Files & Documents' && <AutoTranslate>All selected files and documents have been imported successfully.</AutoTranslate>}
+                    {successData.type === 'Complete System' && <AutoTranslate>Your complete Document Management System has been restored and is ready for use.</AutoTranslate>}
                   </p>
                 </div>
               </div>
@@ -823,7 +839,7 @@ const Import = () => {
               }}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
             >
-              Continue to DMS
+              <AutoTranslate>Continue to DMS</AutoTranslate>
             </button>
             <button
               onClick={() => {
@@ -831,7 +847,7 @@ const Import = () => {
               }}
               className="px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all duration-300"
             >
-              Import Another
+              <AutoTranslate>Import Another</AutoTranslate>
             </button>
           </div>
         </div>
@@ -844,32 +860,32 @@ const Import = () => {
 
     return (
       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-4">
-        <h4 className="font-medium text-gray-900 mb-2">📊 File Analysis:</h4>
+        <h4 className="font-medium text-gray-900 mb-2">📊 <AutoTranslate>File Analysis:</AutoTranslate></h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="space-y-2">
             <div>
-              <span className="text-gray-600">Name:</span>
+              <span className="text-gray-600"><AutoTranslate>Name:</AutoTranslate></span>
               <span className="ml-2 font-medium">{file.name}</span>
             </div>
             <div>
-              <span className="text-gray-600">Size:</span>
+              <span className="text-gray-600"><AutoTranslate>Size:</AutoTranslate></span>
               <span className="ml-2 font-medium">{formatFileSize(file.size)}</span>
             </div>
           </div>
           <div className="space-y-2">
             <div>
-              <span className="text-gray-600">Content Type:</span>
+              <span className="text-gray-600"><AutoTranslate>Content Type:</AutoTranslate></span>
               <span className={`ml-2 font-medium ${fileContentType === 'both' ? 'text-purple-600' :
                 fileContentType === 'database' ? 'text-blue-600' :
                   fileContentType === 'files' ? 'text-green-600' : 'text-gray-500'
                 }`}>
-                {fileContentType === 'both' ? 'Database + Files' :
-                  fileContentType === 'database' ? 'Database Only' :
-                    fileContentType === 'files' ? 'Files Only' : 'Unknown'}
+                {fileContentType === 'both' ? <AutoTranslate>Database + Files</AutoTranslate> :
+                  fileContentType === 'database' ? <AutoTranslate>Database Only</AutoTranslate> :
+                    fileContentType === 'files' ? <AutoTranslate>Files Only</AutoTranslate> : <AutoTranslate>Unknown</AutoTranslate>}
               </span>
             </div>
             <div>
-              <span className="text-gray-600">Tables Found:</span>
+              <span className="text-gray-600"><AutoTranslate>Tables Found:</AutoTranslate></span>
               <span className="ml-2 font-medium text-blue-600">
                 {status.details.availableTables?.length || 0}
               </span>
@@ -880,16 +896,16 @@ const Import = () => {
         {status.details.availableTables && status.details.availableTables.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-600">Available Tables:</span>
+              <span className="text-gray-600"><AutoTranslate>Available Tables:</AutoTranslate></span>
               <span className="font-medium text-blue-600">
-                {status.details.availableTables.length} tables • {selectedTables.size} selected
+                {status.details.availableTables.length} <AutoTranslate>tables</AutoTranslate> • {selectedTables.size} <AutoTranslate>selected</AutoTranslate>
               </span>
             </div>
             <button
               onClick={() => setShowTableSelector(!showTableSelector)}
               className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
             >
-              <span>{showTableSelector ? 'Hide Table Selection' : 'Select Tables to Import'}</span>
+              <span>{showTableSelector ? <AutoTranslate>Hide Table Selection</AutoTranslate> : <AutoTranslate>Select Tables to Import</AutoTranslate>}</span>
               {showTableSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           </div>
@@ -898,16 +914,16 @@ const Import = () => {
         {status.details.availableFiles && status.details.availableFiles.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-600">Available File Categories:</span>
+              <span className="text-gray-600"><AutoTranslate>Available File Categories:</AutoTranslate></span>
               <span className="font-medium text-green-600">
-                {status.details.availableFiles.length} categories • {selectedFiles.size} selected
+                {status.details.availableFiles.length} <AutoTranslate>categories</AutoTranslate> • {selectedFiles.size} <AutoTranslate>selected</AutoTranslate>
               </span>
             </div>
             <button
               onClick={() => setShowFileSelector(!showFileSelector)}
               className="flex items-center space-x-2 text-sm text-green-600 hover:text-green-800 font-medium"
             >
-              <span>{showFileSelector ? 'Hide File Selection' : 'Select File Categories to Import'}</span>
+              <span>{showFileSelector ? <AutoTranslate>Hide File Selection</AutoTranslate> : <AutoTranslate>Select File Categories to Import</AutoTranslate>}</span>
               {showFileSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           </div>
@@ -925,19 +941,19 @@ const Import = () => {
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-4 mt-4 max-h-80 overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
-          <h5 className="font-medium text-gray-900">Select Tables to Import</h5>
+          <h5 className="font-medium text-gray-900"><AutoTranslate>Select Tables to Import</AutoTranslate></h5>
           <div className="flex space-x-2">
             <button
               onClick={selectAllTables}
               className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 border border-blue-200 rounded"
             >
-              Select All
+              <AutoTranslate>Select All</AutoTranslate>
             </button>
             <button
               onClick={clearTableSelection}
               className="text-xs text-gray-600 hover:text-gray-800 font-medium px-2 py-1 border border-gray-200 rounded"
             >
-              Clear All
+              <AutoTranslate>Clear All</AutoTranslate>
             </button>
           </div>
         </div>
@@ -955,7 +971,7 @@ const Import = () => {
             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <span className="text-sm font-medium text-gray-900">
-            {allSelected ? 'All tables selected' : someSelected ? 'Some tables selected' : 'Select all tables'}
+            {allSelected ? <AutoTranslate>All tables selected</AutoTranslate> : someSelected ? <AutoTranslate>Some tables selected</AutoTranslate> : <AutoTranslate>Select all tables</AutoTranslate>}
           </span>
         </label>
 
@@ -975,7 +991,7 @@ const Import = () => {
 
         <div className="mt-3 pt-3 border-t border-gray-200">
           <div className="text-sm text-gray-600">
-            Selected: <span className="font-medium">{selectedTables.size}</span> of {availableTables.length} tables
+            <AutoTranslate>Selected:</AutoTranslate> <span className="font-medium">{selectedTables.size}</span> <AutoTranslate>of</AutoTranslate> {availableTables.length} <AutoTranslate>tables</AutoTranslate>
           </div>
         </div>
       </div>
@@ -1005,19 +1021,19 @@ const Import = () => {
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-4 mt-4">
         <div className="flex items-center justify-between mb-3">
-          <h5 className="font-medium text-gray-900">Select File Categories to Import</h5>
+          <h5 className="font-medium text-gray-900"><AutoTranslate>Select File Categories to Import</AutoTranslate></h5>
           <div className="flex space-x-2">
             <button
               onClick={selectAllFiles}
               className="text-xs text-green-600 hover:text-green-800 font-medium px-2 py-1 border border-green-200 rounded"
             >
-              Select All
+              <AutoTranslate>Select All</AutoTranslate>
             </button>
             <button
               onClick={clearFileSelection}
               className="text-xs text-gray-600 hover:text-gray-800 font-medium px-2 py-1 border border-gray-200 rounded"
             >
-              Clear All
+              <AutoTranslate>Clear All</AutoTranslate>
             </button>
           </div>
         </div>
@@ -1035,7 +1051,7 @@ const Import = () => {
             className="rounded border-gray-300 text-green-600 focus:ring-green-500"
           />
           <span className="text-sm font-medium text-gray-900">
-            {allSelected ? 'All file categories selected' : someSelected ? 'Some categories selected' : 'Select all file categories'}
+            {allSelected ? <AutoTranslate>All file categories selected</AutoTranslate> : someSelected ? <AutoTranslate>Some categories selected</AutoTranslate> : <AutoTranslate>Select all file categories</AutoTranslate>}
           </span>
         </label>
 
@@ -1052,10 +1068,10 @@ const Import = () => {
                 {fileCategoryIcons[category] || <File className="w-4 h-4 text-gray-600" />}
                 <div>
                   <div className="text-sm font-medium text-gray-900">
-                    {fileCategoryNames[category] || category}
+                    <AutoTranslate>{fileCategoryNames[category] || category}</AutoTranslate>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {fileStructure[category]?.fileCount || 0} files
+                    {fileStructure[category]?.fileCount || 0} <AutoTranslate>files</AutoTranslate>
                   </div>
                 </div>
               </div>
@@ -1065,7 +1081,7 @@ const Import = () => {
 
         <div className="mt-3 pt-3 border-t border-gray-200">
           <div className="text-sm text-gray-600">
-            Selected: <span className="font-medium">{selectedFiles.size}</span> of {availableFiles.length} file categories
+            <AutoTranslate>Selected:</AutoTranslate> <span className="font-medium">{selectedFiles.size}</span> <AutoTranslate>of</AutoTranslate> {availableFiles.length} <AutoTranslate>file categories</AutoTranslate>
           </div>
         </div>
       </div>
@@ -1095,10 +1111,10 @@ const Import = () => {
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              DMS Data Import
+              <AutoTranslate>DMS Data Import</AutoTranslate>
             </h1>
             <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Restore your Document Management System from backup files. Supports files up to 100GB with selective table and file import.
+              <AutoTranslate>Restore your Document Management System from backup files. Supports files up to 100GB with selective table and file import.</AutoTranslate>
             </p>
           </div>
 
@@ -1115,11 +1131,11 @@ const Import = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      {progress < 100 ? '🔄 Importing DMS Data' : '✅ Import Complete'}
+                      {progress < 100 ? <AutoTranslate>🔄 Importing DMS Data</AutoTranslate> : <AutoTranslate>✅ Import Complete</AutoTranslate>}
                     </h3>
                     <p className="text-sm text-gray-600">
                       {importOptions.importDatabase && `${selectedTables.size} tables`}
-                      {importOptions.importDatabase && importOptions.importFiles ? ' and ' : ''}
+                      {importOptions.importDatabase && importOptions.importFiles ? <AutoTranslate> and </AutoTranslate> : ''}
                       {importOptions.importFiles && `${selectedFiles.size} file categories`}
                     </p>
                   </div>
@@ -1163,11 +1179,10 @@ const Import = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Select DMS Export File
+                  <AutoTranslate>Select DMS Export File</AutoTranslate>
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Choose a ZIP file that was exported from your DMS system.
-                  The system will automatically detect available content (database, files, or both).
+                  <AutoTranslate>Choose a ZIP file that was exported from your DMS system. The system will automatically detect available content (database, files, or both).</AutoTranslate>
                 </p>
 
                 <input
@@ -1215,12 +1230,12 @@ const Import = () => {
                           }`}
                       >
                         <Search className="w-4 h-4" />
-                        <span>Browse for Export ZIP File</span>
+                        <span><AutoTranslate>Browse for Export ZIP File</AutoTranslate></span>
                       </button>
                     </div>
 
                     <div className="text-sm text-gray-500">
-                      or drag and drop your file here
+                      <AutoTranslate>or drag and drop your file here</AutoTranslate>
                     </div>
                   </div>
 
@@ -1233,10 +1248,10 @@ const Import = () => {
                             <div className="font-medium text-gray-900">{file.name}</div>
                             <div className="text-sm text-gray-600">
                               {formatFileSize(file.size)} • {fileContentType ?
-                                fileContentType === 'both' ? 'Database + Files' :
-                                  fileContentType === 'database' ? 'Database Only' :
-                                    fileContentType === 'files' ? 'Files Only' : 'Ready for import'
-                                : 'Ready for import'}
+                                fileContentType === 'both' ? <AutoTranslate>Database + Files</AutoTranslate> :
+                                  fileContentType === 'database' ? <AutoTranslate>Database Only</AutoTranslate> :
+                                    fileContentType === 'files' ? <AutoTranslate>Files Only</AutoTranslate> : <AutoTranslate>Ready for import</AutoTranslate>
+                                : <AutoTranslate>Ready for import</AutoTranslate>}
                             </div>
                           </div>
                         </div>
@@ -1255,7 +1270,7 @@ const Import = () => {
                   )}
 
                   <div className="mt-4 text-xs text-gray-400">
-                    Maximum file size: 100GB • DMS Export ZIP format only
+                    <AutoTranslate>Maximum file size: 100GB • DMS Export ZIP format only</AutoTranslate>
                   </div>
                 </div>
               </div>
@@ -1266,7 +1281,7 @@ const Import = () => {
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8 max-w-4xl mx-auto">
               <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                 <Settings className="w-6 h-6 mr-3 text-blue-600" />
-                Import Configuration
+                <AutoTranslate>Import Configuration</AutoTranslate>
               </h3>
 
               <div className="space-y-6">
@@ -1280,18 +1295,18 @@ const Import = () => {
                         }`} />
                       <div className={`font-semibold ${fileContentType === 'database' || fileContentType === 'both' ? 'text-gray-900' : 'text-gray-500'
                         }`}>
-                        Import Database
+                        <AutoTranslate>Import Database</AutoTranslate>
                       </div>
                       {!(fileContentType === 'database' || fileContentType === 'both') && (
-                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Not available</span>
+                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded"><AutoTranslate>Not available</AutoTranslate></span>
                       )}
                     </div>
                     <div className={`text-sm ml-8 ${fileContentType === 'database' || fileContentType === 'both' ? 'text-gray-600' : 'text-gray-400'
                       }`}>
-                      Restore database tables and records. Select specific tables or import all.
+                      <AutoTranslate>Restore database tables and records. Select specific tables or import all.</AutoTranslate>
                       {importOptions.importDatabase && availableTables.length > 0 && (
                         <div className="mt-1 text-blue-600 font-medium">
-                          {availableTables.length} tables available • {selectedTables.size} selected
+                          {availableTables.length} <AutoTranslate>tables available</AutoTranslate> • {selectedTables.size} <AutoTranslate>selected</AutoTranslate>
                         </div>
                       )}
                     </div>
@@ -1301,7 +1316,7 @@ const Import = () => {
                         onClick={() => setShowTableSelector(!showTableSelector)}
                         className="ml-8 mt-2 flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
                       >
-                        <span>{showTableSelector ? 'Hide Table Selection' : 'Select Specific Tables'}</span>
+                        <span>{showTableSelector ? <AutoTranslate>Hide Table Selection</AutoTranslate> : <AutoTranslate>Select Specific Tables</AutoTranslate>}</span>
                         {showTableSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
                     )}
@@ -1332,18 +1347,18 @@ const Import = () => {
                         }`} />
                       <div className={`font-semibold ${fileContentType === 'files' || fileContentType === 'both' ? 'text-gray-900' : 'text-gray-500'
                         }`}>
-                        Import Files & Documents
+                        <AutoTranslate>Import Files & Documents</AutoTranslate>
                       </div>
                       {!(fileContentType === 'files' || fileContentType === 'both') && (
-                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Not available</span>
+                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded"><AutoTranslate>Not available</AutoTranslate></span>
                       )}
                     </div>
                     <div className={`text-sm ml-8 ${fileContentType === 'files' || fileContentType === 'both' ? 'text-gray-600' : 'text-gray-400'
                       }`}>
-                      Restore documents, profiles, waiting room files, and archives with automatic directory creation.
+                      <AutoTranslate>Restore documents, profiles, waiting room files, and archives with automatic directory creation.</AutoTranslate>
                       {importOptions.importFiles && availableFiles.length > 0 && (
                         <div className="mt-1 text-green-600 font-medium">
-                          {availableFiles.length} categories available • {selectedFiles.size} selected
+                          {availableFiles.length} <AutoTranslate>categories available</AutoTranslate> • {selectedFiles.size} <AutoTranslate>selected</AutoTranslate>
                         </div>
                       )}
                     </div>
@@ -1353,7 +1368,7 @@ const Import = () => {
                         onClick={() => setShowFileSelector(!showFileSelector)}
                         className="ml-8 mt-2 flex items-center space-x-2 text-sm text-green-600 hover:text-green-800 font-medium"
                       >
-                        <span>{showFileSelector ? 'Hide File Selection' : 'Select File Categories'}</span>
+                        <span>{showFileSelector ? <AutoTranslate>Hide File Selection</AutoTranslate> : <AutoTranslate>Select File Categories</AutoTranslate>}</span>
                         {showFileSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
                     )}
@@ -1378,12 +1393,12 @@ const Import = () => {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <AlertCircle className="w-5 h-5 text-amber-600" />
-                      <div className="font-semibold text-gray-900">Duplicate Data Handling</div>
+                      <div className="font-semibold text-gray-900"><AutoTranslate>Duplicate Data Handling</AutoTranslate></div>
                     </div>
                     <div className="text-sm text-gray-600 ml-8">
                       {importOptions.overwriteExisting
-                        ? "Replace existing records and files when duplicates are found."
-                        : "Skip existing records and files, only add new data."
+                        ? <AutoTranslate>Replace existing records and files when duplicates are found.</AutoTranslate>
+                        : <AutoTranslate>Skip existing records and files, only add new data.</AutoTranslate>
                       }
                     </div>
                   </div>
@@ -1408,8 +1423,6 @@ const Import = () => {
           {file && fileContentType && (
             <div className="max-w-4xl mx-auto">
 
-
-
               {/* Import Cards - Styled like Backup Section */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {/* Database Import Card */}
@@ -1423,16 +1436,16 @@ const Import = () => {
                     <div className="p-4 bg-blue-100 rounded-2xl mb-4">
                       <Database className="w-8 h-8 text-blue-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">Database Import</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3"><AutoTranslate>Database Import</AutoTranslate></h3>
                     <p className="text-gray-600 mb-4 flex-1">
-                      Import database tables and records only
+                      <AutoTranslate>Import database tables and records only</AutoTranslate>
                     </p>
                     <div className="w-full space-y-3">
                       <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                         <div className="text-blue-700 font-semibold text-sm">
                           {selectedTables.size > 0
                             ? `${selectedTables.size} tables selected`
-                            : 'No tables selected'
+                            : <AutoTranslate>No tables selected</AutoTranslate>
                           }
                         </div>
                       </div>
@@ -1443,7 +1456,7 @@ const Import = () => {
                           : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
                           }`}
                       >
-                        {isSubmitting ? 'Importing...' : 'Start Database Import'}
+                        {isSubmitting ? <AutoTranslate>Importing...</AutoTranslate> : <AutoTranslate>Start Database Import</AutoTranslate>}
                       </button>
                     </div>
                   </div>
@@ -1460,16 +1473,16 @@ const Import = () => {
                     <div className="p-4 bg-green-100 rounded-2xl mb-4">
                       <HardDrive className="w-8 h-8 text-green-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">Files & Documents Import</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3"><AutoTranslate>Files & Documents Import</AutoTranslate></h3>
                     <p className="text-gray-600 mb-4 flex-1">
-                      Import documents, files, and attachments only
+                      <AutoTranslate>Import documents, files, and attachments only</AutoTranslate>
                     </p>
                     <div className="w-full space-y-3">
                       <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                         <div className="text-green-700 font-semibold text-sm">
                           {selectedFiles.size > 0
                             ? `${selectedFiles.size} categories selected`
-                            : 'No categories selected'
+                            : <AutoTranslate>No categories selected</AutoTranslate>
                           }
                         </div>
                       </div>
@@ -1480,7 +1493,7 @@ const Import = () => {
                           : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl'
                           }`}
                       >
-                        {isSubmitting ? 'Importing...' : 'Start Files Import'}
+                        {isSubmitting ? <AutoTranslate>Importing...</AutoTranslate> : <AutoTranslate>Start Files Import</AutoTranslate>}
                       </button>
                     </div>
                   </div>
@@ -1497,9 +1510,9 @@ const Import = () => {
                     <div className="p-4 bg-purple-100 rounded-2xl mb-4">
                       <Server className="w-8 h-8 text-purple-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">Complete System Import</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3"><AutoTranslate>Complete System Import</AutoTranslate></h3>
                     <p className="text-gray-600 mb-4 flex-1">
-                      Import both database and files for complete system restoration
+                      <AutoTranslate>Import both database and files for complete system restoration</AutoTranslate>
                     </p>
                     <div className="w-full space-y-3">
                       <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
@@ -1507,7 +1520,7 @@ const Import = () => {
                           {importOptions.importDatabase ? `${selectedTables.size} tables` : ''}
                           {importOptions.importDatabase && importOptions.importFiles ? ' + ' : ''}
                           {importOptions.importFiles ? `${selectedFiles.size} categories` : ''}
-                          {!importOptions.importDatabase && !importOptions.importFiles ? 'Nothing selected' : ''}
+                          {!importOptions.importDatabase && !importOptions.importFiles ? <AutoTranslate>Nothing selected</AutoTranslate> : ''}
                         </div>
                       </div>
                       <button
@@ -1517,7 +1530,7 @@ const Import = () => {
                           : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
                           }`}
                       >
-                        {isSubmitting ? 'Importing...' : 'Start Full System Import'}
+                        {isSubmitting ? <AutoTranslate>Importing...</AutoTranslate> : <AutoTranslate>Start Full System Import</AutoTranslate>}
                       </button>
                     </div>
                   </div>

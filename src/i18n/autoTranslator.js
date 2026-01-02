@@ -50,12 +50,19 @@ const fallbackTranslations = {
     'UpdatedBy': 'अपडेटकर्ता',
     'Updated Date': 'अपडेट तारीख',
     'Assign Role': 'भूमिका सौंपें',
+    'Start Date': 'प्रारंभ तिथि',
+    'End Date': 'समाप्ति तिथि',
+    'Search Query': 'खोज शब्द',
+    
 
 
 
     // Placeholders
     'Enter Mobile Number': 'मोबाइल नंबर दर्ज करें',
     'Enter Email': 'ईमेल दर्ज करें',
+    'Select Start Date': 'प्रारंभ तिथि चुनें',
+    'Select End Date': 'समाप्ति तिथि चुनें',
+    'Enter exact text to search in documents': 'दस्तावेज़ों में खोजने के लिए सटीक पाठ दर्ज करें',
     
 
 
@@ -353,6 +360,32 @@ export const getCacheInfo = () => {
     languages: supportedLanguages
   };
 };
+
+/**
+ * Instant translation for placeholders, titles, aria-labels
+ * (NO async, NO JSX)
+ */
+export const translateInstant = (text, targetLanguageCode = 'en') => {
+  if (!text || targetLanguageCode === 'en') {
+    return text;
+  }
+
+  // Try fallback first
+  const fallback = getFallbackTranslation(text, targetLanguageCode);
+  if (fallback) {
+    return fallback;
+  }
+
+  // Try cache (if already translated earlier)
+  const cacheKey = `${text}_${targetLanguageCode}`;
+  if (translationCache[cacheKey]) {
+    return translationCache[cacheKey];
+  }
+
+  // Otherwise return original text (NO API call here)
+  return text;
+};
+
 
 /**
  * Translate all strings in an object recursively

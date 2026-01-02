@@ -19,6 +19,10 @@ import axios from "axios"
 import { DOCUMENTHEADER_API, API_HOST } from "../API/apiConfig"
 import LoadingComponent from '../Components/LoadingComponent';
 import Popup from '../Components/Popup';
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { translateInstant } from '../i18n/autoTranslator';
+
 
 const tokenKey = "tokenKey"
 
@@ -69,6 +73,29 @@ const extractFileName = (fullName) => {
 }
 
 const FileCompare = () => {
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
+  // Debug log
+  useEffect(() => {
+    console.log('🔍 FileCompare Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
+
   const [documentHeaders, setDocumentHeaders] = useState([])
   const [firstFileDocuments, setFirstFileDocuments] = useState([])
   const [secondFileDocuments, setSecondFileDocuments] = useState([])
@@ -257,7 +284,7 @@ const FileCompare = () => {
         const existingExt = existingFileName.split('.').pop()?.toUpperCase() || "Unknown";
         const selectedExt = selectedFileName.split('.').pop()?.toUpperCase() || "Unknown";
 
-        setWarningMessage(`Cannot compare ${existingExt} with ${selectedExt}. Please select files with the same format.`);
+        setWarningMessage(<AutoTranslate>Cannot compare {existingExt} with {selectedExt}. Please select files with the same format.</AutoTranslate>);
         return;
       }
     }
@@ -269,11 +296,11 @@ const FileCompare = () => {
         setWarningMessage("")
       } else {
         if (totalSelected >= 2) {
-          setWarningMessage("Warning: You cannot select more than 2 documents in total across both files.")
+          setWarningMessage(<AutoTranslate>Warning: You cannot select more than 2 documents in total across both files.</AutoTranslate>)
           return
         }
         if (currentFirstCount >= 2) {
-          setWarningMessage("Warning: You cannot select more than 2 documents in the first file.")
+          setWarningMessage(<AutoTranslate>Warning: You cannot select more than 2 documents in the first file.</AutoTranslate>)
           return
         }
         setSelectedFirstFileIds((prev) => [...prev, fileId])
@@ -286,11 +313,11 @@ const FileCompare = () => {
         setWarningMessage("")
       } else {
         if (totalSelected >= 2) {
-          setWarningMessage("Warning: You cannot select more than 2 documents in total across both files.")
+          setWarningMessage(<AutoTranslate>Warning: You cannot select more than 2 documents in total across both files.</AutoTranslate>)
           return
         }
         if (currentSecondCount >= 2) {
-          setWarningMessage("Warning: You cannot select more than 2 documents in the second file.")
+          setWarningMessage(<AutoTranslate>Warning: You cannot select more than 2 documents in the second file.</AutoTranslate>)
           return
         }
         setSelectedSecondFileIds((prev) => [...prev, fileId])
@@ -374,7 +401,9 @@ const FileCompare = () => {
         <div className="flex items-center justify-center h-full bg-gray-50">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-600">Loading document...</p>
+            <p className="text-sm text-gray-600">
+              <AutoTranslate>Loading document...</AutoTranslate>
+            </p>
           </div>
         </div>
       );
@@ -385,7 +414,9 @@ const FileCompare = () => {
         <div className="flex items-center justify-center h-full bg-gray-50">
           <div className="text-center">
             <DocumentIcon className="h-12 w-12 text-red-500 mx-auto mb-2" />
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-red-600">
+              <AutoTranslate>{error}</AutoTranslate>
+            </p>
           </div>
         </div>
       );
@@ -405,7 +436,9 @@ const FileCompare = () => {
         <div className="flex items-center justify-center h-full bg-gray-50">
           <div className="text-center">
             <DocumentIcon className="h-20 w-20 text-gray-400 mx-auto mb-4" />
-            <p className="text-sm text-gray-600">Unable to load file preview</p>
+            <p className="text-sm text-gray-600">
+              <AutoTranslate>Unable to load file preview</AutoTranslate>
+            </p>
           </div>
         </div>
       )
@@ -450,7 +483,7 @@ const FileCompare = () => {
         <div className="flex items-center justify-center h-full bg-gray-50">
           <video controls className="max-w-full max-h-full">
             <source src={fileData.url} type={contentType} />
-            Your browser does not support the video tag.
+            <AutoTranslate>Your browser does not support the video tag.</AutoTranslate>
           </video>
         </div>
       )
@@ -463,7 +496,7 @@ const FileCompare = () => {
             <SpeakerWaveIcon className="h-20 w-20 text-gray-400 mx-auto mb-4" />
             <audio controls className="w-full max-w-md">
               <source src={fileData.url} type={contentType} />
-              Your browser does not support the audio tag.
+              <AutoTranslate>Your browser does not support the audio tag.</AutoTranslate>
             </audio>
             <p className="mt-2 text-sm text-gray-600">{fileName}</p>
           </div>
@@ -541,7 +574,7 @@ const FileCompare = () => {
   const compareFiles = async () => {
     const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length
     if (totalSelected !== 2) {
-      setWarningMessage("Please select exactly 2 documents to compare (can be from same file or different files).")
+      setWarningMessage(<AutoTranslate>Please select exactly 2 documents to compare (can be from same file or different files).</AutoTranslate>)
       return
     }
 
@@ -566,7 +599,7 @@ const FileCompare = () => {
       const ext1 = fileName1.split('.').pop()?.toUpperCase() || "Unknown";
       const ext2 = fileName2.split('.').pop()?.toUpperCase() || "Unknown";
 
-      setWarningMessage(`Cannot compare different file types. ${ext1} files can only be compared with ${ext1} files.`);
+      setWarningMessage(<AutoTranslate>Cannot compare different file types. {ext1} files can only be compared with {ext1} files.</AutoTranslate>);
       return;
     }
 
@@ -729,8 +762,12 @@ const FileCompare = () => {
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-700">No differences found</p>
-            <p className="text-sm text-gray-500">Files are identical</p>
+            <p className="text-lg font-medium text-gray-700">
+              <AutoTranslate>No differences found</AutoTranslate>
+            </p>
+            <p className="text-sm text-gray-500">
+              <AutoTranslate>Files are identical</AutoTranslate>
+            </p>
           </div>
         </div>
       )
@@ -759,22 +796,26 @@ const FileCompare = () => {
                   {diff.type}
                 </span>
                 <div className="text-xs text-gray-600">
-                  Line {diff.leftLineNumber !== -1 ? diff.leftLineNumber : "N/A"} →{" "}
+                  <AutoTranslate>Line</AutoTranslate> {diff.leftLineNumber !== -1 ? diff.leftLineNumber : "N/A"} →{" "}
                   {diff.rightLineNumber !== -1 ? diff.rightLineNumber : "N/A"}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">Original</div>
+                  <div className="text-xs font-medium text-gray-600 mb-1">
+                    <AutoTranslate>Original</AutoTranslate>
+                  </div>
                   <div className="text-sm bg-white p-2 rounded border font-mono">
-                    {diff.leftContent || <span className="text-gray-400 italic">No content</span>}
+                    {diff.leftContent || <span className="text-gray-400 italic"><AutoTranslate>No content</AutoTranslate></span>}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">Modified</div>
+                  <div className="text-xs font-medium text-gray-600 mb-1">
+                    <AutoTranslate>Modified</AutoTranslate>
+                  </div>
                   <div className="text-sm bg-white p-2 rounded border font-mono">
-                    {diff.rightContent || <span className="text-gray-400 italic">No content</span>}
+                    {diff.rightContent || <span className="text-gray-400 italic"><AutoTranslate>No content</AutoTranslate></span>}
                   </div>
                 </div>
               </div>
@@ -804,255 +845,257 @@ const FileCompare = () => {
   }, [comparisonResult, fileUrls.firstFile, fileUrls.secondFile])
 
 
-// Replace your FileSearchDropdown component with this FIXED version
-const FileSearchDropdown = ({ isFirst = true }) => {
-  const dropdownRef = useRef(null)
-  const inputRef = useRef(null)
+  // Replace your FileSearchDropdown component with this FIXED version
+  const FileSearchDropdown = ({ isFirst = true }) => {
+    const dropdownRef = useRef(null)
+    const inputRef = useRef(null)
 
-  // Determine which state to use
-  const searchTerm = isFirst ? firstSearchTerm : secondSearchTerm
-  const setSearchTerm = isFirst ? setFirstSearchTerm : setSecondSearchTerm
-  const selectedCategory = isFirst ? firstSelectedCategory : secondSelectedCategory
-  const setSelectedCategory = isFirst ? setFirstSelectedCategory : setSecondSelectedCategory
-  const showDropdown = isFirst ? firstShowDropdown : secondShowDropdown
-  const setShowDropdown = isFirst ? setFirstShowDropdown : setSecondShowDropdown
-  const selectedFileNo = isFirst ? selectedFirstFileNo : selectedSecondFileNo
-  const filteredHeaders = isFirst ? filteredFirstFileHeaders : filteredSecondFileHeaders
+    // Determine which state to use
+    const searchTerm = isFirst ? firstSearchTerm : secondSearchTerm
+    const setSearchTerm = isFirst ? setFirstSearchTerm : setSecondSearchTerm
+    const selectedCategory = isFirst ? firstSelectedCategory : secondSelectedCategory
+    const setSelectedCategory = isFirst ? setFirstSelectedCategory : setSecondSelectedCategory
+    const showDropdown = isFirst ? firstShowDropdown : secondShowDropdown
+    const setShowDropdown = isFirst ? setFirstShowDropdown : setSecondShowDropdown
+    const selectedFileNo = isFirst ? selectedFirstFileNo : selectedSecondFileNo
+    const filteredHeaders = isFirst ? filteredFirstFileHeaders : filteredSecondFileHeaders
 
-  // Keep input focused while typing - THIS IS THE CRITICAL FIX
-  useEffect(() => {
-    if (showDropdown && inputRef.current && document.activeElement !== inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [showDropdown, searchTerm])
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false)
-      }
-    }
-
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showDropdown, setShowDropdown])
-
-  // Handle input change
-  const handleInputChange = (e) => {
-    const value = e.target.value
-    setSearchTerm(value)
-    if (!showDropdown) {
-      setShowDropdown(true)
-    }
-  }
-
-  // Handle input focus
-  const handleInputFocus = () => {
-    setShowDropdown(true)
-  }
-
-  // Handle category change
-  const handleCategoryChange = (e) => {
-    setSelectedCategory(e.target.value)
-    setShowDropdown(true)
-    // Keep focus on input after changing category
-    setTimeout(() => {
-      if (inputRef.current) {
+    // Keep input focused while typing - THIS IS THE CRITICAL FIX
+    useEffect(() => {
+      if (showDropdown && inputRef.current && document.activeElement !== inputRef.current) {
         inputRef.current.focus()
       }
-    }, 0)
-  }
+    }, [showDropdown, searchTerm])
 
-  // Handle file selection
-  const handleSelectFile = (fileNo) => {
-    if (isFirst) {
-      setSelectedFirstFileNo(fileNo)
-      setFirstSearchTerm("")
-      setFirstSelectedCategory("")
-      if (fileNo) {
-        fetchDocumentsByFileNo(fileNo, true)
+    // Close dropdown on outside click
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          setShowDropdown(false)
+        }
       }
-    } else {
-      setSelectedSecondFileNo(fileNo)
-      setSecondSearchTerm("")
-      setSecondSelectedCategory("")
-      if (fileNo) {
-        fetchDocumentsByFileNo(fileNo, false)
+
+      if (showDropdown) {
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }, [showDropdown, setShowDropdown])
+
+    // Handle input change
+    const handleInputChange = (e) => {
+      const value = e.target.value
+      setSearchTerm(value)
+      if (!showDropdown) {
+        setShowDropdown(true)
       }
     }
-    setShowDropdown(false)
-  }
 
-  // Clear selection
-  const clearSelection = () => {
-    if (isFirst) {
-      setSelectedFirstFileNo("")
-      setFirstSearchTerm("")
-      setFirstSelectedCategory("")
-      setFirstFileDocuments([])
-      setSelectedFirstFileIds([])
-    } else {
-      setSelectedSecondFileNo("")
-      setSecondSearchTerm("")
-      setSecondSelectedCategory("")
-      setSecondFileDocuments([])
-      setSelectedSecondFileIds([])
+    // Handle input focus
+    const handleInputFocus = () => {
+      setShowDropdown(true)
     }
-    setShowDropdown(false)
-  }
 
-  // Get category name
-  const getCategoryName = (header) => {
-    return header.categoryMaster?.name || header.category?.name || "Unknown Category"
-  }
-
-  // Handle Enter key
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && filteredHeaders.length > 0) {
-      handleSelectFile(filteredHeaders[0].fileNo)
+    // Handle category change
+    const handleCategoryChange = (e) => {
+      setSelectedCategory(e.target.value)
+      setShowDropdown(true)
+      // Keep focus on input after changing category
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus()
+        }
+      }, 0)
     }
-  }
 
-  // Prevent dropdown from stealing focus
-  const handleDropdownMouseDown = (e) => {
-    e.preventDefault()
-  }
+    // Handle file selection
+    const handleSelectFile = (fileNo) => {
+      if (isFirst) {
+        setSelectedFirstFileNo(fileNo)
+        setFirstSearchTerm("")
+        setFirstSelectedCategory("")
+        if (fileNo) {
+          fetchDocumentsByFileNo(fileNo, true)
+        }
+      } else {
+        setSelectedSecondFileNo(fileNo)
+        setSecondSearchTerm("")
+        setSecondSelectedCategory("")
+        if (fileNo) {
+          fetchDocumentsByFileNo(fileNo, false)
+        }
+      }
+      setShowDropdown(false)
+    }
 
-  return (
-    <div className="relative w-full" ref={dropdownRef}>
-      {/* Search and Category Row */}
-      <div className="flex gap-2 mb-2">
-        {/* Search Input */}
-        <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Search files by name..."
-            value={searchTerm}
-            onChange={handleInputChange}
-            onFocus={handleInputFocus}
-            onKeyDown={handleKeyDown}
-            autoComplete="off"
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <XMarkIcon className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+    // Clear selection
+    const clearSelection = () => {
+      if (isFirst) {
+        setSelectedFirstFileNo("")
+        setFirstSearchTerm("")
+        setFirstSelectedCategory("")
+        setFirstFileDocuments([])
+        setSelectedFirstFileIds([])
+      } else {
+        setSelectedSecondFileNo("")
+        setSecondSearchTerm("")
+        setSecondSelectedCategory("")
+        setSecondFileDocuments([])
+        setSelectedSecondFileIds([])
+      }
+      setShowDropdown(false)
+    }
 
-        {/* Category Filter */}
-        <select
-          value={selectedCategory}
-          onChange={handleCategoryChange}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 min-w-max"
-        >
-          <option value="">All Categories</option>
-          {categoryOptions.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </div>
+    // Get category name
+    const getCategoryName = (header) => {
+      return header.categoryMaster?.name || header.category?.name || "Unknown Category"
+    }
 
-      {/* Selected File Badge */}
-      {selectedFileNo && (
-        <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
-          <div>
-            <div className="font-semibold text-blue-900">{selectedFileNo}</div>
-            <div className="text-xs text-blue-700">
-              {documentHeaders.find(h => h.fileNo === selectedFileNo)?.title || 'Unknown'}
-            </div>
-          </div>
-          <button
-            onClick={clearSelection}
-            className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-100 rounded"
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
-        </div>
-      )}
+    // Handle Enter key
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' && filteredHeaders.length > 0) {
+        handleSelectFile(filteredHeaders[0].fileNo)
+      }
+    }
 
-      {/* Dropdown List */}
-      {showDropdown && !selectedFileNo && (
-        <div 
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col"
-          onMouseDown={handleDropdownMouseDown}
-        >
-          {/* Search Info Header */}
-          {(searchTerm || selectedCategory) && (
-            <div className="px-3 py-2 bg-gray-50 border-b text-xs text-gray-600 sticky top-0">
-              {searchTerm && (
-                <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-1">
-                  Search: "{searchTerm}"
-                </span>
-              )}
-              {selectedCategory && (
-                <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded">
-                  {categoryOptions.find(cat => cat.id.toString() === selectedCategory)?.name}
-                </span>
-              )}
-            </div>
-          )}
+    // Prevent dropdown from stealing focus
+    const handleDropdownMouseDown = (e) => {
+      e.preventDefault()
+    }
 
-          {/* Results Container */}
-          <div className="overflow-y-auto flex-1">
-            {filteredHeaders.length === 0 ? (
-              <div className="p-6 text-center">
-                <DocumentIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm font-medium">
-                  {searchTerm.trim().length > 0 ? "No files found" : "Start typing to search"}
-                </p>
-              </div>
-            ) : (
-              filteredHeaders.map((header) => (
-                <div
-                  key={header.fileNo}
-                  onClick={() => handleSelectFile(header.fileNo)}
-                  className="px-3 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
-                >
-                  <div className="font-semibold text-gray-900 text-sm">
-                    {header.fileNo}
-                  </div>
-                  <div className="text-sm text-gray-700 mt-0.5 truncate">
-                    {header.title || 'No title'}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1 truncate">
-                    {header.subject || 'No subject'}
-                  </div>
-                  <div className="text-xs text-blue-600 mt-1">
-                    {getCategoryName(header)}
-                  </div>
-                </div>
-              ))
+    return (
+      <div className="relative w-full" ref={dropdownRef}>
+        {/* Search and Category Row */}
+        <div className="flex gap-2 mb-2">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={translateInstant('Select File',currentLanguage)}
+              value={searchTerm}
+              onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
             )}
           </div>
 
-          {/* Footer with count */}
-          {filteredHeaders.length > 0 && (
-            <div className="px-3 py-2 bg-gray-50 border-t text-xs text-gray-600 text-center">
-              {filteredHeaders.length} result{filteredHeaders.length !== 1 ? 's' : ''}
-            </div>
-          )}
+          {/* Category Filter */}
+          <select
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 min-w-max"
+          >
+            <option value=""><AutoTranslate>All Categories</AutoTranslate></option>
+            {categoryOptions.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
         </div>
-      )}
-    </div>
-  )
-}
+
+        {/* Selected File Badge */}
+        {selectedFileNo && (
+          <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
+            <div>
+              <div className="font-semibold text-blue-900">{selectedFileNo}</div>
+              <div className="text-xs text-blue-700">
+                {documentHeaders.find(h => h.fileNo === selectedFileNo)?.title || 'Unknown'}
+              </div>
+            </div>
+            <button
+              onClick={clearSelection}
+              className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-100 rounded"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Dropdown List */}
+        {showDropdown && !selectedFileNo && (
+          <div
+            className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col"
+            onMouseDown={handleDropdownMouseDown}
+          >
+            {/* Search Info Header */}
+            {(searchTerm || selectedCategory) && (
+              <div className="px-3 py-2 bg-gray-50 border-b text-xs text-gray-600 sticky top-0">
+                {searchTerm && (
+                  <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-1">
+                    <AutoTranslate>Search:</AutoTranslate> "{searchTerm}"
+                  </span>
+                )}
+                {selectedCategory && (
+                  <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded">
+                    {categoryOptions.find(cat => cat.id.toString() === selectedCategory)?.name}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Results Container */}
+            <div className="overflow-y-auto flex-1">
+              {filteredHeaders.length === 0 ? (
+                <div className="p-6 text-center">
+                  <DocumentIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm font-medium">
+                    {searchTerm.trim().length > 0 ? <AutoTranslate>No files found</AutoTranslate> : <AutoTranslate>Start typing to search</AutoTranslate>}
+                  </p>
+                </div>
+              ) : (
+                filteredHeaders.map((header) => (
+                  <div
+                    key={header.fileNo}
+                    onClick={() => handleSelectFile(header.fileNo)}
+                    className="px-3 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
+                  >
+                    <div className="font-semibold text-gray-900 text-sm">
+                      {header.fileNo}
+                    </div>
+                    <div className="text-sm text-gray-700 mt-0.5 truncate">
+                      {header.title || <AutoTranslate>No title</AutoTranslate>}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 truncate">
+                      {header.subject || <AutoTranslate>No subject</AutoTranslate>}
+                    </div>
+                    <div className="text-xs text-blue-600 mt-1">
+                      {getCategoryName(header)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer with count */}
+            {filteredHeaders.length > 0 && (
+              <div className="px-3 py-2 bg-gray-50 border-t text-xs text-gray-600 text-center">
+                {filteredHeaders.length} <AutoTranslate>result{filteredHeaders.length !== 1 ? 's' : ''}</AutoTranslate>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
 
   return (
     <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">File Comparison</h1>
+      <h1 className="text-2xl mb-1 font-semibold">
+        <AutoTranslate>File Compare</AutoTranslate>
+      </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         {warningMessage && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start">
@@ -1067,17 +1110,21 @@ const FileSearchDropdown = ({ isFirst = true }) => {
             {/* First File Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-700">First File</h3>
-                <span className="text-sm text-gray-500">Selected: {selectedFirstFileIds.length}/2</span>
+                <h3 className="text-lg font-medium text-gray-700">
+                  <AutoTranslate>First File</AutoTranslate>
+                </h3>
+                <span className="text-sm text-gray-500">
+                  <AutoTranslate>Selected:</AutoTranslate> {selectedFirstFileIds.length}/2
+                </span>
               </div>
 
               <div className="block text-md font-medium text-gray-700">
-                Select File <span className="text-red-500">*</span>
+                <AutoTranslate>Select File</AutoTranslate> <span className="text-red-500">*</span>
                 <FileSearchDropdown isFirst={true} />
               </div>
 
               <div className="block text-md font-medium text-gray-700">
-                Select Documents <span className="text-red-500">*</span>
+                <AutoTranslate>Select Documents</AutoTranslate> <span className="text-red-500">*</span>
                 <div className="mt-1 border rounded-md p-2 max-h-40 overflow-y-auto">
                   {firstFileDocuments.length > 0 ? (
                     firstFileDocuments.map((doc) => {
@@ -1101,7 +1148,9 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                             {getFileTypeIcon(doc.fileType)}
                             <label className="ml-2 block text-sm text-gray-700 cursor-pointer flex-1">
                               <div className="font-medium">{extractFileName(doc.fileName || doc.docName)}</div>
-                              <div className="text-xs text-gray-500">Version: {doc.version}</div>
+                              <div className="text-xs text-gray-500">
+                                <AutoTranslate>Version:</AutoTranslate> {doc.version}
+                              </div>
                             </label>
                           </div>
                         </div>
@@ -1109,7 +1158,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                     })
                   ) : (
                     <p className="text-sm text-gray-500 p-2">
-                      {selectedFirstFileNo ? "No documents available" : "Select a file to see documents"}
+                      {selectedFirstFileNo ? <AutoTranslate>No documents available</AutoTranslate> : <AutoTranslate>Select a file to see documents</AutoTranslate>}
                     </p>
                   )}
                 </div>
@@ -1119,17 +1168,21 @@ const FileSearchDropdown = ({ isFirst = true }) => {
             {/* Second File Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-700">Second File</h3>
-                <span className="text-sm text-gray-500">Selected: {selectedSecondFileIds.length}/2</span>
+                <h3 className="text-lg font-medium text-gray-700">
+                  <AutoTranslate>Second File</AutoTranslate>
+                </h3>
+                <span className="text-sm text-gray-500">
+                  <AutoTranslate>Selected:</AutoTranslate> {selectedSecondFileIds.length}/2
+                </span>
               </div>
 
               <div className="block text-md font-medium text-gray-700">
-                Select File <span className="text-red-500">*</span>
+                <AutoTranslate>Select File</AutoTranslate> <span className="text-red-500">*</span>
                 <FileSearchDropdown isFirst={false} />
               </div>
 
               <div className="block text-md font-medium text-gray-700">
-                Select Documents <span className="text-red-500">*</span>
+                <AutoTranslate>Select Documents</AutoTranslate> <span className="text-red-500">*</span>
                 <div className="mt-1 border rounded-md p-2 max-h-40 overflow-y-auto">
                   {secondFileDocuments.length > 0 ? (
                     secondFileDocuments.map((doc) => {
@@ -1153,7 +1206,9 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                             {getFileTypeIcon(doc.fileType)}
                             <label className="ml-2 block text-sm text-gray-700 cursor-pointer flex-1">
                               <div className="font-medium">{extractFileName(doc.fileName || doc.docName)}</div>
-                              <div className="text-xs text-gray-500">Version: {doc.version}</div>
+                              <div className="text-xs text-gray-500">
+                                <AutoTranslate>Version:</AutoTranslate> {doc.version}
+                              </div>
                             </label>
                           </div>
                         </div>
@@ -1161,7 +1216,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                     })
                   ) : (
                     <p className="text-sm text-gray-500 p-2">
-                      {selectedSecondFileNo ? "No documents available" : "Select a file to see documents"}
+                      {selectedSecondFileNo ? <AutoTranslate>No documents available</AutoTranslate> : <AutoTranslate>Select a file to see documents</AutoTranslate>}
                     </p>
                   )}
                 </div>
@@ -1182,12 +1237,15 @@ const FileSearchDropdown = ({ isFirst = true }) => {
               {isComparing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Comparing...
+                  <AutoTranslate>Comparing...</AutoTranslate>
                 </>
               ) : (
                 <>
-                  <ArrowsRightLeftIcon className="h-5 w-5 mr-2" /> Compare Files
+                  <ArrowsRightLeftIcon className="h-5 w-5 mr-2" />
+                  <AutoTranslate>CompareFiles</AutoTranslate>
+
                 </>
+
               )}
             </button>
           </div>
@@ -1200,7 +1258,9 @@ const FileSearchDropdown = ({ isFirst = true }) => {
               {/* Header */}
               <div className="flex justify-between items-center p-4 border-b bg-gray-50">
                 <div className="flex items-center space-x-4">
-                  <h2 className="text-xl font-semibold">File Comparison</h2>
+                  <h2 className="text-xl font-semibold">
+                    <AutoTranslate>File Compare</AutoTranslate>
+                  </h2>
                   <div className="flex items-center">
                     {comparisonResult.identical ? (
                       <CheckCircleIcon className="h-6 w-6 text-green-500 mr-2" />
@@ -1211,7 +1271,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                       className={`px-3 py-1 rounded-full text-sm font-medium ${comparisonResult.identical ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                         }`}
                     >
-                      {comparisonResult.similarityPercentage?.toFixed(1) || "0.0"}% Similar
+                      {comparisonResult.similarityPercentage?.toFixed(1) || "0.0"}% <AutoTranslate>Similar</AutoTranslate>
                     </span>
                   </div>
                 </div>
@@ -1233,7 +1293,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                       }`}
                   >
-                    File Preview
+                    <AutoTranslate>File </AutoTranslate><AutoTranslate> Preview</AutoTranslate>
                   </button>
                   <button
                     onClick={() => setActiveTab("differences")}
@@ -1242,7 +1302,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                       }`}
                   >
-                    Differences ({comparisonResult.differences?.length || 0})
+                    <AutoTranslate>Difference</AutoTranslate> ({comparisonResult.differences?.length || 0})
                   </button>
                   {bothImages && (
                     <button
@@ -1252,7 +1312,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                         }`}
                     >
-                      Visual Diff (Images)
+                      <AutoTranslate>VisualDifference</AutoTranslate> (<AutoTranslate>Images</AutoTranslate>)
                     </button>
                   )}
                   {bothText && (
@@ -1263,7 +1323,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                         }`}
                     >
-                      Text Comparison
+                      <AutoTranslate>Text Comparison</AutoTranslate>
                     </button>
                   )}
                 </nav>
@@ -1278,7 +1338,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                       <div className="ml-2">
                         <h3 className="font-medium text-gray-800">{extractFileName(comparisonResult.leftFile.fileName)}</h3>
                         <p className="text-xs text-gray-600">
-                          Version: {comparisonResult.leftFile.version} | fileType: {comparisonResult.leftFile.fileType}
+                          <AutoTranslate>Version:</AutoTranslate> {comparisonResult.leftFile.version} | <AutoTranslate>fileType:</AutoTranslate> {comparisonResult.leftFile.fileType}
                         </p>
                       </div>
                     </div>
@@ -1289,7 +1349,7 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                       <div className="ml-2">
                         <h3 className="font-medium text-gray-800">{extractFileName(comparisonResult.rightFile.fileName)}</h3>
                         <p className="text-xs text-gray-600">
-                          Version: {comparisonResult.rightFile.version} | fileType: {" "}
+                          <AutoTranslate>Version:</AutoTranslate> {comparisonResult.rightFile.version} | <AutoTranslate>fileType:</AutoTranslate> {" "}
                           {comparisonResult.rightFile.fileType}
                         </p>
                       </div>
@@ -1306,7 +1366,9 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                       <div className="w-full flex items-center justify-center">
                         <div className="text-center">
                           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                          <p className="text-gray-600">Loading file previews...</p>
+                          <p className="text-gray-600">
+                            <AutoTranslate>Loading file previews...</AutoTranslate>
+                          </p>
                         </div>
                       </div>
                     ) : (
@@ -1358,14 +1420,18 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-6">
                     <div className="text-sm">
-                      <span className="font-medium">Status:</span>
+                      <span className="font-medium">
+                        <AutoTranslate>Status:</AutoTranslate>
+                      </span>
                       <span className={`ml-1 ${comparisonResult.identical ? "text-green-600" : "text-red-600"}`}>
                         {comparisonResult.message}
                       </span>
                     </div>
                     {!comparisonResult.identical && comparisonResult.differences && (
                       <div className="text-sm">
-                        <span className="font-medium">Differences Found:</span>
+                        <span className="font-medium">
+                          <AutoTranslate>Differences Found:</AutoTranslate>
+                        </span>
                         <span className="ml-1 text-red-600">{comparisonResult.differences.length}</span>
                       </div>
                     )}
@@ -1373,17 +1439,17 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                       <div className="flex items-center space-x-4 text-sm">
                         {comparisonResult.comparisonResult.summary.totalLinesAdded > 0 && (
                           <div className="text-green-600">
-                            +{comparisonResult.comparisonResult.summary.totalLinesAdded} added
+                            +{comparisonResult.comparisonResult.summary.totalLinesAdded} <AutoTranslate>added</AutoTranslate>
                           </div>
                         )}
                         {comparisonResult.comparisonResult.summary.totalLinesDeleted > 0 && (
                           <div className="text-red-600">
-                            -{comparisonResult.comparisonResult.summary.totalLinesDeleted} deleted
+                            -{comparisonResult.comparisonResult.summary.totalLinesDeleted} <AutoTranslate>deleted</AutoTranslate>
                           </div>
                         )}
                         {comparisonResult.comparisonResult.summary.totalLinesModified > 0 && (
                           <div className="text-yellow-600">
-                            ~{comparisonResult.comparisonResult.summary.totalLinesModified} modified
+                            ~{comparisonResult.comparisonResult.summary.totalLinesModified} <AutoTranslate>modified</AutoTranslate>
                           </div>
                         )}
                       </div>
@@ -1393,15 +1459,15 @@ const FileSearchDropdown = ({ isFirst = true }) => {
                   <div className="flex items-center space-x-4 text-xs">
                     <div className="flex items-center">
                       <div className="w-3 h-3 bg-green-50 border-2 border-green-400 mr-1"></div>
-                      <span>Identical (100%)</span>
+                      <span><AutoTranslate>Identical (100%)</AutoTranslate></span>
                     </div>
                     <div className="flex items-center">
                       <div className="w-3 h-3 bg-yellow-50 border-2 border-yellow-400 mr-1"></div>
-                      <span>Similar (80-99%)</span>
+                      <span><AutoTranslate>Similar (80-99%)</AutoTranslate></span>
                     </div>
                     <div className="flex items-center">
                       <div className="w-3 h-3 bg-red-50 border-2 border-red-400 mr-1"></div>
-                      <span>Different (&lt;80%)</span>
+                      <span><AutoTranslate>Different (&lt;80%)</AutoTranslate></span>
                     </div>
                   </div>
                 </div>
@@ -1414,12 +1480,16 @@ const FileSearchDropdown = ({ isFirst = true }) => {
         {!comparisonResult && !showComparisonModal && (
           <div className="text-center py-12 text-gray-500">
             <DocumentDuplicateIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <p className="text-lg font-medium">Select exactly 2 documents to compare</p>
-            <p className="text-sm">You can select documents from the same file or different files</p>
+            <p className="text-lg font-medium">
+              <AutoTranslate>Select exactly 2 documents to compare</AutoTranslate>
+            </p>
+            <p className="text-sm">
+              <AutoTranslate>You can select documents from the same file or different files</AutoTranslate>
+            </p>
             <div className="mt-4 text-xs text-gray-400">
-              <p>• Select 2 documents from first file only</p>
-              <p>• Select 2 documents from second file only</p>
-              <p>• Select 1 document from each file</p>
+              <p>• <AutoTranslate>Select 2 documents from first file only</AutoTranslate></p>
+              <p>• <AutoTranslate>Select 2 documents from second file only</AutoTranslate></p>
+              <p>• <AutoTranslate>Select 1 document from each file</AutoTranslate></p>
             </div>
           </div>
         )}
@@ -1547,21 +1617,23 @@ function VisualDiffPanel({
           <span className="font-medium">{leftName}</span> vs <span className="font-medium">{rightName}</span>
         </div>
         <div className="flex items-center gap-3">
-          <label className="text-sm text-gray-600">Mode:</label>
+          <label className="text-sm text-gray-600">
+            <AutoTranslate>Mode:</AutoTranslate>
+          </label>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMode("overlay")}
               className={`px-3 py-1 rounded text-sm ${mode === "overlay" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
                 }`}
             >
-              Overlay
+              <AutoTranslate>Overlay</AutoTranslate>
             </button>
             <button
               onClick={() => setMode("pixel")}
               className={`px-3 py-1 rounded text-sm ${mode === "pixel" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
                 }`}
             >
-              Pixel Diff
+              <AutoTranslate>Pixel Diff</AutoTranslate>
             </button>
           </div>
 
@@ -1583,7 +1655,9 @@ function VisualDiffPanel({
 
           {mode === "pixel" && (
             <div className="flex items-center gap-2 ml-4">
-              <span className="text-xs text-gray-600">Sensitivity:</span>
+              <span className="text-xs text-gray-600">
+                <AutoTranslate>Sensitivity:</AutoTranslate>
+              </span>
               <input
                 type="range"
                 min={5}
@@ -1624,7 +1698,7 @@ function VisualDiffPanel({
             <div className="text-center">
               <canvas ref={canvasRef} className="w-auto h-auto max-w-full border" style={{ maxHeight: 'calc(100vh - 300px)' }} />
               <div className="mt-2 text-xs text-gray-600">
-                Red areas indicate differences between images
+                <AutoTranslate>Red areas indicate differences between images</AutoTranslate>
               </div>
             </div>
           )}
@@ -1658,7 +1732,7 @@ function TextDiffPanel({
     if (!content) {
       return (
         <div className="no-content">
-          No content available for {isLeft ? leftName : rightName}
+          <AutoTranslate>No content available for</AutoTranslate> {isLeft ? leftName : rightName}
         </div>
       );
     }
@@ -1718,9 +1792,9 @@ function TextDiffPanel({
       {/* Left Document - Full Content */}
       <div className="border rounded-lg bg-white overflow-hidden">
         <div className="sticky top-0 bg-blue-50 p-3 border-b font-medium text-blue-800 flex justify-between items-center">
-          <span>{leftName} (Original)</span>
+          <span>{leftName} (<AutoTranslate>Original</AutoTranslate>)</span>
           <span className="text-xs font-normal text-blue-600">
-            {differences && differences.filter(d => d.type === 'DELETED' || d.type === 'MODIFIED').length} changes
+            {differences && differences.filter(d => d.type === 'DELETED' || d.type === 'MODIFIED').length} <AutoTranslate>changes</AutoTranslate>
           </span>
         </div>
         <div className="p-4 overflow-auto max-h-96 full-document-container">
@@ -1731,9 +1805,9 @@ function TextDiffPanel({
       {/* Right Document - Full Content */}
       <div className="border rounded-lg bg-white overflow-hidden">
         <div className="sticky top-0 bg-blue-50 p-3 border-b font-medium text-blue-800 flex justify-between items-center">
-          <span>{rightName} (Modified)</span>
+          <span>{rightName} (<AutoTranslate>Modified</AutoTranslate>)</span>
           <span className="text-xs font-normal text-blue-600">
-            {differences && differences.filter(d => d.type === 'ADDED' || d.type === 'MODIFIED').length} changes
+            {differences && differences.filter(d => d.type === 'ADDED' || d.type === 'MODIFIED').length} <AutoTranslate>changes</AutoTranslate>
           </span>
         </div>
         <div className="p-4 overflow-auto max-h-96 full-document-container">
@@ -1760,22 +1834,26 @@ function TextDiffPanel({
                   {diff.type}
                 </span>
                 <div className="text-xs text-gray-600">
-                  Line {diff.leftLineNumber !== -1 ? diff.leftLineNumber : "N/A"} →{" "}
+                  <AutoTranslate>Line</AutoTranslate> {diff.leftLineNumber !== -1 ? diff.leftLineNumber : "N/A"} →{" "}
                   {diff.rightLineNumber !== -1 ? diff.rightLineNumber : "N/A"}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">Original</div>
+                  <div className="text-xs font-medium text-gray-600 mb-1">
+                    <AutoTranslate>Original</AutoTranslate>
+                  </div>
                   <div className="text-sm bg-white p-2 rounded border font-mono">
-                    {diff.leftContent || <span className="text-gray-400 italic">No content</span>}
+                    {diff.leftContent || <span className="text-gray-400 italic"><AutoTranslate>No content</AutoTranslate></span>}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">Modified</div>
+                  <div className="text-xs font-medium text-gray-600 mb-1">
+                    <AutoTranslate>Modified</AutoTranslate>
+                  </div>
                   <div className="text-sm bg-white p-2 rounded border font-mono">
-                    {diff.rightContent || <span className="text-gray-400 italic">No content</span>}
+                    {diff.rightContent || <span className="text-gray-400 italic"><AutoTranslate>No content</AutoTranslate></span>}
                   </div>
                 </div>
               </div>
@@ -1785,8 +1863,12 @@ function TextDiffPanel({
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <p className="text-lg font-medium text-gray-700">No differences found</p>
-              <p className="text-sm text-gray-500">Files are identical</p>
+              <p className="text-lg font-medium text-gray-700">
+                <AutoTranslate>No differences found</AutoTranslate>
+              </p>
+              <p className="text-sm text-gray-500">
+                <AutoTranslate>Files are identical</AutoTranslate>
+              </p>
             </div>
           </div>
         )}
@@ -1800,7 +1882,7 @@ function TextDiffPanel({
         <div className="text-sm text-gray-700">
           <span className="font-medium">{leftName}</span> vs <span className="font-medium">{rightName}</span>
           {differences && differences.length > 0 && (
-            <span className="ml-3 text-red-600">({differences.length} differences found)</span>
+            <span className="ml-3 text-red-600">({differences.length} <AutoTranslate>differences found</AutoTranslate>)</span>
           )}
         </div>
 
@@ -1808,15 +1890,15 @@ function TextDiffPanel({
           <div className="flex items-center gap-2 text-xs text-gray-600">
             <div className="flex items-center">
               <div className="w-3 h-3 bg-red-100 border border-red-500 mr-1"></div>
-              <span>Deleted content</span>
+              <span><AutoTranslate>Deleted content</AutoTranslate></span>
             </div>
             <div className="flex items-center">
               <div className="w-3 h-3 bg-green-100 border border-green-500 mr-1"></div>
-              <span>Added content</span>
+              <span><AutoTranslate>Added content</AutoTranslate></span>
             </div>
             <div className="flex items-center">
               <div className="w-3 h-3 bg-yellow-100 border border-yellow-500 mr-1"></div>
-              <span>Modified content</span>
+              <span><AutoTranslate>Modified content</AutoTranslate></span>
             </div>
           </div>
 
@@ -1828,7 +1910,7 @@ function TextDiffPanel({
                 : 'bg-gray-100 text-gray-700'
                 }`}
             >
-              Full Document
+              <AutoTranslate>Full Document</AutoTranslate>
             </button>
             <button
               onClick={() => setViewMode('differences-only')}
@@ -1837,7 +1919,7 @@ function TextDiffPanel({
                 : 'bg-gray-100 text-gray-700'
                 }`}
             >
-              Differences Only
+              <AutoTranslate>Differences Only</AutoTranslate>
             </button>
           </div>
         </div>

@@ -2,8 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Download, Database, Folder, Archive, AlertCircle, CheckCircle, Info, Calendar, Filter, X, Clock, Ban, HardDrive, FileText, Shield, CloudDownload, Server, FileArchive, CheckCircle2 } from 'lucide-react';
 import { EXPORT_API } from '../API/apiConfig';
 import Popup from '../Components/Popup';
+import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
+import { useLanguage } from '../i18n/LanguageContext'; // Import useLanguage hook
 
 const ExportData = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const [exporting, setExporting] = useState('');
   const [status, setStatus] = useState({});
   const [progress, setProgress] = useState(0);
@@ -25,6 +39,16 @@ const ExportData = () => {
   const [backendExportHistory, setBackendExportHistory] = useState([]);
 
   const token = localStorage.getItem('tokenKey');
+
+  // Debug language status
+  useEffect(() => {
+    console.log('🔍 ExportData Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded]);
 
   // Load export history from localStorage AND backend on component mount
   useEffect(() => {
@@ -580,16 +604,20 @@ const ExportData = () => {
               }`} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-            <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <AutoTranslate>{title}</AutoTranslate>
+            </h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              <AutoTranslate>{description}</AutoTranslate>
+            </p>
             {isDateRangeInvalid && (
               <p className="text-xs text-gray-500 mt-2 italic">
-                Select start and end dates to enable
+                <AutoTranslate>Select start and end dates to enable</AutoTranslate>
               </p>
             )}
             {isDuplicateBlocked && (
               <p className="text-xs text-red-600 mt-2 font-medium">
-                ⚠️ {getExportTypeDisplayName(type)} backup already exists for this date range
+                ⚠️ <AutoTranslate>{getExportTypeDisplayName(type)} backup already exists for this date range</AutoTranslate>
               </p>
             )}
           </div>
@@ -611,27 +639,26 @@ const ExportData = () => {
             {exporting === type ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Creating Backup...</span>
+                <span><AutoTranslate>Creating Backup...</AutoTranslate></span>
               </>
             ) : isBlocked ? (
               <>
                 <Clock className="w-5 h-5" />
-                <span>Processing...</span>
+                <span><AutoTranslate>Processing...</AutoTranslate></span>
               </>
             ) : isDuplicateBlocked ? (
               <>
                 <Ban className="w-5 h-5" />
-                <span>Duplicate {getExportTypeDisplayName(type)} Backup</span>
+                <span><AutoTranslate>Duplicate {getExportTypeDisplayName(type)} Backup</AutoTranslate></span>
               </>
             ) : (
               <>
                 <CloudDownload className="w-5 h-5" />
-                <span>Start {getExportTypeDisplayName(type)} Backup</span>
+                <span><AutoTranslate>Start {getExportTypeDisplayName(type)} Backup</AutoTranslate></span>
               </>
             )}
           </button>
         </div>
-
       </div>
     );
   };
@@ -666,7 +693,6 @@ const ExportData = () => {
             />
           )}
 
-
           {/* Success Popup */}
           {showSuccessPopup && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-300">
@@ -676,25 +702,27 @@ const ExportData = () => {
                     <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-2 text-lg">Backup Completed Successfully!</h4>
+                    <h4 className="font-semibold text-gray-900 mb-2 text-lg">
+                      <AutoTranslate>Backup Completed Successfully!</AutoTranslate>
+                    </h4>
                     <p className="text-sm text-gray-600 mb-4">
-                      {successData.type} backup has been generated and downloaded.
+                      <AutoTranslate>{successData.type} backup has been generated and downloaded.</AutoTranslate>
                     </p>
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between items-start">
-                        <span className="text-gray-500 font-medium">File:</span>
+                        <span className="text-gray-500 font-medium"><AutoTranslate>File:</AutoTranslate></span>
                         <span className="font-medium text-gray-700 text-right max-w-[200px] break-words">{successData.fileName}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500 font-medium">Size:</span>
+                        <span className="text-gray-500 font-medium"><AutoTranslate>Size:</AutoTranslate></span>
                         <span className="font-medium text-gray-700">{successData.fileSize}</span>
                       </div>
                       <div className="flex justify-between items-start">
-                        <span className="text-gray-500 font-medium">Period:</span>
+                        <span className="text-gray-500 font-medium"><AutoTranslate>Period:</AutoTranslate></span>
                         <span className="font-medium text-gray-700 text-right max-w-[150px]">{successData.dateRange}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500 font-medium">Time:</span>
+                        <span className="text-gray-500 font-medium"><AutoTranslate>Time:</AutoTranslate></span>
                         <span className="font-medium text-gray-700">{successData.timestamp}</span>
                       </div>
                     </div>
@@ -702,7 +730,7 @@ const ExportData = () => {
                       onClick={resetPage}
                       className="w-full mt-6 px-4 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-transform"
                     >
-                      Got it!
+                      <AutoTranslate>Got it!</AutoTranslate>
                     </button>
                   </div>
                 </div>
@@ -720,41 +748,43 @@ const ExportData = () => {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 mb-2 text-lg">
-                      {getExportTypeDisplayName(showDuplicatePopup.type)} Backup Blocked - Duplicate Date Range
+                      <AutoTranslate>{getExportTypeDisplayName(showDuplicatePopup.type)} Backup Blocked - Duplicate Date Range</AutoTranslate>
                     </h4>
 
                     <div className="space-y-3 text-sm mb-4">
                       <div className="flex justify-between items-start">
-                        <span className="text-gray-500 font-medium">Selected Range:</span>
+                        <span className="text-gray-500 font-medium"><AutoTranslate>Selected Range:</AutoTranslate></span>
                         <span className="font-medium text-gray-700 text-right">
-                          {formatDateDisplay(dateRange.fromDate)} to {formatDateDisplay(dateRange.toDate)}
+                          {formatDateDisplay(dateRange.fromDate)} <AutoTranslate>to</AutoTranslate> {formatDateDisplay(dateRange.toDate)}
                         </span>
                       </div>
                       <div className="flex justify-between items-start">
-                        <span className="text-gray-500 font-medium">Existing {getExportTypeDisplayName(showDuplicatePopup.type)} Backup:</span>
+                        <span className="text-gray-500 font-medium">
+                          <AutoTranslate>Existing {getExportTypeDisplayName(showDuplicatePopup.type)} Backup:</AutoTranslate>
+                        </span>
                         <span className="font-medium text-gray-700 text-right">
-                          {showDuplicatePopup.existingFrom} to {showDuplicatePopup.existingTo}
+                          {showDuplicatePopup.existingFrom} <AutoTranslate>to</AutoTranslate> {showDuplicatePopup.existingTo}
                         </span>
                       </div>
                     </div>
 
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
                       <p className="text-red-700 text-sm font-medium">
-                        This {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backup already exists for the selected date range.
+                        <AutoTranslate>This {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backup already exists for the selected date range.</AutoTranslate>
                       </p>
                       <p className="text-red-600 text-xs mt-1">
-                        You cannot create duplicate {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backups for the same date range.
+                        <AutoTranslate>You cannot create duplicate {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backups for the same date range.</AutoTranslate>
                       </p>
                     </div>
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                       <p className="text-blue-700 text-sm font-medium mb-1">
-                        To create a new {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backup, please:
+                        <AutoTranslate>To create a new {getExportTypeDisplayName(showDuplicatePopup.type).toLowerCase()} backup, please:</AutoTranslate>
                       </p>
                       <ul className="text-blue-600 text-xs list-disc list-inside space-y-1">
-                        <li>Select a different date range</li>
-                        <li>Or try a different backup type (Database, Files, or Complete)</li>
-                        <li>Or use Quick Backup for today's data only</li>
+                        <li><AutoTranslate>Select a different date range</AutoTranslate></li>
+                        <li><AutoTranslate>Or try a different backup type (Database, Files, or Complete)</AutoTranslate></li>
+                        <li><AutoTranslate>Or use Quick Backup for today's data only</AutoTranslate></li>
                       </ul>
                     </div>
 
@@ -762,7 +792,7 @@ const ExportData = () => {
                       onClick={handleDuplicateClose}
                       className="w-full mt-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-transform"
                     >
-                      Got it - I'll select different dates
+                      <AutoTranslate>Got it - I'll select different dates</AutoTranslate>
                     </button>
                   </div>
                 </div>
@@ -778,10 +808,10 @@ const ExportData = () => {
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Data Management & Backup
+              <AutoTranslate>Data Management & Backup</AutoTranslate>
             </h1>
             <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Secure and reliable backup solutions for your database and document files
+              <AutoTranslate>Secure and reliable backup solutions for your database and document files</AutoTranslate>
             </p>
           </div>
 
@@ -795,7 +825,7 @@ const ExportData = () => {
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
               >
-                Quick Backup
+                <AutoTranslate>Quick Backup</AutoTranslate>
               </button>
               <button
                 onClick={() => setActiveTab('advanced')}
@@ -804,7 +834,7 @@ const ExportData = () => {
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
               >
-                Date Range Export
+                <AutoTranslate>Date Range Export</AutoTranslate>
               </button>
             </div>
           </div>
@@ -818,11 +848,13 @@ const ExportData = () => {
                     <CloudDownload className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Creating {getExportTypeDisplayName(exporting)} Backup</h3>
+                    <h3 className="font-semibold text-gray-900">
+                      <AutoTranslate>Creating {getExportTypeDisplayName(exporting)} Backup</AutoTranslate>
+                    </h3>
                     <p className="text-sm text-gray-600">
                       {activeTab === 'advanced'
-                        ? `${formatDateDisplay(dateRange.fromDate)} to ${formatDateDisplay(dateRange.toDate)}`
-                        : "Today's complete data"
+                        ? `${formatDateDisplay(dateRange.fromDate)} <AutoTranslate>to</AutoTranslate> ${formatDateDisplay(dateRange.toDate)}`
+                        : <AutoTranslate>Today's complete data</AutoTranslate>
                       }
                     </p>
                   </div>
@@ -839,44 +871,26 @@ const ExportData = () => {
                   style={{ width: `${progress}%` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
-                  <div className="absolute right-0 top-0 w-2 h-4 bg-white/60 animate-pulse"></div>
+                  <div className="absolute right sentinel 0 top-0 w-2 h-4 bg-white/60 animate-pulse"></div>
                 </div>
               </div>
 
               <div className="flex justify-between text-xs text-gray-500 mt-3 font-medium">
-                <span className={`${progress > 0 ? 'text-blue-600' : ''}`}>Initializing</span>
-                <span className={`${progress > 25 ? 'text-blue-600' : ''}`}>Collecting Data</span>
-                <span className={`${progress > 50 ? 'text-blue-600' : ''}`}>Processing Files</span>
-                <span className={`${progress > 75 ? 'text-blue-600' : ''}`}>Finalizing</span>
+                <span className={`${progress > 0 ? 'text-blue-600' : ''}`}><AutoTranslate>Initializing</AutoTranslate></span>
+                <span className={`${progress > 25 ? 'text-blue-600' : ''}`}><AutoTranslate>Collecting Data</AutoTranslate></span>
+                <span className={`${progress > 50 ? 'text-blue-600' : ''}`}><AutoTranslate>Processing Files</AutoTranslate></span>
+                <span className={`${progress > 75 ? 'text-blue-600' : ''}`}><AutoTranslate>Finalizing</AutoTranslate></span>
               </div>
             </div>
           )}
-
-          {/* Status Message */}
-          {/* {status.message && !exporting && (
-          <div
-            className={`flex items-center space-x-4 p-4 rounded-2xl mb-6 animate-in fade-in duration-500 max-w-2xl mx-auto ${
-              status.type === 'error' 
-                ? 'bg-red-50 text-red-800 border border-red-200' 
-                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-            }`}
-          >
-            {status.type === 'error' ? (
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            ) : (
-              <CheckCircle className="w-5 h-5 flex-shrink-0" />
-            )}
-            <span className="text-sm font-medium">{status.message}</span>
-          </div>
-        )} */}
 
           {/* Quick Backup Section */}
           {activeTab === 'quick' && (
             <div className="space-y-8 mb-8">
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">Quick System Backup</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3"><AutoTranslate>Quick System Backup</AutoTranslate></h2>
                 <p className="text-gray-600 max-w-2xl mx-auto">
-                  Complete system backups for today's data. No date selection required.
+                  <AutoTranslate>Complete system backups for today's data. No date selection required.</AutoTranslate>
                 </p>
               </div>
 
@@ -910,9 +924,9 @@ const ExportData = () => {
           {activeTab === 'advanced' && (
             <div className="space-y-8">
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">Selective Data Export</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3"><AutoTranslate>Selective Data Export</AutoTranslate></h2>
                 <p className="text-gray-600 max-w-2xl mx-auto">
-                  Export data from specific time periods for compliance or analysis
+                  <AutoTranslate>Export data from specific time periods for compliance or analysis</AutoTranslate>
                 </p>
               </div>
 
@@ -921,7 +935,7 @@ const ExportData = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
                     <Calendar className="w-6 h-6 text-blue-600" />
-                    <h3 className="text-xl font-semibold text-gray-900">Define Export Period</h3>
+                    <h3 className="text-xl font-semibold text-gray-900"><AutoTranslate>Define Export Period</AutoTranslate></h3>
                   </div>
                   {isFilterActive && (
                     <button
@@ -929,7 +943,7 @@ const ExportData = () => {
                       className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
                     >
                       <X className="w-4 h-4" />
-                      <span>Clear Dates</span>
+                      <span><AutoTranslate>Clear Dates</AutoTranslate></span>
                     </button>
                   )}
                 </div>
@@ -937,7 +951,7 @@ const ExportData = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Start Date *
+                      <AutoTranslate>Start Date</AutoTranslate> *
                     </label>
                     <input
                       type="date"
@@ -951,7 +965,7 @@ const ExportData = () => {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      End Date *
+                      <AutoTranslate>End Date</AutoTranslate> *
                     </label>
                     <input
                       type="date"
@@ -993,13 +1007,12 @@ const ExportData = () => {
             </div>
           )}
 
-
           {/* Recent Activity - Only shows completed/failed exports */}
           {(exportHistory.length > 0 || backendExportHistory.length > 0) && (
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mt-12">
               <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                 <Clock className="w-6 h-6 mr-3 text-gray-600" />
-                Recent Backup Operations
+                <AutoTranslate>Recent Backup Operations</AutoTranslate>
               </h3>
               <div className="space-y-4">
                 {[...exportHistory, ...backendExportHistory.map(item => ({
@@ -1026,21 +1039,14 @@ const ExportData = () => {
                     }
                   };
 
-                  // Safe datetime formatting function
-
                   const safeFormatDateTime = (timestamp) => {
-                    // Handle empty, null, undefined, or invalid timestamps
                     if (!timestamp || timestamp === 'null' || timestamp === 'undefined' || timestamp === 'Invalid Date') {
                       return 'Recent';
                     }
 
                     try {
-                      // Create date object from timestamp
                       const date = new Date(timestamp);
-
-                      // Check if the date is valid
                       if (isNaN(date.getTime())) {
-                        // Try alternative parsing for different date formats
                         const dateFromString = new Date(timestamp.toString().replace(/-/g, '/'));
                         if (!isNaN(dateFromString.getTime())) {
                           return dateFromString.toLocaleString('en-US', {
@@ -1053,7 +1059,6 @@ const ExportData = () => {
                         return 'Recent';
                       }
 
-                      // Return formatted date for valid timestamps
                       return date.toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -1078,15 +1083,17 @@ const ExportData = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-3 mb-1">
-                            <span className="font-semibold text-gray-900 capitalize">{exportItem.type} Backup</span>
+                            <span className="font-semibold text-gray-900 capitalize">
+                              <AutoTranslate>{exportItem.type} Backup</AutoTranslate>
+                            </span>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${exportItem.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                              {exportItem.status}
+                              <AutoTranslate>{exportItem.status}</AutoTranslate>
                             </span>
                           </div>
                           <p className="text-sm text-gray-600">
                             {exportItem.fromDate && exportItem.toDate
-                              ? `${safeFormatDate(exportItem.fromDate)} to ${safeFormatDate(exportItem.toDate)}`
-                              : 'Complete Data - No Date Filter'}
+                              ? `${safeFormatDate(exportItem.fromDate)} <AutoTranslate>to</AutoTranslate> ${safeFormatDate(exportItem.toDate)}`
+                              : <AutoTranslate>Complete Data - No Date Filter</AutoTranslate>}
                           </p>
                           {exportItem.fileName && (
                             <p className="text-xs text-gray-500 mt-1 truncate">{exportItem.fileName}</p>
@@ -1110,7 +1117,6 @@ const ExportData = () => {
         </div>
       </div>
     </div>
-
   );
 };
 

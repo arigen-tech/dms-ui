@@ -10,8 +10,21 @@ import Popup from "../Components/Popup"
 import QrScanner from "qr-scanner"
 import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingSpinner from "../Components/LoadingComponent";
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const SearchByScan = () => {
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const navigate = useNavigate()
   const [headerData, setHeaderData] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -42,9 +55,21 @@ const SearchByScan = () => {
   const fileInputRef = useRef(null)
   const scanSectionRef = useRef(null)
 
-  const unauthorizedMessage = "You are not authorized to scan this QR code."
-  const invalidQrMessage = "Invalid QR Code."
-  const cameraErrorMessage = "Could not access camera. Please check permissions and try again."
+  const unauthorizedMessage = <AutoTranslate>You are not authorized to scan this QR code.</AutoTranslate>
+  const invalidQrMessage = <AutoTranslate>Invalid QR Code.</AutoTranslate>
+  const cameraErrorMessage = <AutoTranslate>Could not access camera. Please check permissions and try again.</AutoTranslate>
+
+  // Debug log
+  useEffect(() => {
+    console.log('🔍 SearchByScan Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
   // Check camera permissions and get available cameras
   const checkCameraPermissions = async () => {
@@ -56,11 +81,11 @@ const SearchByScan = () => {
         setSelectedCamera(videoDevices[0].deviceId)
         return true
       }
-      setError("No camera devices found")
+      setError(<AutoTranslate>No camera devices found</AutoTranslate>)
       return false
     } catch (err) {
       console.error("Camera permission error:", err)
-      setError("Please allow camera access to scan QR codes")
+      setError(<AutoTranslate>Please allow camera access to scan QR codes</AutoTranslate>)
       return false
     }
   }
@@ -181,7 +206,6 @@ const SearchByScan = () => {
       showPopup(invalidQrMessage, "error")
       return
     }
-   
 
     if (id) {
       const qrParams = { branchId, departmentId, empId }
@@ -234,7 +258,13 @@ const SearchByScan = () => {
   }, [qrData])
 
   const showPopup = (message, type = "info") => {
-    setPopupMessage({ message, type })
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+      }
+    })
   }
 
   const fetchLoginUser = async () => {
@@ -273,7 +303,7 @@ const SearchByScan = () => {
 
   const fetchDocument = async (id) => {
     if (!id) {
-      setError("No document ID found.")
+      setError(<AutoTranslate>No document ID found.</AutoTranslate>)
       return
     }
 
@@ -298,13 +328,13 @@ const SearchByScan = () => {
       if (err.response) {
         const errorMessage =
           err.response.status === 404
-            ? "Document not found. Please check the ID."
-            : `Server error: ${err.response.statusText} (${err.response.status})`
+            ? <AutoTranslate>Document not found. Please check the ID.</AutoTranslate>
+            : <AutoTranslate>Server error: {err.response.statusText} ({err.response.status})</AutoTranslate>
         setError(errorMessage)
       } else if (err.request) {
-        setError("No response from the server. Please try again later.")
+        setError(<AutoTranslate>No response from the server. Please try again later.</AutoTranslate>)
       } else {
-        setError("Error occurred while setting up the request.")
+        setError(<AutoTranslate>Error occurred while setting up the request.</AutoTranslate>)
       }
     } finally {
       setLoading(false)
@@ -344,7 +374,7 @@ const SearchByScan = () => {
     const fileToSubmit = currentFile || file
 
     if (!fileToSubmit) {
-      showPopup("Please select a file", "warning")
+      showPopup(<AutoTranslate>Please select a file</AutoTranslate>, "warning")
       return
     }
 
@@ -374,7 +404,6 @@ const SearchByScan = () => {
           empId: params.get("e"),
         }
 
-
         if (id) {
           if (!handleQrCheck(qrParams)) {
             fetchDocument(id)
@@ -393,7 +422,7 @@ const SearchByScan = () => {
       setOpeningFiles(prev => ({ ...prev, [file.id]: true }))
 
       if (!file?.docName) {
-        showPopup("Document name is missing. Please try again.")
+        showPopup(<AutoTranslate>Document name is missing. Please try again.</AutoTranslate>)
         return
       }
 
@@ -422,12 +451,11 @@ const SearchByScan = () => {
       setIsModalOpen(true)
     } catch (error) {
       console.error("Error:", error)
-      showPopup("Failed to fetch or preview the file.", "error")
+      showPopup(<AutoTranslate>Failed to fetch or preview the file.</AutoTranslate>, "error")
     } finally {
       setOpeningFiles(prev => ({ ...prev, [file.id]: false }))
     }
   }
-
 
   const handleDownload = async (file) => {
     try {
@@ -462,7 +490,7 @@ const SearchByScan = () => {
       URL.revokeObjectURL(link.href)
     } catch (error) {
       console.error("Download error:", error)
-      showPopup("Failed to download the file.", "error")
+      showPopup(<AutoTranslate>Failed to download the file.</AutoTranslate>, "error")
     }
   }
 
@@ -491,14 +519,17 @@ const SearchByScan = () => {
 
   const actionByName =
     headerData?.approvalStatus === "REJECTED"
-      ? "Rejected"
+      ? <AutoTranslate>Rejected</AutoTranslate>
       : headerData?.approvalStatus === "APPROVED"
-        ? "Approved"
+        ? <AutoTranslate>Approved</AutoTranslate>
         : null
 
   return (
     <div className="p-4 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Document Search by QR Code</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        <AutoTranslate>Search Document Using QR Code</AutoTranslate>
+
+      </h1>
 
       {popupMessage && <Popup message={popupMessage.message} type={popupMessage.type} onClose={handlePopupClose} />}
 
@@ -510,7 +541,9 @@ const SearchByScan = () => {
 
       {/* Scan Section */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-8" ref={scanSectionRef}>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Scan QR Code</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          <AutoTranslate>Scan QR Code</AutoTranslate>
+        </h2>
 
         {!headerData && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -523,7 +556,7 @@ const SearchByScan = () => {
                     id="uploaded-image"
                     className="w-full h-full object-contain rounded-lg"
                     src={file ? URL.createObjectURL(file) : ""}
-                    alt={file ? "Uploaded QR Code" : "Click to upload"}
+                    alt={file ? <AutoTranslate>Uploaded QR Code</AutoTranslate> : <AutoTranslate>Click to upload</AutoTranslate>}
                     style={{ display: file ? "block" : "none" }}
                   />
                   {!file && (
@@ -546,14 +579,14 @@ const SearchByScan = () => {
                   className="flex items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-300"
                 >
                   <BsUpload className="mr-2" />
-                  {file ? "Change QR Image" : "Upload QR Code"}
+                  {file ? <AutoTranslate>Change QR Image</AutoTranslate> : <AutoTranslate>Upload QR Code</AutoTranslate>}
                 </button>
                 {file && (
                   <button
                     onClick={() => setFile(null)}
                     className="mt-2 text-sm text-gray-500 hover:text-gray-700 flex items-center"
                   >
-                    <FiX className="mr-1" /> Clear
+                    <FiX className="mr-1" /> <AutoTranslate>Clear</AutoTranslate>
                   </button>
                 )}
               </div>
@@ -571,8 +604,8 @@ const SearchByScan = () => {
                       onClick={handleToggleCamera}
                       disabled={isCameraLoading}
                       className={`flex items-center justify-center px-6 py-3 rounded-lg transition-colors duration-300 ${isCameraLoading
-                          ? "bg-gray-500 cursor-not-allowed"
-                          : "bg-indigo-600 text-white hover:bg-indigo-700"
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700"
                         }`}
                     >
                       {isCameraLoading ? (
@@ -580,7 +613,7 @@ const SearchByScan = () => {
                       ) : (
                         <BsCameraVideo className="mr-2" />
                       )}
-                      {isCameraLoading ? "Loading..." : "Open Camera"}
+                      {isCameraLoading ? <AutoTranslate>Loading...</AutoTranslate> : <AutoTranslate>Open Camera</AutoTranslate>}
                     </button>
                   </>
                 ) : (
@@ -593,7 +626,9 @@ const SearchByScan = () => {
                       />
                       {scanSuccess && (
                         <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-70">
-                          <div className="text-white text-lg font-semibold">Scan Successful!</div>
+                          <div className="text-white text-lg font-semibold">
+                            <AutoTranslate>Scan</AutoTranslate><AutoTranslate> Successful</AutoTranslate>
+                          </div>
                         </div>
                       )}
                       {error && (
@@ -612,7 +647,9 @@ const SearchByScan = () => {
                         >
                           {availableCameras.map((camera) => (
                             <option key={camera.deviceId} value={camera.deviceId}>
-                              {camera.label || `Camera ${availableCameras.indexOf(camera) + 1}`}
+                              {camera.label || <AutoTranslate>Camera</AutoTranslate>}{availableCameras.indexOf(camera) + 1}
+
+
                             </option>
                           ))}
                         </select>
@@ -623,7 +660,7 @@ const SearchByScan = () => {
                         className="flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
                       >
                         <BsCameraVideoOff className="mr-2" />
-                        Close Camera
+                        <AutoTranslate>Close Camera</AutoTranslate>
                       </button>
                     </div>
                   </>
@@ -638,7 +675,9 @@ const SearchByScan = () => {
       {headerData && (
         <div className="bg-white rounded-xl shadow-md p-6 mb-8 transition-all duration-300">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">Document Details</h2>
+            <h2 className="text-xl font-semibold text-gray-800">
+              <AutoTranslate>Document Details</AutoTranslate>
+            </h2>
             <button
               onClick={() => {
                 setHeaderData(null)
@@ -647,74 +686,98 @@ const SearchByScan = () => {
               }}
               className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
             >
-              <FiX className="mr-1" /> Scan Another
+              <FiX className="mr-1" /> <AutoTranslate>Scan Another</AutoTranslate>
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">File No.</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>File No.</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{headerData?.fileNo || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Title</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Title</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{headerData?.title || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Subject</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Subject</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{headerData?.subject || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Category</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{headerData?.categoryMaster?.name || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Uploaded Date</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Uploaded Date</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{formatDate(headerData?.createdOn) || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Uploaded By</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Uploaded By</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{headerData?.employee?.name || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Department</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Department</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{headerData?.employee?.department?.name || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Branch</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Branch</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{headerData?.employee?.branch?.name || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Status</AutoTranslate>
+              </label>
               <p className={`font-medium ${headerData?.approvalStatus === "APPROVED" ? "text-green-600" :
-                  headerData?.approvalStatus === "REJECTED" ? "text-red-600" : "text-yellow-600"
+                headerData?.approvalStatus === "REJECTED" ? "text-red-600" : "text-yellow-600"
                 }`}>
                 {headerData?.approvalStatus || "N/A"}
               </p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">Document Year</label>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                <AutoTranslate>Document Year</AutoTranslate>
+              </label>
               <p className="text-gray-800 font-medium">{headerData?.yearMaster?.name || "N/A"}</p>
             </div>
 
             {headerData?.approvalStatus !== "PENDING" && (
               <>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">{actionByName} Date</label>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    {actionByName} <AutoTranslate>Date</AutoTranslate>
+                  </label>
                   <p className="text-gray-800 font-medium">{formatDate(headerData?.approvalStatusOn) || "N/A"}</p>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">{actionByName} By</label>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    {actionByName} <AutoTranslate>By</AutoTranslate>
+                  </label>
                   <p className="text-gray-800 font-medium">{headerData?.employeeBy?.name || "N/A"}</p>
                 </div>
               </>
@@ -722,7 +785,9 @@ const SearchByScan = () => {
 
             {headerData?.approvalStatus === "REJECTED" && (
               <div className="bg-gray-50 p-4 rounded-lg col-span-1 md:col-span-2 lg:col-span-4">
-                <label className="block text-sm font-medium text-gray-500 mb-1">Rejection Reason</label>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  <AutoTranslate>Rejection Reason</AutoTranslate>
+                </label>
                 <p className="text-gray-800 font-medium">{headerData?.rejectionReason || "N/A"}</p>
               </div>
             )}
@@ -731,14 +796,16 @@ const SearchByScan = () => {
           {/* Attached Files Section */}
           <div className="mt-8">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Attached Files</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                <AutoTranslate>Attached Files</AutoTranslate>
+              </h3>
               <div className="relative w-64">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiSearch className="text-gray-400" />
                 </div>
                 <input
                   type="text"
-                  placeholder="Search files..."
+                  placeholder={<AutoTranslate>Search files...</AutoTranslate>}
                   value={searchFileTerm}
                   onChange={(e) => setSearchFileTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -761,16 +828,16 @@ const SearchByScan = () => {
                     <thead>
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                          S.N.
+                          <AutoTranslate>S.N.</AutoTranslate>
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                          Document Name
+                          <AutoTranslate>Document Name</AutoTranslate>
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                          Version
+                          <AutoTranslate>Version</AutoTranslate>
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                          Actions
+                          <AutoTranslate>Actions</AutoTranslate>
                         </th>
                       </tr>
                     </thead>
@@ -797,19 +864,19 @@ const SearchByScan = () => {
                                   onClick={() => openFile(file)}
                                   disabled={openingFiles[file.id]}
                                   className={`inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${openingFiles[file.id]
-                                      ? "bg-indigo-300 cursor-not-allowed"
-                                      : "bg-indigo-600 hover:bg-indigo-700"
+                                    ? "bg-indigo-300 cursor-not-allowed"
+                                    : "bg-indigo-600 hover:bg-indigo-700"
                                     }`}
                                 >
                                   <FiEye className="mr-1" />
-                                  {openingFiles[file.id] ? "Opening..." : "View"}
+                                  {openingFiles[file.id] ? <AutoTranslate>Opening...</AutoTranslate> : <AutoTranslate>View</AutoTranslate>}
                                 </button>
                                 <button
                                   onClick={() => handleDownload(file)}
                                   className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                                 >
                                   <FiDownload className="mr-1" />
-                                  Download
+                                  <AutoTranslate>Download</AutoTranslate>
                                 </button>
                               </div>
                             </td>
@@ -822,7 +889,9 @@ const SearchByScan = () => {
               </div>
             ) : (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">No attached files available</p>
+                <p className="text-gray-500">
+                  <AutoTranslate>No attached files available</AutoTranslate>
+                </p>
               </div>
             )}
           </div>

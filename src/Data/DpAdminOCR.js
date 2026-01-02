@@ -8,10 +8,24 @@ import {
   API_OCR_HOST,
   API_HOST
 } from "../API/apiConfig";
-import { ArrowLeftIcon, ArrowRightIcon} from "@heroicons/react/24/solid";
+import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
 import LoadingComponent from '../Components/LoadingComponent';
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const DpAdminOCR = () => {
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -33,6 +47,18 @@ const DpAdminOCR = () => {
   const token = localStorage.getItem("tokenKey");
   const [fixedBranchName, setFixedBranchName] = useState("");
   const [fixedDepartmentName, setFixedDepartmentName] = useState("");
+
+  // Debug log
+  useEffect(() => {
+    console.log('🔍 DpAdminOCR Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
   // Fetch initial data
   useEffect(() => {
@@ -61,7 +87,6 @@ const DpAdminOCR = () => {
 
     fetchData();
   }, [token]);
-
 
   const fetchUser = async () => {
     setIsLoading(true);
@@ -131,13 +156,11 @@ const DpAdminOCR = () => {
       setFilteredDocuments(sortedDocuments);
     } catch (error) {
       console.error("Fetch documents error:", error.message);
-      setSearchError("Failed to load documents. Please try again.");
+      setSearchError(<AutoTranslate>Failed to load documents. Please try again.</AutoTranslate>);
     } finally {
       setIsLoading(false);
     }
   };
-
-
 
   // Apply filters whenever filters or documents change
   useEffect(() => {
@@ -197,12 +220,12 @@ const DpAdminOCR = () => {
     e.preventDefault();
 
     if (!query) {
-      setSearchError("Please enter a search query");
+      setSearchError(<AutoTranslate>Please enter a search query</AutoTranslate>);
       return;
     }
 
     if (filteredDocuments.length === 0) {
-      setSearchError("No documents available to search. Please select a branch first.");
+      setSearchError(<AutoTranslate>No documents available to search. Please select a branch first.</AutoTranslate>);
       return;
     }
 
@@ -211,7 +234,7 @@ const DpAdminOCR = () => {
       .filter(Boolean);
 
     if (docNames.length === 0) {
-      setSearchError("No valid document names found for searching");
+      setSearchError(<AutoTranslate>No valid document names found for searching</AutoTranslate>);
       return;
     }
 
@@ -242,7 +265,7 @@ const DpAdminOCR = () => {
       })
       .catch((error) => {
         console.error("Error:", error);
-        setSearchError("Search failed. Please try again.");
+        setSearchError(<AutoTranslate>Search failed. Please try again.</AutoTranslate>);
       })
       .finally(() => {
         setIsLoading(false);
@@ -282,41 +305,45 @@ const DpAdminOCR = () => {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Document Text Search (OCR)</h1>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+        <AutoTranslate>Document Text Search (OCR)</AutoTranslate>
+      </h1>
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-lg font-medium text-gray-700 mb-4">Search Documents</h2>
+        <h2 className="text-lg font-medium text-gray-700 mb-4">
+          <AutoTranslate>Search Documents</AutoTranslate>
+        </h2>
 
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Branch
+                <AutoTranslate>Branch</AutoTranslate>
               </label>
               <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100">
-                {fixedBranchName || "Not assigned"}
+                {fixedBranchName || <AutoTranslate>Not assigned</AutoTranslate>}
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Department
+                <AutoTranslate>Department</AutoTranslate>
               </label>
               <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100">
-                {fixedDepartmentName || "Not assigned"}
+                {fixedDepartmentName || <AutoTranslate>Not assigned</AutoTranslate>}
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                File Year
+                <AutoTranslate>File Year</AutoTranslate>
               </label>
               <select
                 value={filters.year}
                 onChange={(e) => handleFilterChange("year", e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Years</option>
+                <option value=""><AutoTranslate>All Years</AutoTranslate></option>
                 {years.map((year) => (
                   <option key={year.name} value={year.name}>
                     {year.name}
@@ -329,14 +356,14 @@ const DpAdminOCR = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
+                <AutoTranslate>Category</AutoTranslate>
               </label>
               <select
                 value={filters.category}
                 onChange={(e) => handleFilterChange("category", e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Categories</option>
+                <option value=""><AutoTranslate>All Categories</AutoTranslate></option>
                 {categories.map((category) => (
                   <option key={category.name} value={category.name}>
                     {category.name}
@@ -347,34 +374,39 @@ const DpAdminOCR = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+                <AutoTranslate>Status</AutoTranslate>
               </label>
               <select
                 value={filters.approvalStatus}
                 onChange={(e) => handleFilterChange("approvalStatus", e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
+                <option value=""><AutoTranslate>All Statuses</AutoTranslate></option>
+                <option value="PENDING"><AutoTranslate>Pending</AutoTranslate></option>
+                <option value="APPROVED"><AutoTranslate>Approved</AutoTranslate></option>
+                <option value="REJECTED"><AutoTranslate>Rejected</AutoTranslate></option>
               </select>
             </div>
           </div>
 
           <div className="border-t pt-4">
-            <h3 className="text-md font-medium text-gray-700 mb-3">OCR Text Search</h3>
+            <h3 className="text-md font-medium text-gray-700 mb-3">
+              <AutoTranslate>OCR Text Search</AutoTranslate>
+            </h3>
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Search Query <span className="text-red-500">*</span>
+                  <AutoTranslate>Search Query</AutoTranslate> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter text to search in documents..."
+                  placeholder={getFallbackTranslation(
+                    'Enter exact text to search in documents',
+                    currentLanguage
+                  )}
                 />
               </div>
               <div className="flex items-end">
@@ -386,7 +418,7 @@ const DpAdminOCR = () => {
                     : "bg-blue-600 hover:bg-blue-700"
                     }`}
                 >
-                  Search in Documents
+                  <AutoTranslate>Search in Documents</AutoTranslate>
                 </button>
               </div>
             </div>
@@ -395,7 +427,7 @@ const DpAdminOCR = () => {
             )}
             {filters.branch && filteredDocuments.length > 0 && (
               <div className="mt-2 text-sm text-gray-500">
-                Searching in {filteredDocuments.length} documents
+                <AutoTranslate>Searching in</AutoTranslate> {filteredDocuments.length} <AutoTranslate>documents</AutoTranslate>
               </div>
             )}
           </div>
@@ -406,10 +438,12 @@ const DpAdminOCR = () => {
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-lg font-medium text-gray-700">
-            Documents {filteredDocuments.length > 0 && `(${filteredDocuments.length})`}
+            <AutoTranslate>Documents</AutoTranslate> {filteredDocuments.length > 0 && `(${filteredDocuments.length})`}
           </h2>
           <div className="flex items-center">
-            <label className="text-sm text-gray-700 mr-2">Show:</label>
+            <label className="text-sm text-gray-700 mr-2">
+              <AutoTranslate>Show:</AutoTranslate>
+            </label>
             <select
               value={itemsPerPage}
               onChange={(e) => setItemsPerPage(Number(e.target.value))}
@@ -425,8 +459,8 @@ const DpAdminOCR = () => {
         </div>
 
         {filteredDocuments.length === 0 ? (
-          <div>
-            No documents found
+          <div className="p-8 text-center text-gray-500">
+            <AutoTranslate>No documents found</AutoTranslate>
           </div>
         ) : (
           <>
@@ -435,11 +469,21 @@ const DpAdminOCR = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File No</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <AutoTranslate>Title</AutoTranslate>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <AutoTranslate>File No</AutoTranslate>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <AutoTranslate>Subject</AutoTranslate>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <AutoTranslate>Upload Date</AutoTranslate>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <AutoTranslate>Status</AutoTranslate>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -481,10 +525,12 @@ const DpAdminOCR = () => {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
-                    <span className="font-medium">
-                      {Math.min(currentPage * itemsPerPage, totalItems)}
-                    </span> of <span className="font-medium">{totalItems}</span> results
+                    <span className="text-sm text-gray-700">
+                      <AutoTranslate>
+                        {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                          } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+                      </AutoTranslate>
+                    </span>
                   </p>
                 </div>
                 <div>
@@ -495,7 +541,9 @@ const DpAdminOCR = () => {
                       className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
                         }`}
                     >
-                      <span className="sr-only">Previous</span>
+                      <span className="sr-only">
+                        <AutoTranslate>Previous</AutoTranslate>
+                      </span>
                       <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
 
@@ -518,7 +566,9 @@ const DpAdminOCR = () => {
                       className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
                         }`}
                     >
-                      <span className="sr-only">Next</span>
+                      <span className="sr-only">
+                        <AutoTranslate>Next</AutoTranslate>
+                      </span>
                       <ArrowRightIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                   </nav>

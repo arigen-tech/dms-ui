@@ -1,14 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Popup from "../Components/Popup";
 import LoadingComponent from '../Components/LoadingComponent';
 import { postRequest, putRequest, getRequest } from "../API/apiService";
-import { API_HOST, MAS_ROLES, ROLE_TEMPLATE, MAS_TEMPLATE } from "../API/apiConfig";
+import { MAS_ROLES, ROLE_TEMPLATE, MAS_TEMPLATE } from "../API/apiConfig";
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Rolesrights = () => {
+    // Get language context
+    const {
+        currentLanguage,
+        defaultLanguage,
+        translationStatus,
+        isTranslationNeeded,
+        availableLanguages,
+        changeLanguage,
+        translate,
+        preloadTranslationsForTerms
+    } = useLanguage();
+
+    // State for tracking data loading
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // State for translated placeholders
+    const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
+        selectRole: 'Select Role',
+    });
+
     const [currentPage, setCurrentPage] = useState(1);
     const [popupMessage, setPopupMessage] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [roleData, setRoleData] = useState([]);
     const [templateData, setTemplateData] = useState([]);
@@ -17,13 +38,60 @@ const Rolesrights = () => {
     const [selectedRoleId, setSelectedRoleId] = useState(null);
     const [originalTemplateState, setOriginalTemplateState] = useState([]);
 
+    // Debug log
+    useEffect(() => {
+        console.log('🔍 Rolesrights Component - Language Status:', {
+            currentLanguage,
+            defaultLanguage,
+            isTranslationNeeded: isTranslationNeeded(),
+            translationStatus,
+            availableLanguagesCount: availableLanguages.length,
+            pathname: window.location.pathname
+        });
+    }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
+
+    // Function to translate placeholder text
+    const translatePlaceholder = useCallback(async (text) => {
+        if (isTranslationNeeded()) {
+            try {
+                return await translate(text);
+            } catch (error) {
+                console.error('Error translating placeholder:', error);
+                return text;
+            }
+        }
+        return text;
+    }, [isTranslationNeeded, translate]);
+
+    // Update placeholders when language changes - optimized
+    useEffect(() => {
+        const updatePlaceholders = async () => {
+            // Don't translate if English
+            if (!isTranslationNeeded()) {
+                setTranslatedPlaceholders({
+                    selectRole: 'Select Role',
+                });
+                return;
+            }
+
+            // Only update if language changed
+            const selectRolePlaceholder = await translatePlaceholder('Select Role');
+
+            setTranslatedPlaceholders({
+                selectRole: selectRolePlaceholder,
+            });
+        };
+        
+        updatePlaceholders();
+    }, [currentLanguage, translatePlaceholder, isTranslationNeeded]);
+
     useEffect(() => {
         fetchRoles();
         fetchTemplates(1);
     }, []);
 
     const fetchRoles = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
         try {
             const response = await getRequest(`${MAS_ROLES}/findActiveRole`);
@@ -33,23 +101,25 @@ const Rolesrights = () => {
                 const mappedRoles = response.map(role => ({
                     id: role.id,
                     roleCode: role.roleCode,
-                    role: role.role,   // API gives "role"
-                    isActive: role.isActive // boolean already
+                    role: role.role,
+                    isActive: role.isActive
                 }));
                 setRoleData(mappedRoles);
+                console.log('✅ Roles loaded');
             } else {
                 throw new Error("Invalid response structure");
             }
         } catch (err) {
             console.error("Error fetching roles:", err);
             setError("Failed to fetch roles. Please try again later.");
+            showPopup('Failed to load roles', 'error');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     const fetchTemplates = async (flag = 1) => {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
         try {
             const response = await getRequest(`${MAS_TEMPLATE}/getAll/${flag}`);
@@ -66,19 +136,21 @@ const Rolesrights = () => {
 
                 setTemplateData(mappedTemplates);
                 setTemplates(mappedTemplates);
+                console.log('✅ Templates loaded');
             } else {
                 throw new Error("Invalid template response structure");
             }
         } catch (err) {
             console.error("Error fetching templates:", err);
             setError("Failed to fetch templates. Please try again later.");
+            showPopup('Failed to load templates', 'error');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     const fetchRoleTemplateAssignments = async (roleId, flag = 1) => {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
         try {
             const response = await getRequest(`${ROLE_TEMPLATE}/getAllAssignedTemplates/${roleId}/${flag}`);
@@ -87,7 +159,6 @@ const Rolesrights = () => {
             if (response && response.response) {
                 const assignedTemplateIds = response.response.map(item => item.templateId);
 
-                // Update templates with checked status based on role assignment
                 const updatedTemplates = templateData.map(template => ({
                     ...template,
                     checked: assignedTemplateIds.includes(template.id)
@@ -95,13 +166,11 @@ const Rolesrights = () => {
 
                 setTemplates(updatedTemplates);
 
-                // Store the original state to track changes
                 setOriginalTemplateState(updatedTemplates.map(template => ({
                     id: template.id,
                     checked: template.checked
                 })));
             } else {
-                // If no templates assigned, uncheck all
                 const updatedTemplates = templateData.map(template => ({
                     ...template,
                     checked: false
@@ -117,7 +186,6 @@ const Rolesrights = () => {
             console.error("Error fetching role-template assignments:", err);
             setError("Failed to fetch template assignments. Please try again later.");
 
-            // Reset templates to unchecked state on error
             const updatedTemplates = templateData.map(template => ({
                 ...template,
                 checked: false
@@ -129,19 +197,18 @@ const Rolesrights = () => {
                 checked: false
             })));
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     const handleResetClick = () => {
         const selectElement = document.getElementById("roleSelect");
         if (selectElement) {
-            selectElement.value = ""; // Reset dropdown to default
+            selectElement.value = "";
         }
         setSelectedRole("");
         setSelectedRoleId(null);
 
-        // Reset templates to unchecked state
         setTemplates(prevTemplates => prevTemplates.map(template => ({
             ...template,
             checked: false
@@ -158,7 +225,6 @@ const Rolesrights = () => {
             return;
         }
 
-        // Find the role by role name (not roleCode)
         const role = roleData.find(r => r.role === selectedValue);
 
         if (role) {
@@ -171,13 +237,11 @@ const Rolesrights = () => {
     };
 
     const handleSave = async () => {
-        // Check if a role is selected
         if (!selectedRole || !selectedRoleId) {
             showPopup("Please select a role first!", "warning");
             return;
         }
 
-        // Get templates whose status changed (both newly checked and newly unchecked)
         const changedTemplates = templates.filter(template => {
             const originalState = originalTemplateState.find(t => t.id === template.id);
             return originalState && originalState.checked !== template.checked;
@@ -188,7 +252,6 @@ const Rolesrights = () => {
             return;
         }
 
-        // Format templates based on their checked status
         const templateUpdates = changedTemplates.map(template => ({
             roleId: selectedRoleId,
             templateId: template.id,
@@ -196,23 +259,19 @@ const Rolesrights = () => {
             lastChgBy: 0
         }));
 
-        setLoading(true);
+        setIsLoading(true);
         try {
-            // Match the format from Swagger documentation
             const requestPayload = {
                 applicationStatusUpdates: templateUpdates
             };
 
             console.log("Sending payload to API:", JSON.stringify(requestPayload));
 
-            // Call API to save the template assignments
             const response = await postRequest(`${ROLE_TEMPLATE}/assignTemplates`, requestPayload);
 
-            // Check for numeric status 200 instead of string 'SUCCESS'
             if (response && (response.status === 200 || response.message?.toLowerCase() === 'success')) {
                 showPopup("Roles and rights saved successfully!", "success");
 
-                // Update the original state to reflect the saved changes
                 setOriginalTemplateState(templates.map(template => ({
                     id: template.id,
                     checked: template.checked
@@ -224,7 +283,7 @@ const Rolesrights = () => {
             console.error("Error saving role-template assignments:", err);
             showPopup("An error occurred while saving. Please try again later.", "error");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -239,28 +298,19 @@ const Rolesrights = () => {
         setShowModal(true);
     };
 
+    // Show loading only if initial data is loading
+    if (isLoading) {
+        return <LoadingComponent />;
+    }
+
     return (
         <div className="px-2">
-            <h4 className="text-2xl mb-1 font-semibold">Role Rights</h4>
+            <h4 className="text-2xl mb-1 font-semibold">
+                <AutoTranslate>Role Rights</AutoTranslate>
+            </h4>
             <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="mb-4 bg-slate-100 p-2 rounded-lg">
-                    <div className="flex justify-between items-center mb-6">
-                        {/* <div className="flex space-x-2">
-                            <button
-                                type="button"
-                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
-                                onClick={() => {
-                                    fetchRoles();
-                                    fetchTemplates(1);
-                                    handleResetClick();
-                                }}
-                            >
-                                <span className="mr-1">↻</span> Refresh
-                            </button>
-                        </div> */}
-                    </div>
-
-                    {loading ? (
+                    {isLoading ? (
                         <LoadingComponent />
                     ) : error ? (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
@@ -270,7 +320,9 @@ const Rolesrights = () => {
                         <form className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                                 <div className="relative">
-                                    <label className="block text-lg font-medium text-gray-700 mb-1">Select Role</label>
+                                    <label className="block text-lg font-medium text-gray-700 mb-1">
+                                        <AutoTranslate>Select Role</AutoTranslate>
+                                    </label>
                                     <select
                                         className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                         id="roleSelect"
@@ -278,11 +330,13 @@ const Rolesrights = () => {
                                         onChange={handleRoleChange}
                                         required
                                     >
-                                        <option value="">Select Role</option>
+                                        <option value="">
+                                            <AutoTranslate>{translatedPlaceholders.selectRole}</AutoTranslate>
+                                        </option>
                                         {roleData
                                             .filter(role => role.isActive)
                                             .map(role => (
-                                                <option key={role.id} value={role.role}> {/* Use role.role as value */}
+                                                <option key={role.id} value={role.role}>
                                                     {role.role}
                                                 </option>
                                             ))
@@ -296,7 +350,7 @@ const Rolesrights = () => {
                                     <thead className="bg-gray-100">
                                         <tr>
                                             <th colSpan="2" className="py-3 px-4 text-left font-semibold text-gra-700 border-b border-gray-200">
-                                                Templates
+                                                <AutoTranslate>Templates</AutoTranslate>
                                             </th>
                                         </tr>
                                     </thead>
@@ -304,7 +358,9 @@ const Rolesrights = () => {
                                         {templates.length > 0 ? (
                                             templates.map((template, index) => (
                                                 <tr key={template.id} className="hover:bg-gray-50">
-                                                    <td className="py-3 px-4 border-b border-gray-200">{template.name}</td>
+                                                    <td className="py-3 px-4 border-b border-gray-200">
+                                                        {template.name || <AutoTranslate>No Name</AutoTranslate>}
+                                                    </td>
                                                     <td className="py-3 px-4 border-b border-gray-200 text-center w-24">
                                                         <div className="flex justify-center">
                                                             <label className="flex items-center cursor-pointer">
@@ -327,7 +383,7 @@ const Rolesrights = () => {
                                         ) : (
                                             <tr>
                                                 <td colSpan="2" className="py-4 px-4 text-center text-gray-500 border-b border-gray-200">
-                                                    No templates available
+                                                    <AutoTranslate>No templates available</AutoTranslate>
                                                 </td>
                                             </tr>
                                         )}
@@ -341,14 +397,14 @@ const Rolesrights = () => {
                                     className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 flex items-center"
                                     onClick={handleSave}
                                 >
-                                    <span className="mr-1"></span> Save
+                                    <AutoTranslate>Save</AutoTranslate>
                                 </button>
                                 <button
                                     type="button"
                                     className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 flex items-center"
                                     onClick={handleResetClick}
                                 >
-                                    <span className="mr-1">↻</span> Reset
+                                    <AutoTranslate>Reset</AutoTranslate>
                                 </button>
                             </div>
                         </form>

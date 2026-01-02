@@ -4,8 +4,22 @@ import { API_HOST } from '../API/apiConfig';
 import Popup from '../Components/Popup';
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import LoadingComponent from '../Components/LoadingComponent';
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const ArchiveUpload = () => {
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
@@ -17,12 +31,23 @@ const ArchiveUpload = () => {
   const [userDepartment, setUserDepartment] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-
   const initialFormData = {
     branchId: '',
     departmentId: '',
   };
   const [archiveCriteria, setArchiveCriteria] = useState(initialFormData);
+
+  // Debug log
+  useEffect(() => {
+    console.log('🔍 ArchiveUpload Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
   useEffect(() => {
     fetchUserDetails();
@@ -65,10 +90,9 @@ const ArchiveUpload = () => {
       }
     } catch (error) {
       console.error("Error fetching user details:", error);
-      showPopup("Failed to fetch user details", "error");
-    }finally{
-    setIsLoading(false);
-
+      showPopup(<AutoTranslate>Failed to fetch user details</AutoTranslate>, "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -83,12 +107,12 @@ const ArchiveUpload = () => {
       setBranchOptions(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
-      showPopup('Failed to fetch branches', 'error');
-    }finally{
-    setIsLoading(false);
-
+      showPopup(<AutoTranslate>Failed to fetch branches</AutoTranslate>, 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
+
   if (isLoading) {
     return <LoadingComponent />;
   }
@@ -105,7 +129,7 @@ const ArchiveUpload = () => {
       setDepartmentOptions(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
-      showPopup('Failed to fetch departments', 'error');
+      showPopup(<AutoTranslate>Failed to fetch departments</AutoTranslate>, 'error');
     }
   };
 
@@ -126,16 +150,16 @@ const ArchiveUpload = () => {
       if (isValidZip) {
         setSelectedFile(file);
       } else {
-        showPopup('Please select a valid ZIP file', 'error');
+        showPopup(<AutoTranslate>Please select a valid ZIP file</AutoTranslate>, 'error');
       }
     } else {
-      showPopup('No file selected', 'error');
+      showPopup(<AutoTranslate>No file selected</AutoTranslate>, 'error');
     }
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      showPopup('Please select a file to upload', 'error');
+      showPopup(<AutoTranslate>Please select a file to upload</AutoTranslate>, 'error');
       return;
     }
 
@@ -168,12 +192,12 @@ const ArchiveUpload = () => {
         }
       });
 
-      showPopup('Archive restored successfully', 'success');
+      showPopup(<AutoTranslate>Archive restored successfully</AutoTranslate>, 'success');
       setSelectedFile(null);
       setUploadProgress(0);
     } catch (error) {
       console.error('Error restoring archive:', error);
-      showPopup(error.response?.data?.message || 'Failed to restore archive', 'error');
+      showPopup(error.response?.data?.message || <AutoTranslate>Failed to restore archive</AutoTranslate>, 'error');
     } finally {
       setUploading(false);
     }
@@ -191,7 +215,7 @@ const ArchiveUpload = () => {
           <>
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="branch">
-                Branch
+                <AutoTranslate>Branch</AutoTranslate>
               </label>
               <select
                 id="branchId"
@@ -207,7 +231,7 @@ const ArchiveUpload = () => {
 
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="department">
-                Department
+                <AutoTranslate>Department</AutoTranslate>
               </label>
               <select
                 id="departmentId"
@@ -215,7 +239,7 @@ const ArchiveUpload = () => {
                 onChange={handleInputChange}
                 className="p-2 border rounded-md outline-none"
               >
-                <option value="">Select Department</option>
+                <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
                 {departmentOptions.map((department) => (
                   <option key={department.id} value={department.id}>
                     {department.name}
@@ -228,7 +252,7 @@ const ArchiveUpload = () => {
           <>
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="branch">
-                Branch
+                <AutoTranslate>Branch</AutoTranslate>
               </label>
               <select
                 id="branchId"
@@ -244,7 +268,7 @@ const ArchiveUpload = () => {
 
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="department">
-                Department
+                <AutoTranslate>Department</AutoTranslate>
               </label>
               <select
                 id="departmentId"
@@ -264,7 +288,7 @@ const ArchiveUpload = () => {
           <>
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="branch">
-                Branch
+                <AutoTranslate>Branch</AutoTranslate>
               </label>
               <select
                 id="branchId"
@@ -273,7 +297,7 @@ const ArchiveUpload = () => {
                 onChange={handleInputChange}
                 className="p-2 border rounded-md outline-none"
               >
-                <option value="">Select Branch</option>
+                <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
                 {branchOptions.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name}
@@ -284,7 +308,7 @@ const ArchiveUpload = () => {
 
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="department">
-                Department
+                <AutoTranslate>Department</AutoTranslate>
               </label>
               <select
                 id="departmentId"
@@ -294,7 +318,7 @@ const ArchiveUpload = () => {
                 className="p-2 border rounded-md outline-none"
                 disabled={!archiveCriteria.branchId}
               >
-                <option value="">Select Department</option>
+                <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
                 {departmentOptions.map((department) => (
                   <option key={department.id} value={department.id}>
                     {department.name}
@@ -309,9 +333,10 @@ const ArchiveUpload = () => {
   };
 
   return (
-    
-      <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">Upload Archive</h1>
+    <div className="px-2">
+      <h1 className="text-2xl mb-1 font-semibold">
+        <AutoTranslate>Upload Archive</AutoTranslate>
+      </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
 
         {popupMessage && (
@@ -350,7 +375,7 @@ const ArchiveUpload = () => {
                     if (file.name.toLowerCase().endsWith('.zip')) {
                       setSelectedFile(file);
                     } else {
-                      showPopup('Please select a valid ZIP file', 'error');
+                      showPopup(<AutoTranslate>Please select a valid ZIP file</AutoTranslate>, 'error');
                     }
                   }
                 }}
@@ -358,9 +383,13 @@ const ArchiveUpload = () => {
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <CloudArrowUpIcon className="w-10 h-10 mb-3 text-gray-400" />
                   <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
+                    <span className="font-semibold">
+                      <AutoTranslate>Click to upload</AutoTranslate>
+                    </span> <AutoTranslate>or drag and drop</AutoTranslate>
                   </p>
-                  <p className="text-xs text-gray-500">ZIP file only</p>
+                  <p className="text-xs text-gray-500">
+                    <AutoTranslate>ZIP file only</AutoTranslate>
+                  </p>
                 </div>
                 <input
                   type="file"
@@ -373,7 +402,9 @@ const ArchiveUpload = () => {
             </div>
             {selectedFile && (
               <div className="mt-4">
-                <p className="text-sm text-gray-600">Selected file: {selectedFile.name}</p>
+                <p className="text-sm text-gray-600">
+                  <AutoTranslate>Selected file:</AutoTranslate> {selectedFile.name}
+                </p>
               </div>
             )}
             {uploadProgress > 0 && (
@@ -384,7 +415,7 @@ const ArchiveUpload = () => {
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">{uploadProgress}% uploaded</p>
+                <p className="text-sm text-gray-600 mt-2">{uploadProgress}% <AutoTranslate>uploaded</AutoTranslate></p>
               </div>
             )}
           </div>
@@ -396,7 +427,7 @@ const ArchiveUpload = () => {
           className={`bg-blue-900 text-white rounded-lg py-3 px-6 hover:bg-blue-800 transition duration-300 shadow-md hover:shadow-lg flex items-center justify-center w-full md:w-auto ${(uploading || !selectedFile) ? 'opacity-50 cursor-not-allowed' : ''
             }`}
         >
-          {uploading ? 'Restoring...' : 'Restore Archive'}
+          {uploading ? <AutoTranslate>Restoring...</AutoTranslate> : <AutoTranslate>Restore Archive</AutoTranslate>}
         </button>
       </div>
     </div>

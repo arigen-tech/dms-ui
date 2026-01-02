@@ -7,8 +7,22 @@ import {
 import { API_HOST, DEPAETMENT_API, BRANCH_API, CATEGORI_API } from "../API/apiConfig"
 import Popup from "../Components/Popup"
 import LoadingComponent from "../Components/LoadingComponent"
+import AutoTranslate from '../i18n/AutoTranslate'
+import { useLanguage } from '../i18n/LanguageContext'
+import { getFallbackTranslation } from '../i18n/autoTranslator'
 
 const NewRetaintionPolicy = () => {
+    const {
+        currentLanguage,
+        defaultLanguage,
+        translationStatus,
+        isTranslationNeeded,
+        availableLanguages,
+        changeLanguage,
+        translate,
+        preloadTranslationsForTerms
+    } = useLanguage()
+
     const [policies, setPolicies] = useState([])
     const [branches, setBranches] = useState([])
     const [departments, setDepartments] = useState([])
@@ -41,7 +55,17 @@ const NewRetaintionPolicy = () => {
     // Create a ref for the form section
     const formRef = useRef(null)
 
-
+    // Debug log
+    useEffect(() => {
+        console.log('🔍 NewRetaintionPolicy Component - Language Status:', {
+            currentLanguage,
+            defaultLanguage,
+            isTranslationNeeded: isTranslationNeeded(),
+            translationStatus,
+            availableLanguagesCount: availableLanguages.length,
+            pathname: window.location.pathname
+        });
+    }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -55,7 +79,7 @@ const NewRetaintionPolicy = () => {
                 await fetchPolicies();
             } catch (error) {
                 console.error("Error loading initial data:", error);
-                showPopup("Failed to load initial data", "error");
+                showPopup(<AutoTranslate>Failed to load initial data</AutoTranslate>, "error");
             } finally {
                 setIsLoading(false);
             }
@@ -85,8 +109,6 @@ const NewRetaintionPolicy = () => {
         }
     }, [selectedBranch])
 
-
-
     const scrollToForm = () => {
         if (formRef.current) {
             formRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -94,21 +116,21 @@ const NewRetaintionPolicy = () => {
     };
 
     const getBranchNameById = (id) => {
-        if (!id || id === null) return "All Branches";
+        if (!id || id === null) return <AutoTranslate>All Branches</AutoTranslate>;
         const branch = branches.find(b => b.id === id);
-        return branch ? branch.name : "Unknown Branch";
+        return branch ? branch.name : <AutoTranslate>Unknown Branch</AutoTranslate>;
     };
 
     const getDepartmentNameById = (departmentId) => {
-        if (!departmentId || departmentId === null) return "All Departments";
+        if (!departmentId || departmentId === null) return <AutoTranslate>All Departments</AutoTranslate>;
         const department = allDepartments.find((dept) => dept.id === departmentId);
-        return department?.name || "Unknown Department";
+        return department?.name || <AutoTranslate>Unknown Department</AutoTranslate>;
     };
 
     const getCategoryNameById = (id) => {
-        if (!id || id === null) return "All Categorys";
+        if (!id || id === null) return <AutoTranslate>All Categorys</AutoTranslate>;
         const cat = categories.find(b => b.id === id);
-        return cat ? cat.name : "Unknown Branch";
+        return cat ? cat.name : <AutoTranslate>Unknown Category</AutoTranslate>;
     };
 
     const fetchPolicies = async () => {
@@ -141,7 +163,7 @@ const NewRetaintionPolicy = () => {
             setPolicies(normalizedPolicies);
         } catch (error) {
             console.error("Error fetching retention policies:", error);
-            showPopup("Failed to fetch retention policies", "error");
+            showPopup(<AutoTranslate>Failed to fetch retention policies</AutoTranslate>, "error");
         }
     };
 
@@ -150,7 +172,6 @@ const NewRetaintionPolicy = () => {
 
         let date;
         if (Array.isArray(value)) {
-
             const [year, month, day, hour = 0, minute = 0, second = 0] = value;
             date = new Date(year, month - 1, day, hour, minute, second);
         } else {
@@ -171,11 +192,8 @@ const NewRetaintionPolicy = () => {
         return date.toLocaleString("en-GB", options).replace(",", " at");
     }
 
-
-
-
     const formatDateTime = (dateArray, timeArray) => {
-        if (!dateArray || !timeArray) return "Invalid Date";
+        if (!dateArray || !timeArray) return <AutoTranslate>Invalid Date</AutoTranslate>;
 
         const [year, month, day] = dateArray;
         const [hour = 0, minute = 0] = timeArray;
@@ -209,7 +227,7 @@ const NewRetaintionPolicy = () => {
             setBranches(Array.isArray(branchesData) ? branchesData : [branchesData])
         } catch (error) {
             console.error("Error fetching branches:", error)
-            showPopup("Failed to fetch branches", "error")
+            showPopup(<AutoTranslate>Failed to fetch branches</AutoTranslate>, "error")
         }
     }
 
@@ -224,7 +242,7 @@ const NewRetaintionPolicy = () => {
             setDepartments(Array.isArray(departmentsData) ? departmentsData : [departmentsData])
         } catch (error) {
             console.error("Error fetching departments:", error)
-            showPopup("Failed to fetch departments", "error")
+            showPopup(<AutoTranslate>Failed to fetch departments</AutoTranslate>, "error")
             setDepartments([])
         }
     }
@@ -239,8 +257,8 @@ const NewRetaintionPolicy = () => {
             const categoriesData = response.data?.response || response.data || []
             setCategories(Array.isArray(categoriesData) ? categoriesData : [categoriesData])
         } catch (error) {
-            console.error("Error fetching branches:", error)
-            showPopup("Failed to fetch branches", "error")
+            console.error("Error fetching categories:", error)
+            showPopup(<AutoTranslate>Failed to fetch categories</AutoTranslate>, "error")
         }
     }
 
@@ -256,7 +274,7 @@ const NewRetaintionPolicy = () => {
             });
 
             if (!response.ok) {
-                throw new Error("Failed to download ZIP");
+                throw new Error(<AutoTranslate>Failed to download ZIP</AutoTranslate>);
             }
 
             let fileName = `archive_${policy.id}.zip`;
@@ -280,12 +298,11 @@ const NewRetaintionPolicy = () => {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Error downloading ZIP:", error);
-            alert("Failed to download ZIP file");
+            alert(<AutoTranslate>Failed to download ZIP file</AutoTranslate>);
         } finally {
             setDownloadingId(null);
         }
     };
-
 
     const fetchAllDepartments = async () => {
         try {
@@ -320,7 +337,7 @@ const NewRetaintionPolicy = () => {
         }
         else if (name === "todate" && value) {
             if (formData.fromdate && value <= formData.fromdate) {
-                alert("Archive To Date must be greater than Archive From Date");
+                alert(<AutoTranslate>Archive To Date must be greater than Archive From Date</AutoTranslate>);
                 return;
             }
 
@@ -336,7 +353,7 @@ const NewRetaintionPolicy = () => {
         else if (name === "retentionDate" && value) {
             // compare with todate if exists
             if (formData.todate && value <= formData.todate) {
-                alert("Retention Date must be greater than Archive To Date");
+                alert(<AutoTranslate>Retention Date must be greater than Archive To Date</AutoTranslate>);
                 return;
             }
 
@@ -363,8 +380,6 @@ const NewRetaintionPolicy = () => {
         }
     };
 
-
-
     const handleBranchChange = async (e) => {
         const branchId = e.target.value
         setSelectedBranch(branchId)
@@ -382,11 +397,9 @@ const NewRetaintionPolicy = () => {
         }
     }
 
-
-
     const handleAddPolicy = async () => {
         if (!formData.retentionDate) {
-            showPopup("Please select a retention date", "warning");
+            showPopup(<AutoTranslate>Please select a retention date</AutoTranslate>, "warning");
             return;
         }
 
@@ -416,16 +429,14 @@ const NewRetaintionPolicy = () => {
 
             await fetchPolicies();
             resetForm();
-            showPopup("Policy created successfully!", "success");
+            showPopup(<AutoTranslate>Policy created successfully!</AutoTranslate>, "success");
         } catch (error) {
             console.error("Error creating policy:", error);
 
-            const backendMessage = error.response?.data?.message || error.message || "Something went wrong";
+            const backendMessage = error.response?.data?.message || error.message || <AutoTranslate>Something went wrong</AutoTranslate>;
             showPopup(backendMessage, "warning");
         }
-
     };
-
 
     const handleEditPolicy = async (policy) => {
         if (policy) {
@@ -470,20 +481,18 @@ const NewRetaintionPolicy = () => {
         }
     };
 
-
-
     const handleSaveEdit = async () => {
         try {
             const policyIndex = policies.findIndex((policy) => policy.id === editId);
             if (policyIndex === -1) {
-                showPopup("Policy not found!", "error");
+                showPopup(<AutoTranslate>Policy not found!</AutoTranslate>, "error");
                 return;
             }
 
             const formatDate = (dateStr) => {
                 if (!dateStr) return null;
                 const d = new Date(dateStr);
-                return d.toISOString().split("T")[0]; 
+                return d.toISOString().split("T")[0];
             };
 
             const updatedPolicy = {
@@ -498,14 +507,14 @@ const NewRetaintionPolicy = () => {
                     ? new Date(formData.todate).toISOString().slice(0, 19)
                     : null,
 
-                retentionDate: formatDate(formData.retentionDate), 
+                retentionDate: formatDate(formData.retentionDate),
                 retentionTime: formData.retentionTime
                     ? formData.retentionTime + ":00"
                     : "23:59:00",
                 isActive: !!formData.isActive,
                 departmentId: Number(formData.departmentId) || null,
                 branchId: Number(formData.branchId) || null,
-                categoryId: Number(formData.categoryId) || null, 
+                categoryId: Number(formData.categoryId) || null,
                 updatedOn: new Date().toISOString().slice(0, 19),
             };
 
@@ -522,17 +531,14 @@ const NewRetaintionPolicy = () => {
 
             await fetchPolicies();
             resetForm();
-            showPopup("Retention policy updated successfully!", "success");
+            showPopup(<AutoTranslate>Retention policy updated successfully!</AutoTranslate>, "success");
         } catch (error) {
             console.error("Error creating policy:", error);
             const backendMessage =
-                error.response?.data?.message || error.message || "Something went wrong";
+                error.response?.data?.message || error.message || <AutoTranslate>Something went wrong</AutoTranslate>;
             showPopup(backendMessage, "warning");
         }
     };
-
-
-
 
     const resetForm = () => {
         setFormData({
@@ -572,11 +578,11 @@ const NewRetaintionPolicy = () => {
                 setModalVisible(false);
                 setPolicyToToggle(null);
 
-                const statusText = newActiveStatus ? "activated" : "deactivated";
-                showPopup(`Policy ${statusText} successfully!`, "success");
+                const statusText = newActiveStatus ? <AutoTranslate>activated</AutoTranslate> : <AutoTranslate>deactivated</AutoTranslate>;
+                showPopup(<AutoTranslate>Policy {statusText} successfully!</AutoTranslate>, "success");
             } catch (error) {
                 console.error("Error toggling policy status:", error);
-                showPopup("Failed to change the status", "error");
+                showPopup(<AutoTranslate>Failed to change the status</AutoTranslate>, "error");
                 setModalVisible(false);
                 setPolicyToToggle(null);
             }
@@ -593,7 +599,6 @@ const NewRetaintionPolicy = () => {
         })
     }
 
-
     const filteredPolicies = policies.filter((policy) => {
         const searchLower = searchTerm.toLowerCase()
         const branchName = policy.branchName || getBranchNameById(policy.branchId)
@@ -604,7 +609,7 @@ const NewRetaintionPolicy = () => {
             (policy.policyType || "").toLowerCase().includes(searchLower) ||
             branchName.toLowerCase().includes(searchLower) ||
             departmentName.toLowerCase().includes(searchLower) ||
-            categoryName.toLowerCase().includes(searchLower) 
+            categoryName.toLowerCase().includes(searchLower)
         )
     })
 
@@ -629,7 +634,9 @@ const NewRetaintionPolicy = () => {
 
     return (
         <div className="px-2">
-            <h1 className="text-2xl mb-1 font-semibold">Archival Policies</h1>
+            <h1 className="text-2xl mb-1 font-semibold">
+                <AutoTranslate>Archival Policies</AutoTranslate>
+            </h1>
 
             <div className="bg-white p-4 rounded-lg shadow-sm">
                 {popupMessage && (
@@ -640,44 +647,42 @@ const NewRetaintionPolicy = () => {
                 <div ref={formRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <label className="block text-md font-medium text-gray-700">
-                            Policy Type <span className="text-red-500">*</span>
+                            <AutoTranslate>PolicyType</AutoTranslate> <span className="text-red-500">*</span>
                             <select
                                 name="policyType"
                                 value={formData.policyType}
                                 onChange={handleInputChange}
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="FILE_RETENTION">File Retention Policy</option>
-                                <option value="DATA_RETENTION">Data Retention Policy</option>
+                                <option value="FILE_RETENTION"><AutoTranslate>File Retention Policy</AutoTranslate></option>
+                                <option value="DATA_RETENTION"><AutoTranslate>Data Retention Policy</AutoTranslate></option>
                             </select>
                         </label>
 
                         <label className="block text-md font-medium text-gray-700">
-                            From Date <span className="text-red-500">*</span>
+                            <AutoTranslate>From Date</AutoTranslate> <span className="text-red-500">*</span>
                             <input
                                 type="date"
                                 name="fromdate"
                                 value={formData.fromdate || ''}
                                 onChange={handleInputChange}
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                            //  min={new Date().toISOString().split('T')[0]} // must be today or later
                             />
                         </label>
 
                         <label className="block text-md font-medium text-gray-700">
-                            To Date <span className="text-red-500">*</span>
+                            <AutoTranslate>To Date</AutoTranslate> <span className="text-red-500">*</span>
                             <input
                                 type="date"
                                 name="todate"
                                 value={formData.todate || ''}
                                 onChange={handleInputChange}
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                                // must be > fromdate
                                 min={
                                     formData.fromdate
                                         ? (() => {
                                             const d = new Date(formData.fromdate);
-                                            d.setDate(d.getDate() + 1); // strictly greater
+                                            d.setDate(d.getDate() + 1);
                                             return d.toISOString().split("T")[0];
                                         })()
                                         : new Date().toISOString().split("T")[0]
@@ -686,7 +691,7 @@ const NewRetaintionPolicy = () => {
                         </label>
 
                         <label className="block text-md font-medium text-gray-700">
-                            Date of Archival <span className="text-red-500">*</span>
+                            <AutoTranslate>Date of Archival</AutoTranslate> <span className="text-red-500">*</span>
                             <input
                                 type="date"
                                 name="retentionDate"
@@ -702,16 +707,13 @@ const NewRetaintionPolicy = () => {
                                         toDate.setHours(0, 0, 0, 0);
 
                                         if (toDate > today) {
-                                            // ✅ Case 1: todate > today
                                             toDate.setDate(toDate.getDate() + 1);
                                             return toDate.toISOString().split("T")[0];
                                         } else {
-                                            // ✅ Case 2: todate <= today
                                             today.setDate(today.getDate() + 1);
                                             return today.toISOString().split("T")[0];
                                         }
                                     } else {
-                                        // fallback: today + 1
                                         today.setDate(today.getDate() + 1);
                                         return today.toISOString().split("T")[0];
                                     }
@@ -719,9 +721,8 @@ const NewRetaintionPolicy = () => {
                             />
                         </label>
 
-
                         <label className="block text-md font-medium text-gray-700">
-                            Archival Time
+                            <AutoTranslate>Archival Time</AutoTranslate>
                             <input
                                 type="time"
                                 name="retentionTime"
@@ -731,16 +732,15 @@ const NewRetaintionPolicy = () => {
                             />
                         </label>
 
-
                         <label className="block text-md font-medium text-gray-700">
-                            Branch <span className="text-red-500">*</span>
+                            <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
                             <select
                                 name="branchId"
                                 value={formData.branchId}
                                 onChange={handleBranchChange}
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="">All Branch</option>
+                                <option value=""><AutoTranslate>All Branch</AutoTranslate></option>
                                 {branches.map((branch) => (
                                     <option key={branch.id} value={branch.id}>
                                         {branch.name}
@@ -749,9 +749,8 @@ const NewRetaintionPolicy = () => {
                             </select>
                         </label>
 
-
                         <label className="block text-md font-medium text-gray-700">
-                            Department <span className="text-red-500">*</span>
+                            <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
                             <select
                                 name="departmentId"
                                 value={formData.departmentId}
@@ -759,7 +758,7 @@ const NewRetaintionPolicy = () => {
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                                 disabled={!formData.branchId}
                             >
-                                <option value="">All Departments</option>
+                                <option value=""><AutoTranslate>All Departments</AutoTranslate></option>
                                 {departments.map((department) => (
                                     <option key={department.id} value={department.id}>
                                         {department.name}
@@ -769,14 +768,14 @@ const NewRetaintionPolicy = () => {
                         </label>
 
                         <label className="block text-md font-medium text-gray-700">
-                            Category <span className="text-red-500">*</span>
+                            <AutoTranslate>Category</AutoTranslate> <span className="text-red-500">*</span>
                             <select
                                 name="categoryId"
                                 value={formData.categoryId}
                                 onChange={handleInputChange}
                                 className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="">All Category</option>
+                                <option value=""><AutoTranslate>All Category</AutoTranslate></option>
                                 {categories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>
                                         {cat.name}
@@ -785,12 +784,13 @@ const NewRetaintionPolicy = () => {
                             </select>
                         </label>
 
-
-
                         <label className="block text-md font-medium text-gray-700">
-                            Archive Description
+                            <AutoTranslate>Archive Description</AutoTranslate>
                             <textarea
-                                placeholder="Enter policy description"
+                                placeholder={getFallbackTranslation(
+                                    'Enter policy description',
+                                    currentLanguage
+                                )}
                                 name="description"
                                 value={formData.description}
                                 onChange={handleInputChange}
@@ -807,7 +807,7 @@ const NewRetaintionPolicy = () => {
                                 className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
                             >
                                 <PlusCircleIcon className="h-5 w-5 mr-1" />
-                                Add Policy
+                                <AutoTranslate>Add Policy</AutoTranslate>
                             </button>
                         ) : (
                             <>
@@ -815,13 +815,13 @@ const NewRetaintionPolicy = () => {
                                     onClick={handleSaveEdit}
                                     className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
                                 >
-                                    Update Policy
+                                    <AutoTranslate>Update Policy</AutoTranslate>
                                 </button>
                                 <button
                                     onClick={resetForm}
                                     className="bg-gray-500 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
                                 >
-                                    Cancel
+                                    <AutoTranslate>Cancel</AutoTranslate>
                                 </button>
                             </>
                         )}
@@ -835,7 +835,7 @@ const NewRetaintionPolicy = () => {
                             htmlFor="itemsPerPage"
                             className="mr-2 ml-2 text-white text-sm"
                         >
-                            Show:
+                            <AutoTranslate>Show:</AutoTranslate>
                         </label>
                         <select
                             id="itemsPerPage"
@@ -857,7 +857,10 @@ const NewRetaintionPolicy = () => {
                     <div className="flex items-center w-full md:w-auto flex-1">
                         <input
                             type="text"
-                            placeholder="Search..."
+                            placeholder={getFallbackTranslation(
+                                'Search...',
+                                currentLanguage
+                            )}
                             className="border rounded-l-md p-1 outline-none w-full"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -871,17 +874,16 @@ const NewRetaintionPolicy = () => {
                     <table className="table-fixed border-collapse border border-gray-300 min-w-[1400px]">
                         <thead className="bg-gray-100 sticky top-0 z-10">
                             <tr>
-                                <th className="border p-2 text-left w-12">SR.</th>
-                                <th className="border p-2 text-left w-44">Policy Type</th>
-                                <th className="border p-2 text-left w-[650px]">Archival Period</th>
-                                <th className="border p-2 text-left w-96">Archive Date & Time</th>
-                                <th className="border p-2 text-left w-40">Branch</th>
-                                <th className="border p-2 text-left w-40">Department</th>
-                                <th className="border p-2 text-left w-40">Category</th>
-                                <th className="border p-2 text-left w-60">Description</th>
-                                <th className="border p-2 text-left w-28">Status</th>
-                                <th className="border p-2 text-left w-20">Edit</th>
-                                {/* <th className="border p-2 text-left w-28">Retrieved</th> */}
+                                <th className="border p-2 text-left w-12"><AutoTranslate>SN</AutoTranslate></th>
+                                <th className="border p-2 text-left w-44"><AutoTranslate>PolicyType</AutoTranslate></th>
+                                <th className="border p-2 text-left w-[650px]"><AutoTranslate>Archival Period</AutoTranslate></th>
+                                <th className="border p-2 text-left w-96"><AutoTranslate>Archive Date & Time</AutoTranslate></th>
+                                <th className="border p-2 text-left w-40"><AutoTranslate>Branch</AutoTranslate></th>
+                                <th className="border p-2 text-left w-40"><AutoTranslate>Department</AutoTranslate></th>
+                                <th className="border p-2 text-left w-40"><AutoTranslate>Category</AutoTranslate></th>
+                                <th className="border p-2 text-left w-60"><AutoTranslate>Description</AutoTranslate></th>
+                                <th className="border p-2 text-left w-28"><AutoTranslate>Status</AutoTranslate></th>
+                                <th className="border p-2 text-left w-20"><AutoTranslate>Edit</AutoTranslate></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -898,8 +900,8 @@ const NewRetaintionPolicy = () => {
                                                 }`}
                                         >
                                             {policy.policyType === "FILE_RETENTION"
-                                                ? "File Retention"
-                                                : "Data Retention"}
+                                                ? <AutoTranslate>File Retention</AutoTranslate>
+                                                : <AutoTranslate>Data Retention</AutoTranslate>}
                                         </span>
                                     </td>
                                     <td className="border p-2 w-[500px] text-center text-gray-700">
@@ -927,7 +929,7 @@ const NewRetaintionPolicy = () => {
                                                 : "bg-green-100 text-green-800"
                                                 }`}
                                         >
-                                            {policy.isActive ? "Waiting For Archive" : "Archived"}
+                                            {policy.isActive ? <AutoTranslate>Waiting For Archive</AutoTranslate> : <AutoTranslate>Archived</AutoTranslate>}
                                         </span>
                                     </td>
                                     <td className="border p-2 w-20 text-center">
@@ -939,50 +941,11 @@ const NewRetaintionPolicy = () => {
                                             <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                                         </button>
                                     </td>
-                                    {/* <td className="border p-2 w-28 text-center">
-                                        <button
-                                            onClick={() => handleDownloadZip(policy)}
-                                            disabled={policy.isActive || downloadingId === policy.id}
-                                            className={`p-1 rounded-full ${policy.isActive || downloadingId === policy.id
-                                                ? "bg-gray-400 cursor-not-allowed"
-                                                : "bg-green-500 hover:bg-green-600"
-                                                } text-white transition duration-200 flex items-center gap-2`}
-                                        >
-                                            {policy.isActive ? (
-                                                <span>Disabled</span>
-                                            ) : downloadingId === policy.id ? (
-                                                <>
-                                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                                        <circle
-                                                            cx="12"
-                                                            cy="12"
-                                                            r="10"
-                                                            stroke="currentColor"
-                                                            strokeWidth="4"
-                                                            fill="none"
-                                                            className="opacity-25"
-                                                        />
-                                                        <path
-                                                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                                            fill="currentColor"
-                                                            className="opacity-75"
-                                                        />
-                                                    </svg>
-                                                    <span>Downloading…</span>
-                                                </>
-                                            ) : (
-                                                <span>Download</span>
-                                            )}
-                                        </button>
-                                    </td> */}
-
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-
-
 
                 {/* Pagination Controls */}
                 <div className="flex items-center mt-4">
@@ -993,7 +956,7 @@ const NewRetaintionPolicy = () => {
                             }`}
                     >
                         <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                        Previous
+                        <AutoTranslate>Previous</AutoTranslate>
                     </button>
 
                     {totalPages > 0 && getPageNumbers().map((page) => (
@@ -1007,7 +970,9 @@ const NewRetaintionPolicy = () => {
                         </button>
                     ))}
 
-                    <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+                    <span className="text-sm text-gray-700 mx-2">
+                        <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
+                    </span>
 
                     <button
                         onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
@@ -1015,14 +980,14 @@ const NewRetaintionPolicy = () => {
                         className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
                             }`}
                     >
-                        Next
+                        <AutoTranslate>Next</AutoTranslate>
                         <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
                     </button>
                     <div className="ml-4">
                         <span className="text-sm text-gray-700">
-                            Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-                            {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-                            {totalItems} entries
+                            <AutoTranslate>
+                                {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries`}
+                            </AutoTranslate>
                         </span>
                     </div>
                 </div>
@@ -1032,10 +997,17 @@ const NewRetaintionPolicy = () => {
             {modalVisible && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                     <div className="bg-white p-6 rounded-lg shadow-lg">
-                        <h2 className="text-lg font-semibold mb-4">Confirm Status Change</h2>
+                        <h2 className="text-lg font-semibold mb-4">
+                            <AutoTranslate>Confirm Status Change</AutoTranslate>
+                        </h2>
                         <p className="mb-4">
-                            Are you sure you want to {policyToToggle?.isActive ? "deactivate" : "activate"} this retention policy
-                            <strong> "{policyToToggle?.policyType === "FILE_RETENTION" ? "File Retention" : "Data Retention"}"</strong>?
+                            <AutoTranslate>
+                                Are you sure you want to {policyToToggle?.isActive ? "deactivate" : "activate"} this retention policy
+                            </AutoTranslate>
+                            <strong> "{policyToToggle?.policyType === "FILE_RETENTION" ?
+                                <AutoTranslate>File Retention</AutoTranslate> :
+                                <AutoTranslate>Data Retention</AutoTranslate>
+                            }"</strong>?
                         </p>
                         <div className="flex justify-end gap-4">
                             <button
@@ -1045,10 +1017,10 @@ const NewRetaintionPolicy = () => {
                                 }}
                                 className="bg-gray-300 p-2 rounded-lg"
                             >
-                                Cancel
+                                <AutoTranslate>Cancel</AutoTranslate>
                             </button>
                             <button onClick={confirmToggleActiveStatus} className="bg-blue-500 text-white p-2 rounded-lg">
-                                Confirm
+                                <AutoTranslate>Confirm</AutoTranslate>
                             </button>
                         </div>
                     </div>

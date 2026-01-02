@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { postRequest, putRequest, getRequest } from "../API/apiService";
-import { API_HOST, MAS_TEMPLATE, ASSIGN_TEMPLATES, MAS_APPLICATION } from "../API/apiConfig";
+import { MAS_TEMPLATE, ASSIGN_TEMPLATES, MAS_APPLICATION } from "../API/apiConfig";
 import LoadingComponent from '../Components/LoadingComponent';
 import {
     PlusCircleIcon,
@@ -8,9 +8,33 @@ import {
     ChevronDownIcon,
     ChevronRightIcon
 } from '@heroicons/react/24/solid';
-import Popup from "../Components/Popup"
+import Popup from "../Components/Popup";
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const AssignApplication = () => {
+    // Get language context
+    const {
+        currentLanguage,
+        defaultLanguage,
+        translationStatus,
+        isTranslationNeeded,
+        availableLanguages,
+        changeLanguage,
+        translate,
+        preloadTranslationsForTerms
+    } = useLanguage();
+
+    // State for tracking data loading
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // State for translated placeholders
+    const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
+        selectTemplate: 'Select Template',
+        selectParentApplication: 'Select Parent Application',
+        selectAll: 'Select All',
+    });
+
     const [showForm, setShowForm] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const totalPages = 3;
@@ -25,8 +49,60 @@ const AssignApplication = () => {
     const [templateModules, setTemplateModules] = useState([]);
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState('');
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Debug log
+    useEffect(() => {
+        console.log('🔍 AssignApplication Component - Language Status:', {
+            currentLanguage,
+            defaultLanguage,
+            isTranslationNeeded: isTranslationNeeded(),
+            translationStatus,
+            availableLanguagesCount: availableLanguages.length,
+            pathname: window.location.pathname
+        });
+    }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
+
+    // Function to translate placeholder text
+    const translatePlaceholder = useCallback(async (text) => {
+        if (isTranslationNeeded()) {
+            try {
+                return await translate(text);
+            } catch (error) {
+                console.error('Error translating placeholder:', error);
+                return text;
+            }
+        }
+        return text;
+    }, [isTranslationNeeded, translate]);
+
+    // Update placeholders when language changes - optimized
+    useEffect(() => {
+        const updatePlaceholders = async () => {
+            // Don't translate if English
+            if (!isTranslationNeeded()) {
+                setTranslatedPlaceholders({
+                    selectTemplate: 'Select Template',
+                    selectParentApplication: 'Select Parent Application',
+                    selectAll: 'Select All',
+                });
+                return;
+            }
+
+            // Only update if language changed
+            const selectTemplatePlaceholder = await translatePlaceholder('Select Template');
+            const selectParentApplicationPlaceholder = await translatePlaceholder('Select Parent Application');
+            const selectAllPlaceholder = await translatePlaceholder('Select All');
+
+            setTranslatedPlaceholders({
+                selectTemplate: selectTemplatePlaceholder,
+                selectParentApplication: selectParentApplicationPlaceholder,
+                selectAll: selectAllPlaceholder,
+            });
+        };
+        
+        updatePlaceholders();
+    }, [currentLanguage, translatePlaceholder, isTranslationNeeded]);
 
     useEffect(() => {
         fetchTemplates(1);
@@ -34,7 +110,7 @@ const AssignApplication = () => {
     }, []);
 
     const fetchParentApplications = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
         try {
             const response = await getRequest(`${MAS_APPLICATION}/getAllParents/1`);
@@ -61,17 +137,19 @@ const AssignApplication = () => {
 
                 findParentApps(response.response);
                 setParentApplications(allParentApps);
+                console.log('✅ Parent applications loaded');
             }
         } catch (err) {
             console.error("Error fetching parent applications:", err);
             setError("Failed to fetch parent applications. Please try again later.");
+            showPopup('Failed to load parent applications', 'error');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     const fetchTemplates = async (flag = 1) => {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
         try {
             const response = await getRequest(`${MAS_TEMPLATE}/getAll/${flag}`);
@@ -85,11 +163,13 @@ const AssignApplication = () => {
             }));
 
             setTemplates(mappedTemplates);
+            console.log('✅ Templates loaded');
         } catch (err) {
             console.error("Error fetching templates:", err);
             setError("Failed to fetch templates. Please try again later.");
+            showPopup('Failed to load templates', 'error');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -102,8 +182,6 @@ const AssignApplication = () => {
         for (const app of apps) {
             const displayPath = parentPath ? `${parentPath}->${app.name}` : app.name;
 
-            // ✅ FIX: Check both 'assigned' AND 'status' properties
-            // An item should be checked only if it's assigned AND status is 'y'
             const isChecked = app.assigned === true && app.status?.toLowerCase() === 'y';
 
             const currentApp = {
@@ -114,8 +192,8 @@ const AssignApplication = () => {
                 appId: app.appId,
                 status: app.status?.toLowerCase() || 'n',
                 lastChgDate: app.lastChgDate,
-                checked: isChecked, // ✅ Fixed: Use both conditions
-                assigned: app.assigned, // ✅ Keep track of assignment status
+                checked: isChecked,
+                assigned: app.assigned,
                 parentHierarchy: parentPath,
                 nestLevel: parentPath ? parentPath.split("->").length : 0,
                 isParent: app.children && app.children.length > 0,
@@ -154,7 +232,7 @@ const AssignApplication = () => {
     const handleParentApplicationSelect = async (e) => {
         const selectedParentId = e.target.value;
         setSelectedParentApp(selectedParentId);
-        setLoading(true);
+        setIsLoading(true);
 
         try {
             const childResponse = await getRequest(`${MAS_APPLICATION}/getAllChildrenByParentId/${selectedParentId}?templateId=${selectedTemplate || ''}`);
@@ -172,21 +250,17 @@ const AssignApplication = () => {
             setShowModuleTable(true);
         } catch (error) {
             console.error("Error fetching child applications:", error);
-            setPopupMessage({
-                message: "Failed to load child applications",
-                type: "error",
-                onClose: () => setPopupMessage(null)
-            });
+            showPopup("Failed to load child applications", "error");
         }
         finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     const handleTemplateSelect = async (e) => {
         const selectedTemplateId = e.target.value;
         setSelectedTemplate(selectedTemplateId);
-        setLoading(true);
+        setIsLoading(true);
 
         try {
             const response = await getRequest(`${ASSIGN_TEMPLATES}/getAllTemplateById/${selectedTemplateId}`);
@@ -195,7 +269,7 @@ const AssignApplication = () => {
                 const formattedData = response.response.map((template, index) => {
                     return {
                         srNo: index + 1,
-                        module: template.appName || "Unknown Module",
+                        module: template.appName || <AutoTranslate>Unknown Module</AutoTranslate>,
                         templateId: template.templateId,
                         appId: template.appId,
                         status: template.status,
@@ -211,14 +285,10 @@ const AssignApplication = () => {
             }
         } catch (error) {
             console.error("Error fetching template details:", error);
-            setPopupMessage({
-                message: "Failed to load template details",
-                type: "error",
-                onClose: () => setPopupMessage(null)
-            });
+            showPopup("Failed to load template details", "error");
         }
         finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -228,11 +298,7 @@ const AssignApplication = () => {
 
     const handleAddClick = () => {
         if (!selectedTemplate) {
-            setPopupMessage({
-                message: "You must select a template first.",
-                type: "warning",
-                onClose: () => setPopupMessage(null)
-            });
+            showPopup("You must select a template first.", "warning");
             return;
         }
 
@@ -294,43 +360,39 @@ const AssignApplication = () => {
         );
     };
 
+    const showPopup = (message, type = 'info') => {
+        setPopupMessage({
+            message,
+            type,
+            onClose: () => {
+                setPopupMessage(null);
+            }
+        });
+    };
+
     const handleSave = async () => {
         try {
-            setLoading(true);
+            setIsLoading(true);
 
             // Validate required fields
             if (!selectedTemplate) {
-                setPopupMessage({
-                    message: "Please select a template first.",
-                    type: "warning",
-                    onClose: () => setPopupMessage(null)
-                });
-                setLoading(false);
+                showPopup("Please select a template first.", "warning");
+                setIsLoading(false);
                 return;
             }
 
             if (!selectedParentApp) {
-                setPopupMessage({
-                    message: "Please select a parent application first.",
-                    type: "warning",
-                    onClose: () => setPopupMessage(null)
-                });
-                setLoading(false);
+                showPopup("Please select a parent application first.", "warning");
+                setIsLoading(false);
                 return;
             }
 
             if (childApplications.length === 0) {
-                setPopupMessage({
-                    message: "No child applications available to update.",
-                    type: "warning",
-                    onClose: () => setPopupMessage(null)
-                });
-                setLoading(false);
+                showPopup("No child applications available to update.", "warning");
+                setIsLoading(false);
                 return;
             }
 
-            // ✅ FIX: Create a Map to track both appId and assignment status
-            // This helps us know which apps are already in the template_application table
             const assignedAppMap = new Map();
 
             if (Array.isArray(templateModules)) {
@@ -342,7 +404,6 @@ const AssignApplication = () => {
                 });
             }
 
-            // Also add from childApplications that have 'assigned' flag
             childApplications.forEach(child => {
                 if (child.assigned) {
                     assignedAppMap.set(child.appId, {
@@ -357,7 +418,6 @@ const AssignApplication = () => {
             const applicationStatusUpdates = [];
             const templateApplicationAssignments = [];
 
-            // ✅ FIX 1: Get all descendants of the selected parent to know which apps we're managing
             const getAllDescendantIds = (apps) => {
                 const ids = new Set();
                 const traverse = (appList) => {
@@ -372,19 +432,16 @@ const AssignApplication = () => {
                 return ids;
             };
 
-            // Get all child IDs under current parent (these are the ones we're managing)
             const managedAppIds = new Set(childApplications.map(child => child.appId));
-            managedAppIds.add(selectedParentApp); // Include the parent itself
+            managedAppIds.add(selectedParentApp);
 
             console.log("Currently managing these app IDs:", Array.from(managedAppIds));
 
-            // ✅ FIX: Track which apps we've already processed to avoid duplicates
             const processedAppIds = new Set();
 
             // Process parent application
             const isParentAssigned = assignedAppIds.has(selectedParentApp);
             if (!isParentAssigned) {
-                // Parent is not assigned, add it as new assignment with status "y"
                 templateApplicationAssignments.push({
                     templateId: Number(selectedTemplate),
                     appId: selectedParentApp,
@@ -394,7 +451,6 @@ const AssignApplication = () => {
                 });
                 processedAppIds.add(selectedParentApp);
             } else {
-                // Parent is already assigned, ensure it stays active
                 applicationStatusUpdates.push({
                     templateId: Number(selectedTemplate),
                     appId: selectedParentApp,
@@ -411,14 +467,12 @@ const AssignApplication = () => {
                 const newStatus = isChecked ? "y" : "n";
 
                 if (isAssigned) {
-                    // Update status for already assigned applications
                     applicationStatusUpdates.push({
                         templateId: Number(selectedTemplate),
                         appId: appId,
                         status: newStatus
                     });
                 } else if (isChecked) {
-                    // Add new assignment only if checked
                     templateApplicationAssignments.push({
                         templateId: Number(selectedTemplate),
                         appId: appId,
@@ -427,31 +481,24 @@ const AssignApplication = () => {
                         status: "y"
                     });
                 }
-                // ✅ Don't do anything for unchecked AND unassigned items
             });
 
-            // ✅ FIX 2: Check for existing assignments within the managed scope only
             try {
                 const allTemplateApps = await getRequest(`${ASSIGN_TEMPLATES}/getAllTemplateById/${selectedTemplate}`);
                 if (allTemplateApps?.response) {
                     allTemplateApps.response.forEach(app => {
                         const appId = app.appId;
 
-                        // ✅ CRITICAL: Only process apps that are under the current parent's hierarchy
-                        // Skip apps that are not in our managed scope
                         if (!managedAppIds.has(appId)) {
                             console.log(`Skipping ${appId} - not in current parent hierarchy`);
-                            return; // Don't touch apps outside current parent's scope
+                            return;
                         }
 
-                        // Check if we've already processed this app
                         const alreadyProcessed =
                             applicationStatusUpdates.some(update => update.appId === appId) ||
                             templateApplicationAssignments.some(assign => assign.appId === appId);
 
                         if (!alreadyProcessed) {
-                            // This app was assigned but is no longer in childApplications
-                            // (possibly removed or hidden) - set to inactive
                             applicationStatusUpdates.push({
                                 templateId: Number(selectedTemplate),
                                 appId: appId,
@@ -467,12 +514,8 @@ const AssignApplication = () => {
 
             // Validate we have something to update
             if (applicationStatusUpdates.length === 0 && templateApplicationAssignments.length === 0) {
-                setPopupMessage({
-                    message: "No changes detected to apply.",
-                    type: "info",
-                    onClose: () => setPopupMessage(null)
-                });
-                setLoading(false);
+                showPopup("No changes detected to apply.", "info");
+                setIsLoading(false);
                 return;
             }
 
@@ -493,20 +536,15 @@ const AssignApplication = () => {
                 if (response.status === 200 || response.status === 207) {
                     const message = response.data || "Template assigned to applications successfully";
 
-                    setPopupMessage({
-                        message: message,
-                        type: response.status === 200 ? "success" : "warning",
-                        onClose: () => {
-                            setPopupMessage(null);
-                            // Refresh the data to reflect changes
-                            if (selectedTemplate) {
-                                handleTemplateSelect({ target: { value: selectedTemplate } });
-                            }
-                            if (selectedParentApp) {
-                                handleParentApplicationSelect({ target: { value: selectedParentApp } });
-                            }
-                        }
-                    });
+                    showPopup(message, response.status === 200 ? "success" : "warning");
+
+                    // Refresh the data to reflect changes
+                    if (selectedTemplate) {
+                        handleTemplateSelect({ target: { value: selectedTemplate } });
+                    }
+                    if (selectedParentApp) {
+                        handleParentApplicationSelect({ target: { value: selectedParentApp } });
+                    }
                 } else {
                     throw new Error(response.message || "Failed to process request");
                 }
@@ -515,14 +553,9 @@ const AssignApplication = () => {
             }
         } catch (error) {
             console.error("Error saving template application:", error);
-
-            setPopupMessage({
-                message: error.message || "Failed to assign template to application",
-                type: "error",
-                onClose: () => setPopupMessage(null)
-            });
+            showPopup(error.message || "Failed to assign template to application", "error");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -581,17 +614,19 @@ const AssignApplication = () => {
         );
     };
 
-    if (loading) {
+    // Show loading only if initial data is loading
+    if (isLoading) {
         return <LoadingComponent />;
     }
 
     return (
         <div className="px-2">
-            <h1 className="text-2xl font-semibold mb-6 text-gray-800">Assign Application To Template</h1>
+            <h1 className="text-2xl font-semibold mb-6 text-gray-800">
+                <AutoTranslate>Assign Application To Template</AutoTranslate>
+            </h1>
 
             <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-
 
                     {popupMessage && (
                         <Popup
@@ -601,11 +636,10 @@ const AssignApplication = () => {
                         />
                     )}
 
-
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
                         <div className="md:col-span-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Template Name <span className="text-red-500">*</span>
+                                <AutoTranslate>Template</AutoTranslate><AutoTranslate> Name</AutoTranslate> <span className="text-red-500">*</span>
                             </label>
                             <select
                                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -613,7 +647,9 @@ const AssignApplication = () => {
                                 onChange={handleTemplateSelect}
                                 value={selectedTemplate}
                             >
-                                <option value="" disabled>Select Template</option>
+                                <option value="" disabled>
+                                    <AutoTranslate>{translatedPlaceholders.selectTemplate}</AutoTranslate>
+                                </option>
                                 {templates.map((template) => (
                                     <option key={template.id} value={template.id}>
                                         {template.templateName}
@@ -629,7 +665,7 @@ const AssignApplication = () => {
                                 onClick={handleAddClick}
                             >
                                 <PlusCircleIcon className="h-5 w-5 mr-2" />
-                                Application
+                                <AutoTranslate>Application</AutoTranslate>
                             </button>
                         </div>
                     </div>
@@ -638,7 +674,7 @@ const AssignApplication = () => {
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
                             <div className="md:col-span-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Module Name
+                                    <AutoTranslate>Module Name</AutoTranslate>
                                 </label>
                                 <select
                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -646,7 +682,9 @@ const AssignApplication = () => {
                                     onChange={handleParentApplicationSelect}
                                     value={selectedParentApp}
                                 >
-                                    <option value="" disabled>Select Parent Application</option>
+                                    <option value="" disabled>
+                                        <AutoTranslate>{translatedPlaceholders.selectParentApplication}</AutoTranslate>
+                                    </option>
                                     {parentApplications.map((app) => (
                                         <option key={app.id} value={app.id}>
                                             {app.applicationName}
@@ -659,13 +697,19 @@ const AssignApplication = () => {
 
                     {selectedTemplate && (
                         <div className="mb-6">
-                            <h6 className="text-lg font-semibold mb-4 text-gray-700">Template Modules</h6>
+                            <h6 className="text-lg font-semibold mb-4 text-gray-700">
+                                <AutoTranslate>Template Modules</AutoTranslate>
+                            </h6>
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse border border-gray-200 rounded-lg">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">Sr No</th>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">Assigned Module</th>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">
+                                                <AutoTranslate>Sr No</AutoTranslate>
+                                            </th>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">
+                                                <AutoTranslate>Assigned Module</AutoTranslate>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -679,7 +723,7 @@ const AssignApplication = () => {
                                         ) : (
                                             <tr>
                                                 <td colSpan="2" className="p-3 border border-gray-200 text-center text-gray-500">
-                                                    No modules assigned to this template
+                                                    <AutoTranslate>No modules assigned to this template</AutoTranslate>
                                                 </td>
                                             </tr>
                                         )}
@@ -691,13 +735,19 @@ const AssignApplication = () => {
 
                     {showModuleSection && showModuleTable && (
                         <div>
-                            <h6 className="text-lg font-semibold mb-4 text-gray-700">Child Applications</h6>
+                            <h6 className="text-lg font-semibold mb-4 text-gray-700">
+                                <AutoTranslate>Child Applications</AutoTranslate>
+                            </h6>
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse border border-gray-200 rounded-lg">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">Sr No</th>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">Assigned Module</th>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">
+                                                <AutoTranslate>Sr No</AutoTranslate>
+                                            </th>
+                                            <th className="p-3 border border-gray-200 text-left font-semibold">
+                                                <AutoTranslate>Assigned Module</AutoTranslate>
+                                            </th>
                                             <th className="p-3 border border-gray-200 text-left font-semibold">
                                                 <label className="flex items-center cursor-pointer">
                                                     <input
@@ -706,7 +756,7 @@ const AssignApplication = () => {
                                                         checked={childApplications.length > 0 && childApplications.every(item => item.checked)}
                                                         onChange={handleSelectAllFeatures}
                                                     />
-                                                    Select All
+                                                    <AutoTranslate>{translatedPlaceholders.selectAll}</AutoTranslate>
                                                 </label>
                                             </th>
                                         </tr>
@@ -738,7 +788,7 @@ const AssignApplication = () => {
                                         ) : (
                                             <tr>
                                                 <td colSpan="3" className="p-3 border border-gray-200 text-center text-gray-500">
-                                                    No child applications found
+                                                    <AutoTranslate>No child applications found</AutoTranslate>
                                                 </td>
                                             </tr>
                                         )}
@@ -752,7 +802,7 @@ const AssignApplication = () => {
                                     onClick={handleSave}
                                 >
                                     <CheckCircleIcon className="h-5 w-5 mr-2" />
-                                    Save
+                                    <AutoTranslate>Save</AutoTranslate>
                                 </button>
                             </div>
                         </div>

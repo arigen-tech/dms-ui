@@ -6,9 +6,24 @@ import "react-datepicker/dist/react-datepicker.css";
 import { FaFilePdf, FaFileExcel } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import Popup from '../Components/Popup';
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { getFallbackTranslation } from '../i18n/autoTranslator';
+
 
 
 const UserReport = () => {
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const initialFormData = {
     branch: "",
     department: "",
@@ -28,12 +43,23 @@ const UserReport = () => {
 
   const [userBranch, setUserBranch] = useState(null);
   const [userDepartment, setUserDepartment] = useState(null);
- 
+
   const [modalMessage, setModalMessage] = useState("");
   const [modalType, setModalType] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
 
+  // Debug log
+  useEffect(() => {
+    console.log('🔍 UserReport Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -54,7 +80,7 @@ const UserReport = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        
+
       }
     });
   };
@@ -244,10 +270,10 @@ const UserReport = () => {
       link.click();
       link.remove();
 
-      showModalAlert("Download successful!", "success");
+      showModalAlert(<AutoTranslate>Download successful!</AutoTranslate>, "success");
       resetForm();
     } catch (error) {
-      showModalAlert("Failed to download file. Please try again.", "error");
+      showModalAlert(<AutoTranslate>Failed to download file. Please try again.</AutoTranslate>, "error");
       console.error("Error during file download:", error);
     } finally {
       setIsProcessing(false);
@@ -261,11 +287,11 @@ const UserReport = () => {
   };
 
   const validateForm = () => {
-    if (!formData.branch) return "Branch is required.";
-    if (!formData.department) return "Department is required.";
-    if (!fromDate) return "Start date is required.";
-    if (!toDate) return "End date is required.";
-    if (!selectedFormat) return "Document format is required.";
+    if (!formData.branch) return <AutoTranslate>Branch is required.</AutoTranslate>;
+    if (!formData.department) return <AutoTranslate>Department is required.</AutoTranslate>;
+    if (!fromDate) return <AutoTranslate>Start date is required.</AutoTranslate>;
+    if (!toDate) return <AutoTranslate>End date is required.</AutoTranslate>;
+    if (!selectedFormat) return <AutoTranslate>Document format is required.</AutoTranslate>;
     return null;
   };
 
@@ -282,7 +308,9 @@ const UserReport = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">User Reports</h1>
+      <h1 className="text-xl mb-4 font-semibold">
+        <AutoTranslate>User Reports</AutoTranslate>
+      </h1>
       <div className="bg-white p-4 rounded-lg shadow-md">
         {popupMessage && (
           <Popup
@@ -297,7 +325,7 @@ const UserReport = () => {
               <>
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="branch">
-                    Branch <span className="text-red-700">*</span>
+                    <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="branch"
@@ -313,7 +341,7 @@ const UserReport = () => {
 
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="department">
-                    Department <span className="text-red-700">*</span>
+                    <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="department"
@@ -321,7 +349,7 @@ const UserReport = () => {
                     onChange={handleInputChange}
                     className="p-2 border rounded-md outline-none"
                   >
-                    <option value="">Select Department</option>
+                    <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
                     {departmentOptions.map((department) => (
                       <option key={department.id} value={department.id}>
                         {department.name}
@@ -334,7 +362,7 @@ const UserReport = () => {
               <>
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="branch">
-                    Branch <span className="text-red-700">*</span>
+                    <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="branch"
@@ -350,7 +378,7 @@ const UserReport = () => {
 
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="department">
-                    Department <span className="text-red-700">*</span>
+                    <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="department"
@@ -370,7 +398,7 @@ const UserReport = () => {
               <>
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="branch">
-                    Branch <span className="text-red-700">*</span>
+                    <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="branch"
@@ -379,7 +407,7 @@ const UserReport = () => {
                     onChange={handleInputChange}
                     className="p-2 border rounded-md outline-none"
                   >
-                    <option value="">Select Branch</option>
+                    <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
                     {branchOptions.map((branch) => (
                       <option key={branch.id} value={branch.id}>
                         {branch.name}
@@ -390,7 +418,7 @@ const UserReport = () => {
 
                 <div className="flex flex-col">
                   <label className="mb-1" htmlFor="department">
-                    Department <span className="text-red-700">*</span>
+                    <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
                   </label>
                   <select
                     id="department"
@@ -400,7 +428,7 @@ const UserReport = () => {
                     className="p-2 border rounded-md outline-none"
                     disabled={!formData.branch}
                   >
-                    <option value="">Select Department</option>
+                    <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
                     {departmentOptions.map((department) => (
                       <option key={department.id} value={department.id}>
                         {department.name}
@@ -414,7 +442,7 @@ const UserReport = () => {
             {/* Status Dropdown */}
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="status">
-                Status
+                <AutoTranslate>Status</AutoTranslate>
               </label>
               <select
                 id="status"
@@ -423,16 +451,16 @@ const UserReport = () => {
                 onChange={handleInputChange}
                 className="p-2 border rounded-md outline-none"
               >
-                <option value="">All</option>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
+                <option value=""><AutoTranslate>All</AutoTranslate></option>
+                <option value="true"><AutoTranslate>Active</AutoTranslate></option>
+                <option value="false"><AutoTranslate>Inactive</AutoTranslate></option>
               </select>
             </div>
 
             {/* From Date Picker */}
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="fromDate">
-                From Date <span className="text-red-700">*</span>
+                <AutoTranslate>From Date</AutoTranslate> <span className="text-red-700">*</span>
               </label>
               <DatePicker
                 id="fromDate"
@@ -443,15 +471,16 @@ const UserReport = () => {
                 endDate={toDate}
                 maxDate={new Date()}
                 dateFormat="dd/MM/yyyy"
-                placeholderText="Select a start date"
+                placeholderText={getFallbackTranslation('Select Start Date', currentLanguage)}
                 className="w-full px-3 py-2 border rounded-md focus:ring-2"
               />
+
             </div>
 
             {/* To Date Picker */}
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="toDate">
-                To Date <span className="text-red-700">*</span>
+                <AutoTranslate>To Date</AutoTranslate> <span className="text-red-700">*</span>
               </label>
               <DatePicker
                 id="toDate"
@@ -463,9 +492,10 @@ const UserReport = () => {
                 minDate={fromDate}
                 maxDate={new Date()}
                 dateFormat="dd/MM/yyyy"
-                placeholderText="Select an end date"
+                placeholderText={getFallbackTranslation('Select End Date', currentLanguage)}
                 className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
               />
+
             </div>
           </div>
 
@@ -480,7 +510,9 @@ const UserReport = () => {
                 disabled={isProcessing}
               />
               <FaFilePdf className="h-5 w-5 text-gray-700" />
-              <span className="text-gray-700">PDF</span>
+              <span className="text-gray-700">
+                PDF
+              </span>
             </label>
 
             <label className="flex items-center space-x-2">
@@ -493,7 +525,9 @@ const UserReport = () => {
                 disabled={isProcessing}
               />
               <FaFileExcel className="h-5 w-5 text-gray-700" />
-              <span className="text-gray-700">Excel</span>
+              <span className="text-gray-700">
+                Excel
+              </span>
             </label>
           </div>
 
@@ -505,7 +539,7 @@ const UserReport = () => {
               : "bg-blue-500 hover:bg-blue-600"
               } text-white`}
           >
-            {isProcessing ? "Processing..." : "Download"}
+            {isProcessing ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Download</AutoTranslate>}
           </button>
         </form>
       </div>
@@ -516,7 +550,7 @@ const UserReport = () => {
               } text-gray-900 shadow-lg`}
           >
             <h2 className="text-xl font-semibold mb-4">
-              {modalType === "success" ? "Success!" : "Error"}
+              {modalType === "success" ? <AutoTranslate>Success!</AutoTranslate> : <AutoTranslate>Error</AutoTranslate>}
             </h2>
             <p>{modalMessage}</p>
             <div className="mt-4 flex justify-end">
@@ -524,7 +558,7 @@ const UserReport = () => {
                 onClick={closeModal}
                 className="px-4 py-2 bg-green-400 text-white p-2 rounded-md"
               >
-                OK
+                <AutoTranslate>OK</AutoTranslate>
               </button>
             </div>
           </div>

@@ -5,7 +5,6 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   MagnifyingGlassIcon,
-
   PrinterIcon,
   XMarkIcon,
   EyeIcon,
@@ -14,9 +13,22 @@ import { API_HOST, DOCUMENTHEADER_API, BRANCH_API, DEPAETMENT_API } from "../API
 import FilePreviewModal from "../Components/FilePreviewModal";
 import apiClient from "../API/apiClient";
 import LoadingComponent from '../Components/LoadingComponent';
-
+import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
+import { useLanguage } from '../i18n/LanguageContext'; // Import useLanguage hook
 
 const Approve = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const location = useLocation();
   const [branchFilter, setBranchFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
@@ -36,13 +48,10 @@ const Approve = () => {
   const [openingFiles, setOpeningFiles] = useState(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [documentToApprove, setDocumentToApprove] = useState(null);
-
   const [isRejectReasonModalOpen, setIsRejectReasonModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [, setError] = useState("");
-
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [highlightedDocId, setHighlightedDocId] = useState(null);
   const [blobUrl, setBlobUrl] = useState("");
@@ -50,11 +59,20 @@ const Approve = () => {
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
   const tokenKey = localStorage.getItem("tokenKey");
-  const [isOpeningFile, setIsOpeningFile] = useState(false);
+  const [, setIsOpeningFile] = useState(false);
   const [, setUserBranch] = useState(null);
   const [openingFileIndex, setOpeningFileIndex] = useState(null);
   const [loadingFiles, setLoadingFiles] = useState(false);
 
+  // Debug language status
+  useEffect(() => {
+    console.log('🔍 Approve Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded]);
 
   useEffect(() => {
     fetchUserBranch();
@@ -243,7 +261,6 @@ const Approve = () => {
     }
   };
 
-
   const handleDownload = async (file) => {
     const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
     const department = selectedDoc.employee.department.name.replace(/ /g, "_");
@@ -289,7 +306,6 @@ const Approve = () => {
     });
   }, [selectedDoc, searchFileTerm]);
 
-
   const handleStatusChange = (doc, status) => {
     if (status === "REJECTED") {
       setDocumentToApprove(doc);
@@ -305,15 +321,15 @@ const Approve = () => {
       const employeeId = localStorage.getItem("userId");
 
       const response = await axios.patch(
-        `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`, // Change to PATCH
-        null, // No body needed for the PATCH request since we're using query parameters
+        `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`,
+        null,
         {
           headers: {
             Authorization: `Bearer ${tokenKey}`,
-            employeeId: employeeId, // Include employeeId in headers
+            employeeId: employeeId,
           },
           params: {
-            status: "APPROVED", // Send status as a query parameter
+            status: "APPROVED",
           },
         }
       );
@@ -335,16 +351,16 @@ const Approve = () => {
       const employeeId = localStorage.getItem("userId");
 
       const response = await axios.patch(
-        `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`, // Change to PATCH
-        null, // No body needed for the PATCH request since we're using query parameters
+        `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`,
+        null,
         {
           headers: {
             Authorization: `Bearer ${tokenKey}`,
-            employeeId: employeeId, // Include employeeId in headers
+            employeeId: employeeId,
           },
           params: {
-            status: "REJECTED", // Send status as a query parameter
-            rejectionReason: rejectReason, // Include rejection reason as a query parameter
+            status: "REJECTED",
+            rejectionReason: rejectReason,
           },
         }
       );
@@ -401,8 +417,8 @@ const Approve = () => {
   };
 
   const openModal = (doc) => {
-    setSelectedDoc(doc); // Set the selected document without paths first
-    fetchPaths(doc); // Fetch paths and update the selected document with paths
+    setSelectedDoc(doc);
+    fetchPaths(doc);
     setIsOpen(true);
     fetchQRCode(doc.id);
   };
@@ -441,10 +457,9 @@ const Approve = () => {
       const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
 
       setQrCodeUrl(qrCodeUrl);
-      setError(""); // Clear any previous errors
+      setError("");
     } catch (error) {
       setQrCodeUrl(null);
-      // setError("Error displaying QR Code: " + error.message);
     }
   };
 
@@ -455,6 +470,7 @@ const Approve = () => {
       setPrintTrue(false);
     }, 1000);
   };
+  
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {
@@ -464,6 +480,7 @@ const Approve = () => {
     };
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
+  
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch = (
       doc.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -480,8 +497,8 @@ const Approve = () => {
 
     return matchesSearch && matchesBranch && matchesDepartment;
   });
+  
   const totalItems = filteredDocuments.length;
-
   const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
     (currentPage - 1) * itemsPerPage,
@@ -505,7 +522,9 @@ const Approve = () => {
 
   return (
     <div className="px-1">
-      <h1 className="text-lg mb-1 font-semibold">Pending Approval</h1>
+      <h1 className="text-lg mb-1 font-semibold">
+        <AutoTranslate>Pending Approval</AutoTranslate>
+      </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
@@ -514,7 +533,7 @@ const Approve = () => {
               htmlFor="itemsPerPage"
               className="mr-2 ml-2 text-white text-sm"
             >
-              Show:
+              <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
@@ -534,55 +553,54 @@ const Approve = () => {
           </div>
 
           {/* Branch Filter Dropdown */}
-  <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
-    <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
-      Branch:
-    </label>
-    <select
-      id="branchFilter"
-      className="border rounded-r-lg p-1.5 outline-none w-full"
-      value={branchFilter}
-      onChange={(e) => {
-        setBranchFilter(e.target.value);
-        setDepartmentFilter(''); // Reset department when branch changes
-        setCurrentPage(1);
-      }}
-    >
-      <option value="">All Branches</option>
-      {branches.map((branch) => (
-        <option key={branch.id} value={branch.id}>
-          {branch.name}
-        </option>
-      ))}
-    </select>
-  </div>
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
+            <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+              <AutoTranslate>Branch</AutoTranslate>
+            </label>
+            <select
+              id="branchFilter"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
+              value={branchFilter}
+              onChange={(e) => {
+                setBranchFilter(e.target.value);
+                setDepartmentFilter('');
+                setCurrentPage(1);
+              }}
+            >
+              <option value=""><AutoTranslate>All Branches</AutoTranslate></option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-  {/* Department Filter Dropdown */}
-  <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
-    <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
-      Dept:
-    </label>
-    <select
-      id="departmentFilter"
-      className="border rounded-r-lg p-1.5 outline-none w-full"
-      value={departmentFilter}
-      onChange={(e) => {
-        setDepartmentFilter(e.target.value);
-        setCurrentPage(1);
-      }}
-      disabled={branchFilter === ''} 
-      
-      >
-      <option value="">All Departments</option>
-      {departments
-        .filter(dept => branchFilter === '' || dept.branch?.id === parseInt(branchFilter))
-        .map((dept) => (
-          <option key={dept.id} value={dept.id}>
-            {dept.name}
-          </option>
-        ))}
-    </select>
-  </div>
+          {/* Department Filter Dropdown */}
+          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
+            <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+              <AutoTranslate>Department</AutoTranslate>
+            </label>
+            <select
+              id="departmentFilter"
+              className="border rounded-r-lg p-1.5 outline-none w-full"
+              value={departmentFilter}
+              onChange={(e) => {
+                setDepartmentFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              disabled={branchFilter === ''}
+            >
+              <option value=""><AutoTranslate>All Departments</AutoTranslate></option>
+              {departments
+                .filter(dept => branchFilter === '' || dept.branch?.id === parseInt(branchFilter))
+                .map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+            </select>
+          </div>
 
           {/* Search Input (Remaining Space) */}
           <div className="flex items-center w-full md:w-auto flex-1">
@@ -601,18 +619,39 @@ const Approve = () => {
           <table className="w-full border-collapse border">
             <thead>
               <tr className="bg-slate-100">
-                <th className="border p-2 text-left">SR.</th>
-                <th className="border p-2 text-left">Title</th>
-                <th className="border p-2 text-left">File No</th>
-                <th className="border p-2 text-left">Subject</th>
-                <th className="border p-2 text-left">Branch</th>
-                <th className="border p-2 text-left">Department</th>
-                <th className="border p-2 text-left">Category</th>
-                <th className="border p-2 text-left">Uploaded Date</th>
-                <th className="border p-2 text-left">User Name</th>
-                <th className="border p-2 text-left">Approval Status</th>
-                {/* <th className="border p-2 text-left">Action</th> */}
-                <th className="border p-2 text-left">View</th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>SN</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>Title</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>File No</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>Subject</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>Branch</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>Department</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>Category</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>Uploaded Date</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>User Name</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>Approval Status</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>View</AutoTranslate>
+                </th>
               </tr>
             </thead>
 
@@ -636,12 +675,12 @@ const Approve = () => {
                     <td className="border p-2">
                       {doc.employee && doc.employee.branch
                         ? doc.employee.branch.name
-                        : "No Branch"}
+                        : <AutoTranslate>No Branch</AutoTranslate>}
                     </td>
                     <td className="border p-2">
                       {doc.employee && doc.employee.department
                         ? doc.employee.department.name
-                        : "No Department"}
+                        : <AutoTranslate>No Department</AutoTranslate>}
                     </td>
                     <td className="border p-2">
                       {doc.categoryMaster ? doc.categoryMaster.name : ""}
@@ -655,18 +694,6 @@ const Approve = () => {
                     </td>
 
                     <td className="border p-2">{doc.approvalStatus}</td>
-                    {/* <td className="border p-2">
-                      <select
-                        className="border p-1"
-                        onChange={(e) =>
-                          handleStatusChange(doc, e.target.value)
-                        }
-                      >
-                        <option value="">Select Status</option>
-                        <option value="APPROVED">APPROVED</option>
-                        <option value="REJECTED">REJECTED</option>
-                      </select>
-                    </td> */}
                     <td className="border p-2">
                       <button onClick={() => openModal(doc)}>
                         <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
@@ -677,10 +704,10 @@ const Approve = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="13"
+                    colSpan="11"
                     className="border p-4 text-center text-gray-500"
                   >
-                    No data found.
+                    <AutoTranslate>No data found.</AutoTranslate>
                   </td>
                 </tr>
               )}
@@ -718,7 +745,7 @@ const Approve = () => {
                           <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
                         </div>
                         <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-                          <strong>Uploaded Date:</strong> {formatDate(selectedDoc?.createdOn)}
+                          <strong><AutoTranslate>Uploaded Date:</AutoTranslate></strong> {formatDate(selectedDoc?.createdOn)}
                         </p>
                       </div>
 
@@ -733,13 +760,13 @@ const Approve = () => {
                             { label: "Subject", value: selectedDoc?.subject },
                             {
                               label: "Category",
-                              value: selectedDoc?.categoryMaster?.name || "No Category",
+                              value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>,
                             },
                             { label: "Status", value: selectedDoc?.approvalStatus },
                             { label: "Upload By", value: selectedDoc?.employee?.name },
                           ].map((item, idx) => (
                             <p key={idx} className="text-md text-gray-700">
-                              <strong>{item.label} :-</strong> {item.value || "N/A"}
+                              <strong><AutoTranslate>{item.label}</AutoTranslate> :-</strong> {item.value || <AutoTranslate>N/A</AutoTranslate>}
                             </p>
                           ))}
                         </div>
@@ -747,7 +774,7 @@ const Approve = () => {
                         {/* QR Code */}
                         <div className="items-center justify-center text-center">
                           <p className="text-md text-gray-700 mt-3">
-                            <strong>QR Code:</strong>
+                            <strong><AutoTranslate>QR Code:</AutoTranslate></strong>
                           </p>
                           {selectedDoc?.qrPath ? (
                             <div className="mt-4">
@@ -760,11 +787,13 @@ const Approve = () => {
                                 onClick={downloadQRCode}
                                 className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
                               >
-                                Download
+                                <AutoTranslate>Download</AutoTranslate>
                               </button>
                             </div>
                           ) : (
-                            <p className="text-gray-500">No QR code available</p>
+                            <p className="text-gray-500">
+                              <AutoTranslate>No QR code available</AutoTranslate>
+                            </p>
                           )}
                         </div>
                       </div>
@@ -772,7 +801,9 @@ const Approve = () => {
                       {/* Attached Files */}
                       <div className="mt-8">
                         <div className="flex justify-between items-center mb-4 relative">
-                          <h2 className="text-lg font-bold text-indigo-700">Attached Files</h2>
+                          <h2 className="text-lg font-bold text-indigo-700">
+                            <AutoTranslate>Attached Files</AutoTranslate>
+                          </h2>
                           <input
                             type="text"
                             placeholder="Search Files..."
@@ -786,18 +817,32 @@ const Approve = () => {
                         {loadingFiles ? (
                           <div className="flex justify-center items-center py-6">
                             <div className="w-6 h-6 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
-                            <span className="ml-2 text-gray-600">Loading files...</span>
+                            <span className="ml-2 text-gray-600">
+                              <AutoTranslate>Loading files...</AutoTranslate>
+                            </span>
                           </div>
                         ) : selectedDoc && filteredDocFiles.length > 0 ? (
                           <div className="border border-gray-200 rounded-lg shadow-sm">
                             {/* Table Header */}
                             <div className="grid grid-cols-8 bg-gray-100 text-gray-700 font-semibold text-sm px-4 py-2 sticky top-0">
-                              <span className="col-span-3 text-left">File Name</span>
-                              <span className="text-center">Year</span>
-                              <span className="text-center">Version</span>
-                              <span className="text-center">Status</span>
-                              <span className="text-center no-print">Action</span>
-                              <span className="text-center no-print">Open</span>
+                              <span className="col-span-3 text-left">
+                                <AutoTranslate>File Name</AutoTranslate>
+                              </span>
+                              <span className="text-center">
+                                <AutoTranslate>Year</AutoTranslate>
+                              </span>
+                              <span className="text-center">
+                                <AutoTranslate>Version</AutoTranslate>
+                              </span>
+                              <span className="text-center">
+                                <AutoTranslate>Status</AutoTranslate>
+                              </span>
+                              <span className="text-center no-print">
+                                <AutoTranslate>Action</AutoTranslate>
+                              </span>
+                              <span className="text-center no-print">
+                                <AutoTranslate>Open</AutoTranslate>
+                              </span>
                             </div>
 
                             {/* File List */}
@@ -835,7 +880,7 @@ const Approve = () => {
                                             : "bg-yellow-100 text-yellow-700"
                                         }`}
                                     >
-                                      {file.status || "PENDING"}
+                                      {file.status || <AutoTranslate>PENDING</AutoTranslate>}
                                     </span>
                                   </div>
 
@@ -846,9 +891,9 @@ const Approve = () => {
                                       onChange={(e) => handleStatusChange(file, e.target.value)}
                                       disabled={file.status === "APPROVED" || file.status === "REJECTED"}
                                     >
-                                      <option value="">Select</option>
-                                      <option value="APPROVED">APPROVED</option>
-                                      <option value="REJECTED">REJECTED</option>
+                                      <option value=""><AutoTranslate>Select</AutoTranslate></option>
+                                      <option value="APPROVED"><AutoTranslate>APPROVED</AutoTranslate></option>
+                                      <option value="REJECTED"><AutoTranslate>REJECTED</AutoTranslate></option>
                                     </select>
                                   </div>
 
@@ -867,7 +912,7 @@ const Approve = () => {
                                           : "hover:bg-indigo-600"
                                         }`}
                                     >
-                                      {openingFileIndex === index ? "Opening..." : "Open"}
+                                      {openingFileIndex === index ? <AutoTranslate>Opening...</AutoTranslate> : <AutoTranslate>Open</AutoTranslate>}
                                     </button>
                                   </div>
                                 </li>
@@ -876,7 +921,7 @@ const Approve = () => {
                           </div>
                         ) : (
                           <p className="text-sm text-gray-500 mt-4 text-center">
-                            No attached files available.
+                            <AutoTranslate>No attached files available.</AutoTranslate>
                           </p>
                         )}
                       </div>
@@ -885,7 +930,6 @@ const Approve = () => {
                 </div>
               </div>
             )}
-
           </>
         </div>
         <FilePreviewModal
@@ -907,7 +951,7 @@ const Approve = () => {
               }`}
           >
             <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            Previous
+            <AutoTranslate>Previous</AutoTranslate>
           </button>
 
           {/* Page Number Buttons */}
@@ -923,7 +967,9 @@ const Approve = () => {
           ))}
 
           {/* Page Count Info */}
-          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+          <span className="text-sm text-gray-700 mx-2">
+            <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
+          </span>
 
           {/* Next Button */}
           <button
@@ -932,14 +978,15 @@ const Approve = () => {
             className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
               }`}
           >
-            Next
+            <AutoTranslate>Next</AutoTranslate>
             <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
           </button>
           <div className="ml-4">
             <span className="text-sm text-gray-700">
-              Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-              {totalItems} entries
+              <AutoTranslate>
+                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                  } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+              </AutoTranslate>
             </span>
           </div>
         </div>
@@ -948,20 +995,22 @@ const Approve = () => {
       {isConfirmModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-4 rounded-md w-1/3 relative">
-            <h3 className="text-lg font-bold mb-2">Confirm Approval</h3>
-            <p>Are you sure you want to approve this document?</p>
+            <h3 className="text-lg font-bold mb-2">
+              <AutoTranslate>Confirm Approval</AutoTranslate>
+            </h3>
+            <p><AutoTranslate>Are you sure you want to approve this document?</AutoTranslate></p>
             <div className="flex justify-end mt-4">
               <button
                 className="bg-green-500 text-white p-2 rounded-md mr-2"
                 onClick={approveDocument}
               >
-                Yes, Approve
+                <AutoTranslate>Yes, Approve</AutoTranslate>
               </button>
               <button
                 className="bg-gray-500 text-white p-2 rounded-md"
                 onClick={() => setIsConfirmModalOpen(false)}
               >
-                Cancel
+                <AutoTranslate>Cancel</AutoTranslate>
               </button>
             </div>
           </div>
@@ -972,7 +1021,9 @@ const Approve = () => {
       {isRejectReasonModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-4 rounded-md w-1/3 relative">
-            <h3 className="text-lg font-bold mb-2">Reason for Rejection</h3>
+            <h3 className="text-lg font-bold mb-2">
+              <AutoTranslate>Reason for Rejection</AutoTranslate>
+            </h3>
             <textarea
               className="w-full border p-2 mb-2"
               rows="4"
@@ -984,7 +1035,7 @@ const Approve = () => {
 
             {rejectReasonError && (
               <p className="text-red-500 text-sm">
-                Please enter a rejection reason with at least 10 characters.
+                <AutoTranslate>Please enter a rejection reason with at least 10 characters.</AutoTranslate>
               </p>
             )}
 
@@ -1000,7 +1051,7 @@ const Approve = () => {
                   }
                 }}
               >
-                Submit
+                <AutoTranslate>Submit</AutoTranslate>
               </button>
               <button
                 className="bg-gray-500 text-white p-2 rounded-md"
@@ -1009,7 +1060,7 @@ const Approve = () => {
                   setIsRejectReasonModalOpen(false);
                 }}
               >
-                Cancel
+                <AutoTranslate>Cancel</AutoTranslate>
               </button>
             </div>
           </div>
@@ -1021,12 +1072,14 @@ const Approve = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-md text-center w-1/3 relative">
             <div className="spinner-border animate-spin text-green-500 w-6 h-6 mb-4"></div>
-            <h3 className="text-lg font-bold mb-4">{successMessage}</h3>
+            <h3 className="text-lg font-bold mb-4">
+              <AutoTranslate>{successMessage}</AutoTranslate>
+            </h3>
             <button
               className="bg-green-500 text-white p-2 rounded-md"
               onClick={() => setIsSuccessModalOpen(false)}
             >
-              OK
+              <AutoTranslate>OK</AutoTranslate>
             </button>
           </div>
         </div>
