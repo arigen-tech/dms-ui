@@ -657,7 +657,7 @@ const LoginPage = () => {
           localStorage.removeItem("redirectUrl");
           navigate(redirectUrl);
         } else {
-          navigate("/dashboard");
+          navigate("/newDash");
         }
       }
     } catch (error) {

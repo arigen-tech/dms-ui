@@ -62,7 +62,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
 
   const handleClose = () => {
     setPopupMessage(null);
-    navigate("/dashboard");
+    navigate("/newDash");
   };
 
   const handleClickOutside = (event) => {

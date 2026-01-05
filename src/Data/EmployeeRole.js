@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API_HOST } from "../API/apiConfig";
 import {
@@ -55,7 +55,7 @@ const EmployeeRole = () => {
   const token = localStorage.getItem("tokenKey");
 
   // Function to translate placeholder text
-  const translatePlaceholder = async (text) => {
+  const translatePlaceholder = useCallback(async (text) => {
     if (isTranslationNeeded()) {
       try {
         return await translate(text);
@@ -65,7 +65,7 @@ const EmployeeRole = () => {
       }
     }
     return text;
-  };
+  }, [isTranslationNeeded, translate]);
 
   // Update placeholders when language changes
   useEffect(() => {
@@ -548,5 +548,5 @@ const EmployeeRole = () => {
     </div>
   );
 };
-
+  
 export default EmployeeRole;

@@ -556,7 +556,7 @@ function RejectedDoc() {
   return (
     <div className="px-1">
       <h1 className="text-xl mb-4 font-semibold">
-        <AutoTranslate>Rejected Documents</AutoTranslate>
+        <AutoTranslate>RejectedDocuments</AutoTranslate>
       </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">

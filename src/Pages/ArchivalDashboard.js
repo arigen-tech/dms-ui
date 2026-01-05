@@ -4,6 +4,8 @@ import axios from "axios"
 import Layout from "../Components/Layout"
 import FolderGroup from "../Assets/folderGroup.png"
 import { API_HOST, BRANCH_API, DEPAETMENT_API } from "../API/apiConfig"
+import AutoTranslate from '../i18n/AutoTranslate'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const ArchiveDashboard = () => {
   const [branches, setBranches] = useState([])
@@ -346,7 +348,9 @@ const ArchiveDashboard = () => {
     <div className={`p-5 rounded-xl shadow-sm hover:shadow-md transition border ${border} ${bg}`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-medium text-gray-600">{label}</p>
+          <p className="text-xs font-medium text-gray-600">
+            <AutoTranslate>{label}</AutoTranslate>
+          </p>
           <p className="mt-1 text-3xl font-bold text-gray-900">{value}</p>
         </div>
         <div
@@ -376,7 +380,7 @@ const ArchiveDashboard = () => {
           }}
           className="hover:text-blue-600 font-medium"
         >
-          Archive Jobs
+          <AutoTranslate>Archive Jobs</AutoTranslate>
         </button>
         {drillDownLevel >= 1 && (
           <>
@@ -390,7 +394,7 @@ const ArchiveDashboard = () => {
               }}
               className="hover:text-blue-600 font-medium"
             >
-              {selectedJob?.archiveName} (Documents)
+              {selectedJob?.archiveName} <AutoTranslate>(Documents)</AutoTranslate>
             </button>
           </>
         )}
@@ -405,14 +409,14 @@ const ArchiveDashboard = () => {
               }}
               className="hover:text-blue-600 font-medium"
             >
-              {selectedDocument?.title} (Versions)
+              {selectedDocument?.title} <AutoTranslate>(Versions)</AutoTranslate>
             </button>
           </>
         )}
         {drillDownLevel === 3 && (
           <>
             <ChevronRight className="h-4 w-4" />
-            <span className="text-gray-900 font-semibold">{selectedVersion?.version} (Files)</span>
+            <span className="text-gray-900 font-semibold">{selectedVersion?.version} <AutoTranslate>(Files)</AutoTranslate></span>
           </>
         )}
       </div>
@@ -422,7 +426,9 @@ const ArchiveDashboard = () => {
   return (
     <Layout>
       <div className="p-2">
-        <h1 className="text-lg mb-2 font-semibold text-gray-900">ARCHIVAL DASHBOARD</h1>
+        <h1 className="text-lg mb-2 font-semibold text-gray-900">
+          <AutoTranslate>ARCHIVAL DASHBOARD</AutoTranslate>
+        </h1>
 
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -514,12 +520,14 @@ const ArchiveDashboard = () => {
             <div className="p-5 rounded-xl shadow-sm hover:shadow-md transition border border-violet-200 bg-violet-50">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Archived Percentage</p>
+                  <p className="text-xs font-medium text-gray-600">
+                    <AutoTranslate>Archived Percentage</AutoTranslate>
+                  </p>
                   <p className="mt-1 text-3xl font-bold text-violet-700">
                     {stats.totalJobs > 0 ? `${((stats.archived / stats.totalJobs) * 100).toFixed(1)}%` : "0%"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {stats.archived} of {stats.totalJobs} policies
+                    {stats.archived} <AutoTranslate>of</AutoTranslate> {stats.totalJobs} <AutoTranslate>policies</AutoTranslate>
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-full flex items-center justify-center bg-violet-100 text-violet-700 ring-1 ring-inset ring-white/30">
@@ -538,7 +546,7 @@ const ArchiveDashboard = () => {
                     <Search className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Search archive jobs..."
+                      placeholder={<AutoTranslate>Search archive jobs...</AutoTranslate>}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
@@ -553,7 +561,9 @@ const ArchiveDashboard = () => {
                     onChange={(e) => setSelectedBranch(e.target.value)}
                     className="border border-gray-300 rounded-md px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="All">All Branches</option>
+                    <option value="All">
+                      <AutoTranslate>All Branches</AutoTranslate>
+                    </option>
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name}
@@ -569,7 +579,9 @@ const ArchiveDashboard = () => {
                     onChange={(e) => setSelectedDepartment(e.target.value)}
                     className="border border-gray-300 rounded-md px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="All">All Departments</option>
+                    <option value="All">
+                      <AutoTranslate>All Departments</AutoTranslate>
+                    </option>
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name}
@@ -585,7 +597,9 @@ const ArchiveDashboard = () => {
                     onChange={(e) => setSelectedStatus(e.target.value)}
                     className="border border-gray-300 rounded-md px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="All">All Status</option>
+                    <option value="All">
+                      <AutoTranslate>All Status</AutoTranslate>
+                    </option>
                     {statuses.map((s) => (
                       <option key={s} value={s}>
                         {s}
@@ -605,7 +619,7 @@ const ArchiveDashboard = () => {
                   className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4 font-medium"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                  <AutoTranslate>Back</AutoTranslate>
                 </button>
                 {renderBreadcrumb()}
               </div>
@@ -619,34 +633,34 @@ const ArchiveDashboard = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Policy ID
+                          <AutoTranslate>Policy ID</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Policy Name
+                          <AutoTranslate>Policy Name</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Branch
+                          <AutoTranslate>Branch</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Department
+                          <AutoTranslate>Department</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Status
+                          <AutoTranslate>Status</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Documents
+                          <AutoTranslate>Documents</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Total Files
+                          <AutoTranslate>Total Files</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Archived On
+                          <AutoTranslate>Archived On</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Export
+                          <AutoTranslate>Export</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Retry
+                          <AutoTranslate>Retry</AutoTranslate>
                         </th>
                       </tr>
                     </thead>
@@ -682,7 +696,7 @@ const ArchiveDashboard = () => {
                               disabled={job.status !== "ARCHIVED"}
                               className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition"
                             >
-                              Export
+                              <AutoTranslate>Export</AutoTranslate>
                             </button>
                           </td>
 
@@ -695,11 +709,9 @@ const ArchiveDashboard = () => {
                               disabled={job.status === "ARCHIVED" || job.status === "IN_PROGRESS" || job.status === "WAITING" || job.status === undefined}
                               className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition"
                             >
-                              Retry
+                              <AutoTranslate>Retry</AutoTranslate>
                             </button>
                           </td>
-
-
                         </tr>
                       ))}
                     </tbody>
@@ -717,7 +729,7 @@ const ArchiveDashboard = () => {
                         : "bg-blue-600 text-white hover:bg-blue-700"
                         }`}
                     >
-                      Previous
+                      <AutoTranslate>Previous</AutoTranslate>
                     </button>
 
                     <div className="flex gap-2">
@@ -743,7 +755,7 @@ const ArchiveDashboard = () => {
                         : "bg-blue-600 text-white hover:bg-blue-700"
                         }`}
                     >
-                      Next
+                      <AutoTranslate>Next</AutoTranslate>
                     </button>
                   </div>
                 )}
@@ -755,7 +767,7 @@ const ArchiveDashboard = () => {
               <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                 <div className="p-4 border-b border-gray-200 bg-gray-50">
                   <h3 className="text-base font-semibold text-gray-800">
-                    Documents in: <span className="text-blue-600">{selectedJob?.archiveName}</span>
+                    <AutoTranslate>Documents in:</AutoTranslate> <span className="text-blue-600">{selectedJob?.archiveName}</span>
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
@@ -763,22 +775,22 @@ const ArchiveDashboard = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Document No.
+                          <AutoTranslate>Document No.</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Title
+                          <AutoTranslate>Title</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Branch
+                          <AutoTranslate>Branch</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Department
+                          <AutoTranslate>Department</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Total Versions
+                          <AutoTranslate>Total Versions</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Total Files
+                          <AutoTranslate>Total Files</AutoTranslate>
                         </th>
                       </tr>
                     </thead>
@@ -808,7 +820,7 @@ const ArchiveDashboard = () => {
               <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                 <div className="p-4 border-b border-gray-200 bg-gray-50">
                   <h3 className="text-base font-semibold text-gray-800">
-                    Versions for: <span className="text-blue-600">{selectedDocument?.title}</span>
+                    <AutoTranslate>Versions for:</AutoTranslate> <span className="text-blue-600">{selectedDocument?.title}</span>
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
@@ -816,19 +828,19 @@ const ArchiveDashboard = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Version
+                          <AutoTranslate>Version</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Status
+                          <AutoTranslate>Status</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Scheuled On
+                          <AutoTranslate>Scheduled On</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Total Files
+                          <AutoTranslate>Total Files</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Archived On
+                          <AutoTranslate>Archived On</AutoTranslate>
                         </th>
                       </tr>
                     </thead>
@@ -863,7 +875,7 @@ const ArchiveDashboard = () => {
               <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                 <div className="p-4 border-b border-gray-200 bg-gray-50">
                   <h3 className="text-base font-semibold text-gray-800">
-                    Files in: <span className="text-blue-600">{selectedDocument?.title}</span> -{" "}
+                    <AutoTranslate>Files in:</AutoTranslate> <span className="text-blue-600">{selectedDocument?.title}</span> -{" "}
                     <span className="text-emerald-600">{selectedVersion?.version}</span>
                   </h3>
                 </div>
@@ -872,19 +884,19 @@ const ArchiveDashboard = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          File Name
+                          <AutoTranslate>File Name</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          MIME Type
+                          <AutoTranslate>MIME Type</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Page Count
+                          <AutoTranslate>Page Count</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Size
+                          <AutoTranslate>Size</AutoTranslate>
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          Status
+                          <AutoTranslate>Status</AutoTranslate>
                         </th>
                       </tr>
                     </thead>
@@ -912,8 +924,12 @@ const ArchiveDashboard = () => {
             {drillDownLevel === 0 && filteredAndSortedData.length === 0 && (
               <div className="text-center py-12">
                 <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No archival records found</h3>
-                <p className="text-gray-500">Try adjusting your search criteria or filters</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <AutoTranslate>No archival records found</AutoTranslate>
+                </h3>
+                <p className="text-gray-500">
+                  <AutoTranslate>Try adjusting your search criteria or filters</AutoTranslate>
+                </p>
               </div>
             )}
           </div>

@@ -10,9 +10,25 @@ import apiClient from "../API/apiClient";
 import { useNavigate } from "react-router-dom";
 import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
-import Profile_Image from "../Assets/Profile_Background.png"
+import Profile_Image from "../Assets/Profile_Background.png";
+// Import AutoTranslate components
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const ChangePasswordPage = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -47,6 +63,18 @@ const ChangePasswordPage = () => {
   const navigate = useNavigate();
   const [popupMessage, setPopupMessage] = useState(null);
 
+  // Debug language status
+  useEffect(() => {
+    console.log('🔍 ChangePasswordPage Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
+
   useEffect(() => {
     fetchEmployeeData();
     fetchImageSrc();
@@ -74,7 +102,7 @@ const ChangePasswordPage = () => {
         setDepartment(response.data.department?.name || "");
       }
     } catch (error) {
-      console.error("Error fetching employee data:", error);
+      console.error(<AutoTranslate>Error fetching employee data:</AutoTranslate>, error);
     } finally {
       setIsLoading(false);
     }
@@ -90,15 +118,15 @@ const ChangePasswordPage = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          responseType: "arraybuffer", // Fetch the image as a byte array
+          responseType: "arraybuffer",
         }
       );
 
-      const imageBlob = new Blob([response.data], { type: "image/jpeg" }); // Adjust type if necessary
+      const imageBlob = new Blob([response.data], { type: "image/jpeg" });
       const imageUrl = URL.createObjectURL(imageBlob);
-      setImageSrc(imageUrl); // Set image source to the object URL
+      setImageSrc(imageUrl);
     } catch (error) {
-      console.error("Error fetching image source", error);
+      console.error(<AutoTranslate>Error fetching image source</AutoTranslate>, error);
     }
   };
 
@@ -108,12 +136,12 @@ const ChangePasswordPage = () => {
     setSuccess("");
 
     if (newPassword !== confirmPassword) {
-      setError("New password and confirm password do not match.");
+      setError(<AutoTranslate>New password and confirm password do not match.</AutoTranslate>);
       return;
     }
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setError("All fields are required.");
+      setError(<AutoTranslate>All fields are required.</AutoTranslate>);
       return;
     }
 
@@ -125,14 +153,14 @@ const ChangePasswordPage = () => {
 
     try {
       await apiClient.post(`${API_HOST}/api/profile`, changePasswordData);
-      showPopup("Password Changed successfully!", "success");
+      showPopup(<AutoTranslate>Password Changed successfully!</AutoTranslate>, "success");
       setActiveForm(null);
     } catch (error) {
       if (error.response && error.response.data) {
-        showPopup(`Failed to Changed Password`, "error");
+        showPopup(<AutoTranslate>Failed to Changed Password</AutoTranslate>, "error");
         setError(error.response.data);
       } else {
-        setError("An unexpected error occurred.");
+        setError(<AutoTranslate>An unexpected error occurred.</AutoTranslate>);
       }
     } finally {
       setCurrentPassword("");
@@ -147,15 +175,14 @@ const ChangePasswordPage = () => {
     setSuccess("");
 
     if (!token) {
-      setError("User is not authenticated. Please log in again.");
+      setError(<AutoTranslate>User is not authenticated. Please log in again.</AutoTranslate>);
       return;
     }
 
-    // Use FormData to capture form inputs
     const formData = new FormData(e.target);
 
     const updateData = {
-      id: localStorage.getItem("userId"), // Ensure the employee ID is included
+      id: localStorage.getItem("userId"),
       name: formData.get("name"),
       mobile: formData.get("mobile"),
     };
@@ -171,19 +198,18 @@ const ChangePasswordPage = () => {
           },
         }
       );
-      const updatedEmployee = response.data; // Get the updated employee from the response
+      const updatedEmployee = response.data;
       localStorage.setItem("UserName", updatedEmployee.name);
 
-      showPopup("Profile Updated successfully!", "success");
+      showPopup(<AutoTranslate>Profile Updated successfully!</AutoTranslate>, "success");
       setActiveForm(null);
-      console.log("Profile updated:", response.data);
+      console.log(<AutoTranslate>Profile updated:</AutoTranslate>, response.data);
     } catch (error) {
-      console.error("Error updating profile:", error.response || error);
-      showPopup(`Failed to Updating Profile`, "error");
-      // Set a user-friendly error message
+      console.error(<AutoTranslate>Error updating profile:</AutoTranslate>, error.response || error);
+      showPopup(<AutoTranslate>Failed to Updating Profile</AutoTranslate>, "error");
       setError(
         error.response?.data?.message ||
-        "Error updating profile. Please try again."
+        <AutoTranslate>Error updating profile. Please try again.</AutoTranslate>
       );
     }
   };
@@ -199,15 +225,16 @@ const ChangePasswordPage = () => {
       setPhoto(URL.createObjectURL(file));
     }
   };
-const handleNameChange = (e) => {
-  const value = e.target.value;
-  const onlyLetters = value.replace(/[^A-Za-z\s]/g, ""); 
-  setEmployee((prev) => ({ ...prev, name: onlyLetters }));
-};
+
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    const onlyLetters = value.replace(/[^A-Za-z\s]/g, "");
+    setEmployee((prev) => ({ ...prev, name: onlyLetters }));
+  };
 
   const handleFileUpload = async () => {
     if (!selectedFile) {
-      setUploadMessage("Please select a file to upload.");
+      setUploadMessage(<AutoTranslate>Please select a file to upload.</AutoTranslate>);
       return;
     }
 
@@ -217,7 +244,6 @@ const handleNameChange = (e) => {
     const employeeId = localStorage.getItem("userId");
 
     try {
-
       const response = await apiClient.post(
         `${API_HOST}/employee/upload/${employeeId}`,
         formData,
@@ -228,23 +254,22 @@ const handleNameChange = (e) => {
           },
         }
       );
-      showPopup("Photo Update successfully!", "success");
+      showPopup(<AutoTranslate>Photo Update successfully!</AutoTranslate>, "success");
       setActiveForm(null);
-      console.log("Upload response:", response.data);
+      console.log(<AutoTranslate>Upload response:</AutoTranslate>, response.data);
 
       if (typeof fetchImageSrc === "function") {
         fetchImageSrc();
       }
     } catch (error) {
-      console.error("Error uploading image:", error.response || error);
-      showPopup(`Image Uploading failed`, "error");
+      console.error(<AutoTranslate>Error uploading image:</AutoTranslate>, error.response || error);
+      showPopup(<AutoTranslate>Image Uploading failed</AutoTranslate>, "error");
       setUploadMessage(
         error.response?.data?.message ||
-        "An error occurred while uploading the image. Please try again."
+        <AutoTranslate>An error occurred while uploading the image. Please try again.</AutoTranslate>
       );
     }
   };
-
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -261,7 +286,7 @@ const handleNameChange = (e) => {
   };
 
   const handleBackClick = () => {
-    navigate("/dashboard");
+    navigate("/newDash");
   };
 
   const toggleCurrentPasswordVisibility = () => {
@@ -295,7 +320,7 @@ const handleNameChange = (e) => {
           <>
             <div className="">
               <h2 className="text-xl font-bold text-center text-gray-900 mb-2">
-                Employee Profile
+                <AutoTranslate>Employee Profile</AutoTranslate>
               </h2>
 
               {isLoading ? (
@@ -317,7 +342,7 @@ const handleNameChange = (e) => {
                     {imageSrc || photo ? (
                       <img
                         src={photo || imageSrc}
-                        alt="Profile"
+                        alt={getFallbackTranslation('Profile', currentLanguage)}
                         className="h-20 w-20 border-2 border-gray-400 rounded-full mb-2 object-cover"
                       />
                     ) : (
@@ -327,39 +352,39 @@ const handleNameChange = (e) => {
 
                   <div className="space-y-2">
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24">Name:</strong>
+                      <strong className="w-24"><AutoTranslate>Name:</AutoTranslate></strong>
                       <strong className="ml-2">{employee?.name}</strong>
                     </p>
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24">Branch:</strong>
-                      <strong className="ml-2">{employee?.branch?.name || "All"}</strong>
+                      <strong className="w-24"><AutoTranslate>Branch:</AutoTranslate></strong>
+                      <strong className="ml-2">{employee?.branch?.name || <AutoTranslate>All</AutoTranslate>}</strong>
                     </p>
 
                     {department && (
                       <p className="text-md text-gray-900 ml-20 flex items-center">
-                        <strong className="w-24">Department:</strong>
-                        <strong className="ml-2">{employee?.department?.name || "All"}</strong>
+                        <strong className="w-24"><AutoTranslate>Department:</AutoTranslate></strong>
+                        <strong className="ml-2">{employee?.department?.name || <AutoTranslate>All</AutoTranslate>}</strong>
                       </p>
                     )}
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24">Role:</strong>
+                      <strong className="w-24"><AutoTranslate>Role:</AutoTranslate></strong>
                       <strong className="ml-2">{employee?.role.role}</strong>
                     </p>
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24">Mobile:</strong>
+                      <strong className="w-24"><AutoTranslate>Mobile:</AutoTranslate></strong>
                       <strong className="ml-2">{employee?.mobile}</strong>
                     </p>
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24">Joined Date:</strong>
+                      <strong className="w-24"><AutoTranslate>Joined Date:</AutoTranslate></strong>
                       <strong className="ml-2">{formatDate(employee?.createdOn)}</strong>
                     </p>
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24">Email:</strong>
+                      <strong className="w-24"><AutoTranslate>Email:</AutoTranslate></strong>
                       <strong className="ml-2">{employee?.email}</strong>
                     </p>
                   </div>
@@ -371,20 +396,20 @@ const handleNameChange = (e) => {
                   onClick={() => setActiveForm("editProfile")}
                   className="bg-blue-900 text-white font-semibold py-1 px-2 rounded-lg hover:bg-blue-950 transition duration-300"
                 >
-                  Edit Profile
+                  <AutoTranslate>Edit Profile</AutoTranslate>
                 </button>
                 <button
                   onClick={() => setActiveForm("changePassword")}
                   className="bg-blue-900 text-white font-semibold py-1 px-2 rounded-lg hover:bg-blue-950 transition duration-300"
                 >
-                  Change Password
+                  <AutoTranslate>Change Password</AutoTranslate>
                 </button>
                 <button
                   onClick={handleBackClick}
                   type="button"
                   className="bg-gray-400 text-white font-semibold py-1 px-2 rounded-lg hover:bg-gray-700 transition duration-300"
                 >
-                  Back
+                  <AutoTranslate>Back</AutoTranslate>
                 </button>
               </div>
             </div>
@@ -394,7 +419,7 @@ const handleNameChange = (e) => {
         {activeForm === "changePassword" && (
           <div className="">
             <h2 className="text-3xl font-semibold text-gray-800 mb-4">
-              Change Password
+              <AutoTranslate>Change Password</AutoTranslate>
             </h2>
             <form onSubmit={handleChangePassword} className="mb-6 w-full">
               {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
@@ -407,7 +432,7 @@ const handleNameChange = (e) => {
                   className="block text-gray-700 text-lg font-bold mb-2"
                   htmlFor="currentPassword"
                 >
-                  Current Password <span className="text-red-700">*</span>
+                  <AutoTranslate>Current Password</AutoTranslate> <span className="text-red-700">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -417,7 +442,10 @@ const handleNameChange = (e) => {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter your current password"
+                    placeholder={getFallbackTranslation(
+                      'Enter your current password',
+                      currentLanguage
+                    )}
                     maxLength={15}
                     minLength={8}
                     required
@@ -440,7 +468,7 @@ const handleNameChange = (e) => {
                   className="block text-gray-700 text-lg font-bold mb-2"
                   htmlFor="newPassword"
                 >
-                  New Password <span className="text-red-700">*</span>
+                  <AutoTranslate>New Password</AutoTranslate> <span className="text-red-700">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -449,7 +477,10 @@ const handleNameChange = (e) => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter your new password"
+                    placeholder={getFallbackTranslation(
+                      'Enter your new password',
+                      currentLanguage
+                    )}
                     required
                     maxLength={15}
                     minLength={8}
@@ -472,7 +503,7 @@ const handleNameChange = (e) => {
                   className="block text-gray-700 text-lg font-bold mb-2"
                   htmlFor="confirmPassword"
                 >
-                  Confirm Password <span className="text-blue-700">*</span>
+                  <AutoTranslate>Confirm Password</AutoTranslate> <span className="text-blue-700">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -482,7 +513,10 @@ const handleNameChange = (e) => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Confirm your new password"
+                    placeholder={getFallbackTranslation(
+                      'Confirm your new password',
+                      currentLanguage
+                    )}
                     required
                     maxLength={15}
                     minLength={8}
@@ -506,13 +540,13 @@ const handleNameChange = (e) => {
                   type="submit"
                   className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
                 >
-                  Change Password
+                  <AutoTranslate>Change Password</AutoTranslate>
                 </button>
                 <button
                   onClick={handleBack}
                   className="bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300"
                 >
-                  Back
+                  <AutoTranslate>Back</AutoTranslate>
                 </button>
               </div>
             </form>
@@ -522,14 +556,14 @@ const handleNameChange = (e) => {
         {activeForm === "editProfile" && (
           <div className="">
             <h2 className="text-3xl font-semibold text-gray-800 mb-4">
-              Edit Your Profile
+              <AutoTranslate>Edit Your Profile</AutoTranslate>
             </h2>
             <div className="relative mb-4 flex flex-col items-center">
               {imageSrc || photo ? (
                 <div className="relative">
                   <img
                     src={photo || imageSrc}
-                    alt="Profile"
+                    alt={getFallbackTranslation('Profile', currentLanguage)}
                     className="h-28 w-28 border-2 border-gray-400 rounded-full mb-2 object-cover"
                   />
                   <PencilSquareIcon
@@ -560,7 +594,7 @@ const handleNameChange = (e) => {
                   onClick={handleFileUpload}
                   className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-800"
                 >
-                  Upload
+                  <AutoTranslate>Upload</AutoTranslate>
                 </button>
               )}
 
@@ -575,20 +609,18 @@ const handleNameChange = (e) => {
                   className="block text-gray-700 text-lg font-bold mb-2"
                   htmlFor="name"
                 >
-                  Name
+                  <AutoTranslate>Name</AutoTranslate>
                 </label>
                 <input
-  type="text"
-  name="name"
-  value={employee.name}
-  onChange={handleNameChange}
-  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-  required
-  maxLength={25}
-  minLength={3}
-/>
-
-
+                  type="text"
+                  name="name"
+                  value={employee.name}
+                  onChange={handleNameChange}
+                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  maxLength={25}
+                  minLength={3}
+                />
               </div>
 
               <div className="mb-4">
@@ -596,7 +628,7 @@ const handleNameChange = (e) => {
                   className="block text-gray-700 text-lg font-bold mb-2"
                   htmlFor="mobile"
                 >
-                  Mobile
+                  <AutoTranslate>Mobile</AutoTranslate>
                 </label>
                 <div className="flex">
                   <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-100 text-gray-700 text-lg">
@@ -619,20 +651,19 @@ const handleNameChange = (e) => {
                 </div>
               </div>
 
-
               <div className="space-x-4">
                 <button
                   type="submit"
                   className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
                 >
-                  Save Changes
+                  <AutoTranslate>Save Changes</AutoTranslate>
                 </button>
                 <button
                   type="button"
                   onClick={handleBack}
                   className="bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300"
                 >
-                  Back
+                  <AutoTranslate>Back</AutoTranslate>
                 </button>
               </div>
             </form>

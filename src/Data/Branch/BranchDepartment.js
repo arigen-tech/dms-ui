@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
   ArrowLeftIcon,
@@ -14,8 +14,31 @@ import { DEPAETMENT_API } from '../../API/apiConfig';
 import { API_HOST } from "../../API/apiConfig";
 import Popup from '../../Components/Popup';
 import LoadingComponent from '../../Components/LoadingComponent';
+import AutoTranslate from '../../i18n/AutoTranslate';
+import { useLanguage } from '../../i18n/LanguageContext';
+import { getFallbackTranslation } from '../../i18n/autoTranslator';
 
 const BranchDepartments = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
+  // State for translated placeholders
+  const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
+    search: 'Search...',
+    show: 'Show:',
+    departmentName: 'Enter Department Name (max 30 chars)',
+    branch: 'Branch'
+  });
+
   const [departments, setDepartments] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -31,10 +54,52 @@ const BranchDepartments = () => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // For button disabling
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const formSectionRef = useRef(null);
 
   const token = localStorage.getItem('tokenKey');
+
+  // Function to translate placeholder text
+  const translatePlaceholder = useCallback(async (text) => {
+    if (isTranslationNeeded()) {
+      try {
+        return await translate(text);
+      } catch (error) {
+        console.error('Error translating placeholder:', error);
+        return text;
+      }
+    }
+    return text;
+  }, [isTranslationNeeded, translate]);
+
+  // Update placeholders when language changes
+  useEffect(() => {
+    const updatePlaceholders = async () => {
+      if (!isTranslationNeeded()) {
+        setTranslatedPlaceholders({
+          search: 'Search...',
+          show: 'Show:',
+          departmentName: 'Enter Department Name (max 30 chars)',
+          branch: 'Branch'
+        });
+        return;
+      }
+
+      const searchPlaceholder = await translatePlaceholder('Search...');
+      const showPlaceholder = await translatePlaceholder('Show:');
+      const departmentPlaceholder = await translatePlaceholder('Enter Department Name (max 30 chars)');
+      const branchPlaceholder = await translatePlaceholder('Branch');
+
+      setTranslatedPlaceholders({
+        search: searchPlaceholder,
+        show: showPlaceholder,
+        departmentName: departmentPlaceholder,
+        branch: branchPlaceholder
+      });
+    };
+
+    updatePlaceholders();
+  }, [currentLanguage, isTranslationNeeded, translatePlaceholder]);
 
   useEffect(() => {
     fetchUserBranch();
@@ -97,7 +162,6 @@ const BranchDepartments = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
-        
       }
     });
   };
@@ -305,7 +369,9 @@ const BranchDepartments = () => {
 
   return (
     <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">DEPARTMENTS</h1>
+      <h1 className="text-2xl mb-1 font-semibold">
+        <AutoTranslate>BRANCH DEPARTMENT</AutoTranslate>
+      </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         {popupMessage && (
           <Popup
@@ -318,10 +384,10 @@ const BranchDepartments = () => {
         <div ref={formSectionRef} className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-2 gap-4">
             <label className="block text-md font-medium text-gray-700">
-              Department Name <span className="text-red-500">*</span>
+              <AutoTranslate>Department Name</AutoTranslate> <span className="text-red-500">*</span>
               <input
                 type="text"
-                placeholder="Enter Department Name (max 30 chars)"
+                placeholder={translatedPlaceholders.departmentName}
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
@@ -331,10 +397,10 @@ const BranchDepartments = () => {
             </label>
 
             <label className="block text-md font-medium text-gray-700">
-              Branch
+              <AutoTranslate>Branch</AutoTranslate>
               <input
                 type="text"
-                placeholder="Branch"
+                placeholder={translatedPlaceholders.branch}
                 value={userBranch ? userBranch.name : "Loading..."}
                 disabled
                 className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
@@ -352,10 +418,10 @@ const BranchDepartments = () => {
                 }`}
               >
                 {isSubmitting ? (
-                  'Adding...'
+                  <AutoTranslate>Adding...</AutoTranslate>
                 ) : (
                   <>
-                    <PlusCircleIcon className="h-5 w-5 mr-1" /> Add Department
+                    <PlusCircleIcon className="h-5 w-5 mr-1" /> <AutoTranslate>Add Department</AutoTranslate>
                   </>
                 )}
               </button>
@@ -368,10 +434,10 @@ const BranchDepartments = () => {
                 }`}
               >
                 {isSubmitting ? (
-                  'Updating...'
+                  <AutoTranslate>Updating...</AutoTranslate>
                 ) : (
                   <>
-                    <CheckCircleIcon className="h-5 w-5 mr-1" /> Update
+                    <CheckCircleIcon className="h-5 w-5 mr-1" /> <AutoTranslate>Update</AutoTranslate>
                   </>
                 )}
               </button>
@@ -382,7 +448,7 @@ const BranchDepartments = () => {
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
             <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
-              Show:
+              <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
@@ -404,7 +470,7 @@ const BranchDepartments = () => {
           <div className="flex items-center w-full md:w-auto flex-1">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={translatedPlaceholders.search}
               className="border rounded-l-md p-1 outline-none w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -416,14 +482,14 @@ const BranchDepartments = () => {
         <table className="w-full border-collapse border">
           <thead>
             <tr className="bg-slate-100">
-              <th className="border p-2 text-left">SR.</th>
-              <th className="border p-2 text-left">Department</th>
-              <th className="border p-2 text-left">Branch</th>
-              <th className="border p-2 text-left">Created On</th>
-              <th className="border p-2 text-left">Updated On</th>
-              <th className="border p-2 text-left">Status</th>
-              <th className="border p-2 text-left">Edit</th>
-              <th className="border p-2 text-left">Access</th>
+              <th className="border p-2 text-left"><AutoTranslate>SR.</AutoTranslate></th>
+              <th className="border p-2 text-left"><AutoTranslate>Department</AutoTranslate></th>
+              <th className="border p-2 text-left"><AutoTranslate>Branch</AutoTranslate></th>
+              <th className="border p-2 text-left"><AutoTranslate>Created On</AutoTranslate></th>
+              <th className="border p-2 text-left"><AutoTranslate>Updated On</AutoTranslate></th>
+              <th className="border p-2 text-left"><AutoTranslate>Status</AutoTranslate></th>
+              <th className="border p-2 text-left"><AutoTranslate>Edit</AutoTranslate></th>
+              <th className="border p-2 text-left"><AutoTranslate>Access</AutoTranslate></th>
             </tr>
           </thead>
           <tbody>
@@ -434,7 +500,7 @@ const BranchDepartments = () => {
                 <td className="border p-2">{userBranch ? userBranch.name : 'N/A'}</td>
                 <td className="border p-2">{formatDate(department.createdOn)}</td>
                 <td className="border p-2">{formatDate(department.updatedOn)}</td>
-                <td className="border p-2">{department.isActive === 1 ? 'Active' : 'Inactive'}</td>
+                <td className="border p-2">{department.isActive === 1 ? 'Active': 'Inactive'}</td>
                 <td className="border p-2">
                   <button 
                     onClick={() => handleEditDepartment(department.id)} 
@@ -468,7 +534,7 @@ const BranchDepartments = () => {
             className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
           >
             <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            Previous
+            <AutoTranslate>Previous</AutoTranslate>
           </button>
 
           {totalPages > 0 && getPageNumbers().map((page) => (
@@ -481,21 +547,23 @@ const BranchDepartments = () => {
             </button>
           ))}
 
-          <span className="text-sm text-gray-700 mx-2">of {totalPages} pages</span>
+          <span className="text-sm text-gray-700 mx-2">
+            <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
+          </span>
 
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
             className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
           >
-            Next
+            <AutoTranslate>Next</AutoTranslate>
             <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
           </button>
           <div className="ml-4">
             <span className="text-sm text-gray-700">
-              Showing {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-              {totalItems} entries
+              <AutoTranslate>
+                {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries`}
+              </AutoTranslate>
             </span>
           </div>
         </div>
@@ -504,21 +572,25 @@ const BranchDepartments = () => {
       {modalVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4">Confirm Status Change</h2>
-            <p>Are you sure you want to {toggleDepartment?.isActive === 1 ? 'deactivate' : 'activate'} the department <strong>{toggleDepartment?.name}</strong>?</p>
+            <h2 className="text-xl font-semibold mb-4">
+              <AutoTranslate>Confirm Status Change</AutoTranslate>
+            </h2>
+            <p>
+              <AutoTranslate>Are you sure you want to</AutoTranslate> {toggleDepartment?.isActive === 1 ? <AutoTranslate>deactivate</AutoTranslate> : <AutoTranslate>activate</AutoTranslate>} <AutoTranslate>the department</AutoTranslate> <strong>{toggleDepartment?.name}</strong>?
+            </p>
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setModalVisible(false)}
                 className="bg-gray-300 text-gray-800 rounded-lg px-4 py-2 mr-2"
               >
-                Cancel
+                <AutoTranslate>Cancel</AutoTranslate>
               </button>
               <button
                 onClick={confirmToggleActiveStatus}
                 disabled={isConfirmDisabled}
                 className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {isConfirmDisabled ? 'Processing...' : 'Confirm'}
+                {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
               </button>
             </div>
           </div>

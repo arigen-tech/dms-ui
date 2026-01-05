@@ -481,7 +481,7 @@ const ManageUserApplication = () => {
                       <td className="border p-2">{application.menuName || <AutoTranslate>No Name</AutoTranslate>}</td>
                       <td className="border p-2">{application.url || <AutoTranslate>No URL</AutoTranslate>}</td>
                       <td className="border p-2">
-                        <AutoTranslate>{application.status === "y" ? "Active" : "Inactive"}</AutoTranslate>
+                        {application.status === "y" ? "Active" : "Inactive"}
                       </td>
                       <td className="border p-2 text-center">
                         <button

@@ -22,51 +22,40 @@ import {
   Pie,
 } from "recharts";
 import { useNavigate, Link } from "react-router-dom";
-
 import { GiFiles } from "react-icons/gi";
 import {
   CalendarDaysIcon,
   ComputerDesktopIcon,
-  
   DocumentCheckIcon,
   DocumentMinusIcon,
   DocumentIcon,
-  
   KeyIcon,
   ShoppingCartIcon,
   UserCircleIcon,
   UsersIcon,
-
 } from "@heroicons/react/24/solid";
 import { IoDocumentLock } from "react-icons/io5";
 import { FaUserClock } from "react-icons/fa6";
 import Layout from "../Components/Layout";
 import axios from 'axios';
-
-
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
 
 function Dashboard() {
   const [chartData, setChartData] = useState([]);
-  const [barChartData, setBarChartData] = useState([]); // Separate state for bar chart
+  const [barChartData, setBarChartData] = useState([]);
   const [topOffice, setTopOffice] = useState([]);
-  
   const [branchesId, setBranchsId] = useState(null);
   const [departmentId, setDepartmentId] = useState(null);
-  
- 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isGrLoading, setIsGrLoading] = useState(true);
   const [isBarChartLoading, setIsBarChartLoading] = useState(true);
-  const [ ,setIsGraphChartLoading] = useState(true);
- 
+  const [, setIsGraphChartLoading] = useState(true);
   const [selectedLineStatus, setSelectedLineStatus] = useState("all");
-
-  // Separate loading for bar chart
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [isBranchLoading, setIsBranchLoading] = useState(false);
-
   const [stats, setStats] = useState({
     branchUser: 0,
     totalUser: 0,
@@ -103,10 +92,12 @@ function Dashboard() {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - i); // e.g., [2025, 2024, ..., 2016]
-
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
   const [employeesStatusData, setEmployeesStatusData] = useState([]);
   const [topTenFileType, setTopTenFileType] = useState([]);
+
+  // Language context
+  const { isTranslationNeeded } = useLanguage();
 
   useEffect(() => {
     fetchUserDetails();
@@ -114,13 +105,11 @@ function Dashboard() {
     fetchTopTenFileType();
   }, []);
 
-
   const fetchEmployeesStatus = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
       const response = await axios.get(
-        `${EMPLOYEE_API}/status-count-by-year`
-        ,
+        `${EMPLOYEE_API}/status-count-by-year`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -137,8 +126,7 @@ function Dashboard() {
     try {
       const token = localStorage.getItem("tokenKey");
       const response = await axios.get(
-        `${DOCUMENTHEADER_API}/top-file-types`
-        ,
+        `${DOCUMENTHEADER_API}/top-file-types`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -150,9 +138,6 @@ function Dashboard() {
       console.error("Error fetching TopTenFileType:", error);
     }
   };
-
-
-
 
   const fetchUserDetails = async () => {
     try {
@@ -173,25 +158,18 @@ function Dashboard() {
       );
 
       const employeeData = response.data;
-      console.log("Employee data:", employeeData);
 
-      // Set Branch ID if available
       if (employeeData.branch && employeeData.branch.id) {
         const branchId = employeeData.branch.id;
         setBranchsId(branchId);
-        console.log("Branch ID:", branchId);
       } else {
-        console.warn("Branch ID is not available in the response.");
         setBranchsId(null);
       }
 
-      // Set Department ID if available, handle null case
       if (employeeData.department) {
         const departmentId = employeeData.department.id;
         setDepartmentId(departmentId);
-        console.log("Department ID:", departmentId);
       } else {
-        console.warn("Department is null.");
         setDepartmentId(null);
       }
     } catch (error) {
@@ -199,7 +177,6 @@ function Dashboard() {
         "Error fetching user details:",
         error.response?.data || error.message
       );
-      // Set default values or handle error
       setBranchsId(null);
       setDepartmentId(null);
     }
@@ -263,12 +240,9 @@ function Dashboard() {
       }
     };
 
-    // Call only on first render
     fetchDashboardStats();
   }, [navigate]);
 
-
-  // Fetch data for all charts except bar chart
   useEffect(() => {
     const fetchMonthlySummary = async () => {
       try {
@@ -289,7 +263,6 @@ function Dashboard() {
 
         let summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
 
-        // Default URL based on role (no branch filtering here)
         switch (role) {
           case SYSTEM_ADMIN:
             summaryUrl = `${baseUrl}/monthly-total`;
@@ -345,7 +318,6 @@ function Dashboard() {
     fetchMonthlySummary();
   }, [navigate, selectedYear, branchesId, departmentId]);
 
-  // Separate fetch for bar chart with branch filtering
   useEffect(() => {
     const fetchBarChartData = async () => {
       try {
@@ -366,7 +338,6 @@ function Dashboard() {
 
         let summaryUrl = `${baseUrl}/document/summary/by/${employeeId}`;
 
-        // Apply branch filtering logic for bar chart
         if (selectedBranch === 'all') {
           switch (role) {
             case SYSTEM_ADMIN:
@@ -387,7 +358,6 @@ function Dashboard() {
               throw new Error("Invalid role.");
           }
         } else {
-          // Filter by selected branch for bar chart
           summaryUrl = `${baseUrl}/branch/${selectedBranch}`;
         }
 
@@ -428,8 +398,6 @@ function Dashboard() {
   }, [navigate, selectedYear, branchesId, departmentId, selectedBranch]);
 
   useEffect(() => {
-    // debugger;
-
     const fetchTopBranchSummary = async () => {
       try {
         setIsGraphChartLoading(true);
@@ -461,7 +429,6 @@ function Dashboard() {
           pendingDocuments,
         } = response.data;
 
-        // Map and filter data based on selectedLineStatus
         let mappedData = branches.map((branch, index) => ({
           name: branch,
           ApprovedDocuments: approvedDocuments[index],
@@ -504,13 +471,13 @@ function Dashboard() {
     }
   }, [navigate, selectedYear, selectedBranch, selectedLineStatus]);
 
-
-
   function StatBlock({ title, value, Icon }) {
     return (
       <div className="p-3 rounded-lg shadow flex items-center justify-between border-l-4 border-blue-50 bg-white">
         <div>
-          <h3 className="text-md font-semibold text-gray-700">{title}</h3>
+          <h3 className="text-md font-semibold text-gray-700">
+            <AutoTranslate>{title}</AutoTranslate>
+          </h3>
           {loading ? (
             <div className="h-7 w-20 bg-gray-200 rounded animate-pulse" />
           ) : (
@@ -521,7 +488,6 @@ function Dashboard() {
       </div>
     );
   }
-
 
   const role = localStorage.getItem("role");
   const totalApprovedDocuments = chartData.reduce(
@@ -552,15 +518,12 @@ function Dashboard() {
     ];
   }, [yearData]);
 
-
   const chartsData = topTenFileType
     .filter(item => item.year === selectedYear)
     .map(item => ({
       name: item.fileType,
       FileCount: item.fileCount
     }));
-
-
 
   const totalDocsbyBranch = (stats.totalRejectedStatusDocById + stats.totalApprovedStatusDocById + stats.totalPendingDocumentsById);
   const totalDocsbyDep = (stats.totalRejectedStatusDocByDepartmentId + stats.totalApprovedStatusDocByDepartmentId + stats.totalPendingDocumentsByDepartmentId);
@@ -569,7 +532,6 @@ function Dashboard() {
   const SkeletonBox = () => (
     <div className="bg-gray-200 animate-pulse rounded-lg h-[300px] w-full"></div>
   );
-
 
   const legendItems = [
     { name: "Active", color: COLORS[0] },
@@ -580,7 +542,9 @@ function Dashboard() {
   return (
     <Layout>
       <div className="flex flex-col p-4 min-h-full w-full bg-slate-100">
-        <h2 className="text-xl mb-4 font-semibold">DASHBOARD</h2>
+        <h2 className="text-xl mb-4 font-semibold">
+          <AutoTranslate>DASHBOARD</AutoTranslate>
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {role === SYSTEM_ADMIN && (
@@ -654,7 +618,6 @@ function Dashboard() {
                   <StatBlock title="Rejected Documents" value={stats.totalRejectedDocuments} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
-              
             </>
           )}
 
@@ -696,7 +659,7 @@ function Dashboard() {
 
               <Link to="/total-rejected" className="block">
                 <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="Rejected Documents" value={stats.totalRejectedStatusDocById} Icon={DocumentMinusIcon} />
+                  <StatBlock title="RejectedDocuments" value={stats.totalRejectedStatusDocById} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
             </>
@@ -742,12 +705,6 @@ function Dashboard() {
 
           {role === USER && (
             <>
-              {/* <Link to="/users" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="Created User" value={stats.createdByCount} Icon={UsersIcon} />
-                </div>
-              </Link> */}
-
               <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                 <StatBlock title="Total Uploaded Documents" value={totalDocsbyUser} Icon={DocumentIcon} />
               </div>
@@ -773,9 +730,10 @@ function Dashboard() {
           )}
         </div>
 
-
         <div className="mb-4">
-          <label className="mr-2 font-semibold text-gray-700">Select Year:</label>
+          <label className="mr-2 font-semibold text-gray-700">
+            <AutoTranslate>Select Year:</AutoTranslate>
+          </label>
           <div className="relative w-40">
             <input
               list="year-options"
@@ -786,7 +744,6 @@ function Dashboard() {
               value={selectedYear || ""}
               onChange={(e) => {
                 const val = e.target.value;
-                // Only allow 4-digit numbers
                 if (/^\d{0,4}$/.test(val)) {
                   setSelectedYear(val ? Number(val) : "");
                 }
@@ -802,23 +759,14 @@ function Dashboard() {
           </div>
         </div>
 
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-          {/* Bar Chart - Only affected by branch filter */}
+          {/* Bar Chart */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
             <div className="mb-4">
               <h3 className="flex text-lg font-bold text-gray-800 border-b pb-2 mb-3">
-                📊 Monthly Documents Status {selectedYear}
-
-
-
-                {/* Branch Filter Dropdown - Only show for SYSTEM_ADMIN */}
+                <AutoTranslate>📊 Monthly Documents Status {selectedYear}</AutoTranslate>
                 {role === SYSTEM_ADMIN && (
-                  <div className=" items-center gap-2">
-                    {/* <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                    Branch:
-                  </label> */}
+                  <div className="items-center gap-2">
                     <div className="relative">
                       <select
                         value={selectedBranch}
@@ -827,24 +775,22 @@ function Dashboard() {
                         className="appearance-none bg-white border ml-3 border-gray-300 rounded-lg px-2 py-1 pr-8 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-w-[150px] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="all" className="font-medium">
-                          🌐 All Branches
+                          🌐 <AutoTranslate>All Branches</AutoTranslate>
                         </option>
                         {branches.map((branch) => (
                           <option key={branch.id} value={branch.id} className="font-medium">
                             🏢 {branch.name}
                           </option>
                         ))}
-                        <option value="top10">Top 10 Branches</option>
+                        <option value="top10">
+                          <AutoTranslate>Top 10 Branches</AutoTranslate>
+                        </option>
                       </select>
-
-                      {/* Custom dropdown arrow */}
                       <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
-
-                      {/* Loading indicator */}
                       {isBranchLoading && (
                         <div className="absolute inset-y-0 right-8 flex items-center pr-2">
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
@@ -905,21 +851,21 @@ function Dashboard() {
                     <Bar
                       dataKey="RejectedDocuments"
                       fill="#FF0000"
-                      name="Rejected Documents"
+                      name={<AutoTranslate>Rejected Documents</AutoTranslate>}
                       radius={[4, 4, 0, 0]}
                       barSize={20}
                     />
                     <Bar
                       dataKey="ApprovedDocuments"
                       fill="#82ca9d"
-                      name="Approved Documents"
+                      name={<AutoTranslate>Approved Documents</AutoTranslate>}
                       radius={[4, 4, 0, 0]}
                       barSize={20}
                     />
                     <Bar
                       dataKey="PendingDocuments"
                       fill="#f0ad4e"
-                      name="Pending Documents"
+                      name={<AutoTranslate>Pending Documents</AutoTranslate>}
                       radius={[4, 4, 0, 0]}
                       barSize={20}
                     />
@@ -929,11 +875,11 @@ function Dashboard() {
             )}
           </div>
 
-          {/* Line Chart - Not affected by branch filter */}
+          {/* Line Chart */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold text-gray-800 border-b pb-2">
-                📈 Top 10 Office {selectedYear}
+                <AutoTranslate>📈 Top 10 Office {selectedYear}</AutoTranslate>
               </h3>
               <select
                 value={selectedLineStatus}
@@ -941,10 +887,10 @@ function Dashboard() {
                 className="ml-4 border border-gray-300 rounded px-2 py-1 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 style={{ minWidth: 120 }}
               >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value="all"><AutoTranslate>All Status</AutoTranslate></option>
+                <option value="pending"><AutoTranslate>Pending</AutoTranslate></option>
+                <option value="approved"><AutoTranslate>Approved</AutoTranslate></option>
+                <option value="rejected"><AutoTranslate>Rejected</AutoTranslate></option>
               </select>
             </div>
             {isGrLoading ? (
@@ -1001,7 +947,7 @@ function Dashboard() {
                         strokeWidth={3}
                         dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
                         activeDot={{ r: 8, strokeWidth: 0 }}
-                        name="Approved Documents"
+                        name={<AutoTranslate>Approved Documents</AutoTranslate>}
                       />
                     )}
                     {(selectedLineStatus === "all" || selectedLineStatus === "rejected") && (
@@ -1012,7 +958,7 @@ function Dashboard() {
                         strokeWidth={3}
                         dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
                         activeDot={{ r: 8, strokeWidth: 0 }}
-                        name="Rejected Documents"
+                        name={<AutoTranslate>Rejected Documents</AutoTranslate>}
                       />
                     )}
                     {(selectedLineStatus === "all" || selectedLineStatus === "pending") && (
@@ -1023,7 +969,7 @@ function Dashboard() {
                         strokeWidth={3}
                         dot={{ r: 6, strokeWidth: 2, fill: '#fff' }}
                         activeDot={{ r: 8, strokeWidth: 0 }}
-                        name="Pending Documents"
+                        name={<AutoTranslate>Pending Documents</AutoTranslate>}
                       />
                     )}
                   </LineChart>
@@ -1035,7 +981,7 @@ function Dashboard() {
           {/* Polar Chart */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
             <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">
-              🌀 Top 10 File Types {selectedYear}
+              <AutoTranslate>🌀 Top 10 File Types {selectedYear}</AutoTranslate>
             </h3>
             {isGrLoading ? (
               <SkeletonBox />
@@ -1064,7 +1010,7 @@ function Dashboard() {
                       }}
                     />
                     <Radar
-                      name="File Count"
+                      name={<AutoTranslate>File Count</AutoTranslate>}
                       dataKey="FileCount"
                       stroke="#3182ce"
                       fill="#3182ce"
@@ -1093,17 +1039,18 @@ function Dashboard() {
             )}
           </div>
 
-
           {/* Pie Chart */}
           <div className="bg-white p-4 rounded-lg shadow-lg">
             <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">
-              🎯 Users Status {selectedYear}
+              <AutoTranslate>🎯 Users Status {selectedYear}</AutoTranslate>
             </h3>
 
             {isGrLoading ? (
               <SkeletonBox />
             ) : pieChartData.every(item => item.value === 0) ? (
-              <p className="text-gray-500">No data available for {selectedYear}</p>
+              <p className="text-gray-500">
+                <AutoTranslate>No data available for {selectedYear}</AutoTranslate>
+              </p>
             ) : (
               <>
                 <div style={{ width: "100%", height: 300 }}>
@@ -1132,7 +1079,7 @@ function Dashboard() {
                           ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value) => [`${value} users`, "Count"]}
+                        formatter={(value) => [`${value} users`, <AutoTranslate>Count</AutoTranslate>]}
                         contentStyle={{
                           backgroundColor: "#fff",
                           border: "2px solid #2d3748",
@@ -1156,17 +1103,14 @@ function Dashboard() {
                         className="text-base font-semibold"
                         style={{ color: item.color }}
                       >
-                        {item.name}
+                        <AutoTranslate>{item.name}</AutoTranslate>
                       </span>
                     </div>
                   ))}
                 </div>
-
-
               </>
             )}
           </div>
-
         </div>
       </div>
     </Layout>

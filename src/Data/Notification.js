@@ -12,6 +12,9 @@ import { BellAlertIcon } from "@heroicons/react/24/solid"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { API_HOST } from "../API/apiConfig"
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const getNotificationIcon = (type) => {
   const commonClasses = "h-8 w-8 p-1.5 rounded-lg"
@@ -86,6 +89,18 @@ const getAllowedNotificationTypes = (role) => {
 }
 
 export const NotificationBell = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const [unreadCount, setUnreadCount] = useState(0)
   const navigate = useNavigate()
   const tokenKey = localStorage.getItem("tokenKey")
@@ -143,6 +158,30 @@ export const NotificationBell = () => {
 }
 
 export const Notification = () => {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
+  // State for translated text
+  const [translatedTexts, setTranslatedTexts] = useState({
+    notifications: 'Notifications',
+    loadingNotifications: 'Loading notifications...',
+    noNotifications: 'No notifications to display',
+    notifyWhenArrives: 'We\'ll notify you when something arrives',
+    clearAll: 'Clear All',
+    additionalDetails: 'Additional Details',
+    reviewDocument: 'Review Document File',
+    viewEmployee: 'View Employee Details'
+  });
+
   const [notifications, setNotifications] = useState([])
   const [filter, setFilter] = useState("all")
   const [selectedNotification, setSelectedNotification] = useState(null)
@@ -167,8 +206,62 @@ export const Notification = () => {
     "NEW_EMPLOYEE_ADDED",
   ]
 
+  // Function to translate text
+  const translateText = useCallback(async (text) => {
+    if (isTranslationNeeded()) {
+      try {
+        return await translate(text);
+      } catch (error) {
+        console.error('Error translating text:', error);
+        return text;
+      }
+    }
+    return text;
+  }, [isTranslationNeeded, translate]);
+
+  // Update translated texts when language changes
+  useEffect(() => {
+    const updateTranslatedTexts = async () => {
+      if (!isTranslationNeeded()) {
+        setTranslatedTexts({
+          notifications: 'Notifications',
+          loadingNotifications: 'Loading notifications...',
+          noNotifications: 'No notifications to display',
+          notifyWhenArrives: 'We\'ll notify you when something arrives',
+          clearAll: 'Clear All',
+          additionalDetails: 'Additional Details',
+          reviewDocument: 'Review Document File',
+          viewEmployee: 'View Employee Details'
+        });
+        return;
+      }
+
+      const notificationsText = await translateText('Notifications');
+      const loadingText = await translateText('Loading notifications...');
+      const noNotificationsText = await translateText('No notifications to display');
+      const notifyText = await translateText('We\'ll notify you when something arrives');
+      const clearAllText = await translateText('Clear All');
+      const additionalDetailsText = await translateText('Additional Details');
+      const reviewDocumentText = await translateText('Review Document File');
+      const viewEmployeeText = await translateText('View Employee Details');
+
+      setTranslatedTexts({
+        notifications: notificationsText,
+        loadingNotifications: loadingText,
+        noNotifications: noNotificationsText,
+        notifyWhenArrives: notifyText,
+        clearAll: clearAllText,
+        additionalDetails: additionalDetailsText,
+        reviewDocument: reviewDocumentText,
+        viewEmployee: viewEmployeeText
+      });
+    };
+
+    updateTranslatedTexts();
+  }, [currentLanguage, isTranslationNeeded, translateText]);
+
   const formatFilterLabel = (filter) => {
-    if (filter === "all") return "All"
+    if (filter === "all") return <AutoTranslate>All</AutoTranslate>
     return filter
       .split("_")
       .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
@@ -305,20 +398,17 @@ export const Notification = () => {
       case "NEW_DOCUMENT":
         return {
           path: `/approve-documents?detailId=${notification.referenceId}`,
-          label: "Review Document File",
+          label: translatedTexts.reviewDocument,
         }
       case "NEW_EMPLOYEE_ADDED":
         return {
           path: `/PendingRole?userId=${notification.referenceId}`,
-          label: "View Employee Details",
+          label: translatedTexts.viewEmployee,
         }
       default:
         return null
     }
   }
-
-
-
 
   // Get allowed notification types for current role
   const allowedTypes = getAllowedNotificationTypes(role)
@@ -328,7 +418,9 @@ export const Notification = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
-          <p className="mt-6 text-lg text-gray-600 font-medium">Loading notifications...</p>
+          <p className="mt-6 text-lg text-gray-600 font-medium">
+            <AutoTranslate>{translatedTexts.loadingNotifications}</AutoTranslate>
+          </p>
         </div>
       </div>
     )
@@ -356,7 +448,9 @@ export const Notification = () => {
                     >
                       <ArrowLeftIcon className="h-6 w-6" />
                     </button>
-                    <h1 className="text-3xl font-bold text-white">Notifications</h1>
+                    <h1 className="text-3xl font-bold text-white">
+                      <AutoTranslate>{translatedTexts.notifications}</AutoTranslate>
+                    </h1>
                   </div>
                 </div>
 
@@ -423,8 +517,12 @@ export const Notification = () => {
                 ) : (
                   <div className="p-12 text-center text-gray-500">
                     <BellIcon className="h-16 w-16 mx-auto text-gray-400 mb-6" />
-                    <p className="text-xl font-medium mb-2">No notifications to display</p>
-                    <p className="text-sm text-gray-400">We'll notify you when something arrives</p>
+                    <p className="text-xl font-medium mb-2">
+                      <AutoTranslate>{translatedTexts.noNotifications}</AutoTranslate>
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      <AutoTranslate>{translatedTexts.notifyWhenArrives}</AutoTranslate>
+                    </p>
                   </div>
                 )}
               </div>
@@ -436,7 +534,9 @@ export const Notification = () => {
                 className="flex items-center space-x-2 p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
               >
                 <ExclamationTriangleIcon className="h-5 w-5" />
-                <span className="text-sm">Clear All</span>
+                <span className="text-sm">
+                  <AutoTranslate>{translatedTexts.clearAll}</AutoTranslate>
+                </span>
               </button>
             </div>
           </div>
@@ -483,7 +583,9 @@ export const Notification = () => {
                 {/* Detailed Message */}
                 {selectedNotification?.detailedMessage && (
                   <div className="bg-gray-50 rounded-xl p-6 mt-4">
-                    <h3 className="text-lg font-semibold mb-4">Additional Details</h3>
+                    <h3 className="text-lg font-semibold mb-4">
+                      <AutoTranslate>{translatedTexts.additionalDetails}</AutoTranslate>
+                    </h3>
                     <div
                       className="prose max-w-none"
                       dangerouslySetInnerHTML={{
