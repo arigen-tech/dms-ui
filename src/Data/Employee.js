@@ -835,7 +835,7 @@ const UserAddEmployee = () => {
   return (
     <div className="px-2">
       <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>USERS</AutoTranslate>
+        <AutoTranslate>User</AutoTranslate>
       </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         {error && <p className="text-red-500">{error}</p>}

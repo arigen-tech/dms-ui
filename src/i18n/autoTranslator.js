@@ -42,7 +42,7 @@ const fallbackTranslations = {
     'All Branches': 'सभी शाखाएँ',
     'Select Branch': 'शाखा चुनें',
     'Branch': 'शाखा',
-    'Category': 'वर्ग',
+    'Category': 'श्रेणी',
     'Email': 'ईमेल',
     'Select Department': 'विभाग चुनें',
     'CreatedBy': 'निर्माता',
@@ -53,6 +53,15 @@ const fallbackTranslations = {
     'Start Date': 'प्रारंभ तिथि',
     'End Date': 'समाप्ति तिथि',
     'Search Query': 'खोज शब्द',
+    'Import Data & File':' डेटा और फ़ाइल इम्पोर्ट करें',
+    'Mange Users Roles':'यूज़र रोल प्रबंधन',
+    'User Report':'यूज़र रिपोर्ट',
+    'Rejected Documents':'अस्वीकृत दस्तावेज़',
+    'Branch wise (OCR) Search':'शाखा के अनुसार(OCR)खोजे',
+    'Department wise (OCR)Search':'विभाग के अनुसार(OCR)खोजे',
+    'Enable':'सक्षम करें',
+    'Disable':'अक्षम करें',
+    'Document Management System':'दस्तावेज़ प्रबंधन प्रणाली',
     
 
 
@@ -63,6 +72,11 @@ const fallbackTranslations = {
     'Select Start Date': 'प्रारंभ तिथि चुनें',
     'Select End Date': 'समाप्ति तिथि चुनें',
     'Enter exact text to search in documents': 'दस्तावेज़ों में खोजने के लिए सटीक पाठ दर्ज करें',
+    'Search by title, subject, or file no': 'शीर्षक, विषय, या फ़ाइल संख्या से खोजें',
+    'Enter Version': 'संस्करण दर्ज करें',
+    'Enter Subject': 'विषय दर्ज करें',
+    'Enter Title': 'शीर्षक दर्ज करें',
+    'Enter File No.': 'फ़ाइल संख्या दर्ज करें',
     
 
 

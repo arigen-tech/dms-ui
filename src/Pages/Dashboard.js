@@ -659,7 +659,7 @@ function Dashboard() {
 
               <Link to="/total-rejected" className="block">
                 <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="RejectedDocuments" value={stats.totalRejectedStatusDocById} Icon={DocumentMinusIcon} />
+                  <StatBlock title="Rejected Documents" value={stats.totalRejectedStatusDocById} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
             </>

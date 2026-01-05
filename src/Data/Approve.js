@@ -523,7 +523,7 @@ const Approve = () => {
   return (
     <div className="px-1">
       <h1 className="text-lg mb-1 font-semibold">
-        <AutoTranslate>Pending Approval</AutoTranslate>
+        <AutoTranslate>Pending Documents</AutoTranslate>
       </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
@@ -644,7 +644,7 @@ const Approve = () => {
                   <AutoTranslate>Uploaded Date</AutoTranslate>
                 </th>
                 <th className="border p-2 text-left">
-                  <AutoTranslate>User Name</AutoTranslate>
+                  <AutoTranslate>User</AutoTranslate><AutoTranslate> Name</AutoTranslate>
                 </th>
                 <th className="border p-2 text-left">
                   <AutoTranslate>Approval Status</AutoTranslate>

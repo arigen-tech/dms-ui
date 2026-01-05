@@ -1390,7 +1390,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   <input
                     type="text"
                     placeholder={getFallbackTranslation(
-                      'File No.',
+                      'Enter File No.',
                       currentLanguage
                     )}
                     name="fileNo"
@@ -1410,7 +1410,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   <input
                     type="text"
                     placeholder={getFallbackTranslation(
-                      'Title',
+                      'Enter Title',
                       currentLanguage
                     )}
                     name="title"
@@ -1430,7 +1430,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   <input
                     type="text"
                     placeholder={getFallbackTranslation(
-                      'Subject',
+                      'Enter Subject',
                       currentLanguage
                     )}
                     name="subject"
@@ -1505,7 +1505,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                   <input
                     type="text"
                     placeholder={getFallbackTranslation(
-                      'Version',
+                      'Enter Version',
                       currentLanguage
                     )}
                     name="version"
@@ -1681,7 +1681,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     {/* Version - Show version value */}
                     <div className="text-center">
                       <label className="flex justify-center items-center gap-2">
-                        <span className="text-sm font-medium text-gray-600"><AutoTranslate>Ver:</AutoTranslate></span>
+                        <span className="text-sm font-medium text-gray-600"><AutoTranslate>Version</AutoTranslate>:</span>
                         <span className="border rounded-lg px-2 py-1 text-sm w-20 text-center bg-gray-50">
                           {version || "--"}
                         </span>
@@ -1942,7 +1942,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               <input
                 type="text"
                 placeholder={getFallbackTranslation(
-                  'Search by title, subject, or file no...',
+                  'Search by title, subject, or file no',
                   currentLanguage
                 )}
                 className="border rounded-l-md p-1 outline-none"
@@ -2043,8 +2043,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               <div className="ml-4">
                 <span className="text-sm text-gray-700">
                   <AutoTranslate>
-                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries`}
-                  </AutoTranslate>
+                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                  } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+              </AutoTranslate>
                 </span>
               </div>
             </div>

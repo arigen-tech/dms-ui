@@ -452,8 +452,8 @@ const UserReport = () => {
                 className="p-2 border rounded-md outline-none"
               >
                 <option value=""><AutoTranslate>All</AutoTranslate></option>
-                <option value="true"><AutoTranslate>Active</AutoTranslate></option>
-                <option value="false"><AutoTranslate>Inactive</AutoTranslate></option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
               </select>
             </div>
 

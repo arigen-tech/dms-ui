@@ -15,6 +15,7 @@ import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
 import { NotificationBell } from "../Data/Notification";
 import { ImSpinner2 } from "react-icons/im";
+import AutoTranslate from "../i18n/AutoTranslate";
 
 const DropdownMenu = ({ items, onSelect, emptyMessage, className }) => (
   <div className={`absolute right-0 mt-0.5 w-48 bg-white rounded-md shadow-lg z-10 ${className}`}>
@@ -194,7 +195,12 @@ const confirmRoleSwitch = async () => {
         >
           <Bars3Icon className="h-7 w-7" />
         </button>
-        <h3 className="font-bold text-lg mb-1.5">Document Management System</h3>
+        <h3 className="font-bold text-lg mb-1.5">
+          <AutoTranslate>
+          Document Management System
+          
+          </AutoTranslate>
+          </h3>
       </div>
 
       <div className="flex space-x-2 items-center mr-10">

@@ -324,7 +324,7 @@ const BrAdminOCR = () => {
   return (
     <div className="px-4 py-6">
       <h1 className="text-2xl font-semibold text-gray-800 mb-6">
-        <AutoTranslate>Document Text Search (OCR)</AutoTranslate>
+        <AutoTranslate>Branch wise (OCR) Search</AutoTranslate>
       </h1>
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">

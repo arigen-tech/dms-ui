@@ -335,7 +335,7 @@ const ArchiveUpload = () => {
   return (
     <div className="px-2">
       <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>Upload Archive</AutoTranslate>
+        <AutoTranslate>Upload Archive Data</AutoTranslate>
       </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
 
