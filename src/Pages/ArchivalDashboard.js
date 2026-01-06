@@ -687,31 +687,51 @@ const ArchiveDashboard = () => {
                           <td className="px-4 py-3 text-sm text-gray-700">{job.totalDocuments}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{job.totalFiles}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{formatDate(job.archivedDateTime)}</td>
-                          <td className="px-4 py-3 text-sm text-gray-700">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleExport(job);
-                              }}
-                              disabled={job.status !== "ARCHIVED"}
-                              className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition"
-                            >
-                              <AutoTranslate>Export</AutoTranslate>
-                            </button>
-                          </td>
 
-                          <td className="px-4 py-3 text-sm text-gray-700">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRetry(job);
-                              }}
-                              disabled={job.status === "ARCHIVED" || job.status === "IN_PROGRESS" || job.status === "WAITING" || job.status === undefined}
-                              className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition"
-                            >
-                              <AutoTranslate>Retry</AutoTranslate>
-                            </button>
-                          </td>
+  <td className="px-4 py-3 text-sm text-gray-700">
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      handleExport(job);
+    }}
+    disabled={job.status !== "ARCHIVED"}
+    className={`px-2 py-1 text-xs font-medium text-white rounded transition
+      ${
+        job.status !== "ARCHIVED"
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-blue-600 hover:bg-blue-700"
+      }`}
+  >
+    <AutoTranslate>Export</AutoTranslate>
+  </button>
+</td>
+
+<td className="px-4 py-3 text-sm text-gray-700">
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      handleRetry(job);
+    }}
+    disabled={
+      job.status === "ARCHIVED" ||
+      job.status === "IN_PROGRESS" ||
+      job.status === "WAITING" ||
+      job.status === undefined
+    }
+    className={`px-2 py-1 text-xs font-medium text-white rounded transition
+      ${
+        job.status === "ARCHIVED" ||
+        job.status === "IN_PROGRESS" ||
+        job.status === "WAITING" ||
+        job.status === undefined
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-green-600 hover:bg-green-700"
+      }`}
+  >
+    <AutoTranslate>Retry</AutoTranslate>
+  </button>
+</td>
+
                         </tr>
                       ))}
                     </tbody>

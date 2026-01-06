@@ -73,7 +73,7 @@ const NotAuthorized = () => {
 
       {/* Button */}
       <button
-        onClick={() => navigate("/dashboard")}
+        onClick={() => navigate("/newDash")}
         className="mt-6 rounded-lg bg-blue-600 px-6 py-2 font-medium text-white shadow-lg hover:bg-blue-700 transition"
       >
         Go Back To Dashboard
