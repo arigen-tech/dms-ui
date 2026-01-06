@@ -53,85 +53,88 @@ const RoleRightss = React.lazy(() => import("./Pages/RoleRightss"));
 const AuditForms = React.lazy(() => import("./Pages/AuditForms"));
 const WaitingRooms = React.lazy(() => import("./Pages/WaitingRooms"));
 const DashboardnEW = React.lazy(() => import("./Pages/DashboardnEW"));
-const ExportDatas =React.lazy(() => import( "./Pages/ExportDatas"));
-const Imports =React.lazy(() => import( "./Pages/Imports"));
+const ExportDatas = React.lazy(() => import("./Pages/ExportDatas"));
+const Imports = React.lazy(() => import("./Pages/Imports"));
+const LanguageMasters = React.lazy(() => import("./Pages/LanguageMasters"));
 
 function App() {
   return (
-     
+
     <MenuProvider>
       <LanguageProvider>
-      <Router>
-        <ChatBotPopup />
-        <Suspense fallback={<div>Loading...</div>}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<LoginPage />} />
-            <Route path="/notifications" element={<Notification />} />
-            <Route path="/adminOCRResponce" element={<AdminsOCRResponce />} />
-            <Route path="/profile" element={<ChangePasswordPage />} />
-
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/newDash" element={<Dashboard />} />
-              <Route path="/dashboard" element={<DashboardnEW />} />
-              <Route path="/inbox" element={<Inbox />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/branchusers" element={<BranchUsers />} />
-              <Route path="/Departmentusers" element={<DepartmentUsers />} />
-              <Route path="/create-branch" element={<Branches />} />
-              <Route path="/create-year" element={<Years />} />
-              <Route path="/create-department" element={<Departments />} />
-              <Route path="/create-departments" element={<BranchDepartments />} />
-              <Route path="/create-role" element={<Roles />} />
-              <Route path="/create-type" element={<Types />} />
-              <Route path="/create-category" element={<Categories />} />
-              <Route path="/approve-documents" element={<Approves />} />
-              <Route path="/total-approved" element={<ApproveByAdmin />} />
-              <Route path="/total-rejected" element={<RejectByAdmin />} />
-              <Route path="/userRoleAssing" element={<UserRoleAssing />} />
-              <Route path="/pendingRole" element={<PendingUsers />} />
-              <Route path="/all-documents" element={<Documents />} />
-              <Route path="/approvedDocs" element={<ApprovedDocs />} />
-              <Route path="/rejectedDocs" element={<RejectedDocs />} />
-              <Route path="/userReport" element={<UserReports />} />
-              <Route path="/manageUserRole" element={<ManageUserRoles />} />
-              <Route path="/documentReport" element={<DocumentsReport />} />
-              <Route path="/profile" element={<ChangePasswordPage />} />
-              <Route path="/search" element={<SearchDoc />} />
-              <Route path="/searchByScan" element={<SearchByScanning />} />
-              <Route path="/archive" element={<ArchiveDoc />} />
-              <Route path="/archivesuplod" element={<ArchivesDoc />} />
-              <Route path="/adminOcr" element={<AdminsOCR />} />
-              <Route path="/brAdminOcr" element={<BrAdminsOCR />} />
-              <Route path="/searchOcr" element={<DpAdminsOCR />} />
+        <Router>
+          <ChatBotPopup />
+          <Suspense fallback={<div>Loading...</div>}>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<LoginPage />} />
+              <Route path="/notifications" element={<Notification />} />
               <Route path="/adminOCRResponce" element={<AdminsOCRResponce />} />
-              <Route path="/scan" element={<Scanner />} />
-              <Route path="/idcard" element={<IDCardGenerator />} />
-              <Route path="/create-fileType" element={<FilesType />} />
-              <Route path="/retentionpolicy" element={<RetentionPolicypage />} />
-              <Route path="/archivalDashboard" element={<ArchivalDashboard />} />
-              <Route path="/FileCompare" element={<FileComparepage />} />
-              <Route path="/ManageUserApplications" element={<ManageUserApplications />} />
-              <Route path="/TemplateMasters" element={<TemplateMasters />} />
-              <Route path="/Audit-form" element={<AuditForms />} />
-              <Route path="/Add-form-reports" element={<AddFormReportss />} />
-              <Route path="/Assign-applications" element={<AssignApplications />} />
-              <Route path="/Role-rights" element={<RoleRightss />} />
-              <Route path="/Waiting-room" element={<WaitingRooms />} />
-              <Route path="/newDash" element={<DashboardnEW />} />
-              <Route path="/export" element={<ExportDatas />} />
-               <Route path="/import" element={<Imports />} />
-            </Route>
+              <Route path="/profile" element={<ChangePasswordPage />} />
 
-            {/* Fallback */}
-            <Route path="*" element={<PageNotFound />} />
-          </Routes>
-        </Suspense>
-      </Router>
-       </LanguageProvider>
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/newDash" element={<Dashboard />} />
+                <Route path="/dashboard" element={<DashboardnEW />} />
+                <Route path="/inbox" element={<Inbox />} />
+                <Route path="/users" element={<Users />} />
+                <Route path="/branchusers" element={<BranchUsers />} />
+                <Route path="/Departmentusers" element={<DepartmentUsers />} />
+                <Route path="/create-branch" element={<Branches />} />
+                <Route path="/create-year" element={<Years />} />
+                <Route path="/create-department" element={<Departments />} />
+                <Route path="/create-departments" element={<BranchDepartments />} />
+                <Route path="/create-role" element={<Roles />} />
+                <Route path="/create-type" element={<Types />} />
+                <Route path="/create-category" element={<Categories />} />
+                <Route path="/approve-documents" element={<Approves />} />
+                <Route path="/total-approved" element={<ApproveByAdmin />} />
+                <Route path="/total-rejected" element={<RejectByAdmin />} />
+                <Route path="/userRoleAssing" element={<UserRoleAssing />} />
+                <Route path="/pendingRole" element={<PendingUsers />} />
+                <Route path="/all-documents" element={<Documents />} />
+                <Route path="/approvedDocs" element={<ApprovedDocs />} />
+                <Route path="/rejectedDocs" element={<RejectedDocs />} />
+                <Route path="/userReport" element={<UserReports />} />
+                <Route path="/manageUserRole" element={<ManageUserRoles />} />
+                <Route path="/documentReport" element={<DocumentsReport />} />
+                <Route path="/profile" element={<ChangePasswordPage />} />
+                <Route path="/search" element={<SearchDoc />} />
+                <Route path="/searchByScan" element={<SearchByScanning />} />
+                <Route path="/archive" element={<ArchiveDoc />} />
+                <Route path="/archivesuplod" element={<ArchivesDoc />} />
+                <Route path="/adminOcr" element={<AdminsOCR />} />
+                <Route path="/brAdminOcr" element={<BrAdminsOCR />} />
+                <Route path="/searchOcr" element={<DpAdminsOCR />} />
+                <Route path="/adminOCRResponce" element={<AdminsOCRResponce />} />
+                <Route path="/scan" element={<Scanner />} />
+                <Route path="/idcard" element={<IDCardGenerator />} />
+                <Route path="/create-fileType" element={<FilesType />} />
+                <Route path="/retentionpolicy" element={<RetentionPolicypage />} />
+                <Route path="/archivalDashboard" element={<ArchivalDashboard />} />
+                <Route path="/FileCompare" element={<FileComparepage />} />
+                <Route path="/ManageUserApplications" element={<ManageUserApplications />} />
+                <Route path="/TemplateMasters" element={<TemplateMasters />} />
+                <Route path="/Audit-form" element={<AuditForms />} />
+                <Route path="/Add-form-reports" element={<AddFormReportss />} />
+                <Route path="/Assign-applications" element={<AssignApplications />} />
+                <Route path="/Role-rights" element={<RoleRightss />} />
+                <Route path="/Waiting-room" element={<WaitingRooms />} />
+                <Route path="/newDash" element={<DashboardnEW />} />
+                <Route path="/export" element={<ExportDatas />} />
+                <Route path="/import" element={<Imports />} />
+                <Route path="/LanguageMaster" element={<LanguageMasters />} />
+
+              </Route>
+
+              {/* Fallback */}
+              <Route path="*" element={<PageNotFound />} />
+            </Routes>
+          </Suspense>
+        </Router>
+      </LanguageProvider>
     </MenuProvider>
-    
+
   );
 }
 

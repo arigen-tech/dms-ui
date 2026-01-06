@@ -52,7 +52,8 @@ const validRoutes = [
   "/Waiting-room",
   "/newDash",
   "/export",
-  "/import"
+  "/import",
+  "/LanguageMaster",
 ];
 
 const NotAuthorized = () => {
@@ -129,7 +130,7 @@ const ProtectedRoute = () => {
   }
 
   // Dashboard OR user has explicit permission
-  if (currentPath === "/dashboard" || allowedUrls.includes(currentPath)) {
+  if (currentPath === "/newDash" || allowedUrls.includes(currentPath)) {
     return <Outlet />;
   }
 

@@ -12,6 +12,8 @@
 export const MAIN_DASHBOARD_URL = 'http://103.133.215.182:8010/dashboard/';
 export const API_URL = API_HOST; 
 export const BRANCH_API = `${API_HOST}/branchmaster`;
+export const LANGUAGE_MASTER_API = `${API_HOST}/languageMaster`;
+
 export const CATEGORI_API = `${API_HOST}/CategoryMaster`;
 export const DEPAETMENT_API = `${API_HOST}/DepartmentMaster`;
 export const DASHBORD_API = `${API_HOST}/Dashboard`;
