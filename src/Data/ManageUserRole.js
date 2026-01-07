@@ -514,7 +514,11 @@ const ManageUserRole = () => {
                   setCurrentPage(1);
                 }}
               >
-                <option value="">All</option>
+                <option value="">
+                  <AutoTranslate>
+                  All
+                  </AutoTranslate>
+                </option>
                 {branchData.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name}
@@ -539,7 +543,9 @@ const ManageUserRole = () => {
                 }}
                 disabled={!selectedBranch}
               >
-                <option value="">All</option>
+                <option value="">
+                  <AutoTranslate>All</AutoTranslate>
+                </option>
                 {departmentData.map((dept) => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}

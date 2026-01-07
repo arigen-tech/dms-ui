@@ -558,7 +558,7 @@ const Department = () => {
                   <td className="border p-2">{formatDate(department.createdOn)}</td>
                   <td className="border p-2">{formatDate(department.updatedOn)}</td>
                   <td className="border p-2">
-                    <AutoTranslate>{department.isActive === 1 ? 'Active' : 'Inactive'}</AutoTranslate>
+                   {department.isActive === 1 ? 'Active' : 'Inactive'}
                   </td>
                   <td className="border p-2 text-center">
                     <button

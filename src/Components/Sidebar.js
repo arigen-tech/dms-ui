@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import {
@@ -48,6 +48,7 @@ import { UserIcon } from "lucide-react";
 import { getRequest } from "../API/apiService";
 import AutoTranslate from "../i18n/AutoTranslate";
 import { useLanguage } from "../i18n/LanguageContext";
+import { getFallbackTranslation, translateText, translationCache } from "../i18n/autoTranslator";
 
 function Sidebar({ roleChanged }) {
   const location = useLocation();
@@ -57,6 +58,7 @@ function Sidebar({ roleChanged }) {
   const [openMenus, setOpenMenus] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [searchPlaceholder, setSearchPlaceholder] = useState("Search Menu...");
+  const [translationDictionary, setTranslationDictionary] = useState({});
 
   const sidebarRef = useRef(null);
 
@@ -65,7 +67,7 @@ function Sidebar({ roleChanged }) {
 
   const cacheKey = `menuCache-${rolesId}`;
 
-  // Update search placeholder when language changes - IMMEDIATE FALLBACK
+  // Update search placeholder when language changes
   useEffect(() => {
     const placeholders = {
       'en': 'Search Menu...',
@@ -76,7 +78,64 @@ function Sidebar({ roleChanged }) {
     setSearchPlaceholder(placeholders[currentLanguage] || "Search Menu...");
   }, [currentLanguage]);
 
-  // Fetch menu data (with caching). We avoid re-fetching if cached and role hasn't changed.
+  // Load translation dictionary for search
+  useEffect(() => {
+    const loadTranslationDictionary = () => {
+      try {
+        // Get all cached translations from localStorage
+        const cached = localStorage.getItem('translationCache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setTranslationDictionary(parsed);
+        }
+      } catch (error) {
+        console.error("Error loading translation dictionary:", error);
+      }
+    };
+
+    loadTranslationDictionary();
+  }, []);
+
+  // Function to search in all languages
+  const searchInAllLanguages = useCallback((menuItem, term) => {
+    if (!term.trim()) return true;
+    
+    const searchTermLower = term.toLowerCase();
+    const menuName = menuItem.name;
+    
+    // Check English name
+    if (menuName.toLowerCase().includes(searchTermLower)) {
+      return true;
+    }
+    
+    // Check all languages in translation dictionary
+    const languages = ['hi', 'or', 'mr'];
+    for (const lang of languages) {
+      const cacheKey = `${menuName}_${lang}`;
+      const translatedText = translationDictionary[cacheKey];
+      
+      if (translatedText && translatedText.toLowerCase().includes(searchTermLower)) {
+        return true;
+      }
+    }
+    
+    // Check fallback translations
+    for (const lang of languages) {
+      const fallbackTranslation = getFallbackTranslation(menuName, lang);
+      if (fallbackTranslation && fallbackTranslation.toLowerCase().includes(searchTermLower)) {
+        return true;
+      }
+    }
+    
+    // Check children recursively
+    if (menuItem.children && menuItem.children.length > 0) {
+      return menuItem.children.some(child => searchInAllLanguages(child, term));
+    }
+    
+    return false;
+  }, [translationDictionary]);
+
+  // Fetch menu data
   const fetchMenuData = async () => {
     setLoading(true);
     try {
@@ -85,7 +144,7 @@ function Sidebar({ roleChanged }) {
         setMenuData(data.response);
         sessionStorage.setItem(cacheKey, JSON.stringify(data.response));
 
-        // Initialize open menus from localStorage (or default false)
+        // Initialize open menus
         const initialOpenMenus = {};
         data.response.forEach((item) => {
           if (item.children?.length > 0) {
@@ -95,7 +154,7 @@ function Sidebar({ roleChanged }) {
         });
         setOpenMenus(initialOpenMenus);
 
-        // Build allowed URLs once
+        // Build allowed URLs
         const extractUrls = (items) => {
           let urls = [];
           for (const item of items) {
@@ -110,6 +169,9 @@ function Sidebar({ roleChanged }) {
         };
         const allowedUrls = extractUrls(data.response);
         sessionStorage.setItem("allowedUrls", JSON.stringify(allowedUrls));
+        
+        // Preload translations for all menu items
+        preloadMenuTranslations(data.response);
       } else {
         console.error("Unexpected API response format:", data);
         setMenuData([]);
@@ -121,7 +183,43 @@ function Sidebar({ roleChanged }) {
     }
   };
 
-  // On mount / rolesId or roleChanged change: try using cache first to avoid flashing/loading
+  // Preload translations for menu items
+  const preloadMenuTranslations = async (menuItems) => {
+    try {
+      const languages = ['hi', 'or', 'mr'];
+      const allMenuTexts = [];
+      
+      const extractMenuTexts = (items) => {
+        for (const item of items) {
+          if (item.name) {
+            allMenuTexts.push(item.name);
+          }
+          if (item.children && item.children.length > 0) {
+            extractMenuTexts(item.children);
+          }
+        }
+      };
+      
+      extractMenuTexts(menuItems);
+      
+      // Remove duplicates
+      const uniqueTexts = [...new Set(allMenuTexts)];
+      
+      // Preload translations for each language
+      for (const lang of languages) {
+        if (lang !== 'en') {
+          for (const text of uniqueTexts) {
+            // Trigger translation to cache it
+            translateText(text, lang);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error preloading menu translations:", error);
+    }
+  };
+
+  // On mount / rolesId or roleChanged change
   useEffect(() => {
     let canceled = false;
     const cached = sessionStorage.getItem(cacheKey);
@@ -130,7 +228,6 @@ function Sidebar({ roleChanged }) {
       try {
         const parsed = JSON.parse(cached);
         setMenuData(parsed);
-        // init open menus from localStorage
         const initialOpenMenus = {};
         parsed.forEach((item) => {
           if (item.children?.length > 0) {
@@ -140,14 +237,16 @@ function Sidebar({ roleChanged }) {
         });
         setOpenMenus(initialOpenMenus);
         setLoading(false);
+        
+        // Preload translations
+        preloadMenuTranslations(parsed);
+        
         return () => (canceled = true);
       } catch (err) {
-        // if cache corrupted fall back to network
         console.warn("Menu cache parse failed, refetching", err);
       }
     }
 
-    // otherwise fetch fresh
     fetchMenuData();
 
     return () => {
@@ -156,7 +255,7 @@ function Sidebar({ roleChanged }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleChanged, rolesId]);
 
-  // Persist scroll position while user scrolls the sidebar
+  // Persist scroll position
   useEffect(() => {
     const sidebar = sidebarRef.current;
     if (!sidebar) return;
@@ -164,34 +263,30 @@ function Sidebar({ roleChanged }) {
     const handleScroll = () => {
       try {
         sessionStorage.setItem("sidebarScroll", String(sidebar.scrollTop || 0));
-      } catch (e) {
-        // ignore sessionStorage errors
-      }
+      } catch (e) {}
     };
 
     sidebar.addEventListener("scroll", handleScroll);
     return () => sidebar.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Restore scroll after menuData is present AND loading finished
+  // Restore scroll after menuData is present
   useEffect(() => {
     if (!sidebarRef.current) return;
-    if (loading) return; // wait until load finished
+    if (loading) return;
     if (!menuData || menuData.length === 0) return;
 
     const saved = sessionStorage.getItem("sidebarScroll");
     if (saved) {
-      // Ensure DOM has painted before setting scrollTop
       requestAnimationFrame(() => {
         try {
           sidebarRef.current.scrollTop = parseInt(saved, 10) || 0;
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
       });
     }
   }, [loading, menuData]);
 
+  // Counts state
   const [counts, setCounts] = useState(() => {
     const savedCounts = sessionStorage.getItem("counts");
     return savedCounts
@@ -236,6 +331,7 @@ function Sidebar({ roleChanged }) {
         };
   });
 
+  // Fetch counts
   useEffect(() => {
     const fetchCounts = async () => {
       try {
@@ -263,17 +359,20 @@ function Sidebar({ roleChanged }) {
     fetchCounts();
   }, []);
 
+  // Menu toggle handler
   const handleMenuToggle = (appId) => {
     const newState = !openMenus[appId];
     setOpenMenus((prev) => ({ ...prev, [appId]: newState }));
     localStorage.setItem(`menu-${appId}-open`, JSON.stringify(newState));
   };
 
+  // Active link style
   const isActive = (path) =>
     location.pathname === path
       ? "bg-blue-950 text-white"
       : "text-white hover:bg-blue-950 hover:text-white";
 
+  // Icon mapping
   const getIconComponent = (name) => {
     const iconMap = {
       Dashboard: InboxIcon,
@@ -319,6 +418,7 @@ function Sidebar({ roleChanged }) {
     return iconMap[name] || DocumentIcon;
   };
 
+  // Get count for menu item
   const getCountForMenuItem = (url) => {
     const currentRole = localStorage.getItem("role");
 
@@ -368,7 +468,7 @@ function Sidebar({ roleChanged }) {
     return countMap[url] || 0;
   };
 
-  // Save scroll right before navigation (also scroll handler persists during scroll)
+  // Sidebar Link component
   const SidebarLink = ({ to, icon: Icon, text, count }) => (
     <Link
       to={to}
@@ -393,10 +493,11 @@ function Sidebar({ roleChanged }) {
     </Link>
   );
 
+  // Render menu items with multilingual search
   const renderMenuItems = (items) => {
+    // Filter items based on multilingual search
     const filteredItems = items.filter((item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.children && item.children.some((child) => child.name.toLowerCase().includes(searchTerm.toLowerCase())))
+      searchInAllLanguages(item, searchTerm)
     );
 
     const sortedItems = [...filteredItems].sort((a, b) => a.serialNo - b.serialNo);
@@ -407,6 +508,11 @@ function Sidebar({ roleChanged }) {
       const isOpen = openMenus[item.appId] || false;
 
       if (hasChildren) {
+        // Check if parent or any child should be shown
+        const shouldShowParent = searchTerm.trim() === '' || searchInAllLanguages(item, searchTerm);
+
+        if (!shouldShowParent) return null;
+
         return (
           <div key={item.appId}>
             <button
@@ -427,6 +533,11 @@ function Sidebar({ roleChanged }) {
           </div>
         );
       } else {
+        // Only show leaf items that match search
+        if (searchTerm.trim() !== '' && !searchInAllLanguages(item, searchTerm)) {
+          return null;
+        }
+
         return (
           <SidebarLink
             key={item.appId}
@@ -440,6 +551,7 @@ function Sidebar({ roleChanged }) {
     });
   };
 
+  // Handle search input change
   const handleInputChange = (event) => {
     setSearchTerm(event.target.value);
   };

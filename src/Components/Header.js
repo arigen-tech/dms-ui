@@ -15,7 +15,10 @@ import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
 import { NotificationBell } from "../Data/Notification";
 import { ImSpinner2 } from "react-icons/im";
-import AutoTranslate from "../i18n/AutoTranslate";
+// Import AutoTranslate components
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
+import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const DropdownMenu = ({ items, onSelect, emptyMessage, className }) => (
   <div className={`absolute right-0 mt-0.5 w-48 bg-white rounded-md shadow-lg z-10 ${className}`}>
@@ -36,6 +39,18 @@ const DropdownMenu = ({ items, onSelect, emptyMessage, className }) => (
 );
 
 function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
+  // Get language context
+  const {
+    currentLanguage,
+    defaultLanguage,
+    translationStatus,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
+  } = useLanguage();
+
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownRoleOpen, setDropdownRoleOpen] = useState(false);
@@ -51,6 +66,18 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
   const [targetRoleName, setTargetRoleName] = useState("");
   const [isConfSwitch, setIsConfSwitch] = useState(false);
   const [currentRole, setCurrentRole] = useState("");
+
+  // Debug language status
+  useEffect(() => {
+    console.log('🔍 Header Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
   const handleLogout = () => {
     localStorage.removeItem("tokenKey");
@@ -91,7 +118,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
       const imageUrl = URL.createObjectURL(imageBlob);
       setImageSrc(imageUrl);
     } catch (error) {
-      console.error("Error fetching image source", error);
+      console.error(<AutoTranslate>Error fetching image source</AutoTranslate>, error);
     }
   };
 
@@ -112,54 +139,48 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
       );
 
       setCurrentRole(response.data.employeeRole);
-
-      console.log(" Roles:", response.data);
       setRoleName(sortedRoles);
     } catch (error) {
-      console.error("Error fetching user roles", error);
+      console.error(<AutoTranslate>Error fetching user roles</AutoTranslate>, error);
     }
   };
-
-
 
   const handleRoleSwitch = async (targetRoleName) => {
     setTargetRoleName(targetRoleName);
     setShowConfirmationPopup(true);
   };
 
-const confirmRoleSwitch = async () => {
-  try {
-    setIsConfSwitch(true);
-    const employeeId = localStorage.getItem("userId");
-    const response = await axios.put(
-      `${API_HOST}/employee/${employeeId}/role/switch`,
-      { targetRoleName },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  const confirmRoleSwitch = async () => {
+    try {
+      setIsConfSwitch(true);
+      const employeeId = localStorage.getItem("userId");
+      const response = await axios.put(
+        `${API_HOST}/employee/${employeeId}/role/switch`,
+        { targetRoleName },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    const roleId = response.data?.response?.role?.id;
-    if (roleId) {
-      localStorage.setItem("currRoleId", roleId);
-      console.log("currRoleId updated:", roleId);
+      const roleId = response.data?.response?.role?.id;
+      if (roleId) {
+        localStorage.setItem("currRoleId", roleId);
+      }
+
+      localStorage.setItem("role", targetRoleName);
+      setRole(targetRoleName);
+      showPopup("Role switched successfully!", "success");
+      setShowConfirmationPopup(false);
+
+      // ✅ Trigger Sidebar to refresh menu
+      triggerMenuRefresh();
+
+      fetchUserRole();
+    } catch (error) {
+      showPopup(<AutoTranslate>Error switching role!</AutoTranslate>, "error");
+      setShowConfirmationPopup(false);
+    } finally {
+      setIsConfSwitch(false);
     }
-
-    localStorage.setItem("role", targetRoleName);
-    setRole(targetRoleName);
-    showPopup("Role switched successfully!", "success");
-    setShowConfirmationPopup(false);
-
-    // ✅ Trigger Sidebar to refresh menu
-    triggerMenuRefresh();
-
-    fetchUserRole();
-  } catch (error) {
-    showPopup("Error switching role!", "error");
-    setShowConfirmationPopup(false);
-  } finally {
-    setIsConfSwitch(false);
-  }
-};
-
+  };
 
   const cancelRoleSwitch = () => {
     setShowConfirmationPopup(false);
@@ -196,11 +217,8 @@ const confirmRoleSwitch = async () => {
           <Bars3Icon className="h-7 w-7" />
         </button>
         <h3 className="font-bold text-lg mb-1.5">
-          <AutoTranslate>
-          Document Management System
-          
-          </AutoTranslate>
-          </h3>
+          <AutoTranslate>Document Management System</AutoTranslate>
+        </h3>
       </div>
 
       <div className="flex space-x-2 items-center mr-10">
@@ -214,7 +232,7 @@ const confirmRoleSwitch = async () => {
             onClick={() => setDropdownRoleOpen(!dropdownRoleOpen)}
           >
             <PiUserSwitchFill className="h-10 w-10" />
-            <span className="font-bold text-sm mr-1">{role || "Role"}</span>
+            <span className="font-bold text-sm mr-1">{role || <AutoTranslate>Role</AutoTranslate>}</span>
           </div>
 
           {dropdownRoleOpen && (
@@ -223,7 +241,7 @@ const confirmRoleSwitch = async () => {
               items={
                 Array.isArray(roleName)
                   ? roleName
-                    .filter((roleItem) => roleItem !== currentRole) // skip currentRole
+                    .filter((roleItem) => roleItem !== currentRole)
                     .map((roleItem) => {
                       let IconComponent = FiUser;
                       if (roleItem === "ADMIN") IconComponent = TbPasswordUser;
@@ -245,10 +263,9 @@ const confirmRoleSwitch = async () => {
                   : []
               }
               onSelect={(item) => item.onClick && item.onClick()}
-              emptyMessage="No Multiple roles available"
+              emptyMessage={<AutoTranslate>No Multiple roles available</AutoTranslate>}
             />
           )}
-
         </div>
 
         {/* Profile Dropdown */}
@@ -264,7 +281,7 @@ const confirmRoleSwitch = async () => {
             <img
               src={imageSrc || adminPhoto}
               onError={(e) => (e.currentTarget.src = adminPhoto)}
-              alt="Profile"
+              alt={getFallbackTranslation('Profile', currentLanguage)}
               className="h-8 w-8 rounded-full"
             />
           </div>
@@ -275,7 +292,7 @@ const confirmRoleSwitch = async () => {
                 {
                   label: (
                     <span className="flex items-center text-gray-800 p-1 text-sm">
-                      <PencilIcon className="h-4 w-4 mr-2" /> Edit Profile
+                      <PencilIcon className="h-4 w-4 mr-2" /> <AutoTranslate>Edit Profile</AutoTranslate>
                     </span>
                   ),
                   onClick: handleChangePassword,
@@ -283,14 +300,14 @@ const confirmRoleSwitch = async () => {
                 {
                   label: (
                     <span className="flex items-center text-gray-800 p-1 text-sm">
-                      <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" /> Logout
+                      <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" /> <AutoTranslate>Logout</AutoTranslate>
                     </span>
                   ),
                   onClick: handleLogout,
                 },
               ]}
               onSelect={(item) => item.onClick && item.onClick()}
-              emptyMessage="No options available"
+              emptyMessage={<AutoTranslate>No options available</AutoTranslate>}
             />
           )}
         </div>
@@ -299,9 +316,11 @@ const confirmRoleSwitch = async () => {
         {showConfirmationPopup && (
           <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6 w-96 relative z-60">
-              <h2 className="text-lg font-semibold mb-4">Confirm Role Switch</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                <AutoTranslate>Confirm Role Switch</AutoTranslate>
+              </h2>
               <p className="text-gray-700 mb-6">
-                Are you sure you want to switch to the role:{" "}
+                <AutoTranslate>Are you sure you want to switch to the role:</AutoTranslate>{" "}
                 <strong>{targetRoleName}</strong>?
               </p>
               <div className="flex justify-end space-x-4">
@@ -309,7 +328,7 @@ const confirmRoleSwitch = async () => {
                   onClick={cancelRoleSwitch}
                   className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
                 >
-                  Cancel
+                  <AutoTranslate>Cancel</AutoTranslate>
                 </button>
                 <button
                   onClick={confirmRoleSwitch}
@@ -319,10 +338,10 @@ const confirmRoleSwitch = async () => {
                 >
                   {isConfSwitch ? (
                     <span className="flex items-center">
-                      <ImSpinner2 className="animate-spin mr-2" /> Switching...
+                      <ImSpinner2 className="animate-spin mr-2" /> <AutoTranslate>Switching...</AutoTranslate>
                     </span>
                   ) : (
-                    "Confirm"
+                    <AutoTranslate>Confirm</AutoTranslate>
                   )}
                 </button>
               </div>

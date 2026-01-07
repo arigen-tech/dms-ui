@@ -446,7 +446,7 @@ const Year = () => {
                   <td className="border p-2">{formatDate(year.createdOn)}</td>
                   <td className="border p-2">{formatDate(year.updatedOn)}</td>
                   <td className="border p-2">
-                    <AutoTranslate>{year.isActive ? 'Active' : 'Inactive'}</AutoTranslate>
+                    {year.isActive ? 'Active' : 'Inactive'}
                   </td>
                   <td className="border p-2 text-center">
                     <button

@@ -54,6 +54,7 @@ const fallbackTranslations = {
     'End Date': 'समाप्ति तिथि',
     'Search Query': 'खोज शब्द',
     'Import Data & File':' डेटा और फ़ाइल इम्पोर्ट करें',
+    'Export Data & File':'डेटा और फ़ाइल एक्सपोर्ट करें',
     'Mange Users Roles':'यूज़र रोल प्रबंधन',
     'User Report':'यूज़र रिपोर्ट',
     'Rejected Documents':'अस्वीकृत दस्तावेज़',

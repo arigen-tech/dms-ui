@@ -555,7 +555,7 @@ const FilesType = () => {
                   <td className="border p-2">{formatDate(fileType.createdOn)}</td>
                   <td className="border p-2">{formatDate(fileType.updatedOn)}</td>
                   <td className="border p-2">
-                    <AutoTranslate>{fileType.isActive ? 'Active' : 'Inactive'}</AutoTranslate>
+                   {fileType.isActive ? 'Active' : 'Inactive'}
                   </td>
                   <td className="border p-2 text-center">
                     <button 

@@ -521,7 +521,7 @@ const Role = () => {
                   <td className="border p-2">{formatDate(role.createdOn)}</td>
                   <td className="border p-2">{formatDate(role.updatedOn)}</td>
                   <td className="border p-2">
-                    <AutoTranslate>{role.isActive ? 'Active' : 'Inactive'}</AutoTranslate>
+                    {role.isActive ? 'Active' : 'Inactive'}
                   </td>
                   <td className="border p-2 text-center">
                     <button 
