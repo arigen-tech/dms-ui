@@ -19,6 +19,7 @@ import logo2 from "../Assets/logo2.jpg";
 import { jwtDecode } from "jwt-decode";
 import AutoTranslate from "../i18n/AutoTranslate";
 import { useLanguage } from "../i18n/LanguageContext";
+import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +38,8 @@ const LoginPage = () => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -53,12 +56,30 @@ const LoginPage = () => {
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Use language context
-  const { 
-    availableLanguages, 
-    isLoadingLanguages, 
+   const {
     currentLanguage,
-    changeLanguage 
+    defaultLanguage,
+    translationStatus,
+    isLoadingLanguages,
+    isTranslationNeeded,
+    availableLanguages,
+    changeLanguage,
+    translate,
+    preloadTranslationsForTerms
   } = useLanguage();
+
+   useEffect(() => {
+    console.log('🔍 DocumentManagement Component - Language Status:', {
+      currentLanguage,
+      defaultLanguage,
+      isTranslationNeeded: isTranslationNeeded(),
+      translationStatus,
+      availableLanguagesCount: availableLanguages.length,
+      pathname: window.location.pathname
+    });
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
+
+
   
   const [selectedLanguageId, setSelectedLanguageId] = useState(null);
   
@@ -768,7 +789,7 @@ const LoginPage = () => {
 
 
                   <div className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-1 shadow-lg z-10 whitespace-nowrap">
-                    <AutoTranslate>This website is running on Release Version 1.23, which is currently under testing.</AutoTranslate>
+                    <AutoTranslate>This website is running on Release Version 1.24, which is currently under testing.</AutoTranslate>
                   </div>
 
                 )}
@@ -840,7 +861,10 @@ const LoginPage = () => {
                     value={formData.username}
                     onChange={handleInputChange}
                     className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    placeholder="Enter your username"
+                     placeholder={getFallbackTranslation(
+                      'Enter your username',
+                      currentLanguage
+                    )}
                     required
                   />
                 </div>
@@ -860,7 +884,10 @@ const LoginPage = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                    placeholder="Enter your password"
+                    placeholder={getFallbackTranslation(
+                      'Enter your password',
+                      currentLanguage
+                    )}
                     required
                   />
                   <button

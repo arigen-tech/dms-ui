@@ -63,6 +63,9 @@ const fallbackTranslations = {
     'Enable':'सक्षम करें',
     'Disable':'अक्षम करें',
     'Document Management System':'दस्तावेज़ प्रबंधन प्रणाली',
+    'Enter your username': 'अपना उपयोगकर्ता नाम दर्ज करें',
+    'Enter your password': 'अपना पासवर्ड दर्ज करें',
+    'Please sign in to your account': 'कृपया अपने खाते में साइन इन करें',
     
 
 
