@@ -224,7 +224,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const handleSelectFromWaitingRoom = async (selectedDocuments, metadata = {}) => {
     if (!selectedDocuments || selectedDocuments.length === 0) {
-      showPopup(<AutoTranslate>No documents selected from Waiting Room.</AutoTranslate>, "warning");
+      showPopup("No documents selected from Waiting Room.", "warning");
       return;
     }
 
@@ -245,7 +245,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     if (isDuplicate) {
       showPopup(
-        <AutoTranslate>Version "{versionToUpload}" already exists for year "{formData.year?.name}". Please use a new version or select a different year.</AutoTranslate>,
+        `Version "${versionToUpload}" already exists for year "${formData.year?.name}". Please use a new version or select a different year.`,
         "warning"
       );
       return;
@@ -355,13 +355,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       });
 
       showPopup(
-        <AutoTranslate>{processedDocuments.length} file(s) added from Waiting Room! Files are ready to be saved.</AutoTranslate>,
+        `${processedDocuments.length} file(s) added from Waiting Room! Files are ready to be saved.`,
         "success"
       );
     } catch (error) {
-      console.error(<AutoTranslate>Error processing waiting room documents:</AutoTranslate>, error);
+      console.error("Error processing waiting room documents:", error);
       showPopup(
-        <AutoTranslate>Failed to process files from Waiting Room: {error.message || error}</AutoTranslate>,
+        `Failed to process files from Waiting Room: ${error.message || error}`,
         "error"
       );
     } finally {
@@ -422,12 +422,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       });
 
       if (isFolderDropped && !folderUpload) {
-        showPopup(<AutoTranslate>Please enable 'folderUpload' to upload folders.</AutoTranslate>, "warning");
+        showPopup("Please enable 'folderUpload' to upload folders", "warning");
         return;
       }
 
       if (!isFolderDropped && folderUpload) {
-        showPopup(<AutoTranslate>Please disable 'folderUpload' to upload files.</AutoTranslate>, "warning");
+        showPopup("Please disable 'folderUpload' to upload files.", "warning");
         return;
       }
 
@@ -644,7 +644,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const handleUploadDocument = async () => {
     if (selectedFiles.length === 0) {
-      showPopup(<AutoTranslate>Please select at least one file to upload.</AutoTranslate>, "warning");
+      showPopup("Please select at least one file to upload.", "warning");
       return;
     }
 
@@ -665,7 +665,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     if (isDuplicate) {
       showPopup(
-        <AutoTranslate>Version "{versionToUpload}" already exists for year "{formData.year?.name}". Please use a new version or select a different year.</AutoTranslate>,
+        `Version "${versionToUpload}" already exists for year "${formData.year?.name}". Please use a new version or select a different year.`,
         "warning"
       );
       return;
@@ -774,12 +774,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               fileInputRef.current.value = null;
             }
 
-            showPopup(<AutoTranslate>Files uploaded successfully!</AutoTranslate>, "success");
+            showPopup("Files uploaded successfully!", "success");
           }
 
           if (result.errors.length > 0) {
             showPopup(
-              <AutoTranslate>Some files failed to upload:</AutoTranslate> + "\n" + result.errors
+              "Some files failed to upload:" + "\n" + result.errors
                 .map((err) => `${err.file}: ${err.error}`)
                 .join("\n"),
               "error"
@@ -787,19 +787,19 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             setUnsportFile(true);
           }
         } else {
-          showPopup(<AutoTranslate>File upload failed: {xhr.statusText}</AutoTranslate>, "error");
+          showPopup("File upload failed: " + xhr.statusText, "error");
         }
       };
 
       xhr.onerror = () => {
         setIsUploading(false);
-        showPopup(<AutoTranslate>Upload failed due to a network error.</AutoTranslate>, "error");
+        showPopup("Upload failed due to a network error.", "error");
       };
 
       xhr.onabort = () => {
         setIsUploading(false);
         setUploadController(null);
-        showPopup(<AutoTranslate>Upload has been canceled.</AutoTranslate>, "warning");
+        showPopup("Upload has been canceled.", "warning");
       };
 
       controller.signal.addEventListener("abort", () => {
@@ -809,7 +809,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       xhr.send(uploadData);
     } catch (error) {
       setIsUploading(false);
-      showPopup(<AutoTranslate>File upload failed: {error.message}</AutoTranslate>, "error");
+      showPopup("File upload failed: " + error.message, "error");
     }
   };
 
@@ -818,7 +818,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       uploadController.abort();
       setUploadController(null);
       setIsUploading(false);
-      showPopup(<AutoTranslate>Upload has been canceled.</AutoTranslate>, "warning");
+      showPopup("Upload has been canceled.", "warning");
     }
   };
 
@@ -864,13 +864,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const handleSaveEdit = async () => {
     const userId = localStorage.getItem("userId");
     if (!userId || !token) {
-      showPopup(<AutoTranslate>User not logged in. Please log in again.</AutoTranslate>, "error");
+      showPopup("User not logged in. Please log in again.", "error");
       return;
     }
 
     const { fileNo, title, subject, category } = formData;
     if (!fileNo || !title || !subject || !category || uploadedFilePath.length === 0) {
-      showPopup(<AutoTranslate>Please fill in all required fields and upload files.</AutoTranslate>, "error");
+      showPopup("Please fill in all required fields and upload files.", "error");
       return;
     }
 
@@ -920,17 +920,17 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       const result = await response.json();
 
       if (!response.ok || result?.status === 409 || result?.message?.toLowerCase() !== "success") {
-        const warningMessage = result?.response?.msg || result?.message || <AutoTranslate>Unknown error occurred</AutoTranslate>;
-        showPopup(<AutoTranslate>Document update failed: {warningMessage}</AutoTranslate>, "warning");
+        const warningMessage = result?.response?.msg || result?.message || "Unknown error occurred";
+        showPopup(`Document update failed: ${warningMessage}`, "warning");
         return;
       }
 
-      showPopup(result?.response?.msg || <AutoTranslate>Document updated successfully!</AutoTranslate>, "success");
+      showPopup(result?.response?.msg || "Document updated successfully!", "success");
       resetEditForm();
       fetchDocuments();
     } catch (error) {
-      console.error(<AutoTranslate>Error updating document:</AutoTranslate>, error);
-      showPopup(<AutoTranslate>Document update failed: {error.message}</AutoTranslate>, "error");
+      console.error("Error updating document:", error);
+      showPopup("Document update failed: " + error.message, "error");
     } finally {
       setBProcess(false);
     }
@@ -981,7 +981,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       formData.uploadedFilePaths.length === 0
     ) {
       showPopup(
-        <AutoTranslate>Please fill in all the required fields and upload a file.</AutoTranslate>,
+        "Please fill in all the required fields and upload a file.",
         "error"
       );
       return;
@@ -1036,12 +1036,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       if (!response.ok || result?.status === 409) {
         const errorMessage =
-          result?.response?.msg || result?.message || <AutoTranslate>Unknown error</AutoTranslate>;
-        showPopup(<AutoTranslate>Document save failed: {errorMessage}</AutoTranslate>, "warning");
+          result?.response?.msg || result?.message || "Unknown error";
+        showPopup(`Document save failed: ${errorMessage}`, "warning");
         return;
       }
 
-      showPopup(result?.response?.msg || <AutoTranslate>Document saved successfully</AutoTranslate>, "success");
+      showPopup(result?.response?.msg || "Document saved successfully", "success");
 
       setFormData({
         fileNo: "",
@@ -1059,8 +1059,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       fetchDocuments();
 
     } catch (error) {
-      console.error(<AutoTranslate>Error saving document:</AutoTranslate>, error);
-      showPopup(<AutoTranslate>Document save failed: {error.message}</AutoTranslate>, "warning");
+      console.error("Error saving document:", error);
+      showPopup("Document save failed: " + error.message, "warning");
     } finally {
       setBProcess(false);
     }
@@ -1104,9 +1104,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       return paths;
     } catch (error) {
-      console.error(<AutoTranslate>Error in fetchPaths:</AutoTranslate>, error);
+      console.error("Error in fetchPaths:", error);
       showPopup(
-        <AutoTranslate>Failed to fetch document paths: {error.message || "Unknown error"}</AutoTranslate>,
+        `Failed to fetch document paths: ${error.message || "Unknown error"}`,
         "error"
       );
       return null;
@@ -1392,7 +1392,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     placeholder={getFallbackTranslation(
                       'Enter File No.',
                       currentLanguage
-                    )}
+                    )||'Enter File No.'}
                     name="fileNo"
                     value={formData.fileNo}
                     onChange={(e) => setFormData({ ...formData, fileNo: e.target.value })}
@@ -1412,7 +1412,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     placeholder={getFallbackTranslation(
                       'Enter Title',
                       currentLanguage
-                    )}
+                    )||'Enter Title'}
                     name="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -1432,7 +1432,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     placeholder={getFallbackTranslation(
                       'Enter Subject',
                       currentLanguage
-                    )}
+                    )||'Enter Subject'}
                     name="subject"
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
@@ -1507,7 +1507,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     placeholder={getFallbackTranslation(
                       'Enter Version',
                       currentLanguage
-                    )}
+                    )||'Enter Version'}
                     name="version"
                     value={formData.version}
                     onChange={(e) =>

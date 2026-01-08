@@ -864,7 +864,7 @@ const LoginPage = () => {
                      placeholder={getFallbackTranslation(
                       'Enter your username',
                       currentLanguage
-                    )}
+                    )|| 'Enter your username'}
                     required
                   />
                 </div>
@@ -887,7 +887,7 @@ const LoginPage = () => {
                     placeholder={getFallbackTranslation(
                       'Enter your password',
                       currentLanguage
-                    )}
+                    )|| 'Enter your password'}
                     required
                   />
                   <button

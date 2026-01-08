@@ -90,7 +90,7 @@ const ArchiveUpload = () => {
       }
     } catch (error) {
       console.error("Error fetching user details:", error);
-      showPopup(<AutoTranslate>Failed to fetch user details</AutoTranslate>, "error");
+      showPopup("Failed to fetch user details", "error");
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +107,7 @@ const ArchiveUpload = () => {
       setBranchOptions(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
-      showPopup(<AutoTranslate>Failed to fetch branches</AutoTranslate>, 'error');
+      showPopup("Failed to fetch branches", 'error');
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +129,7 @@ const ArchiveUpload = () => {
       setDepartmentOptions(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
-      showPopup(<AutoTranslate>Failed to fetch departments</AutoTranslate>, 'error');
+      showPopup("Failed to fetch departments", 'error');
     }
   };
 
@@ -150,16 +150,16 @@ const ArchiveUpload = () => {
       if (isValidZip) {
         setSelectedFile(file);
       } else {
-        showPopup(<AutoTranslate>Please select a valid ZIP file</AutoTranslate>, 'error');
+        showPopup("Please select a valid ZIP file", 'error');
       }
     } else {
-      showPopup(<AutoTranslate>No file selected</AutoTranslate>, 'error');
+      showPopup("No file selected", 'error');
     }
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      showPopup(<AutoTranslate>Please select a file to upload</AutoTranslate>, 'error');
+      showPopup("Please select a file to upload", 'error');
       return;
     }
 
@@ -192,12 +192,12 @@ const ArchiveUpload = () => {
         }
       });
 
-      showPopup(<AutoTranslate>Archive restored successfully</AutoTranslate>, 'success');
+      showPopup("Archive restored successfully", 'success');
       setSelectedFile(null);
       setUploadProgress(0);
     } catch (error) {
       console.error('Error restoring archive:', error);
-      showPopup(error.response?.data?.message || <AutoTranslate>Failed to restore archive</AutoTranslate>, 'error');
+      showPopup(error.response?.data?.message || "Failed to restore archive", 'error');
     } finally {
       setUploading(false);
     }
@@ -375,7 +375,7 @@ const ArchiveUpload = () => {
                     if (file.name.toLowerCase().endsWith('.zip')) {
                       setSelectedFile(file);
                     } else {
-                      showPopup(<AutoTranslate>Please select a valid ZIP file</AutoTranslate>, 'error');
+                      showPopup("Please select a valid ZIP file", 'error');
                     }
                   }
                 }}

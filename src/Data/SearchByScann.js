@@ -422,7 +422,7 @@ const SearchByScan = () => {
       setOpeningFiles(prev => ({ ...prev, [file.id]: true }))
 
       if (!file?.docName) {
-        showPopup(<AutoTranslate>Document name is missing. Please try again.</AutoTranslate>)
+        showPopup("Document name is missing. Please try again.")
         return
       }
 
@@ -451,7 +451,7 @@ const SearchByScan = () => {
       setIsModalOpen(true)
     } catch (error) {
       console.error("Error:", error)
-      showPopup(<AutoTranslate>Failed to fetch or preview the file.</AutoTranslate>, "error")
+      showPopup("Failed to fetch or preview the file.", "error")
     } finally {
       setOpeningFiles(prev => ({ ...prev, [file.id]: false }))
     }
@@ -490,7 +490,7 @@ const SearchByScan = () => {
       URL.revokeObjectURL(link.href)
     } catch (error) {
       console.error("Download error:", error)
-      showPopup(<AutoTranslate>Failed to download the file.</AutoTranslate>, "error")
+      showPopup("Failed to download the file.", "error")
     }
   }
 
