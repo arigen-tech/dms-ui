@@ -1,6 +1,8 @@
 import React, { Suspense } from "react";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { MenuProvider } from "./Components/MenuProvider";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import ChatBotPopup from "./Components/ChatBotPopup";
 import PageNotFound from "./Pages/PageNotFound";
@@ -43,7 +45,8 @@ const Scanner = React.lazy(() => import("./Pages/Scanner"));
 const IDCardGenerator = React.lazy(() => import("./Pages/IDCardGenerator"));
 const FilesType = React.lazy(() => import("./Pages/FilesTypes"));
 const RetentionPolicypage = React.lazy(() => import("./Pages/RetentionPolicypage"));
-const ArchivalDashboard = React.lazy(() => import("./Pages/ArchivalDashboard"));
+// const ArchivalDashboard = React.lazy(() => import("./Pages/ArchivalDashboard"));
+const ArchivalDashboardP5 = React.lazy(() => import("./Pages/ArchiveDashboardP5"));
 const FileComparepage = React.lazy(() => import("./Pages/FileComparepage"));
 const ManageUserApplications = React.lazy(() => import("./Pages/ManageUserApplications"));
 const TemplateMasters = React.lazy(() => import("./Pages/TemplateMasters"));
@@ -67,6 +70,15 @@ function App() {
       <LanguageProvider>
         <Router>
           <ChatBotPopup />
+
+          <ToastContainer
+            position="bottom-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            closeOnClick
+            pauseOnHover
+            draggable
+          />
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
               {/* Public Routes */}
@@ -114,7 +126,9 @@ function App() {
                 <Route path="/idcard" element={<IDCardGenerator />} />
                 <Route path="/create-fileType" element={<FilesType />} />
                 <Route path="/retentionpolicy" element={<RetentionPolicypage />} />
-                <Route path="/archivalDashboard" element={<ArchivalDashboard />} />
+                {/* <Route path="/archivalDashboard" element={<ArchivalDashboard />} /> */}
+                <Route path="/archivalDashboard" element={<ArchivalDashboardP5 />} />
+
                 <Route path="/FileCompare" element={<FileComparepage />} />
                 <Route path="/ManageUserApplications" element={<ManageUserApplications />} />
                 <Route path="/TemplateMasters" element={<TemplateMasters />} />
