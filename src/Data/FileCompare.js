@@ -15,34 +15,31 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid"
 import axios from "axios"
+import { useLocation } from 'react-router-dom'
 
 import { DOCUMENTHEADER_API, API_HOST } from "../API/apiConfig"
-import LoadingComponent from '../Components/LoadingComponent';
-import Popup from '../Components/Popup';
-import AutoTranslate from '../i18n/AutoTranslate';
-import { useLanguage } from '../i18n/LanguageContext';
-import { translateInstant } from '../i18n/autoTranslator';
-
+import LoadingComponent from '../Components/LoadingComponent'
+import Popup from '../Components/Popup'
+import AutoTranslate from '../i18n/AutoTranslate'
+import { useLanguage } from '../i18n/LanguageContext'
+import { translateInstant } from '../i18n/autoTranslator'
 
 const tokenKey = "tokenKey"
 
 const imageExtensions = ["png", "jpg", "jpeg", "gif", "bmp", "svg", "tiff", "webp", "heic", "heif"]
 const textExtensions = ["txt", "csv", "log", "xml", "html", "htm", "js", "jsx", "ts",
   "css", "scss", "json", "md", "yml", "yaml", "java", "py", "cpp",
-  "c", "h", "php", "rb", "go", "rs", "swift", "kt"];
-const textMimes = ["text/", "application/json", "application/xml", "application/javascript"];
+  "c", "h", "php", "rb", "go", "rs", "swift", "kt"]
+const textMimes = ["text/", "application/json", "application/xml", "application/javascript"]
 
 function getExtension(nameOrType) {
   if (!nameOrType) return ""
   const lower = nameOrType.toLowerCase()
-  // Try to extract extension from filename-like input
   if (lower.includes(".")) {
     const ext = lower.split(".").pop() || ""
     return ext.replace(/\?.*$/, "").replace(/#.*$/, "")
   }
-  // If it's already an extension-like token (e.g., "png"), return as-is
   if (/^[a-z0-9]{2,10}$/.test(lower)) return lower
-  // From content type like image/png
   if (lower.includes("/")) {
     return lower.split("/").pop() || ""
   }
@@ -65,7 +62,6 @@ function isTextFile(fileType, contentType, fileName) {
   return isTextExt || isTextMime
 }
 
-// Function to extract filename by removing the first part (before first underscore)
 const extractFileName = (fullName) => {
   if (!fullName) return "Unknown"
   const fileNameParts = fullName.split("_")
@@ -82,7 +78,7 @@ const FileCompare = () => {
     changeLanguage,
     translate,
     preloadTranslationsForTerms
-  } = useLanguage();
+  } = useLanguage()
 
   // Debug log
   useEffect(() => {
@@ -93,22 +89,22 @@ const FileCompare = () => {
       translationStatus,
       availableLanguagesCount: availableLanguages.length,
       pathname: window.location.pathname
-    });
-  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
+    })
+  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages])
 
+  // ============================================================
+  // STATE DECLARATIONS
+  // ============================================================
   const [documentHeaders, setDocumentHeaders] = useState([])
   const [firstFileDocuments, setFirstFileDocuments] = useState([])
   const [secondFileDocuments, setSecondFileDocuments] = useState([])
   const [selectedFirstFileNo, setSelectedFirstFileNo] = useState("")
   const [selectedSecondFileNo, setSelectedSecondFileNo] = useState("")
-
   const [selectedFirstFileIds, setSelectedFirstFileIds] = useState([])
   const [selectedSecondFileIds, setSelectedSecondFileIds] = useState([])
-
   const [comparisonResult, setComparisonResult] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [popupMessage, setPopupMessage] = useState(null);
-
+  const [popupMessage, setPopupMessage] = useState(null)
   const [isComparing, setIsComparing] = useState(false)
   const [showComparisonModal, setShowComparisonModal] = useState(false)
   const [fileUrls, setFileUrls] = useState({
@@ -117,25 +113,281 @@ const FileCompare = () => {
   })
   const [isLoadingFiles, setIsLoadingFiles] = useState(false)
   const [activeTab, setActiveTab] = useState("preview")
-
   const [warningMessage, setWarningMessage] = useState("")
 
+  // ============================================================
+  // NEW STATE DECLARATIONS
+  // ============================================================
   const [categoryOptions, setCategoryOptions] = useState([])
   const [firstSearchTerm, setFirstSearchTerm] = useState("")
   const [firstSelectedCategory, setFirstSelectedCategory] = useState("")
   const [firstShowDropdown, setFirstShowDropdown] = useState(false)
-
   const [secondSearchTerm, setSecondSearchTerm] = useState("")
   const [secondSelectedCategory, setSecondSelectedCategory] = useState("")
   const [secondShowDropdown, setSecondShowDropdown] = useState(false)
 
   const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null
+  const location = useLocation()
 
+  // ============================================================
+  // EFFECT 1: Initialize on mount
+  // ============================================================
   useEffect(() => {
+    console.log('📍 FileCompare Component Mounted')
     fetchAllDocumentHeaders()
     fetchCategory()
   }, [])
 
+  // ============================================================
+  // EFFECT 2: Handle preselection from navigation
+  // ============================================================
+
+
+ // In FileCompare.js - Update EFFECT 2 to use correct APIs
+
+useEffect(() => {
+  console.log('🔍 Location state changed:', location.state)
+
+  if (!location.state?.preselectedGroup) {
+    return
+  }
+
+  const group = location.state.preselectedGroup
+  console.log('✅ Detected preselectedGroup with detail IDs:', {
+    originalDetailId: group.originalDetailId,
+    duplicateDetailId: group.duplicateFiles?.[0]?.duplicateDetailId
+  })
+
+  // We need to fetch the header information from these detail IDs
+  const fetchHeaderInfo = async () => {
+    try {
+      console.log('🔍 Trying to fetch document details for:', {
+        originalId: group.originalDetailId,
+        duplicateId: group.duplicateFiles?.[0]?.duplicateDetailId
+      })
+
+      // OPTION 1: Try to get document by document name (since we have filename)
+      if (group.originalFileName) {
+        try {
+          const response = await axios.get(
+            `${DOCUMENTHEADER_API}/findByDocName/${encodeURIComponent(group.originalFileName)}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          
+          console.log('📄 Original document by name response:', response.data)
+          
+          if (response.data && response.data.response) {
+            const header = response.data.response;
+            console.log('✅ Found original header:', {
+              id: header.id,
+              fileNo: header.fileNo,
+              title: header.title
+            })
+            
+            if (header.fileNo && !selectedFirstFileNo) {
+              console.log('✅ Setting first file to:', header.fileNo)
+              setSelectedFirstFileNo(header.fileNo)
+            }
+          }
+        } catch (nameError) {
+          console.log('❌ Could not find by name, trying other methods')
+        }
+      }
+
+      // OPTION 2: Try to get document details by ID (detail ID)
+      try {
+        // First, get the document details to find the header ID
+        const originalDetailsResponse = await axios.get(
+          `${DOCUMENTHEADER_API}/byDocumentHeader/${group.originalDetailId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        
+        console.log('📄 Original document details response:', originalDetailsResponse.data)
+        
+        // The response is an array of document details
+        if (originalDetailsResponse.data && originalDetailsResponse.data.length > 0) {
+          const docDetail = originalDetailsResponse.data[0];
+          console.log('📄 Document detail:', docDetail)
+          
+          // If we have documentHeader in the response
+          if (docDetail.documentHeader && docDetail.documentHeader.fileNo) {
+            if (!selectedFirstFileNo) {
+              console.log('✅ Setting first file from documentHeader:', docDetail.documentHeader.fileNo)
+              setSelectedFirstFileNo(docDetail.documentHeader.fileNo)
+            }
+          }
+        }
+      } catch (detailError) {
+        console.log('❌ Could not get document details:', detailError.message)
+      }
+
+      // OPTION 3: If still not found, try to search in all document headers
+      if (!selectedFirstFileNo) {
+        console.log('🔍 Falling back to manual search in document headers')
+        // We'll let the normal flow handle it
+      }
+
+      // Handle duplicate file
+      if (group.duplicateFiles?.[0]?.duplicateFileName && !selectedSecondFileNo) {
+        try {
+          const duplicateResponse = await axios.get(
+            `${DOCUMENTHEADER_API}/findByDocName/${encodeURIComponent(group.duplicateFiles[0].duplicateFileName)}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          
+          console.log('📄 Duplicate document by name response:', duplicateResponse.data)
+          
+          if (duplicateResponse.data && duplicateResponse.data.response) {
+            const header = duplicateResponse.data.response;
+            console.log('✅ Found duplicate header:', {
+              id: header.id,
+              fileNo: header.fileNo
+            })
+            
+            if (header.fileNo) {
+              console.log('✅ Setting second file to:', header.fileNo)
+              setSelectedSecondFileNo(header.fileNo)
+            }
+          }
+        } catch (dupError) {
+          console.log('❌ Could not find duplicate by name')
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error fetching document details:', error)
+    }
+  }
+
+  // Only fetch if we have document headers loaded
+  if (documentHeaders.length > 0) {
+    fetchHeaderInfo()
+  }
+}, [location.state, documentHeaders])
+
+  // ============================================================
+  // EFFECT 3: Fetch first file documents when selectedFirstFileNo changes
+  // ============================================================
+  useEffect(() => {
+    if (!selectedFirstFileNo) return
+
+    console.log('📄 Fetching documents for first file:', selectedFirstFileNo)
+
+    const doFetch = async () => {
+      const docs = await fetchDocumentsByFileNo(selectedFirstFileNo, true)
+      console.log('📋 First file documents loaded:', docs.length, docs)
+    }
+
+    doFetch()
+  }, [selectedFirstFileNo])
+
+  useEffect(() => {
+    if (selectedFirstFileNo && firstFileDocuments.length > 0) {
+      console.log('🔍 DEBUG: First file documents structure:')
+      console.log('Number of documents:', firstFileDocuments.length)
+      console.log('First document keys:', Object.keys(firstFileDocuments[0]))
+      console.log('First document:', firstFileDocuments[0])
+      console.log('---')
+      console.log('Looking for originalDocumentId:', location.state?.preselectedGroup?.originalDocumentId)
+      console.log('Document detailsIds:', firstFileDocuments.map(d => ({ detailsId: d.detailsId, id: d.id, docName: d.docName })))
+    }
+  }, [selectedFirstFileNo, firstFileDocuments, location.state])
+
+  // ============================================================
+  // EFFECT 4: Auto-select first file's document
+  // ============================================================
+
+  useEffect(() => {
+    if (firstFileDocuments.length === 0 || !location.state?.preselectedGroup) return
+
+    const group = location.state.preselectedGroup
+
+    console.log('🎯 EFFECT 4: Auto-selecting first file document')
+    console.log('First file documents:', firstFileDocuments)
+    console.log('Looking for original file:', group.originalFileName)
+
+    // Find document by filename
+    if (group.originalFileName && selectedFirstFileIds.length === 0) {
+      const originalDoc = firstFileDocuments.find(doc =>
+        doc.fileName === group.originalFileName ||
+        doc.docName === group.originalFileName
+      )
+
+      if (originalDoc && originalDoc.detailsId) {
+        console.log('✅ Found original document by filename:', {
+          detailsId: originalDoc.detailsId,
+          fileName: originalDoc.docName || originalDoc.fileName
+        })
+        setSelectedFirstFileIds([originalDoc.detailsId])
+      } else {
+        // Fallback: select first document
+        console.log('⚠️ Could not find by filename, selecting first document')
+        if (firstFileDocuments.length > 0 && firstFileDocuments[0].detailsId) {
+          setSelectedFirstFileIds([firstFileDocuments[0].detailsId])
+        }
+      }
+    }
+  }, [firstFileDocuments, location.state, selectedFirstFileIds])
+
+
+  // ============================================================
+  // EFFECT 5: Fetch second file documents when selectedSecondFileNo changes
+  // ============================================================
+  useEffect(() => {
+    if (!selectedSecondFileNo) return
+
+    console.log('📄 Fetching documents for second file:', selectedSecondFileNo)
+
+    const doFetch = async () => {
+      const docs = await fetchDocumentsByFileNo(selectedSecondFileNo, false)
+      console.log('📋 Second file documents loaded:', docs.length, docs)
+    }
+
+    doFetch()
+  }, [selectedSecondFileNo])
+
+  // ============================================================
+  // EFFECT 6: Auto-select second file's document
+  // ============================================================
+
+  useEffect(() => {
+    if (secondFileDocuments.length === 0 || !location.state?.preselectedGroup) return
+
+    const group = location.state.preselectedGroup
+
+    console.log('🎯 EFFECT 6: Auto-selecting second file document')
+    console.log('Second file documents:', secondFileDocuments)
+
+    // Find duplicate document by filename
+    if (group.duplicateFiles?.[0]?.duplicateFileName && selectedSecondFileIds.length === 0) {
+      const duplicateDoc = secondFileDocuments.find(doc =>
+        doc.fileName === group.duplicateFiles[0].duplicateFileName ||
+        doc.docName === group.duplicateFiles[0].duplicateFileName
+      )
+
+      if (duplicateDoc && duplicateDoc.detailsId) {
+        console.log('✅ Found duplicate document by filename:', {
+          detailsId: duplicateDoc.detailsId,
+          fileName: duplicateDoc.docName || duplicateDoc.fileName
+        })
+        setSelectedSecondFileIds([duplicateDoc.detailsId])
+        console.log('🎉 PRESELECTION COMPLETE! Both documents auto-selected.')
+
+        // Clean up location state
+        window.history.replaceState({}, document.title)
+      } else {
+        // Fallback: select first document
+        console.log('⚠️ Could not find duplicate by filename, selecting first document')
+        if (secondFileDocuments.length > 0 && secondFileDocuments[0].detailsId) {
+          setSelectedSecondFileIds([secondFileDocuments[0].detailsId])
+        }
+      }
+    }
+  }, [secondFileDocuments, location.state, selectedSecondFileIds])
+
+  // ============================================================
+  // EFFECT 7: Clear warning message after 5 seconds
+  // ============================================================
   useEffect(() => {
     if (warningMessage) {
       const timer = setTimeout(() => setWarningMessage(""), 5000)
@@ -172,6 +424,9 @@ const FileCompare = () => {
     }
   }
 
+  // ============================================================
+  // UPDATED fetchDocumentsByFileNo FUNCTION
+  // ============================================================
   const fetchDocumentsByFileNo = async (fileNo, isFirst = true) => {
     try {
       const response = await axios.get(`${DOCUMENTHEADER_API}/getFile/${fileNo}`, {
@@ -179,27 +434,30 @@ const FileCompare = () => {
       })
 
       const data = response.data || {}
+      const fileList = data.fileList || []
+
+      console.log(`✅ Received ${fileList.length} documents for ${isFirst ? 'first' : 'second'} file`)
 
       if (isFirst) {
-        setFirstFileDocuments(data.fileList || [])
+        setFirstFileDocuments(fileList)
         setSelectedFirstFileIds([])
       } else {
-        setSecondFileDocuments(data.fileList || [])
+        setSecondFileDocuments(fileList)
         setSelectedSecondFileIds([])
       }
 
       setWarningMessage("")
+      return fileList
     } catch (error) {
       console.error("Error fetching documents:", error)
       showPopup("Failed to fetch documents", "error")
+      return []
     }
   }
 
-  // Fixed filtering logic - correctly handles the category structure from your API response
   const filteredFirstFileHeaders = useMemo(() => {
     let filtered = documentHeaders
 
-    // Apply search filter
     if (firstSearchTerm) {
       const searchLower = firstSearchTerm.toLowerCase()
       filtered = filtered.filter(header =>
@@ -209,14 +467,11 @@ const FileCompare = () => {
       )
     }
 
-    // Apply category filter - FIXED: Check both category and categoryMaster structures
     if (firstSelectedCategory) {
       filtered = filtered.filter(header => {
-        // Check if header has categoryMaster and matches selected category
         if (header.categoryMaster && header.categoryMaster.id) {
           return header.categoryMaster.id.toString() === firstSelectedCategory.toString()
         }
-        // Fallback to category if categoryMaster doesn't exist
         if (header.category && header.category.id) {
           return header.category.id.toString() === firstSelectedCategory.toString()
         }
@@ -230,7 +485,6 @@ const FileCompare = () => {
   const filteredSecondFileHeaders = useMemo(() => {
     let filtered = documentHeaders
 
-    // Apply search filter
     if (secondSearchTerm) {
       const searchLower = secondSearchTerm.toLowerCase()
       filtered = filtered.filter(header =>
@@ -240,14 +494,11 @@ const FileCompare = () => {
       )
     }
 
-    // Apply category filter - FIXED: Check both category and categoryMaster structures
     if (secondSelectedCategory) {
       filtered = filtered.filter(header => {
-        // Check if header has categoryMaster and matches selected category
         if (header.categoryMaster && header.categoryMaster.id) {
           return header.categoryMaster.id.toString() === secondSelectedCategory.toString()
         }
-        // Fallback to category if categoryMaster doesn't exist
         if (header.category && header.category.id) {
           return header.category.id.toString() === secondSelectedCategory.toString()
         }
@@ -263,12 +514,10 @@ const FileCompare = () => {
     const currentSecondCount = selectedSecondFileIds.length
     const totalSelected = currentFirstCount + currentSecondCount
 
-    // Get the file being selected
     const selectedFile = isFirst
       ? firstFileDocuments.find(doc => doc.detailsId === fileId)
       : secondFileDocuments.find(doc => doc.detailsId === fileId);
 
-    // If there's already one file selected, check compatibility
     if (totalSelected === 1) {
       let existingFile;
 
@@ -366,7 +615,6 @@ const FileCompare = () => {
     return <DocumentIcon className="h-5 w-5 text-gray-500" />
   }
 
-  // Direct DOCX Viewer Component
   const DocxViewer = ({ fileUrl, fileName }) => {
     const [htmlContent, setHtmlContent] = useState("");
     const [loading, setLoading] = useState(true);
@@ -379,7 +627,6 @@ const FileCompare = () => {
           const response = await fetch(fileUrl);
           const arrayBuffer = await response.arrayBuffer();
 
-          // Import mammoth dynamically
           const mammoth = await import('mammoth');
           const result = await mammoth.default.convertToHtml({ arrayBuffer });
 
@@ -448,7 +695,6 @@ const FileCompare = () => {
     const fileName = file?.fileName || file?.docName || ""
     const extension = getExtension(fileName)
 
-    // For PDF files - show directly in iframe
     if (contentType.includes("pdf") || extension === "pdf") {
       return (
         <iframe
@@ -459,13 +705,11 @@ const FileCompare = () => {
         />
       )
     }
-    // For DOCX files - use our custom viewer
     else if (contentType.includes("word") || contentType.includes("docx") || extension === "docx") {
       return (
         <DocxViewer fileUrl={fileData.url} fileName={fileName} />
       )
     }
-    // For images - show directly
     else if (contentType.includes("image") || imageExtensions.includes(extension)) {
       return (
         <div className="flex items-center justify-center h-full bg-gray-50">
@@ -477,7 +721,6 @@ const FileCompare = () => {
         </div>
       )
     }
-    // For videos - show directly
     else if (contentType.includes("video") || ["mp4", "avi", "mov", "wmv", "flv"].includes(extension)) {
       return (
         <div className="flex items-center justify-center h-full bg-gray-50">
@@ -488,7 +731,6 @@ const FileCompare = () => {
         </div>
       )
     }
-    // For audio - show directly
     else if (contentType.includes("audio") || ["mp3", "wav", "ogg", "aac"].includes(extension)) {
       return (
         <div className="flex items-center justify-center h-full bg-gray-50">
@@ -503,7 +745,6 @@ const FileCompare = () => {
         </div>
       )
     }
-    // For other file types - use iframe
     else {
       return (
         <iframe
@@ -516,7 +757,6 @@ const FileCompare = () => {
     }
   }
 
-  // Add this function - it's referenced but missing
   const areFilesComparable = (file1, file2) => {
     if (!file1 || !file2) return false;
 
@@ -544,17 +784,13 @@ const FileCompare = () => {
     const ext1 = getFileExtension(file1);
     const ext2 = getFileExtension(file2);
 
-    // Get content type categories
     const contentType1 = getContentTypeCategory(file1.fileType);
     const contentType2 = getContentTypeCategory(file2.fileType);
 
-    // If both have the same extension, they are comparable
     if (ext1 && ext2 && ext1 === ext2) return true;
 
-    // If extensions are different but content type categories match, they are comparable
     if (contentType1 !== "unknown" && contentType1 === contentType2) return true;
 
-    // Specific cases for office documents
     const officeExtensions = {
       doc: "docx",
       docx: "docx",
@@ -570,7 +806,6 @@ const FileCompare = () => {
     return category1 === category2;
   };
 
-  // Update the compareFiles function with validation
   const compareFiles = async () => {
     const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length
     if (totalSelected !== 2) {
@@ -578,7 +813,6 @@ const FileCompare = () => {
       return
     }
 
-    // Find the selected files
     let firstFile, secondFile;
 
     if (selectedFirstFileIds.length === 2) {
@@ -592,7 +826,6 @@ const FileCompare = () => {
       secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
     }
 
-    // Validate file types
     if (!areFilesComparable(firstFile, secondFile)) {
       const fileName1 = firstFile?.fileName || firstFile?.docName || "File 1";
       const fileName2 = secondFile?.fileName || secondFile?.docName || "File 2";
@@ -640,7 +873,6 @@ const FileCompare = () => {
           firstFileDocuments.find((doc) => doc.detailsId === secondFileId) ||
           secondFileDocuments.find((doc) => doc.detailsId === secondFileId)
 
-        // Use the same approach as in ApprovedDoc
         const [firstFileData, secondFileData] = await Promise.all([
           getFilePreviewUrl(file1),
           getFilePreviewUrl(file2),
@@ -844,13 +1076,10 @@ const FileCompare = () => {
     return !!(leftIsText && rightIsText && fileUrls.firstFile?.url && fileUrls.secondFile?.url)
   }, [comparisonResult, fileUrls.firstFile, fileUrls.secondFile])
 
-
-  // Replace your FileSearchDropdown component with this FIXED version
   const FileSearchDropdown = ({ isFirst = true }) => {
     const dropdownRef = useRef(null)
     const inputRef = useRef(null)
 
-    // Determine which state to use
     const searchTerm = isFirst ? firstSearchTerm : secondSearchTerm
     const setSearchTerm = isFirst ? setFirstSearchTerm : setSecondSearchTerm
     const selectedCategory = isFirst ? firstSelectedCategory : secondSelectedCategory
@@ -860,14 +1089,12 @@ const FileCompare = () => {
     const selectedFileNo = isFirst ? selectedFirstFileNo : selectedSecondFileNo
     const filteredHeaders = isFirst ? filteredFirstFileHeaders : filteredSecondFileHeaders
 
-    // Keep input focused while typing - THIS IS THE CRITICAL FIX
     useEffect(() => {
       if (showDropdown && inputRef.current && document.activeElement !== inputRef.current) {
         inputRef.current.focus()
       }
     }, [showDropdown, searchTerm])
 
-    // Close dropdown on outside click
     useEffect(() => {
       const handleClickOutside = (event) => {
         if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -881,7 +1108,6 @@ const FileCompare = () => {
       }
     }, [showDropdown, setShowDropdown])
 
-    // Handle input change
     const handleInputChange = (e) => {
       const value = e.target.value
       setSearchTerm(value)
@@ -890,16 +1116,13 @@ const FileCompare = () => {
       }
     }
 
-    // Handle input focus
     const handleInputFocus = () => {
       setShowDropdown(true)
     }
 
-    // Handle category change
     const handleCategoryChange = (e) => {
       setSelectedCategory(e.target.value)
       setShowDropdown(true)
-      // Keep focus on input after changing category
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
@@ -907,7 +1130,6 @@ const FileCompare = () => {
       }, 0)
     }
 
-    // Handle file selection
     const handleSelectFile = (fileNo) => {
       if (isFirst) {
         setSelectedFirstFileNo(fileNo)
@@ -927,7 +1149,6 @@ const FileCompare = () => {
       setShowDropdown(false)
     }
 
-    // Clear selection
     const clearSelection = () => {
       if (isFirst) {
         setSelectedFirstFileNo("")
@@ -945,34 +1166,29 @@ const FileCompare = () => {
       setShowDropdown(false)
     }
 
-    // Get category name
     const getCategoryName = (header) => {
       return header.categoryMaster?.name || header.category?.name || "Unknown Category"
     }
 
-    // Handle Enter key
     const handleKeyDown = (e) => {
       if (e.key === 'Enter' && filteredHeaders.length > 0) {
         handleSelectFile(filteredHeaders[0].fileNo)
       }
     }
 
-    // Prevent dropdown from stealing focus
     const handleDropdownMouseDown = (e) => {
       e.preventDefault()
     }
 
     return (
       <div className="relative w-full" ref={dropdownRef}>
-        {/* Search and Category Row */}
         <div className="flex gap-2 mb-2">
-          {/* Search Input */}
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
-              placeholder={translateInstant('Select File',currentLanguage)}
+              placeholder={translateInstant('Select File', currentLanguage)}
               value={searchTerm}
               onChange={handleInputChange}
               onFocus={handleInputFocus}
@@ -990,7 +1206,6 @@ const FileCompare = () => {
             )}
           </div>
 
-          {/* Category Filter */}
           <select
             value={selectedCategory}
             onChange={handleCategoryChange}
@@ -1005,7 +1220,6 @@ const FileCompare = () => {
           </select>
         </div>
 
-        {/* Selected File Badge */}
         {selectedFileNo && (
           <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
             <div>
@@ -1023,13 +1237,11 @@ const FileCompare = () => {
           </div>
         )}
 
-        {/* Dropdown List */}
         {showDropdown && !selectedFileNo && (
           <div
             className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col"
             onMouseDown={handleDropdownMouseDown}
           >
-            {/* Search Info Header */}
             {(searchTerm || selectedCategory) && (
               <div className="px-3 py-2 bg-gray-50 border-b text-xs text-gray-600 sticky top-0">
                 {searchTerm && (
@@ -1045,7 +1257,6 @@ const FileCompare = () => {
               </div>
             )}
 
-            {/* Results Container */}
             <div className="overflow-y-auto flex-1">
               {filteredHeaders.length === 0 ? (
                 <div className="p-6 text-center">
@@ -1078,7 +1289,6 @@ const FileCompare = () => {
               )}
             </div>
 
-            {/* Footer with count */}
             {filteredHeaders.length > 0 && (
               <div className="px-3 py-2 bg-gray-50 border-t text-xs text-gray-600 text-center">
                 {filteredHeaders.length} <AutoTranslate>result{filteredHeaders.length !== 1 ? 's' : ''}</AutoTranslate>
@@ -1089,7 +1299,6 @@ const FileCompare = () => {
       </div>
     )
   }
-
 
   return (
     <div className="px-2">
@@ -1104,10 +1313,8 @@ const FileCompare = () => {
           </div>
         )}
 
-        {/* File Selection */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* First File Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-700">
@@ -1165,7 +1372,6 @@ const FileCompare = () => {
               </div>
             </div>
 
-            {/* Second File Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-700">
@@ -1224,7 +1430,6 @@ const FileCompare = () => {
             </div>
           </div>
 
-          {/* Compare Button */}
           <div className="mt-6 flex justify-center">
             <button
               onClick={compareFiles}
@@ -1243,19 +1448,15 @@ const FileCompare = () => {
                 <>
                   <ArrowsRightLeftIcon className="h-5 w-5 mr-2" />
                   <AutoTranslate>CompareFiles</AutoTranslate>
-
                 </>
-
               )}
             </button>
           </div>
         </div>
 
-        {/* Rest of the modal and comparison code remains the same */}
         {showComparisonModal && comparisonResult && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-5/6 flex flex-col">
-              {/* Header */}
               <div className="flex justify-between items-center p-4 border-b bg-gray-50">
                 <div className="flex items-center space-x-4">
                   <h2 className="text-xl font-semibold">
@@ -1283,7 +1484,6 @@ const FileCompare = () => {
                 </button>
               </div>
 
-              {/* Tabs */}
               <div className="border-b bg-gray-50">
                 <nav className="flex space-x-8 px-4">
                   <button
@@ -1329,7 +1529,6 @@ const FileCompare = () => {
                 </nav>
               </div>
 
-              {/* File Info header for preview */}
               {activeTab === "preview" && (
                 <div className="grid grid-cols-2 gap-px bg-gray-200">
                   <div className="bg-blue-50 p-3 flex items-center justify-between">
@@ -1358,7 +1557,6 @@ const FileCompare = () => {
                 </div>
               )}
 
-              {/* Content */}
               <div className="flex-1 overflow-hidden">
                 {activeTab === "preview" ? (
                   <div className="h-full flex">
@@ -1415,7 +1613,6 @@ const FileCompare = () => {
                 ) : null}
               </div>
 
-              {/* Footer */}
               <div className="p-4 bg-gray-50 border-t">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-6">
@@ -1476,7 +1673,6 @@ const FileCompare = () => {
           </div>
         )}
 
-        {/* Empty state */}
         {!comparisonResult && !showComparisonModal && (
           <div className="text-center py-12 text-gray-500">
             <DocumentDuplicateIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
@@ -1499,7 +1695,6 @@ const FileCompare = () => {
 }
 
 export default FileCompare
-
 
 /* Visual diff panel for images with Overlay and Pixel Diff modes */
 function VisualDiffPanel({
@@ -1541,14 +1736,12 @@ function VisualDiffPanel({
       const ctx = canvas.getContext("2d")
       if (!ctx) return
 
-      // Draw A to offscreen
       const aCanvas = document.createElement("canvas")
       aCanvas.width = w
       aCanvas.height = h
       const aCtx = aCanvas.getContext("2d")
       aCtx.drawImage(imgA, 0, 0, w, h)
 
-      // Draw B to offscreen
       const bCanvas = document.createElement("canvas")
       bCanvas.width = w
       bCanvas.height = h
@@ -1559,7 +1752,6 @@ function VisualDiffPanel({
       const bData = bCtx.getImageData(0, 0, w, h)
       const out = ctx.createImageData(w, h)
 
-      // Improved pixel diff with threshold-based comparison
       for (let i = 0; i < aData.data.length; i += 4) {
         const r1 = aData.data[i]
         const g1 = aData.data[i + 1]
@@ -1568,7 +1760,6 @@ function VisualDiffPanel({
         const g2 = bData.data[i + 1]
         const b2 = bData.data[i + 2]
 
-        // Calculate color difference using Euclidean distance
         const colorDiff = Math.sqrt(
           Math.pow(r1 - r2, 2) +
           Math.pow(g1 - g2, 2) +
@@ -1578,19 +1769,16 @@ function VisualDiffPanel({
         const isDifferent = colorDiff > threshold
 
         if (!isDifferent) {
-          // Keep original color for similar pixels
           out.data[i] = r1
           out.data[i + 1] = g1
           out.data[i + 2] = b1
           out.data[i + 3] = 255
         } else {
-          // Highlight differences in bright red
-          const intensity = Math.min(colorDiff / 100, 1) // Normalize difference intensity
+          const intensity = Math.min(colorDiff / 100, 1)
 
-          // Make differences more visible with bright red overlay
-          out.data[i] = Math.min(255, r1 + (255 - r1) * 0.8) // Add red
-          out.data[i + 1] = Math.max(0, g1 * 0.3) // Reduce green
-          out.data[i + 2] = Math.max(0, b1 * 0.3) // Reduce blue
+          out.data[i] = Math.min(255, r1 + (255 - r1) * 0.8)
+          out.data[i + 1] = Math.max(0, g1 * 0.3)
+          out.data[i + 2] = Math.max(0, b1 * 0.3)
           out.data[i + 3] = 255
         }
       }
@@ -1677,7 +1865,6 @@ function VisualDiffPanel({
         <div className="w-full h-full flex items-start justify-center">
           {mode === "overlay" ? (
             <div className="relative inline-block">
-              {/* Base (left) */}
               <img
                 src={leftUrl || "/placeholder.svg"}
                 crossOrigin="anonymous"
@@ -1685,7 +1872,6 @@ function VisualDiffPanel({
                 className="w-auto h-auto max-w-full block"
                 style={{ maxHeight: 'calc(100vh - 300px)' }}
               />
-              {/* Overlay (right) */}
               <img
                 src={rightUrl || "/placeholder.svg"}
                 crossOrigin="anonymous"
@@ -1719,15 +1905,13 @@ function TextDiffPanel({
   leftHighlightedContent,
   rightHighlightedContent
 }) {
-  const [viewMode, setViewMode] = useState('full-document'); // Default to full document view
+  const [viewMode, setViewMode] = useState('full-document');
 
-  // Extract highlighted content from the comparison result
   const leftHighlighted = leftHighlightedContent ||
     (comparisonResult?.leftFile?.highlightedContent || '');
   const rightHighlighted = rightHighlightedContent ||
     (comparisonResult?.rightFile?.highlightedContent || '');
 
-  // Function to render highlighted content with proper styling
   const renderHighlightedContent = (content, isLeft = true) => {
     if (!content) {
       return (
@@ -1737,7 +1921,6 @@ function TextDiffPanel({
       );
     }
 
-    // If content is already HTML (contains span tags with diff classes)
     if (content.includes('<span class="diff-')) {
       return (
         <div
@@ -1747,12 +1930,10 @@ function TextDiffPanel({
       );
     }
 
-    // If content is plain text (array of lines)
     if (Array.isArray(content)) {
       return (
         <div className="full-document-content">
           {content.map((line, index) => {
-            // Check if this line has differences
             const lineDiff = differences?.find(d =>
               (isLeft && d.leftLineNumber === index + 1) ||
               (!isLeft && d.rightLineNumber === index + 1)
@@ -1775,7 +1956,6 @@ function TextDiffPanel({
       );
     }
 
-    // Fallback for string content
     return (
       <div className="full-document-content">
         {content.split('\n').map((line, index) => (
@@ -1789,7 +1969,6 @@ function TextDiffPanel({
 
   const renderFullDocumentView = () => (
     <div className="grid grid-cols-2 gap-4 h-full overflow-auto p-4">
-      {/* Left Document - Full Content */}
       <div className="border rounded-lg bg-white overflow-hidden">
         <div className="sticky top-0 bg-blue-50 p-3 border-b font-medium text-blue-800 flex justify-between items-center">
           <span>{leftName} (<AutoTranslate>Original</AutoTranslate>)</span>
@@ -1802,7 +1981,6 @@ function TextDiffPanel({
         </div>
       </div>
 
-      {/* Right Document - Full Content */}
       <div className="border rounded-lg bg-white overflow-hidden">
         <div className="sticky top-0 bg-blue-50 p-3 border-b font-medium text-blue-800 flex justify-between items-center">
           <span>{rightName} (<AutoTranslate>Modified</AutoTranslate>)</span>
@@ -1925,7 +2103,6 @@ function TextDiffPanel({
         </div>
       </div>
 
-      {/* CSS styles for full document display */}
       <style>
         {`
           .full-document-container {

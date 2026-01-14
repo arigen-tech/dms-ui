@@ -56,6 +56,9 @@ const DashboardnEW = React.lazy(() => import("./Pages/DashboardnEW"));
 const ExportDatas = React.lazy(() => import("./Pages/ExportDatas"));
 const Imports = React.lazy(() => import("./Pages/Imports"));
 const LanguageMasters = React.lazy(() => import("./Pages/LanguageMasters"));
+const TrashDocs = React.lazy(() => import("./Pages/TrashDocumentspage"));
+const DuplicateFilesPages = React.lazy(() => import("./Pages/DuplicateFilesPages"));
+
 
 function App() {
   return (
@@ -124,7 +127,9 @@ function App() {
                 <Route path="/export" element={<ExportDatas />} />
                 <Route path="/import" element={<Imports />} />
                 <Route path="/LanguageMaster" element={<LanguageMasters />} />
+                <Route path="/trash-documents" element={<TrashDocs />} />
 
+                <Route path="/duplicate-files" element={<DuplicateFilesPages />} />
               </Route>
 
               {/* Fallback */}

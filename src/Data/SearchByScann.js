@@ -55,7 +55,7 @@ const SearchByScan = () => {
   const fileInputRef = useRef(null)
   const scanSectionRef = useRef(null)
 
-  const unauthorizedMessage = <AutoTranslate>You are not authorized to scan this QR code.</AutoTranslate>
+  const unauthorizedMessage = "You are not authorized to scan this QR code."
   const invalidQrMessage = <AutoTranslate>Invalid QR Code.</AutoTranslate>
   const cameraErrorMessage = <AutoTranslate>Could not access camera. Please check permissions and try again.</AutoTranslate>
 
@@ -374,7 +374,7 @@ const SearchByScan = () => {
     const fileToSubmit = currentFile || file
 
     if (!fileToSubmit) {
-      showPopup(<AutoTranslate>Please select a file</AutoTranslate>, "warning")
+      showPopup("Please select a file", "warning")
       return
     }
 

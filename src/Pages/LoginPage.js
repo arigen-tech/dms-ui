@@ -958,7 +958,11 @@ const LoginPage = () => {
                   onChange={handleInputChange}
                   onPaste={handleCaptchaPaste}
                   className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                  placeholder="Enter captcha"
+                  placeholder={getFallbackTranslation(
+                      'Enter captcha',
+                      currentLanguage
+                    )|| 'Enter captcha'}
+
                   required
                 />
               </div>

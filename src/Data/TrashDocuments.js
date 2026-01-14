@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  PencilIcon,
   MagnifyingGlassIcon,
   EyeIcon,
   ArrowRightIcon,
@@ -13,9 +12,9 @@ import {
   DocumentIcon,
   XMarkIcon,
   PrinterIcon,
-  TrashIcon,
+  ArrowUturnLeftIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API, FILETYPE_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from "../Components/LoadingComponent";
@@ -23,7 +22,7 @@ import Popup from "../Components/Popup";
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 
-const ApprovedDoc = () => {
+const TrashDoc = () => {
   const {
     currentLanguage,
     defaultLanguage,
@@ -46,7 +45,6 @@ const ApprovedDoc = () => {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
-  const [highlightedDocId, setHighlightedDocId] = useState(null);
   const [blobUrl, setBlobUrl] = useState("");
   const [contentType, setContentType] = useState("");
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
@@ -54,14 +52,13 @@ const ApprovedDoc = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [openingFileIndex, setOpeningFileIndex] = useState(null);
-  const [viewFileTypeModel, setViewFileTypeModel] = useState(false);
-  const [filesType, setFilesType] = useState([]);
   const [openingFiles, setOpeningFiles] = useState(null);
+  const [highlightedDocId, setHighlightedDocId] = useState(null);
   
-  // State for file-level trash
-  const [fileToDelete, setFileToDelete] = useState(null);
-  const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] = useState(false);
-  const [isDeleteConfirmDisabled, setIsDeleteConfirmDisabled] = useState(false);
+  // State for file-level restore
+  const [fileToRestore, setFileToRestore] = useState(null);
+  const [confirmRestoreModalVisible, setConfirmRestoreModalVisible] = useState(false);
+  const [isRestoreConfirmDisabled, setIsRestoreConfirmDisabled] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
@@ -69,7 +66,7 @@ const ApprovedDoc = () => {
   const role = localStorage.getItem("role");
 
   useEffect(() => {
-    console.log('🔍 ApprovedDoc Component - Language Status:', {
+    console.log('🔍 TrashDoc Component - Language Status:', {
       currentLanguage,
       defaultLanguage,
       isTranslationNeeded: isTranslationNeeded(),
@@ -98,10 +95,10 @@ const ApprovedDoc = () => {
   };
 
   useEffect(() => {
-    fetchDocuments();
+    fetchTrashDocuments();
   }, []);
 
-  const fetchDocuments = async () => {
+  const fetchTrashDocuments = async () => {
     try {
       setLoading(true);
       let response;
@@ -118,7 +115,7 @@ const ApprovedDoc = () => {
         role === "BRANCH ADMIN" ||
         role === "DEPARTMENT ADMIN"
       ) {
-        response = await axios.get(`${API_HOST}/api/documents/approvedByEmp`, {
+        response = await axios.get(`${API_HOST}/api/documents/approvedTrashByEmp`, {
           headers: {
             Authorization: `Bearer ${token}`,
             employeeId: UserId,
@@ -127,36 +124,42 @@ const ApprovedDoc = () => {
       }
 
       const allDocuments = Array.isArray(response.data) ? response.data : [];
-      // Filter to show only non-deleted documents
-      const activeDocuments = allDocuments.filter(doc => !doc.isDeleted);
-      setDocuments(activeDocuments);
-      console.log("Fetched approved documents:", activeDocuments);
+      
+      // Filter documents that have at least one deleted file
+      const trashDocuments = allDocuments.filter(doc => {
+        // Check if documentDetails exists and has at least one file with isDeleted = true
+        return doc.documentDetails && 
+               doc.documentDetails.some(file => file.isDeleted === true);
+      });
+      
+      setDocuments(trashDocuments);
+      console.log("Fetched trash documents:", trashDocuments);
     } catch (error) {
-      console.error("Error fetching documents:", error);
-      setError("Failed to fetch documents. Please try again.");
-      showPopup('Failed to fetch documents. Please try again.', 'error');
+      console.error("Error fetching trash documents:", error);
+      setError("Failed to fetch trash documents. Please try again.");
+      showPopup('Failed to fetch trash documents. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Function to handle file deletion (move to trash)
-  const handleDeleteFile = (file) => {
-    setFileToDelete(file);
-    setConfirmDeleteModalVisible(true);
+  // Function to handle file restoration
+  const handleRestoreFile = (file) => {
+    setFileToRestore(file);
+    setConfirmRestoreModalVisible(true);
   };
 
-  const confirmDeleteFile = async () => {
-    setIsDeleteConfirmDisabled(true);
+  const confirmRestoreFile = async () => {
+    setIsRestoreConfirmDisabled(true);
 
-    if (fileToDelete) {
+    if (fileToRestore) {
       try {
-        // Call the API to move file to trash (set isDeleted = true)
+        // Call the API to restore file (set isDeleted = false)
         const response = await axios.put(
-          `${DOCUMENTHEADER_API}/delete-status/${fileToDelete.id}`,
+          `${DOCUMENTHEADER_API}/delete-status/${fileToRestore.id}`,
           null,
           {
-            params: { isDeleted: true },
+            params: { isDeleted: false },
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
@@ -164,10 +167,13 @@ const ApprovedDoc = () => {
           }
         );
 
-        // Update the file in the selectedDoc documentDetails
-        if (selectedDoc && selectedDoc.documentDetails) {
+        // Refresh the documents list
+        fetchTrashDocuments();
+
+        // If modal is open, update the selectedDoc
+        if (selectedDoc) {
           const updatedDocumentDetails = selectedDoc.documentDetails.map(file =>
-            file.id === fileToDelete.id ? { ...file, isDeleted: true } : file
+            file.id === fileToRestore.id ? { ...file, isDeleted: false } : file
           );
           
           setSelectedDoc({
@@ -176,38 +182,15 @@ const ApprovedDoc = () => {
           });
         }
 
-        // Also update the document in the main documents list
-        // Remove the document from the list if all its files are deleted
-        const updatedDocuments = documents.map(doc => {
-          if (doc.id === selectedDoc?.id && doc.documentDetails) {
-            const updatedDocDetails = doc.documentDetails.map(file =>
-              file.id === fileToDelete.id ? { ...file, isDeleted: true } : file
-            );
-            
-            // Check if all files in this document are deleted
-            const allFilesDeleted = updatedDocDetails.every(file => file.isDeleted === true);
-            
-            return {
-              ...doc,
-              documentDetails: updatedDocDetails,
-              // Optionally mark the document as deleted if all files are deleted
-              isDeleted: allFilesDeleted
-            };
-          }
-          return doc;
-        }).filter(doc => !doc.isDeleted); // Filter out documents marked as deleted
-
-        setDocuments(updatedDocuments);
-
-        setConfirmDeleteModalVisible(false);
-        setFileToDelete(null);
-        setIsDeleteConfirmDisabled(false);
+        setConfirmRestoreModalVisible(false);
+        setFileToRestore(null);
+        setIsRestoreConfirmDisabled(false);
         
-        showPopup('File moved to trash successfully!', 'success');
+        showPopup('File restored successfully!', 'success');
       } catch (error) {
-        console.error('Error deleting file:', error.response ? error.response.data : error.message);
-        showPopup('Failed to move file to trash. Please try again!', 'error');
-        setIsDeleteConfirmDisabled(false);
+        console.error('Error restoring file:', error.response ? error.response.data : error.message);
+        showPopup('Failed to restore file. Please try again!', 'error');
+        setIsRestoreConfirmDisabled(false);
       }
     }
   };
@@ -301,9 +284,9 @@ const ApprovedDoc = () => {
   const filteredDocFiles = useMemo(() => {
     if (!selectedDoc || !Array.isArray(selectedDoc.documentDetails)) return [];
     
-    // Filter to show only non-deleted files
+    // Filter to show only deleted files (for trash page)
     return selectedDoc.documentDetails.filter((file) => {
-      if (file.isDeleted) return false; // Don't show deleted files
+      if (!file.isDeleted) return false; // Only show deleted files
       
       const name = file.docName.toLowerCase();
       const version = String(file.version).toLowerCase();
@@ -345,12 +328,8 @@ const ApprovedDoc = () => {
         );
       }
       if (key === "documentDetails" && Array.isArray(value)) {
-        // Only include documents that have at least one non-deleted file
-        const hasNonDeletedFiles = value.some(file => !file.isDeleted);
-        if (!hasNonDeletedFiles) return false;
-        
         return value.some((file) =>
-          !file.isDeleted && file.docName.toLowerCase().includes(searchTerm.toLowerCase())
+          file.docName.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
       if (key === "updatedOn" || key === "createdOn") {
@@ -410,11 +389,6 @@ const ApprovedDoc = () => {
       console.error("Error fetching QR code:", error);
       setQrCodeUrl(null);
     }
-  };
-
-  const handleEdit = (docId) => {
-    const data = documents.find((item) => item.id === docId);
-    navigate("/all-documents", { state: data });
   };
 
   const downloadQRCode = async () => {
@@ -486,34 +460,6 @@ const ApprovedDoc = () => {
     }
   };
 
-  const fetchFilesType = async () => {
-    try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      setFilesType(response?.data?.response ?? []);
-    } catch (error) {
-      console.error('Error fetching Files Types:', error);
-      setFilesType([]);
-    }
-  };
-
-  const viewfiletype = () => {
-    fetchFilesType();
-    setViewFileTypeModel(true);
-  };
-
-  const handlecloseFileType = () => {
-    setViewFileTypeModel(false);
-  };
-
-  const filteredFiles = (filesType ?? []).filter((file) =>
-    file.filetype?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    file.extension?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const totalItems = filteredDocuments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
@@ -551,7 +497,7 @@ const ApprovedDoc = () => {
   return (
     <div className="px-1">
       <h1 className="text-xl mb-4 font-semibold">
-        <AutoTranslate>Approved Documents</AutoTranslate>
+        <AutoTranslate>Trash Documents</AutoTranslate>
       </h1>
       
       {popupMessage && (
@@ -624,11 +570,6 @@ const ApprovedDoc = () => {
                 <th className="border p-2 text-left">
                   <AutoTranslate>Approval Status</AutoTranslate>
                 </th>
-                {role === "USER" &&
-                  <th className="border p-2 text-left">
-                    <AutoTranslate>Edit</AutoTranslate>
-                  </th>
-                }
                 <th className="border p-2 text-left">
                   <AutoTranslate>View</AutoTranslate>
                 </th>
@@ -657,13 +598,6 @@ const ApprovedDoc = () => {
                     <td className="border p-2">
                       {doc.approvalStatus || <AutoTranslate>Pending</AutoTranslate>}
                     </td>
-                    {role === "USER" && (
-                      <td className="border p-2">
-                        <button onClick={() => handleEdit(doc.id)}>
-                          <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
-                        </button>
-                      </td>
-                    )}
                     <td className="border p-2">
                       <button
                         onClick={() => openModal(doc)}
@@ -677,10 +611,10 @@ const ApprovedDoc = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={role === "USER" ? "8" : "7"}
+                    colSpan="7"
                     className="border p-4 text-center text-gray-500"
                   >
-                    <AutoTranslate>No data found.</AutoTranslate>
+                    <AutoTranslate>No data found in trash.</AutoTranslate>
                   </td>
                 </tr>
               )}
@@ -710,7 +644,7 @@ const ApprovedDoc = () => {
                         <span className="text-lg font-bold">MS</span>
                       </div>
                       <h1 className="text-2xl font-bold text-gray-800">
-                        <AutoTranslate>Document Details</AutoTranslate>
+                        <AutoTranslate>Document Details (Trash)</AutoTranslate>
                       </h1>
                     </div>
                     <div className="flex gap-3">
@@ -792,7 +726,7 @@ const ApprovedDoc = () => {
                   <div className="border-t border-gray-200 pt-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                       <h2 className="text-xl font-semibold text-gray-800">
-                        <AutoTranslate>Attached Files</AutoTranslate>
+                        <AutoTranslate>Deleted Files</AutoTranslate>
                       </h2>
                       <div className="relative w-full sm:w-64">
                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -815,7 +749,7 @@ const ApprovedDoc = () => {
                       </div>
                     ) : selectedDoc && filteredDocFiles.length > 0 ? (
                       <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        {/* Desktop View Table Header - Added Action column */}
+                        {/* Desktop View Table Header - Added Restore column */}
                         <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
                           <span className="text-left">
                             <AutoTranslate>File Name</AutoTranslate>
@@ -894,17 +828,15 @@ const ApprovedDoc = () => {
                                     )}
                                   </button>
                                 </div>
-                                {/* Action Column - Only show trash button for APPROVED files */}
+                                {/* Action Column - Show restore button for deleted files */}
                                 <div className="flex justify-center no-print">
-                                  {file.status === "APPROVED" && (
-                                    <button
-                                      onClick={() => handleDeleteFile(file)}
-                                      className="p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
-                                      title="Move to Trash"
-                                    >
-                                      <TrashIcon className="h-5 w-5" />
-                                    </button>
-                                  )}
+                                  <button
+                                    onClick={() => handleRestoreFile(file)}
+                                    className="p-1.5 rounded-full bg-green-100 hover:bg-green-200 text-green-700"
+                                    title="Restore File"
+                                  >
+                                    <ArrowUturnLeftIcon className="h-5 w-5" />
+                                  </button>
                                 </div>
                               </div>
 
@@ -972,16 +904,14 @@ const ApprovedDoc = () => {
                                     )}
                                   </button>
                                   
-                                  {/* Action button for mobile - Only show trash for APPROVED files */}
-                                  {file.status === "APPROVED" && (
-                                    <button
-                                      onClick={() => handleDeleteFile(file)}
-                                      className="p-1.5 rounded-full bg-red-100 hover:bg-red-200"
-                                      title="Move to Trash"
-                                    >
-                                      <TrashIcon className="h-5 w-5 text-red-700" />
-                                    </button>
-                                  )}
+                                  {/* Restore button for mobile */}
+                                  <button
+                                    onClick={() => handleRestoreFile(file)}
+                                    className="p-1.5 rounded-full bg-green-100 hover:bg-green-200"
+                                    title="Restore File"
+                                  >
+                                    <ArrowUturnLeftIcon className="h-5 w-5 text-green-700" />
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -992,7 +922,7 @@ const ApprovedDoc = () => {
                       <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
                         <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
                         <p className="text-gray-500">
-                          <AutoTranslate>No attached files found</AutoTranslate>
+                          <AutoTranslate>No deleted files found</AutoTranslate>
                         </p>
                         {searchFileTerm && (
                           <p className="text-sm text-gray-400 mt-1">
@@ -1007,37 +937,37 @@ const ApprovedDoc = () => {
             </div>
           )}
 
-          {/* Confirmation Modal for File Deletion */}
-          {confirmDeleteModalVisible && (
+          {/* Confirmation Modal for File Restoration */}
+          {confirmRestoreModalVisible && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
               <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
                 <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Move to Trash</AutoTranslate>
+                  <AutoTranslate>Restore File</AutoTranslate>
                 </h2>
                 <p className="mb-4">
-                  <AutoTranslate>Are you sure you want to move this file to trash?</AutoTranslate> 
+                  <AutoTranslate>Are you sure you want to restore this file?</AutoTranslate> 
                   <br />
-                  <strong>"{fileToDelete?.docName}"</strong>
+                  <strong>"{fileToRestore?.docName}"</strong>
                 </p>
                 <div className="flex justify-end gap-4">
                   <button 
-                    onClick={() => setConfirmDeleteModalVisible(false)} 
+                    onClick={() => setConfirmRestoreModalVisible(false)} 
                     className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
-                    disabled={isDeleteConfirmDisabled}
+                    disabled={isRestoreConfirmDisabled}
                   >
                     <AutoTranslate>Cancel</AutoTranslate>
                   </button>
                   <button
-                    onClick={confirmDeleteFile}
-                    disabled={isDeleteConfirmDisabled}
-                    className={`px-4 py-2 rounded-md text-white ${isDeleteConfirmDisabled 
+                    onClick={confirmRestoreFile}
+                    disabled={isRestoreConfirmDisabled}
+                    className={`px-4 py-2 rounded-md text-white ${isRestoreConfirmDisabled 
                       ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-red-600 hover:bg-red-700'} transition-colors`}
+                      : 'bg-green-600 hover:bg-green-700'} transition-colors`}
                   >
-                    {isDeleteConfirmDisabled ? (
+                    {isRestoreConfirmDisabled ? (
                       <AutoTranslate>Processing...</AutoTranslate>
                     ) : (
-                      <AutoTranslate>Move to Trash</AutoTranslate>
+                      <AutoTranslate>Restore</AutoTranslate>
                     )}
                   </button>
                 </div>
@@ -1096,4 +1026,4 @@ const ApprovedDoc = () => {
   );
 };
 
-export default ApprovedDoc;
+export default TrashDoc;

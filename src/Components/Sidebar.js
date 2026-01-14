@@ -328,6 +328,10 @@ function Sidebar({ roleChanged }) {
           totalRejectedStatusDocByDepartmentId: 0,
           totalUserApplications: 0,
           totalTemplate: 0,
+          trashApprovedDocsById: 0,
+          trashApprovedDocsByBranch: 0,
+          trashApprovedDocsByDepartment: 0, 
+          totalLanguage: 0,
         };
   });
 
@@ -434,6 +438,7 @@ function Sidebar({ roleChanged }) {
       "/ManageUserApplications": counts.totalUserApplications,
       "/TemplateMasters": counts.totalTemplate,
       "/create-fileType": counts.totalFilesType,
+      "/LanguageMaster": counts.totalLanguage,
       "/approve-documents":
         currentRole === SYSTEM_ADMIN
           ? counts.totalPendingDocuments
@@ -442,6 +447,15 @@ function Sidebar({ roleChanged }) {
           : currentRole === DEPARTMENT_ADMIN
           ? counts.totalPendingDocumentsByDepartmentId
           : counts.pendingDocsbyid,
+          
+          "/trash-documents":
+  currentRole === SYSTEM_ADMIN
+    ? counts.trashApprovedDocsById
+    : currentRole === BRANCH_ADMIN
+    ? counts.trashApprovedDocsByBranch
+    : currentRole === DEPARTMENT_ADMIN
+    ? counts.trashApprovedDocsByDepartment
+    : counts.trashApprovedDocsById,
       "/all-documents": currentRole === USER ? counts.pendingDocsbyid : 0,
       "/total-approved":
         currentRole === SYSTEM_ADMIN
@@ -451,6 +465,10 @@ function Sidebar({ roleChanged }) {
           : currentRole === DEPARTMENT_ADMIN
           ? counts.totalApprovedStatusDocByDepartmentId
           : 0,
+
+
+          
+
       "/approvedDocs": currentRole === USER ? counts.approvedDocsbyid : 0,
       "/total-rejected":
         currentRole === SYSTEM_ADMIN
@@ -464,9 +482,19 @@ function Sidebar({ roleChanged }) {
       "/branchusers": counts.branchUser,
       "/Departmentusers": counts.departmentUser,
     };
+    // Debug the trash count calculation
+  if (url === "/trash-documents") {
+    console.log("Trash count calculation:");
+    console.log(`- SYSTEM_ADMIN: ${counts.trashApprovedDocsById}`);
+    console.log(`- BRANCH_ADMIN: ${counts.trashApprovedDocsByBranch}`);
+    console.log(`- DEPARTMENT_ADMIN: ${counts.trashApprovedDocsByDepartment}`);
+    console.log(`- Current role (${currentRole}) count: ${countMap[url]}`);
+  }
 
     return countMap[url] || 0;
   };
+
+  
 
   // Sidebar Link component
   const SidebarLink = ({ to, icon: Icon, text, count }) => (

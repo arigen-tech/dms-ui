@@ -54,6 +54,8 @@ const validRoutes = [
   "/export",
   "/import",
   "/LanguageMaster",
+  "/trash-documents",
+  "/duplicate-files"
 ];
 
 const NotAuthorized = () => {

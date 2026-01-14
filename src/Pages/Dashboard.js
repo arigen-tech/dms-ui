@@ -89,6 +89,10 @@ function Dashboard() {
     totalRejectedStatusDocByDepartmentId: 0,
     totalUserApplications: 0,
     totalTemplate: 0,
+    trashApprovedDocsById: 0,
+    trashApprovedDocsByBranch: 0,
+    trashApprovedDocsByDepartment: 0,
+    totalLanguages: 0,
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
