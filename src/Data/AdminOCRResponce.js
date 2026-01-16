@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import apiClient from "../API/apiClient";
 import { API_HOST, DOCUMENTHEADER_API, SYSTEM_ADMIN, BRANCH_ADMIN} from "../API/apiConfig";
-import { EyeIcon, XMarkIcon, PrinterIcon } from "@heroicons/react/24/solid";
-
+import { EyeIcon, XMarkIcon, PrinterIcon, ArrowPathIcon } from "@heroicons/react/24/solid";
+import AutoTranslate from '../i18n/AutoTranslate'; 
 import FilePreviewModal from "../Components/FilePreviewModal";
 
 const AdminOCRResponse = () => {
@@ -573,25 +573,39 @@ const AdminOCRResponse = () => {
                                   <div className="flex-1 text-center">
                                     <strong>{file.version}</strong>
                                   </div>
-                                  <div className="text-right">
-                                    <button
-                                      onClick={() => {
-                                        setOpeningFileIndex(index);
-                                        setSelectedDocFiles(file);
-                                        openFile(file).finally(() =>
-                                          setOpeningFileIndex(null)
-                                        );
-                                      }}
-                                      disabled={openingFileIndex !== null}
-                                      className={`bg-indigo-500 text-white px-4 py-2 rounded-md transition duration-300 no-print
-                              ${openingFileIndex === index
-                                          ? "opacity-50 cursor-not-allowed"
-                                          : "hover:bg-indigo-600"
-                                        }`}
-                                    >
-                                      {openingFileIndex === index ? "Opening..." : "Open"}
-                                    </button>
-                                  </div>
+                                  <div className="flex justify-center no-print">
+  <button
+    onClick={() => {
+      setOpeningFileIndex(index);
+      setSelectedDocFiles(file);
+      openFile(file).finally(() => setOpeningFileIndex(null));
+    }}
+    disabled={openingFileIndex !== null}
+    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+      ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+  >
+    {openingFileIndex === index ? (
+      <>
+        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+        <AutoTranslate>
+          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+        </AutoTranslate>
+      </>
+    ) : (
+      <>
+        {file.ltoArchived && !file.restored ? (
+          <ArrowPathIcon className="h-3 w-3" /> 
+        ) : (
+          <EyeIcon className="h-3 w-3" /> 
+        )}
+        <AutoTranslate>
+          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+          
+        </AutoTranslate>
+      </>
+    )}
+  </button>
+</div>
                                 </li>
                               ))}
                           </ul>

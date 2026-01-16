@@ -428,8 +428,8 @@ function Sidebar({ roleChanged }) {
 
     const countMap = {
       "/users": counts.totalUser,
-      "/userRoleAssing": counts.totalNullEmployeeType,
-      "/manageUserRole": counts.totalUser - counts.totalNullEmployeeType,
+      "/userRoleAssing": currentRole === SYSTEM_ADMIN ? counts.totalNullEmployeeType : counts.nullRoleEmployeeCountForBranch,
+      "/manageUserRole": currentRole === SYSTEM_ADMIN ? counts.totalUser - counts.totalNullEmployeeType  : counts.branchUser - counts.nullRoleEmployeeCountForBranch  ,
       "/create-branch": counts.totalBranches,
       "/create-department": counts.totalDepartment,
       "/create-role": counts.totalRoles,

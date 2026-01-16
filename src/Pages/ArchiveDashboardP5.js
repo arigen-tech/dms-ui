@@ -11,7 +11,7 @@ import { useLanguage } from '../i18n/LanguageContext'
 const ArchiveDashboardP5 = () => {
     const [branches, setBranches] = useState([])
     const [departments, setDepartments] = useState([])
-    const [statuses] = useState(["IN_PROGRESS", "ARCHIVED", "FAILED", "WAITING"])
+    const [statuses] = useState(["IN_PROGRESS", "COMPLETED", "FAILED", "WAITING"])
 
     const [selectedBranch, setSelectedBranch] = useState("All")
     const [selectedDepartment, setSelectedDepartment] = useState("All")
@@ -51,7 +51,7 @@ const ArchiveDashboardP5 = () => {
 
     const statusPriority = {
         IN_PROGRESS: 1,
-        ARCHIVED: 2,
+        COMPLETED: 2,
         FAILED: 3,
         WAITING: 4,
     }
@@ -122,29 +122,32 @@ const ArchiveDashboardP5 = () => {
 
 
 
-    useEffect(() => {
-        const fetchJobs = async () => {
-            try {
-                const res = await axios.get(
-                    `${API_HOST}/retention-policy/findAllByFilter`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                        params: {
-                            branchId: null,
-                            departmentId: null
-                        }
-                    }
-                )
-                setArchiveJobs(res.data)
-            } catch (err) {
-                console.error("Error fetching retention policies:", err)
-            }
+useEffect(() => {
+    const fetchJobs = async () => {
+        try {
+            const res = await axios.get(
+                `${API_HOST}/retention-policy/findAllByFilter`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    params: {
+                        branchId: selectedBranch !== "All" ? selectedBranch : null,
+                        departmentId: selectedDepartment !== "All" ? selectedDepartment : null,
+                        status: selectedStatus !== "All" ? selectedStatus : null,
+                        search: searchTerm || null,
+                    },
+                }
+            );
+            setArchiveJobs(res.data);
+        } catch (err) {
+            console.error("Error fetching retention policies:", err);
         }
+    };
 
-        if (token) {
-            fetchJobs()
-        }
-    }, [token])
+    if (token) {
+        fetchJobs();
+    }
+}, [token, selectedBranch, selectedDepartment, selectedStatus, searchTerm]);
+
 
 
 
@@ -170,21 +173,33 @@ const ArchiveDashboardP5 = () => {
         return date.toLocaleString("en-GB", options).replace(",", " at")
     }
 
-    const filteredAndSortedData = archiveJobs
-        .filter((item) => {
-            const search = searchTerm.toLowerCase()
-            return (
-                item.archiveName?.toLowerCase().includes(search) ||
-                item.branchName?.toLowerCase().includes(search) ||
-                item.departmentName?.toLowerCase().includes(search) ||
-                item.status?.toLowerCase().includes(search)
-            )
-        })
-        .sort((a, b) => {
-            const priorityA = statusPriority[a.status] || 99
-            const priorityB = statusPriority[b.status] || 99
-            return priorityA - priorityB
-        })
+const filteredAndSortedData = archiveJobs
+    .filter((item) => {
+        const search = searchTerm.toLowerCase();
+
+        const matchSearch =
+            item.archiveName?.toLowerCase().includes(search) ||
+            item.branchName?.toLowerCase().includes(search) ||
+            item.departmentName?.toLowerCase().includes(search) ||
+            item.archiveStatus?.toLowerCase().includes(search);
+
+        const matchBranch =
+            selectedBranch === "All" || item.branchId === Number(selectedBranch);
+
+        const matchDepartment =
+            selectedDepartment === "All" || item.departmentId === Number(selectedDepartment);
+
+        const matchStatus =
+            selectedStatus === "All" || item.archiveStatus === selectedStatus;
+
+        return matchSearch && matchBranch && matchDepartment && matchStatus;
+    })
+    .sort((a, b) => {
+        const priorityA = statusPriority[a.archiveStatus] || 99;
+        const priorityB = statusPriority[b.archiveStatus] || 99;
+        return priorityA - priorityB;
+    });
+
 
     const totalItems = filteredAndSortedData.length
     const totalPages = Math.ceil(totalItems / itemsPerPage)
@@ -577,12 +592,13 @@ const handleRestore = async (e, job) => {
                                     <div className="relative">
                                         <Search className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                         <input
-                                            type="text"
-                                            placeholder={<AutoTranslate>Search archive jobs...</AutoTranslate>}
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-                                        />
+  type="text"
+  placeholder="Search archive jobs..."
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+/>
+
                                     </div>
                                 </div>
 

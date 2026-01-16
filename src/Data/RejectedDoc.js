@@ -908,31 +908,38 @@ function RejectedDoc() {
                                   <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
                                   <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
                                   <div className="flex justify-center no-print">
-                                    <button
-                                      onClick={() => {
-                                        setOpeningFileIndex(index);
-                                        setSelectedDocFiles(file);
-                                        openFile(file).finally(() => setOpeningFileIndex(null));
-                                      }}
-                                      disabled={openingFileIndex !== null}
-                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                            ${openingFileIndex === index ?
-                                          "bg-indigo-400 cursor-not-allowed" :
-                                          "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                    >
-                                      {openingFileIndex === index ? (
-                                        <>
-                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                          <AutoTranslate>Opening...</AutoTranslate>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <EyeIcon className="h-3 w-3" />
-                                          <AutoTranslate>View</AutoTranslate>
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
+  <button
+    onClick={() => {
+      setOpeningFileIndex(index);
+      setSelectedDocFiles(file);
+      openFile(file).finally(() => setOpeningFileIndex(null));
+    }}
+    disabled={openingFileIndex !== null}
+    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+      ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+  >
+    {openingFileIndex === index ? (
+      <>
+        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+        <AutoTranslate>
+          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+        </AutoTranslate>
+      </>
+    ) : (
+      <>
+        {file.ltoArchived && !file.restored ? (
+          <ArrowPathIcon className="h-3 w-3" /> 
+        ) : (
+          <EyeIcon className="h-3 w-3" /> 
+        )}
+        <AutoTranslate>
+          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+          
+        </AutoTranslate>
+      </>
+    )}
+  </button>
+</div>
                                 </div>
 
                                 {/* Mobile View */}
@@ -973,32 +980,39 @@ function RejectedDoc() {
                                     </div>
                                   </div>
 
-                                  <div className="mt-3 flex justify-end">
-                                    <button
-                                      onClick={() => {
-                                        setOpeningFileIndex(index);
-                                        setSelectedDocFiles(file);
-                                        openFile(file).finally(() => setOpeningFileIndex(null));
-                                      }}
-                                      disabled={openingFileIndex !== null}
-                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                            ${openingFileIndex === index ?
-                                          "bg-indigo-400 cursor-not-allowed" :
-                                          "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                    >
-                                      {openingFileIndex === index ? (
-                                        <>
-                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                          <AutoTranslate>Opening...</AutoTranslate>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <EyeIcon className="h-3 w-3" />
-                                          <AutoTranslate>View File</AutoTranslate>
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
+                                  <div className="flex justify-center no-print">
+  <button
+    onClick={() => {
+      setOpeningFileIndex(index);
+      setSelectedDocFiles(file);
+      openFile(file).finally(() => setOpeningFileIndex(null));
+    }}
+    disabled={openingFileIndex !== null}
+    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+      ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+  >
+    {openingFileIndex === index ? (
+      <>
+        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+        <AutoTranslate>
+          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+        </AutoTranslate>
+      </>
+    ) : (
+      <>
+        {file.ltoArchived && !file.restored ? (
+          <ArrowPathIcon className="h-3 w-3" /> 
+        ) : (
+          <EyeIcon className="h-3 w-3" /> 
+        )}
+        <AutoTranslate>
+          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+          
+        </AutoTranslate>
+      </>
+    )}
+  </button>
+</div>
                                 </div>
                               </div>
                             ))}
