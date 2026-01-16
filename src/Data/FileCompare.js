@@ -15,7 +15,6 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid"
 import axios from "axios"
-import { useLocation } from 'react-router-dom'
 
 import { DOCUMENTHEADER_API, API_HOST } from "../API/apiConfig"
 import LoadingComponent from '../Components/LoadingComponent'
@@ -127,7 +126,6 @@ const FileCompare = () => {
   const [secondShowDropdown, setSecondShowDropdown] = useState(false)
 
   const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null
-  const location = useLocation()
 
   // ============================================================
   // EFFECT 1: Initialize on mount
@@ -137,263 +135,6 @@ const FileCompare = () => {
     fetchAllDocumentHeaders()
     fetchCategory()
   }, [])
-
-  // ============================================================
-  // EFFECT 2: Handle preselection from navigation
-  // ============================================================
-
-
- // In FileCompare.js - Update EFFECT 2 to use correct APIs
-
-useEffect(() => {
-  console.log('🔍 Location state changed:', location.state)
-
-  if (!location.state?.preselectedGroup) {
-    return
-  }
-
-  const group = location.state.preselectedGroup
-  console.log('✅ Detected preselectedGroup with detail IDs:', {
-    originalDetailId: group.originalDetailId,
-    duplicateDetailId: group.duplicateFiles?.[0]?.duplicateDetailId
-  })
-
-  // We need to fetch the header information from these detail IDs
-  const fetchHeaderInfo = async () => {
-    try {
-      console.log('🔍 Trying to fetch document details for:', {
-        originalId: group.originalDetailId,
-        duplicateId: group.duplicateFiles?.[0]?.duplicateDetailId
-      })
-
-      // OPTION 1: Try to get document by document name (since we have filename)
-      if (group.originalFileName) {
-        try {
-          const response = await axios.get(
-            `${DOCUMENTHEADER_API}/findByDocName/${encodeURIComponent(group.originalFileName)}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-          
-          console.log('📄 Original document by name response:', response.data)
-          
-          if (response.data && response.data.response) {
-            const header = response.data.response;
-            console.log('✅ Found original header:', {
-              id: header.id,
-              fileNo: header.fileNo,
-              title: header.title
-            })
-            
-            if (header.fileNo && !selectedFirstFileNo) {
-              console.log('✅ Setting first file to:', header.fileNo)
-              setSelectedFirstFileNo(header.fileNo)
-            }
-          }
-        } catch (nameError) {
-          console.log('❌ Could not find by name, trying other methods')
-        }
-      }
-
-      // OPTION 2: Try to get document details by ID (detail ID)
-      try {
-        // First, get the document details to find the header ID
-        const originalDetailsResponse = await axios.get(
-          `${DOCUMENTHEADER_API}/byDocumentHeader/${group.originalDetailId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-        
-        console.log('📄 Original document details response:', originalDetailsResponse.data)
-        
-        // The response is an array of document details
-        if (originalDetailsResponse.data && originalDetailsResponse.data.length > 0) {
-          const docDetail = originalDetailsResponse.data[0];
-          console.log('📄 Document detail:', docDetail)
-          
-          // If we have documentHeader in the response
-          if (docDetail.documentHeader && docDetail.documentHeader.fileNo) {
-            if (!selectedFirstFileNo) {
-              console.log('✅ Setting first file from documentHeader:', docDetail.documentHeader.fileNo)
-              setSelectedFirstFileNo(docDetail.documentHeader.fileNo)
-            }
-          }
-        }
-      } catch (detailError) {
-        console.log('❌ Could not get document details:', detailError.message)
-      }
-
-      // OPTION 3: If still not found, try to search in all document headers
-      if (!selectedFirstFileNo) {
-        console.log('🔍 Falling back to manual search in document headers')
-        // We'll let the normal flow handle it
-      }
-
-      // Handle duplicate file
-      if (group.duplicateFiles?.[0]?.duplicateFileName && !selectedSecondFileNo) {
-        try {
-          const duplicateResponse = await axios.get(
-            `${DOCUMENTHEADER_API}/findByDocName/${encodeURIComponent(group.duplicateFiles[0].duplicateFileName)}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-          
-          console.log('📄 Duplicate document by name response:', duplicateResponse.data)
-          
-          if (duplicateResponse.data && duplicateResponse.data.response) {
-            const header = duplicateResponse.data.response;
-            console.log('✅ Found duplicate header:', {
-              id: header.id,
-              fileNo: header.fileNo
-            })
-            
-            if (header.fileNo) {
-              console.log('✅ Setting second file to:', header.fileNo)
-              setSelectedSecondFileNo(header.fileNo)
-            }
-          }
-        } catch (dupError) {
-          console.log('❌ Could not find duplicate by name')
-        }
-      }
-      
-    } catch (error) {
-      console.error('Error fetching document details:', error)
-    }
-  }
-
-  // Only fetch if we have document headers loaded
-  if (documentHeaders.length > 0) {
-    fetchHeaderInfo()
-  }
-}, [location.state, documentHeaders])
-
-  // ============================================================
-  // EFFECT 3: Fetch first file documents when selectedFirstFileNo changes
-  // ============================================================
-  useEffect(() => {
-    if (!selectedFirstFileNo) return
-
-    console.log('📄 Fetching documents for first file:', selectedFirstFileNo)
-
-    const doFetch = async () => {
-      const docs = await fetchDocumentsByFileNo(selectedFirstFileNo, true)
-      console.log('📋 First file documents loaded:', docs.length, docs)
-    }
-
-    doFetch()
-  }, [selectedFirstFileNo])
-
-  useEffect(() => {
-    if (selectedFirstFileNo && firstFileDocuments.length > 0) {
-      console.log('🔍 DEBUG: First file documents structure:')
-      console.log('Number of documents:', firstFileDocuments.length)
-      console.log('First document keys:', Object.keys(firstFileDocuments[0]))
-      console.log('First document:', firstFileDocuments[0])
-      console.log('---')
-      console.log('Looking for originalDocumentId:', location.state?.preselectedGroup?.originalDocumentId)
-      console.log('Document detailsIds:', firstFileDocuments.map(d => ({ detailsId: d.detailsId, id: d.id, docName: d.docName })))
-    }
-  }, [selectedFirstFileNo, firstFileDocuments, location.state])
-
-  // ============================================================
-  // EFFECT 4: Auto-select first file's document
-  // ============================================================
-
-  useEffect(() => {
-    if (firstFileDocuments.length === 0 || !location.state?.preselectedGroup) return
-
-    const group = location.state.preselectedGroup
-
-    console.log('🎯 EFFECT 4: Auto-selecting first file document')
-    console.log('First file documents:', firstFileDocuments)
-    console.log('Looking for original file:', group.originalFileName)
-
-    // Find document by filename
-    if (group.originalFileName && selectedFirstFileIds.length === 0) {
-      const originalDoc = firstFileDocuments.find(doc =>
-        doc.fileName === group.originalFileName ||
-        doc.docName === group.originalFileName
-      )
-
-      if (originalDoc && originalDoc.detailsId) {
-        console.log('✅ Found original document by filename:', {
-          detailsId: originalDoc.detailsId,
-          fileName: originalDoc.docName || originalDoc.fileName
-        })
-        setSelectedFirstFileIds([originalDoc.detailsId])
-      } else {
-        // Fallback: select first document
-        console.log('⚠️ Could not find by filename, selecting first document')
-        if (firstFileDocuments.length > 0 && firstFileDocuments[0].detailsId) {
-          setSelectedFirstFileIds([firstFileDocuments[0].detailsId])
-        }
-      }
-    }
-  }, [firstFileDocuments, location.state, selectedFirstFileIds])
-
-
-  // ============================================================
-  // EFFECT 5: Fetch second file documents when selectedSecondFileNo changes
-  // ============================================================
-  useEffect(() => {
-    if (!selectedSecondFileNo) return
-
-    console.log('📄 Fetching documents for second file:', selectedSecondFileNo)
-
-    const doFetch = async () => {
-      const docs = await fetchDocumentsByFileNo(selectedSecondFileNo, false)
-      console.log('📋 Second file documents loaded:', docs.length, docs)
-    }
-
-    doFetch()
-  }, [selectedSecondFileNo])
-
-  // ============================================================
-  // EFFECT 6: Auto-select second file's document
-  // ============================================================
-
-  useEffect(() => {
-    if (secondFileDocuments.length === 0 || !location.state?.preselectedGroup) return
-
-    const group = location.state.preselectedGroup
-
-    console.log('🎯 EFFECT 6: Auto-selecting second file document')
-    console.log('Second file documents:', secondFileDocuments)
-
-    // Find duplicate document by filename
-    if (group.duplicateFiles?.[0]?.duplicateFileName && selectedSecondFileIds.length === 0) {
-      const duplicateDoc = secondFileDocuments.find(doc =>
-        doc.fileName === group.duplicateFiles[0].duplicateFileName ||
-        doc.docName === group.duplicateFiles[0].duplicateFileName
-      )
-
-      if (duplicateDoc && duplicateDoc.detailsId) {
-        console.log('✅ Found duplicate document by filename:', {
-          detailsId: duplicateDoc.detailsId,
-          fileName: duplicateDoc.docName || duplicateDoc.fileName
-        })
-        setSelectedSecondFileIds([duplicateDoc.detailsId])
-        console.log('🎉 PRESELECTION COMPLETE! Both documents auto-selected.')
-
-        // Clean up location state
-        window.history.replaceState({}, document.title)
-      } else {
-        // Fallback: select first document
-        console.log('⚠️ Could not find duplicate by filename, selecting first document')
-        if (secondFileDocuments.length > 0 && secondFileDocuments[0].detailsId) {
-          setSelectedSecondFileIds([secondFileDocuments[0].detailsId])
-        }
-      }
-    }
-  }, [secondFileDocuments, location.state, selectedSecondFileIds])
-
-  // ============================================================
-  // EFFECT 7: Clear warning message after 5 seconds
-  // ============================================================
-  useEffect(() => {
-    if (warningMessage) {
-      const timer = setTimeout(() => setWarningMessage(""), 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [warningMessage])
 
   const fetchAllDocumentHeaders = async () => {
     setIsLoading(true)
@@ -440,10 +181,12 @@ useEffect(() => {
 
       if (isFirst) {
         setFirstFileDocuments(fileList)
-        setSelectedFirstFileIds([])
+        // Don't auto-select anything
+        // setSelectedFirstFileIds([])
       } else {
         setSecondFileDocuments(fileList)
-        setSelectedSecondFileIds([])
+        // Don't auto-select anything
+        // setSelectedSecondFileIds([])
       }
 
       setWarningMessage("")
@@ -1299,6 +1042,14 @@ useEffect(() => {
       </div>
     )
   }
+
+  // Clear warning message after 5 seconds
+  useEffect(() => {
+    if (warningMessage) {
+      const timer = setTimeout(() => setWarningMessage(""), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [warningMessage])
 
   return (
     <div className="px-2">
