@@ -5,6 +5,7 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   MagnifyingGlassIcon,
+  ArrowPathIcon,
   PrinterIcon,
   XMarkIcon,
   EyeIcon,
@@ -216,7 +217,7 @@ const Approve = () => {
       }
 
       const response = await axios.get(
-        `${API_HOST}/api/documents/byDocumentHeader/${doc.id}`,
+        `${API_HOST}/api/documents/byDocumentHeader/${doc.id}/PENDING`,
         {
           headers: { Authorization: `Bearer ${tokenKey}` },
         }
@@ -647,7 +648,7 @@ const Approve = () => {
                   <AutoTranslate>User</AutoTranslate><AutoTranslate> Name</AutoTranslate>
                 </th>
                 <th className="border p-2 text-left">
-                  <AutoTranslate>Approval Status</AutoTranslate>
+                  <AutoTranslate>No. Of Attached Files</AutoTranslate>
                 </th>
                 <th className="border p-2 text-left">
                   <AutoTranslate>View</AutoTranslate>
@@ -673,13 +674,13 @@ const Approve = () => {
                     <td className="border p-2">{doc.fileNo}</td>
                     <td className="border p-2">{doc.subject}</td>
                     <td className="border p-2">
-                      {doc.employee && doc.employee.branch
-                        ? doc.employee.branch.name
+                      {doc.branchMaster
+                        ? doc.branchMaster?.name
                         : <AutoTranslate>No Branch</AutoTranslate>}
                     </td>
                     <td className="border p-2">
-                      {doc.employee && doc.employee.department
-                        ? doc.employee.department.name
+                      {doc.departmentMaster
+                        ? doc.departmentMaster?.name
                         : <AutoTranslate>No Department</AutoTranslate>}
                     </td>
                     <td className="border p-2">
@@ -693,7 +694,7 @@ const Approve = () => {
                       {doc.employee ? doc.employee.name : "N/A"}
                     </td>
 
-                    <td className="border p-2">{doc.approvalStatus}</td>
+                    <td className="border p-2">{doc.documentDetails.length}</td>
                     <td className="border p-2">
                       <button onClick={() => openModal(doc)}>
                         <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
@@ -762,7 +763,7 @@ const Approve = () => {
                               label: "Category",
                               value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>,
                             },
-                            { label: "Status", value: selectedDoc?.approvalStatus },
+                            // { label: "Status", value: selectedDoc?.approvalStatus },
                             { label: "Upload By", value: selectedDoc?.employee?.name },
                           ].map((item, idx) => (
                             <p key={idx} className="text-md text-gray-700">

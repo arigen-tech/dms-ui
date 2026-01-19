@@ -622,7 +622,7 @@ const ApprovedDoc = () => {
                   <AutoTranslate>Category</AutoTranslate>
                 </th>
                 <th className="border p-2 text-left">
-                  <AutoTranslate>Approval Status</AutoTranslate>
+                  <AutoTranslate>No. Of Attached Files</AutoTranslate>
                 </th>
                 {role === "USER" &&
                   <th className="border p-2 text-left">
@@ -655,7 +655,7 @@ const ApprovedDoc = () => {
                       {doc.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>}
                     </td>
                     <td className="border p-2">
-                      {doc.approvalStatus || <AutoTranslate>Pending</AutoTranslate>}
+                      {doc.documentDetails.length }
                     </td>
                     {role === "USER" && (
                       <td className="border p-2">
@@ -737,13 +737,13 @@ const ApprovedDoc = () => {
                     <div className="lg:col-span-2 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
-                          { label: "Branch", value: selectedDoc?.employee?.branch?.name },
-                          { label: "Department", value: selectedDoc?.employee?.department?.name },
+                          { label: "Branch", value: selectedDoc?.branchMaster?.name },
+                          { label: "Department", value: selectedDoc?.departmentMaster?.name },
                           { label: "File No.", value: selectedDoc?.fileNo },
                           { label: "Title", value: selectedDoc?.title },
                           { label: "Subject", value: selectedDoc?.subject },
                           { label: "Category", value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate> },
-                          { label: "Status", value: selectedDoc?.approvalStatus },
+                          // { label: "Status", value: selectedDoc?.approvalStatus },
                           { label: "Upload By", value: selectedDoc?.employee?.name },
                         ].map((item, idx) => (
                           <div key={idx} className="space-y-1">

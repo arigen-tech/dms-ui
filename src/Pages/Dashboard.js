@@ -27,6 +27,7 @@ import {
   CalendarDaysIcon,
   ComputerDesktopIcon,
   DocumentCheckIcon,
+  TrashIcon,
   DocumentMinusIcon,
   DocumentIcon,
   KeyIcon,
@@ -89,9 +90,10 @@ function Dashboard() {
     totalRejectedStatusDocByDepartmentId: 0,
     totalUserApplications: 0,
     totalTemplate: 0,
-    trashApprovedDocsById: 0,
-    trashApprovedDocsByBranch: 0,
-    trashApprovedDocsByDepartment: 0,
+    trashTotalDoc: 0,
+    trashTotalDocByEmpId: 0,
+    trashTotalDocByBranch: 0,
+    trashTotalDocByDepartment: 0,
     totalLanguages: 0,
   });
   const [loading, setLoading] = useState(false);
@@ -589,12 +591,6 @@ function Dashboard() {
                 </div>
               </Link>
 
-              <Link to="/create-year" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="Total Year" value={stats.annualYear} Icon={CalendarDaysIcon} />
-                </div>
-              </Link>
-
               <Link to="/create-fileType" className="block">
                 <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                   <StatBlock title="Total Files Types" value={stats.totalFilesType} Icon={GiFiles} />
@@ -620,6 +616,12 @@ function Dashboard() {
               <Link to="/total-rejected" className="block">
                 <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                   <StatBlock title="Rejected Documents" value={stats.totalRejectedDocuments} Icon={DocumentMinusIcon} />
+                </div>
+              </Link>
+
+              <Link to="/trash-documents" className="block">
+                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                  <StatBlock title="Trash Documents" value={stats.trashTotalDoc} Icon={TrashIcon} />
                 </div>
               </Link>
             </>
@@ -666,6 +668,12 @@ function Dashboard() {
                   <StatBlock title="Rejected Documents" value={stats.totalRejectedStatusDocById} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
+
+              <Link to="/trash-documents" className="block">
+                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                  <StatBlock title="Trash Documents" value={stats.trashTotalDocByBranch} Icon={TrashIcon} />
+                </div>
+              </Link>
             </>
           )}
 
@@ -702,6 +710,12 @@ function Dashboard() {
               <Link to="/total-rejected" className="block">
                 <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                   <StatBlock title="Rejected Documents" value={stats.totalRejectedStatusDocByDepartmentId} Icon={DocumentMinusIcon} />
+                </div>
+              </Link>
+
+              <Link to="/trash-documents" className="block">
+                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                  <StatBlock title="Trash Documents" value={stats.trashTotalDocByDepartment} Icon={TrashIcon} />
                 </div>
               </Link>
             </>

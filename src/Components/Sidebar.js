@@ -99,26 +99,26 @@ function Sidebar({ roleChanged }) {
   // Function to search in all languages
   const searchInAllLanguages = useCallback((menuItem, term) => {
     if (!term.trim()) return true;
-    
+
     const searchTermLower = term.toLowerCase();
     const menuName = menuItem.name;
-    
+
     // Check English name
     if (menuName.toLowerCase().includes(searchTermLower)) {
       return true;
     }
-    
+
     // Check all languages in translation dictionary
     const languages = ['hi', 'or', 'mr'];
     for (const lang of languages) {
       const cacheKey = `${menuName}_${lang}`;
       const translatedText = translationDictionary[cacheKey];
-      
+
       if (translatedText && translatedText.toLowerCase().includes(searchTermLower)) {
         return true;
       }
     }
-    
+
     // Check fallback translations
     for (const lang of languages) {
       const fallbackTranslation = getFallbackTranslation(menuName, lang);
@@ -126,12 +126,12 @@ function Sidebar({ roleChanged }) {
         return true;
       }
     }
-    
+
     // Check children recursively
     if (menuItem.children && menuItem.children.length > 0) {
       return menuItem.children.some(child => searchInAllLanguages(child, term));
     }
-    
+
     return false;
   }, [translationDictionary]);
 
@@ -169,7 +169,7 @@ function Sidebar({ roleChanged }) {
         };
         const allowedUrls = extractUrls(data.response);
         sessionStorage.setItem("allowedUrls", JSON.stringify(allowedUrls));
-        
+
         // Preload translations for all menu items
         preloadMenuTranslations(data.response);
       } else {
@@ -188,7 +188,7 @@ function Sidebar({ roleChanged }) {
     try {
       const languages = ['hi', 'or', 'mr'];
       const allMenuTexts = [];
-      
+
       const extractMenuTexts = (items) => {
         for (const item of items) {
           if (item.name) {
@@ -199,12 +199,12 @@ function Sidebar({ roleChanged }) {
           }
         }
       };
-      
+
       extractMenuTexts(menuItems);
-      
+
       // Remove duplicates
       const uniqueTexts = [...new Set(allMenuTexts)];
-      
+
       // Preload translations for each language
       for (const lang of languages) {
         if (lang !== 'en') {
@@ -237,10 +237,10 @@ function Sidebar({ roleChanged }) {
         });
         setOpenMenus(initialOpenMenus);
         setLoading(false);
-        
+
         // Preload translations
         preloadMenuTranslations(parsed);
-        
+
         return () => (canceled = true);
       } catch (err) {
         console.warn("Menu cache parse failed, refetching", err);
@@ -263,7 +263,7 @@ function Sidebar({ roleChanged }) {
     const handleScroll = () => {
       try {
         sessionStorage.setItem("sidebarScroll", String(sidebar.scrollTop || 0));
-      } catch (e) {}
+      } catch (e) { }
     };
 
     sidebar.addEventListener("scroll", handleScroll);
@@ -281,7 +281,7 @@ function Sidebar({ roleChanged }) {
       requestAnimationFrame(() => {
         try {
           sidebarRef.current.scrollTop = parseInt(saved, 10) || 0;
-        } catch (e) {}
+        } catch (e) { }
       });
     }
   }, [loading, menuData]);
@@ -292,47 +292,48 @@ function Sidebar({ roleChanged }) {
     return savedCounts
       ? JSON.parse(savedCounts)
       : {
-          totalUser: 0,
-          branchUser: 0,
-          totalDocument: 0,
-          pendingDocument: 0,
-          storageUsed: 0,
-          totalBranches: 0,
-          totalDepartment: 0,
-          totalRoles: 0,
-          totalFilesType: 0,
-          documentType: 0,
-          annualYear: 0,
-          totalNullEmployeeType: 0,
-          totalCategories: 0,
-          totalApprovedDocuments: 0,
-          totalRejectedDocuments: 0,
-          totalPendingDocuments: 0,
-          totalApprovedDocumentsById: 0,
-          totalRejectedDocumentsById: 0,
-          totalPendingDocumentsById: 0,
-          totalDocumentsById: 0,
-          totalApprovedStatusDocById: 0,
-          totalRejectedStatusDocById: 0,
-          departmentCountForBranch: 0,
-          nullRoleEmployeeCountForBranch: 0,
-          departmentUser: 0,
-          rejectedDocsbyid: 0,
-          approvedDocsbyid: 0,
-          pendingDocsbyid: 0,
-          createdByCount: 0,
-          nullRoleEmployeeCountForDepartment: 0,
-          totalDocumentsByDepartmentId: 0,
-          totalPendingDocumentsByDepartmentId: 0,
-          totalApprovedStatusDocByDepartmentId: 0,
-          totalRejectedStatusDocByDepartmentId: 0,
-          totalUserApplications: 0,
-          totalTemplate: 0,
-          trashApprovedDocsById: 0,
-          trashApprovedDocsByBranch: 0,
-          trashApprovedDocsByDepartment: 0, 
-          totalLanguage: 0,
-        };
+        totalUser: 0,
+        branchUser: 0,
+        totalDocument: 0,
+        pendingDocument: 0,
+        storageUsed: 0,
+        totalBranches: 0,
+        totalDepartment: 0,
+        totalRoles: 0,
+        totalFilesType: 0,
+        documentType: 0,
+        annualYear: 0,
+        totalNullEmployeeType: 0,
+        totalCategories: 0,
+        totalApprovedDocuments: 0,
+        totalRejectedDocuments: 0,
+        totalPendingDocuments: 0,
+        totalApprovedDocumentsById: 0,
+        totalRejectedDocumentsById: 0,
+        totalPendingDocumentsById: 0,
+        totalDocumentsById: 0,
+        totalApprovedStatusDocById: 0,
+        totalRejectedStatusDocById: 0,
+        departmentCountForBranch: 0,
+        nullRoleEmployeeCountForBranch: 0,
+        departmentUser: 0,
+        rejectedDocsbyid: 0,
+        approvedDocsbyid: 0,
+        pendingDocsbyid: 0,
+        createdByCount: 0,
+        nullRoleEmployeeCountForDepartment: 0,
+        totalDocumentsByDepartmentId: 0,
+        totalPendingDocumentsByDepartmentId: 0,
+        totalApprovedStatusDocByDepartmentId: 0,
+        totalRejectedStatusDocByDepartmentId: 0,
+        totalUserApplications: 0,
+        totalTemplate: 0,
+        trashTotalDoc: 0,
+        trashTotalDocByEmpId: 0,
+        trashTotalDocByBranch: 0,
+        trashTotalDocByDepartment: 0,
+        totalLanguage: 0,
+      };
   });
 
   // Fetch counts
@@ -429,7 +430,7 @@ function Sidebar({ roleChanged }) {
     const countMap = {
       "/users": counts.totalUser,
       "/userRoleAssing": currentRole === SYSTEM_ADMIN ? counts.totalNullEmployeeType : counts.nullRoleEmployeeCountForBranch,
-      "/manageUserRole": currentRole === SYSTEM_ADMIN ? counts.totalUser - counts.totalNullEmployeeType  : counts.branchUser - counts.nullRoleEmployeeCountForBranch  ,
+      "/manageUserRole": currentRole === SYSTEM_ADMIN ? counts.totalUser - counts.totalNullEmployeeType : counts.branchUser - counts.nullRoleEmployeeCountForBranch,
       "/create-branch": counts.totalBranches,
       "/create-department": counts.totalDepartment,
       "/create-role": counts.totalRoles,
@@ -443,58 +444,51 @@ function Sidebar({ roleChanged }) {
         currentRole === SYSTEM_ADMIN
           ? counts.totalPendingDocuments
           : currentRole === BRANCH_ADMIN
-          ? counts.totalPendingDocumentsById
-          : currentRole === DEPARTMENT_ADMIN
-          ? counts.totalPendingDocumentsByDepartmentId
-          : counts.pendingDocsbyid,
-          
-          "/trash-documents":
-  currentRole === SYSTEM_ADMIN
-    ? counts.trashApprovedDocsById
-    : currentRole === BRANCH_ADMIN
-    ? counts.trashApprovedDocsByBranch
-    : currentRole === DEPARTMENT_ADMIN
-    ? counts.trashApprovedDocsByDepartment
-    : counts.trashApprovedDocsById,
+            ? counts.totalPendingDocumentsById
+            : currentRole === DEPARTMENT_ADMIN
+              ? counts.totalPendingDocumentsByDepartmentId
+              : counts.pendingDocsbyid,
+
+      "/trash-documents":
+        currentRole === SYSTEM_ADMIN
+          ? counts.trashTotalDoc
+          : currentRole === BRANCH_ADMIN
+            ? counts.trashTotalDocByBranch
+            : currentRole === DEPARTMENT_ADMIN
+              ? counts.trashTotalDocByDepartment
+              : 0,
+
       "/all-documents": currentRole === USER ? counts.pendingDocsbyid : 0,
       "/total-approved":
         currentRole === SYSTEM_ADMIN
           ? counts.totalApprovedDocuments
           : currentRole === BRANCH_ADMIN
-          ? counts.totalApprovedStatusDocById
-          : currentRole === DEPARTMENT_ADMIN
-          ? counts.totalApprovedStatusDocByDepartmentId
-          : 0,
+            ? counts.totalApprovedStatusDocById
+            : currentRole === DEPARTMENT_ADMIN
+              ? counts.totalApprovedStatusDocByDepartmentId
+              : 0,
 
 
-          
+
 
       "/approvedDocs": currentRole === USER ? counts.approvedDocsbyid : 0,
       "/total-rejected":
         currentRole === SYSTEM_ADMIN
           ? counts.totalRejectedDocuments
           : currentRole === BRANCH_ADMIN
-          ? counts.totalRejectedStatusDocById
-          : currentRole === DEPARTMENT_ADMIN
-          ? counts.totalRejectedStatusDocByDepartmentId
-          : counts.rejectedDocsbyid,
+            ? counts.totalRejectedStatusDocById
+            : currentRole === DEPARTMENT_ADMIN
+              ? counts.totalRejectedStatusDocByDepartmentId
+              : counts.rejectedDocsbyid,
       "/rejectedDocs": currentRole === USER ? counts.rejectedDocsbyid : 0,
       "/branchusers": counts.branchUser,
       "/Departmentusers": counts.departmentUser,
     };
-    // Debug the trash count calculation
-  if (url === "/trash-documents") {
-    console.log("Trash count calculation:");
-    console.log(`- SYSTEM_ADMIN: ${counts.trashApprovedDocsById}`);
-    console.log(`- BRANCH_ADMIN: ${counts.trashApprovedDocsByBranch}`);
-    console.log(`- DEPARTMENT_ADMIN: ${counts.trashApprovedDocsByDepartment}`);
-    console.log(`- Current role (${currentRole}) count: ${countMap[url]}`);
-  }
 
     return countMap[url] || 0;
   };
 
-  
+
 
   // Sidebar Link component
   const SidebarLink = ({ to, icon: Icon, text, count }) => (
@@ -503,7 +497,7 @@ function Sidebar({ roleChanged }) {
       onClick={() => {
         try {
           if (sidebarRef.current) sessionStorage.setItem("sidebarScroll", String(sidebarRef.current.scrollTop || 0));
-        } catch (e) {}
+        } catch (e) { }
       }}
       className={`px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between ${isActive(to)}`}
     >
