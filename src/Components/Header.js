@@ -9,7 +9,7 @@ import adminPhoto from "../Assets/profile.svg";
 import { PiUserSwitchFill } from "react-icons/pi";
 import { TbPasswordUser, TbUserCog } from "react-icons/tb";
 import { PiUserCircleGear } from "react-icons/pi";
-import { FiUser } from "react-icons/fi";
+import { FiUser, FiGlobe } from "react-icons/fi";
 import axios from "axios";
 import { API_HOST } from "../API/apiConfig";
 import Popup from "../Components/Popup";
@@ -19,6 +19,7 @@ import { ImSpinner2 } from "react-icons/im";
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
+import { GlobeAltIcon } from "@heroicons/react/24/outline";
 
 const DropdownMenu = ({ items, onSelect, emptyMessage, className }) => (
   <div className={`absolute right-0 mt-0.5 w-48 bg-white rounded-md shadow-lg z-10 ${className}`}>
@@ -48,12 +49,15 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
     availableLanguages,
     changeLanguage,
     translate,
-    preloadTranslationsForTerms
+    preloadTranslationsForTerms,
+    getLanguageName,
+    getLanguageNativeName
   } = useLanguage();
 
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownRoleOpen, setDropdownRoleOpen] = useState(false);
+  const [dropdownLanguageOpen, setDropdownLanguageOpen] = useState(false);
   const [roleName, setRoleName] = useState([]);
   const [popupMessage, setPopupMessage] = useState(null);
   const [, setRole] = useState(null);
@@ -66,6 +70,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
   const [targetRoleName, setTargetRoleName] = useState("");
   const [isConfSwitch, setIsConfSwitch] = useState(false);
   const [currentRole, setCurrentRole] = useState("");
+  const [selectedLang, setSelectedLang] = useState(currentLanguage);
 
   // Debug language status
   useEffect(() => {
@@ -77,6 +82,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
       availableLanguagesCount: availableLanguages.length,
       pathname: window.location.pathname
     });
+    setSelectedLang(currentLanguage);
   }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
   const handleLogout = () => {
@@ -101,6 +107,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
     ) {
       setDropdownOpen(false);
       setDropdownRoleOpen(false);
+      setDropdownLanguageOpen(false);
     }
   };
 
@@ -190,6 +197,63 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
     setPopupMessage({ message, type });
   };
 
+  const getCurrentLanguageName = () => {
+    if (!availableLanguages.length) return currentLanguage.toUpperCase();
+    const lang = availableLanguages.find(l => l.code === currentLanguage);
+    return lang ? lang.name.toUpperCase() : currentLanguage.toUpperCase();
+  };
+
+  const getLanguageNameByCode = (languageCode) => {
+    if (!availableLanguages.length) return languageCode.toUpperCase();
+    const lang = availableLanguages.find(l => l.code === languageCode);
+    return lang ? lang.name : languageCode.toUpperCase();
+  };
+
+  const getLanguageNativeNameByCode = (languageCode) => {
+    if (!availableLanguages.length) {
+      // Default fallbacks
+      switch(languageCode) {
+        case 'en': return 'English';
+        case 'hi': return 'हिंदी';
+        case 'or': return 'ଓଡିଆ';
+        case 'mr': return 'मराठी';
+        default: return languageCode.toUpperCase();
+      }
+    }
+    const lang = availableLanguages.find(l => l.code === languageCode);
+    return lang ? (lang.nativeName || lang.name) : languageCode.toUpperCase();
+  };
+
+  const getLanguageIcon = (code) => {
+    switch(code) {
+      case 'en': return '🇺🇸';
+      case 'hi': return '🇮🇳';
+      case 'or': return '🇮🇳';
+      case 'mr': return '🇮🇳';
+      default: return '🌐';
+    }
+  };
+
+  const handleLanguageChange = async (languageCode) => {
+    try {
+      // Show loading state
+      setDropdownLanguageOpen(false);
+      
+      // Get language name for popup
+      const languageName = getLanguageNativeNameByCode(languageCode);
+      
+      // Change the language
+      await changeLanguage(languageCode);
+      
+      // Show success message with language name
+      showPopup(`Language changed to ${languageName}`, "success");
+      
+    } catch (error) {
+      console.error('Error changing language:', error);
+      showPopup(<AutoTranslate>Error changing language!</AutoTranslate>, "error");
+    }
+  };
+
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -222,13 +286,52 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
       </div>
 
       <div className="flex space-x-2 items-center mr-10">
+        {/* Language Dropdown */}
+        <div className="relative dropdown-toggle">
+          <div
+            className="flex items-center space-x-1 cursor-pointer hover:bg-blue-700 px-2 py-1 rounded-lg transition duration-200"
+            onClick={() => setDropdownLanguageOpen(!dropdownLanguageOpen)}
+          >
+            <GlobeAltIcon className="h-5 w-5 text-white" />
+            <span className="font-bold text-sm mr-1">{getCurrentLanguageName()}</span>
+          </div>
+
+          {dropdownLanguageOpen && (
+            <DropdownMenu
+              className="max-h-48 overflow-y-auto"
+              items={
+                availableLanguages && availableLanguages.length > 0
+                  ? availableLanguages
+                      .filter(lang => lang.isActive !== false)
+                      .map((lang) => ({
+                        label: (
+                          <span className="flex items-center text-sm text-gray-800 p-2 hover:bg-gray-100 rounded">
+                            <span className="mr-2">{getLanguageIcon(lang.code)}</span>
+                            {getLanguageNativeNameByCode(lang.code)}
+                            {lang.code === currentLanguage && (
+                              <span className="ml-auto text-green-500 font-semibold">✓</span>
+                            )}
+                          </span>
+                        ),
+                        onClick: () => handleLanguageChange(lang.code),
+                      }))
+                  : 
+
+                  []
+              }
+              onSelect={(item) => item.onClick && item.onClick()}
+              emptyMessage={<AutoTranslate>No languages available</AutoTranslate>}
+            />
+          )}
+        </div>
+
         <NotificationBell />
         <h1 className="text-3xl mb-2">|</h1>
 
         {/* Role Dropdown */}
         <div className="relative dropdown-toggle">
           <div
-            className="flex items-center space-x-2 cursor-pointer"
+            className="flex items-center space-x-2 cursor-pointer hover:bg-blue-700 px-2 py-1 rounded-lg transition duration-200"
             onClick={() => setDropdownRoleOpen(!dropdownRoleOpen)}
           >
             <PiUserSwitchFill className="h-10 w-10" />
@@ -271,7 +374,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
         {/* Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <div
-            className="flex items-center space-x-2 cursor-pointer"
+            className="flex items-center space-x-2 cursor-pointer hover:bg-blue-700 px-2 py-1 rounded-lg transition duration-200"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             <h1 className="text-3xl pb-2 mr-1">|</h1>
