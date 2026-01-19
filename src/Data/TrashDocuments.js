@@ -13,6 +13,7 @@ import {
   XMarkIcon,
   PrinterIcon,
   ArrowUturnLeftIcon,
+  CheckIcon,
 } from "@heroicons/react/24/solid";
 import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
@@ -60,6 +61,18 @@ const TrashDoc = () => {
   const [confirmRestoreModalVisible, setConfirmRestoreModalVisible] = useState(false);
   const [isRestoreConfirmDisabled, setIsRestoreConfirmDisabled] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
+  
+  // State for document-level restore
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [selectAllDocsChecked, setSelectAllDocsChecked] = useState(false);
+  const [bulkDocRestoreModalVisible, setBulkDocRestoreModalVisible] = useState(false);
+  const [isBulkDocRestoring, setIsBulkDocRestoring] = useState(false);
+  
+  // State for file-level restore (inside modal)
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectAllFilesChecked, setSelectAllFilesChecked] = useState(false);
+  const [bulkFileRestoreModalVisible, setBulkFileRestoreModalVisible] = useState(false);
+  const [isBulkFileRestoring, setIsBulkFileRestoring] = useState(false);
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -74,6 +87,106 @@ const TrashDoc = () => {
     });
   }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded]);
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "--";
+    try {
+      const date = new Date(dateString);
+      const options = {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      };
+      return date.toLocaleString("en-GB", options).replace(",", "");
+    } catch (error) {
+      return "--";
+    }
+  };
+
+  // Calculate filtered documents
+  const filteredDocuments = useMemo(() => {
+    if (!documents) return [];
+    
+    return documents.filter((doc) =>
+      Object.entries(doc).some(([key, value]) => {
+        if (key === "categoryMaster" && value?.name) {
+          return value.name.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        if (key === "employeeBy" && value) {
+          return value.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        if (key === "employee" && value) {
+          return (
+            value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            value.department?.name
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        if (key === "documentDetails" && Array.isArray(value)) {
+          return value.some((file) =>
+            file.docName.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        if (key === "updatedOn" || key === "createdOn") {
+          const date = formatDate(value).toLowerCase();
+          return date.includes(searchTerm.toLowerCase());
+        }
+        if (key === "approvalStatus" && value) {
+          return value.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        if (key === "title" && value) {
+          return value.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        if (key === "subject" && value) {
+          return value.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        if (key === "fileNo" && value) {
+          return value.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        return false;
+      })
+    )
+    .sort((a, b) => {
+      if (a.approvalStatus !== "Pending" && b.approvalStatus === "Pending") return -1;
+      if (a.approvalStatus === "Pending" && b.approvalStatus !== "Pending") return 1;
+      return new Date(b.approvalStatusOn || 0) - new Date(a.approvalStatusOn || 0);
+    });
+  }, [documents, searchTerm]);
+
+  // Calculate pagination values
+  const paginationValues = useMemo(() => {
+    const totalItems = filteredDocuments.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const paginatedDocuments = filteredDocuments.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+    
+    return { totalItems, totalPages, paginatedDocuments };
+  }, [filteredDocuments, currentPage, itemsPerPage]);
+
+  const { totalItems, totalPages, paginatedDocuments } = paginationValues;
+
+  const getPageNumbers = () => {
+    const maxPageNumbers = 5;
+    const startPage =
+      Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
+    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, i) => startPage + i
+    );
+  };
+
+  const findPageForDocument = (documentId) => {
+    const documentIndex = filteredDocuments.findIndex(doc => doc.id === documentId);
+    if (documentIndex !== -1) {
+      return Math.ceil((documentIndex + 1) / itemsPerPage);
+    }
+    return 1;
+  };
+
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const notificationDocId = searchParams.get('docId');
@@ -86,17 +199,28 @@ const TrashDoc = () => {
     }
   }, [location.search, documents, itemsPerPage]);
 
-  const findPageForDocument = (documentId) => {
-    const documentIndex = filteredDocuments.findIndex(doc => doc.id === documentId);
-    if (documentIndex !== -1) {
-      return Math.ceil((documentIndex + 1) / itemsPerPage);
-    }
-    return 1;
-  };
-
   useEffect(() => {
     fetchTrashDocuments();
   }, []);
+
+  // Reset selected documents when documents change
+  useEffect(() => {
+    setSelectedDocuments([]);
+    setSelectAllDocsChecked(false);
+  }, [documents, currentPage, itemsPerPage]);
+
+  // Update selectAllDocsChecked when paginated documents or selections change
+  useEffect(() => {
+    if (paginatedDocuments.length === 0) {
+      setSelectAllDocsChecked(false);
+      return;
+    }
+    
+    const allSelected = paginatedDocuments.every(doc => 
+      selectedDocuments.some(selected => selected.id === doc.id)
+    );
+    setSelectAllDocsChecked(allSelected);
+  }, [selectedDocuments, paginatedDocuments]);
 
   const fetchTrashDocuments = async () => {
     try {
@@ -127,7 +251,6 @@ const TrashDoc = () => {
       
       // Filter documents that have at least one deleted file
       const trashDocuments = allDocuments.filter(doc => {
-        // Check if documentDetails exists and has at least one file with isDeleted = true
         return doc.documentDetails && 
                doc.documentDetails.some(file => file.isDeleted === true);
       });
@@ -143,7 +266,94 @@ const TrashDoc = () => {
     }
   };
 
-  // Function to handle file restoration
+  // Function to handle document selection
+  const handleSelectDocument = (doc) => {
+    setSelectedDocuments(prev => {
+      const isSelected = prev.some(d => d.id === doc.id);
+      if (isSelected) {
+        return prev.filter(d => d.id !== doc.id);
+      } else {
+        return [...prev, doc];
+      }
+    });
+  };
+
+  const handleSelectAllDocuments = () => {
+    if (selectAllDocsChecked) {
+      // Clear all selections
+      setSelectedDocuments([]);
+      setSelectAllDocsChecked(false);
+    } else {
+      // Select all paginated documents
+      setSelectedDocuments([...paginatedDocuments]);
+      setSelectAllDocsChecked(true);
+    }
+  };
+
+  // Function to handle bulk document restore (restore all deleted files in selected documents)
+  const handleBulkDocumentRestore = () => {
+    if (selectedDocuments.length === 0) {
+      showPopup('Please select at least one document to restore.', 'warning');
+      return;
+    }
+    setBulkDocRestoreModalVisible(true);
+  };
+
+  const confirmBulkDocumentRestore = async () => {
+    setIsBulkDocRestoring(true);
+    
+    try {
+      // Get all deleted files from selected documents
+      const allFilesToRestore = [];
+      selectedDocuments.forEach(doc => {
+        if (doc.documentDetails) {
+          const deletedFiles = doc.documentDetails.filter(file => file.isDeleted === true);
+          allFilesToRestore.push(...deletedFiles);
+        }
+      });
+
+      if (allFilesToRestore.length === 0) {
+        showPopup('No deleted files found in selected documents.', 'warning');
+        setIsBulkDocRestoring(false);
+        setBulkDocRestoreModalVisible(false);
+        return;
+      }
+
+      // Restore all files
+      const restorePromises = allFilesToRestore.map(file =>
+        axios.put(
+          `${DOCUMENTHEADER_API}/delete-status/${file.id}`,
+          null,
+          {
+            params: { isDeleted: false },
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+      );
+
+      await Promise.all(restorePromises);
+
+      // Refresh the documents list
+      fetchTrashDocuments();
+
+      // Clear selections
+      setSelectedDocuments([]);
+      setSelectAllDocsChecked(false);
+      setBulkDocRestoreModalVisible(false);
+      
+      showPopup(`${allFilesToRestore.length} file(s) from ${selectedDocuments.length} document(s) restored successfully!`, 'success');
+    } catch (error) {
+      console.error('Error in bulk document restore:', error);
+      showPopup('Failed to restore some files. Please try again!', 'error');
+    } finally {
+      setIsBulkDocRestoring(false);
+    }
+  };
+
+  // Function to handle file restoration (single file inside modal)
   const handleRestoreFile = (file) => {
     setFileToRestore(file);
     setConfirmRestoreModalVisible(true);
@@ -180,6 +390,9 @@ const TrashDoc = () => {
             ...selectedDoc,
             documentDetails: updatedDocumentDetails
           });
+          
+          // Remove from selected files if present
+          setSelectedFiles(prev => prev.filter(f => f.id !== fileToRestore.id));
         }
 
         setConfirmRestoreModalVisible(false);
@@ -194,6 +407,122 @@ const TrashDoc = () => {
       }
     }
   };
+
+  // Bulk file restore functions (inside modal)
+  const handleSelectAllFiles = () => {
+    if (!selectedDoc) return;
+    
+    const currentFilteredFiles = getCurrentFilteredFiles();
+    
+    if (selectAllFilesChecked) {
+      // Clear all selections
+      setSelectedFiles([]);
+      setSelectAllFilesChecked(false);
+    } else {
+      // Select all filtered files
+      setSelectedFiles([...currentFilteredFiles]);
+      setSelectAllFilesChecked(true);
+    }
+  };
+
+  const handleSelectFile = (file) => {
+    setSelectedFiles(prev => {
+      const isSelected = prev.some(f => f.id === file.id);
+      if (isSelected) {
+        return prev.filter(f => f.id !== file.id);
+      } else {
+        return [...prev, file];
+      }
+    });
+  };
+
+  const handleBulkFileRestore = () => {
+    if (selectedFiles.length === 0) {
+      showPopup('Please select at least one file to restore.', 'warning');
+      return;
+    }
+    setBulkFileRestoreModalVisible(true);
+  };
+
+  const confirmBulkFileRestore = async () => {
+    setIsBulkFileRestoring(true);
+    
+    try {
+      const restorePromises = selectedFiles.map(file =>
+        axios.put(
+          `${DOCUMENTHEADER_API}/delete-status/${file.id}`,
+          null,
+          {
+            params: { isDeleted: false },
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+      );
+
+      await Promise.all(restorePromises);
+
+      // Refresh the documents list
+      fetchTrashDocuments();
+
+      // Update selectedDoc if modal is open
+      if (selectedDoc) {
+        const updatedDocumentDetails = selectedDoc.documentDetails.map(file =>
+          selectedFiles.some(selected => selected.id === file.id) 
+            ? { ...file, isDeleted: false } 
+            : file
+        );
+        
+        setSelectedDoc({
+          ...selectedDoc,
+          documentDetails: updatedDocumentDetails
+        });
+      }
+
+      // Clear selections
+      setSelectedFiles([]);
+      setSelectAllFilesChecked(false);
+      setBulkFileRestoreModalVisible(false);
+      
+      showPopup(`${selectedFiles.length} file(s) restored successfully!`, 'success');
+    } catch (error) {
+      console.error('Error in bulk file restore:', error);
+      showPopup('Failed to restore some files. Please try again!', 'error');
+    } finally {
+      setIsBulkFileRestoring(false);
+    }
+  };
+
+  const getCurrentFilteredFiles = () => {
+    if (!selectedDoc || !Array.isArray(selectedDoc.documentDetails)) return [];
+    
+    return selectedDoc.documentDetails.filter((file) => {
+      if (!file.isDeleted) return false;
+      
+      const name = file.docName.toLowerCase();
+      const version = String(file.version).toLowerCase();
+      const term = searchFileTerm.toLowerCase();
+      return name.includes(term) || version.includes(term);
+    });
+  };
+
+  // Update selectAllFilesChecked when filtered files or selections change
+  useEffect(() => {
+    if (!selectedDoc) return;
+    
+    const currentFilteredFiles = getCurrentFilteredFiles();
+    if (currentFilteredFiles.length === 0) {
+      setSelectAllFilesChecked(false);
+      return;
+    }
+    
+    const allSelected = currentFilteredFiles.every(file => 
+      selectedFiles.some(selected => selected.id === file.id)
+    );
+    setSelectAllFilesChecked(allSelected);
+  }, [selectedFiles, selectedDoc, searchFileTerm]);
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({
@@ -282,80 +611,8 @@ const TrashDoc = () => {
   };
 
   const filteredDocFiles = useMemo(() => {
-    if (!selectedDoc || !Array.isArray(selectedDoc.documentDetails)) return [];
-    
-    // Filter to show only deleted files (for trash page)
-    return selectedDoc.documentDetails.filter((file) => {
-      if (!file.isDeleted) return false; // Only show deleted files
-      
-      const name = file.docName.toLowerCase();
-      const version = String(file.version).toLowerCase();
-      const term = searchFileTerm.toLowerCase();
-      return name.includes(term) || version.includes(term);
-    });
+    return getCurrentFilteredFiles();
   }, [selectedDoc, searchFileTerm]);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "--";
-    try {
-      const date = new Date(dateString);
-      const options = {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      };
-      return date.toLocaleString("en-GB", options).replace(",", "");
-    } catch (error) {
-      return "--";
-    }
-  };
-
-  const filteredDocuments = documents?.filter((doc) =>
-    Object.entries(doc).some(([key, value]) => {
-      if (key === "categoryMaster" && value?.name) {
-        return value.name.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (key === "employeeBy" && value) {
-        return value.name?.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (key === "employee" && value) {
-        return (
-          value.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          value.department?.name
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      if (key === "documentDetails" && Array.isArray(value)) {
-        return value.some((file) =>
-          file.docName.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      if (key === "updatedOn" || key === "createdOn") {
-        const date = formatDate(value).toLowerCase();
-        return date.includes(searchTerm.toLowerCase());
-      }
-      if (key === "approvalStatus" && value) {
-        return value.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (key === "title" && value) {
-        return value.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (key === "subject" && value) {
-        return value.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      if (key === "fileNo" && value) {
-        return value.toLowerCase().includes(searchTerm.toLowerCase());
-      }
-      return false;
-    })
-  )
-  .sort((a, b) => {
-    if (a.approvalStatus !== "Pending" && b.approvalStatus === "Pending") return -1;
-    if (a.approvalStatus === "Pending" && b.approvalStatus !== "Pending") return 1;
-    return new Date(b.approvalStatusOn || 0) - new Date(a.approvalStatusOn || 0);
-  });
 
   const fetchQRCode = async (documentId) => {
     try {
@@ -460,24 +717,6 @@ const TrashDoc = () => {
     }
   };
 
-  const totalItems = filteredDocuments.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedDocuments = filteredDocuments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const getPageNumbers = () => {
-    const maxPageNumbers = 5;
-    const startPage =
-      Math.floor((currentPage - 1) / maxPageNumbers) * maxPageNumbers + 1;
-    const endPage = Math.min(startPage + maxPageNumbers - 1, totalPages);
-    return Array.from(
-      { length: endPage - startPage + 1 },
-      (_, i) => startPage + i
-    );
-  };
-
   const openModal = (doc) => {
     setSelectedDoc(doc);
     setIsOpen(true);
@@ -488,6 +727,8 @@ const TrashDoc = () => {
     setIsOpen(false);
     setSelectedDoc(null);
     setQrCodeUrl(null);
+    setSelectedFiles([]);
+    setSelectAllFilesChecked(false);
   };
 
   if (loading) {
@@ -548,10 +789,45 @@ const TrashDoc = () => {
           </div>
         </div>
 
+        {/* Bulk Action Bar */}
+        {selectedDocuments.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+            <div className="flex items-center">
+              <CheckIcon className="h-5 w-5 text-blue-600 mr-2" />
+              <span className="text-blue-700">
+                <AutoTranslate>{selectedDocuments.length} document(s) selected</AutoTranslate>
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleBulkDocumentRestore}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
+                disabled={isBulkDocRestoring}
+              >
+                <ArrowUturnLeftIcon className="h-4 w-4" />
+                {isBulkDocRestoring ? (
+                  <AutoTranslate>Processing...</AutoTranslate>
+                ) : (
+                  <AutoTranslate>Restore Selected</AutoTranslate>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border">
             <thead>
               <tr className="bg-slate-100">
+                <th className="border p-2 text-left">
+                  <input
+                    type="checkbox"
+                    checked={selectAllDocsChecked}
+                    onChange={handleSelectAllDocuments}
+                    className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                    title="Select all documents"
+                  />
+                </th>
                 <th className="border p-2 text-left">
                   <AutoTranslate>SN</AutoTranslate>
                 </th>
@@ -571,47 +847,90 @@ const TrashDoc = () => {
                   <AutoTranslate>Approval Status</AutoTranslate>
                 </th>
                 <th className="border p-2 text-left">
-                  <AutoTranslate>View</AutoTranslate>
+                  <AutoTranslate>Deleted Files</AutoTranslate>
+                </th>
+                <th className="border p-2 text-left">
+                  <AutoTranslate>Actions</AutoTranslate>
                 </th>
               </tr>
             </thead>
             <tbody>
               {paginatedDocuments.length > 0 ? (
-                paginatedDocuments.map((doc, index) => (
-                  <tr
-                    key={doc.id}
-                    className={
-                      doc.id === highlightedDocId
-                        ? 'bg-yellow-100'
-                        : ''
-                    }
-                  >
-                    <td className="border p-2">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </td>
-                    <td className="border p-2">{doc.fileNo || "N/A"}</td>
-                    <td className="border p-2">{doc.title || "N/A"}</td>
-                    <td className="border p-2">{doc.subject || "N/A"}</td>
-                    <td className="border p-2">
-                      {doc.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>}
-                    </td>
-                    <td className="border p-2">
-                      {doc.approvalStatus || <AutoTranslate>Pending</AutoTranslate>}
-                    </td>
-                    <td className="border p-2">
-                      <button
-                        onClick={() => openModal(doc)}
-                        title={`View details for ${doc.title || "this document"}`}
-                      >
-                        <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                paginatedDocuments.map((doc, index) => {
+                  const isSelected = selectedDocuments.some(d => d.id === doc.id);
+                  const deletedFilesCount = doc.documentDetails?.filter(file => file.isDeleted === true).length || 0;
+                  
+                  return (
+                    <tr
+                      key={doc.id}
+                      className={
+                        doc.id === highlightedDocId
+                          ? 'bg-yellow-100'
+                          : isSelected
+                          ? 'bg-blue-50'
+                          : ''
+                      }
+                    >
+                      <td className="border p-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSelectDocument(doc)}
+                          className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                      </td>
+                      <td className="border p-2">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </td>
+                      <td className="border p-2">{doc.fileNo || "N/A"}</td>
+                      <td className="border p-2">{doc.title || "N/A"}</td>
+                      <td className="border p-2">{doc.subject || "N/A"}</td>
+                      <td className="border p-2">
+                        {doc.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>}
+                      </td>
+                      <td className="border p-2">
+                        {doc.approvalStatus || <AutoTranslate>Pending</AutoTranslate>}
+                      </td>
+                      <td className="border p-2 text-center">
+                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 text-red-800 text-xs font-medium">
+                          {deletedFilesCount}
+                        </span>
+                      </td>
+                      <td className="border p-2">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openModal(doc)}
+                            title={`View details for ${doc.title || "this document"}`}
+                            className="p-1 rounded hover:bg-green-100"
+                          >
+                            <EyeIcon className="h-5 w-5 text-green-600" />
+                          </button>
+                          {deletedFilesCount > 0 && (
+                            <button
+                              onClick={() => {
+                                // Direct restore of all files in this document
+                                const docToRestore = doc;
+                                const filesToRestore = doc.documentDetails?.filter(file => file.isDeleted === true) || [];
+                                if (filesToRestore.length > 0) {
+                                  setSelectedDocuments([docToRestore]);
+                                  setBulkDocRestoreModalVisible(true);
+                                }
+                              }}
+                              title="Restore all files in this document"
+                              className="p-1 rounded hover:bg-green-100"
+                            >
+                              <ArrowUturnLeftIcon className="h-5 w-5 text-green-600" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan="9"
                     className="border p-4 text-center text-gray-500"
                   >
                     <AutoTranslate>No data found in trash.</AutoTranslate>
@@ -648,6 +967,16 @@ const TrashDoc = () => {
                       </h1>
                     </div>
                     <div className="flex gap-3">
+                      {selectedFiles.length > 0 && (
+                        <button
+                          onClick={handleBulkFileRestore}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
+                          disabled={selectedFiles.length === 0}
+                        >
+                          <ArrowUturnLeftIcon className="h-5 w-5" />
+                          <span><AutoTranslate>Restore Selected ({selectedFiles.length})</AutoTranslate></span>
+                        </button>
+                      )}
                       <button
                         onClick={() => handlePrintReport(selectedDoc?.id)}
                         className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
@@ -727,16 +1056,30 @@ const TrashDoc = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                       <h2 className="text-xl font-semibold text-gray-800">
                         <AutoTranslate>Deleted Files</AutoTranslate>
+                        <span className="ml-2 text-sm font-normal text-gray-600">
+                          ({selectedFiles.length} selected)
+                        </span>
                       </h2>
-                      <div className="relative w-full sm:w-64">
-                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Search files..."
-                          value={searchFileTerm}
-                          onChange={(e) => setSearchFileTerm(e.target.value)}
-                          className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        />
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-full sm:w-64">
+                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Search files..."
+                            value={searchFileTerm}
+                            onChange={(e) => setSearchFileTerm(e.target.value)}
+                            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                        {selectedFiles.length > 0 && (
+                          <button
+                            onClick={handleBulkFileRestore}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+                          >
+                            <ArrowUturnLeftIcon className="h-4 w-4" />
+                            <span><AutoTranslate>Restore ({selectedFiles.length})</AutoTranslate></span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -749,8 +1092,17 @@ const TrashDoc = () => {
                       </div>
                     ) : selectedDoc && filteredDocFiles.length > 0 ? (
                       <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        {/* Desktop View Table Header - Added Restore column */}
-                        <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
+                        {/* Desktop View Table Header - Added Checkbox column */}
+                        <div className="hidden md:grid grid-cols-[25fr_30fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
+                          <span className="text-left">
+                            <input
+                              type="checkbox"
+                              checked={selectAllFilesChecked}
+                              onChange={handleSelectAllFiles}
+                              className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                              title="Select all files"
+                            />
+                          </span>
                           <span className="text-left">
                             <AutoTranslate>File Name</AutoTranslate>
                           </span>
@@ -781,141 +1133,160 @@ const TrashDoc = () => {
                         </div>
 
                         <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                          {filteredDocFiles.map((file, index) => (
-                            <div key={index} className="hover:bg-gray-50 transition-colors duration-150">
-                              {/* Desktop View */}
-                              <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] items-center px-6 py-4 text-sm">
-                                <div className="text-left text-gray-800 break-words">
-                                  <strong>{index + 1}.</strong> {file.docName}
-                                </div>
-                                <div className="text-center text-gray-700">{file.yearMaster?.name || "--"}</div>
-                                <div className="text-center text-gray-700">{file.version}</div>
-                                <div className="text-center">
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                        "bg-yellow-100 text-yellow-800"}`}
-                                  >
-                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                  </span>
-                                </div>
-                                <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
-                                <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
-                                <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
-                                <div className="flex justify-center no-print">
-                                  <button
-                                    onClick={() => {
-                                      setOpeningFileIndex(index);
-                                      setSelectedDocFiles(file);
-                                      openFile(file).finally(() => setOpeningFileIndex(null));
-                                    }}
-                                    disabled={openingFileIndex !== null}
-                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                          ${openingFileIndex === index ?
-                                        "bg-indigo-400 cursor-not-allowed" :
-                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                  >
-                                    {openingFileIndex === index ? (
-                                      <>
-                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                        <AutoTranslate>Opening...</AutoTranslate>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <EyeIcon className="h-3 w-3" />
-                                        <AutoTranslate>View</AutoTranslate>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                                {/* Action Column - Show restore button for deleted files */}
-                                <div className="flex justify-center no-print">
-                                  <button
-                                    onClick={() => handleRestoreFile(file)}
-                                    className="p-1.5 rounded-full bg-green-100 hover:bg-green-200 text-green-700"
-                                    title="Restore File"
-                                  >
-                                    <ArrowUturnLeftIcon className="h-5 w-5" />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Mobile View */}
-                              <div className="md:hidden p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                  <div className="text-left text-gray-800 break-words flex-1">
+                          {filteredDocFiles.map((file, index) => {
+                            const isSelected = selectedFiles.some(f => f.id === file.id);
+                            return (
+                              <div key={index} className={`hover:bg-gray-50 transition-colors duration-150 ${isSelected ? 'bg-blue-50' : ''}`}>
+                                {/* Desktop View */}
+                                <div className="hidden md:grid grid-cols-[25fr_30fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] items-center px-6 py-4 text-sm">
+                                  <div className="text-left">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => handleSelectFile(file)}
+                                      className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                    />
+                                  </div>
+                                  <div className="text-left text-gray-800 break-words">
                                     <strong>{index + 1}.</strong> {file.docName}
                                   </div>
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
+                                  <div className="text-center text-gray-700">{file.yearMaster?.name || "--"}</div>
+                                  <div className="text-center text-gray-700">{file.version}</div>
+                                  <div className="text-center">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                         ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                        "bg-yellow-100 text-yellow-800"}`}
-                                  >
-                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                  </span>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 text-sm mt-3">
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.yearMaster?.name || "--"}</p>
+                                        file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                          "bg-yellow-100 text-yellow-800"}`}
+                                    >
+                                      {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                                    </span>
                                   </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.version}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.approvedBy || "--"}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
-                                    <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
-                                  </div>
-                                  <div className="col-span-2">
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
-                                    <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
-                                  </div>
-                                </div>
-
-                                <div className="mt-3 flex justify-between items-center">
-                                  <button
-                                    onClick={() => {
-                                      setOpeningFileIndex(index);
-                                      setSelectedDocFiles(file);
-                                      openFile(file).finally(() => setOpeningFileIndex(null));
-                                    }}
-                                    disabled={openingFileIndex !== null}
-                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                                  <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
+                                  <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
+                                  <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
+                                  <div className="flex justify-center no-print">
+                                    <button
+                                      onClick={() => {
+                                        setOpeningFileIndex(index);
+                                        setSelectedDocFiles(file);
+                                        openFile(file).finally(() => setOpeningFileIndex(null));
+                                      }}
+                                      disabled={openingFileIndex !== null}
+                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
                           ${openingFileIndex === index ?
-                                        "bg-indigo-400 cursor-not-allowed" :
-                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                  >
-                                    {openingFileIndex === index ? (
-                                      <>
-                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                        <AutoTranslate>Opening...</AutoTranslate>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <EyeIcon className="h-3 w-3" />
-                                        <AutoTranslate>View File</AutoTranslate>
-                                      </>
-                                    )}
-                                  </button>
-                                  
-                                  {/* Restore button for mobile */}
-                                  <button
-                                    onClick={() => handleRestoreFile(file)}
-                                    className="p-1.5 rounded-full bg-green-100 hover:bg-green-200"
-                                    title="Restore File"
-                                  >
-                                    <ArrowUturnLeftIcon className="h-5 w-5 text-green-700" />
-                                  </button>
+                                          "bg-indigo-400 cursor-not-allowed" :
+                                          "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                    >
+                                      {openingFileIndex === index ? (
+                                        <>
+                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                          <AutoTranslate>Opening...</AutoTranslate>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <EyeIcon className="h-3 w-3" />
+                                          <AutoTranslate>View</AutoTranslate>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                  <div className="flex justify-center no-print">
+                                    <button
+                                      onClick={() => handleRestoreFile(file)}
+                                      className="p-1.5 rounded-full bg-green-100 hover:bg-green-200 text-green-700"
+                                      title="Restore File"
+                                    >
+                                      <ArrowUturnLeftIcon className="h-5 w-5" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Mobile View */}
+                                <div className="md:hidden p-4">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => handleSelectFile(file)}
+                                        className="h-4 w-4 mr-2 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                      />
+                                      <div className="text-left text-gray-800 break-words flex-1">
+                                        <strong>{index + 1}.</strong> {file.docName}
+                                      </div>
+                                    </div>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
+                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                                        file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                          "bg-yellow-100 text-yellow-800"}`}
+                                    >
+                                      {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                                    </span>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                                    <div>
+                                      <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
+                                      <p className="text-gray-700">{file.yearMaster?.name || "--"}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
+                                      <p className="text-gray-700">{file.version}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
+                                      <p className="text-gray-700">{file.approvedBy || "--"}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
+                                      <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
+                                    </div>
+                                    <div className="col-span-2">
+                                      <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
+                                      <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-3 flex justify-between items-center">
+                                    <button
+                                      onClick={() => {
+                                        setOpeningFileIndex(index);
+                                        setSelectedDocFiles(file);
+                                        openFile(file).finally(() => setOpeningFileIndex(null));
+                                      }}
+                                      disabled={openingFileIndex !== null}
+                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                          ${openingFileIndex === index ?
+                                          "bg-indigo-400 cursor-not-allowed" :
+                                          "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                    >
+                                      {openingFileIndex === index ? (
+                                        <>
+                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                          <AutoTranslate>Opening...</AutoTranslate>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <EyeIcon className="h-3 w-3" />
+                                          <AutoTranslate>View File</AutoTranslate>
+                                        </>
+                                      )}
+                                    </button>
+                                    
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => handleRestoreFile(file)}
+                                        className="p-1.5 rounded-full bg-green-100 hover:bg-green-200"
+                                        title="Restore File"
+                                      >
+                                        <ArrowUturnLeftIcon className="h-5 w-5 text-green-700" />
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     ) : (
@@ -937,7 +1308,7 @@ const TrashDoc = () => {
             </div>
           )}
 
-          {/* Confirmation Modal for File Restoration */}
+          {/* Confirmation Modal for Single File Restoration */}
           {confirmRestoreModalVisible && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
               <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
@@ -968,6 +1339,109 @@ const TrashDoc = () => {
                       <AutoTranslate>Processing...</AutoTranslate>
                     ) : (
                       <AutoTranslate>Restore</AutoTranslate>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confirmation Modal for Bulk File Restoration (inside modal) */}
+          {bulkFileRestoreModalVisible && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+                <h2 className="text-lg font-semibold mb-4">
+                  <AutoTranslate>Bulk Restore Files</AutoTranslate>
+                </h2>
+                <p className="mb-4">
+                  <AutoTranslate>Are you sure you want to restore {selectedFiles.length} file(s)?</AutoTranslate>
+                </p>
+                <ul className="mb-4 max-h-40 overflow-y-auto">
+                  {selectedFiles.slice(0, 5).map((file, index) => (
+                    <li key={index} className="text-sm text-gray-600 truncate">
+                      • {file.docName}
+                    </li>
+                  ))}
+                  {selectedFiles.length > 5 && (
+                    <li className="text-sm text-gray-500">
+                      ... and {selectedFiles.length - 5} more
+                    </li>
+                  )}
+                </ul>
+                <div className="flex justify-end gap-4">
+                  <button 
+                    onClick={() => setBulkFileRestoreModalVisible(false)} 
+                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                    disabled={isBulkFileRestoring}
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={confirmBulkFileRestore}
+                    disabled={isBulkFileRestoring}
+                    className={`px-4 py-2 rounded-md text-white ${isBulkFileRestoring 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-green-600 hover:bg-green-700'} transition-colors`}
+                  >
+                    {isBulkFileRestoring ? (
+                      <AutoTranslate>Processing...</AutoTranslate>
+                    ) : (
+                      <AutoTranslate>Restore All</AutoTranslate>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confirmation Modal for Bulk Document Restoration (main table) */}
+          {bulkDocRestoreModalVisible && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+                <h2 className="text-lg font-semibold mb-4">
+                  <AutoTranslate>Bulk Restore Documents</AutoTranslate>
+                </h2>
+                <p className="mb-4">
+                  <AutoTranslate>Are you sure you want to restore all deleted files from {selectedDocuments.length} document(s)?</AutoTranslate>
+                  <br />
+                  <small className="text-gray-600">
+                    <AutoTranslate>This will restore all deleted files in the selected documents.</AutoTranslate>
+                  </small>
+                </p>
+                <ul className="mb-4 max-h-40 overflow-y-auto">
+                  {selectedDocuments.slice(0, 5).map((doc, index) => {
+                    const deletedFilesCount = doc.documentDetails?.filter(file => file.isDeleted === true).length || 0;
+                    return (
+                      <li key={index} className="text-sm text-gray-600 truncate">
+                        • {doc.title} ({deletedFilesCount} file{deletedFilesCount !== 1 ? 's' : ''})
+                      </li>
+                    );
+                  })}
+                  {selectedDocuments.length > 5 && (
+                    <li className="text-sm text-gray-500">
+                      ... and {selectedDocuments.length - 5} more
+                    </li>
+                  )}
+                </ul>
+                <div className="flex justify-end gap-4">
+                  <button 
+                    onClick={() => setBulkDocRestoreModalVisible(false)} 
+                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                    disabled={isBulkDocRestoring}
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={confirmBulkDocumentRestore}
+                    disabled={isBulkDocRestoring}
+                    className={`px-4 py-2 rounded-md text-white ${isBulkDocRestoring 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-green-600 hover:bg-green-700'} transition-colors`}
+                  >
+                    {isBulkDocRestoring ? (
+                      <AutoTranslate>Processing...</AutoTranslate>
+                    ) : (
+                      <AutoTranslate>Restore All</AutoTranslate>
                     )}
                   </button>
                 </div>
