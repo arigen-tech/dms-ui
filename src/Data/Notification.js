@@ -7,6 +7,8 @@ import {
   UserGroupIcon,
   ExclamationTriangleIcon,
   ArrowLeftIcon,
+  ShareIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/solid"
 import { BellAlertIcon } from "@heroicons/react/24/solid"
 import { useNavigate } from "react-router-dom"
@@ -14,7 +16,6 @@ import axios from "axios"
 import { API_HOST } from "../API/apiConfig"
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
-import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 const getNotificationIcon = (type) => {
   const commonClasses = "h-8 w-8 p-1.5 rounded-lg"
@@ -41,6 +42,18 @@ const getNotificationIcon = (type) => {
           <UserGroupIcon className="text-purple-600" />
         </div>
       )
+    case "DOCUMENT_SHARE":
+      return (
+        <div className={`${commonClasses} bg-indigo-100`}>
+          <ShareIcon className="text-indigo-600" />
+        </div>
+      )
+    case "DOCUMENT_SHARE_REVOKE":
+      return (
+        <div className={`${commonClasses} bg-red-100`}>
+          <XCircleIcon className="text-red-600" />
+        </div>
+      )
     default:
       return (
         <div className={`${commonClasses} bg-yellow-100`}>
@@ -64,43 +77,30 @@ const getPriorityColor = (priority) => {
 // Helper function to get allowed notification types based on role
 const getAllowedNotificationTypes = (role) => {
   if (role === "ADMIN" || role === "BRANCH ADMIN") {
-    // ADMIN and BRANCH ADMIN can see all notification types
     return [
-      // "DOCUMENT_APPROVAL",
-      // "DOCUMENT_REJECTION",
       "NEW_DOCUMENT",
       "EMPLOYEE_UPDATE",
-      // "EMPLOYEE_STATUS_CHANGE",
       "NEW_EMPLOYEE_ADDED",
       "ROLE_UPDATE",
+      "DOCUMENT_SHARE",
+      "DOCUMENT_SHARE_REVOKE"
     ]
   } else if (role === "DEPARTMENT ADMIN") {
-    return ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED"]
+    return ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED", "DOCUMENT_SHARE", "DOCUMENT_SHARE_REVOKE"]
   } else {
-    // Regular users
     return [
       "EMPLOYEE_UPDATE",
       "EMPLOYEE_STATUS_CHANGE",
       "ROLE_UPDATE",
       "DOCUMENT_APPROVAL",
       "DOCUMENT_REJECTION",
+      "DOCUMENT_SHARE",
+      "DOCUMENT_SHARE_REVOKE"
     ]
   }
 }
 
 export const NotificationBell = () => {
-  // Get language context
-  const {
-    currentLanguage,
-    defaultLanguage,
-    translationStatus,
-    isTranslationNeeded,
-    availableLanguages,
-    changeLanguage,
-    translate,
-    preloadTranslationsForTerms
-  } = useLanguage();
-
   const [unreadCount, setUnreadCount] = useState(0)
   const navigate = useNavigate()
   const tokenKey = localStorage.getItem("tokenKey")
@@ -109,7 +109,6 @@ export const NotificationBell = () => {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      // Always fetch all notifications and filter them based on role
       const response = await axios.get(`${API_HOST}/notifications`, {
         params: { employeeId: userId },
         headers: { Authorization: `Bearer ${tokenKey}` },
@@ -118,7 +117,6 @@ export const NotificationBell = () => {
       const allNotifications = response.data.response
       const allowedTypes = getAllowedNotificationTypes(role)
 
-      // Filter notifications based on role and unread status
       const filteredUnreadNotifications = allNotifications.filter(notification =>
         allowedTypes.includes(notification.type) && !notification.read
       )
@@ -158,7 +156,6 @@ export const NotificationBell = () => {
 }
 
 export const Notification = () => {
-  // Get language context
   const {
     currentLanguage,
     defaultLanguage,
@@ -170,7 +167,6 @@ export const Notification = () => {
     preloadTranslationsForTerms
   } = useLanguage();
 
-  // State for translated text
   const [translatedTexts, setTranslatedTexts] = useState({
     notifications: 'Notifications',
     loadingNotifications: 'Loading notifications...',
@@ -179,7 +175,9 @@ export const Notification = () => {
     clearAll: 'Clear All',
     additionalDetails: 'Additional Details',
     reviewDocument: 'Review Document File',
-    viewEmployee: 'View Employee Details'
+    viewEmployee: 'View Employee Details',
+    viewSharedDocument: 'View Shared Document',
+    viewRevokedDocument: 'View Document Details'
   });
 
   const [notifications, setNotifications] = useState([])
@@ -204,6 +202,8 @@ export const Notification = () => {
     "EMPLOYEE_STATUS_CHANGE",
     "ROLE_UPDATE",
     "NEW_EMPLOYEE_ADDED",
+    "DOCUMENT_SHARE",
+    "DOCUMENT_SHARE_REVOKE"
   ]
 
   // Function to translate text
@@ -231,7 +231,9 @@ export const Notification = () => {
           clearAll: 'Clear All',
           additionalDetails: 'Additional Details',
           reviewDocument: 'Review Document File',
-          viewEmployee: 'View Employee Details'
+          viewEmployee: 'View Employee Details',
+          viewSharedDocument: 'View Shared Document',
+          viewRevokedDocument: 'View Document Details'
         });
         return;
       }
@@ -244,6 +246,8 @@ export const Notification = () => {
       const additionalDetailsText = await translateText('Additional Details');
       const reviewDocumentText = await translateText('Review Document File');
       const viewEmployeeText = await translateText('View Employee Details');
+      const viewSharedDocumentText = await translateText('View Shared Document');
+      const viewRevokedDocumentText = await translateText('View Document Details');
 
       setTranslatedTexts({
         notifications: notificationsText,
@@ -253,7 +257,9 @@ export const Notification = () => {
         clearAll: clearAllText,
         additionalDetails: additionalDetailsText,
         reviewDocument: reviewDocumentText,
-        viewEmployee: viewEmployeeText
+        viewEmployee: viewEmployeeText,
+        viewSharedDocument: viewSharedDocumentText,
+        viewRevokedDocument: viewRevokedDocumentText
       });
     };
 
@@ -369,17 +375,14 @@ export const Notification = () => {
     if (notifications.length === 0) return;
 
     try {
-      // Mark all current notifications as read on the server
       const markAsReadPromises = notifications.map(notification =>
         axios.put(`${API_HOST}/notifications/${notification.id}/read`, null, {
           headers: { Authorization: `Bearer ${tokenKey}` },
         })
       );
 
-      // Wait for all notifications to be marked as read
       await Promise.all(markAsReadPromises);
 
-      // Clear the local state
       setNotifications([]);
 
       console.log("All notifications cleared successfully");
@@ -393,7 +396,7 @@ export const Notification = () => {
     switch (notification.type) {
       case "DOCUMENT_APPROVAL":
       case "DOCUMENT_REJECTION":
-        return null; // ❌ Don't show button for approved/rejected
+        return null;
 
       case "NEW_DOCUMENT":
         return {
@@ -404,6 +407,18 @@ export const Notification = () => {
         return {
           path: `/PendingRole?userId=${notification.referenceId}`,
           label: translatedTexts.viewEmployee,
+        }
+      case "DOCUMENT_SHARE":
+        // ✅ FIXED: For DOCUMENT_SHARE, use referenceId which is documentDetails.id
+        return {
+          path: `/all-documents?docId=${notification.referenceId}`,
+          label: translatedTexts.viewSharedDocument,
+        }
+      case "DOCUMENT_SHARE_REVOKE":
+        // ✅ FIXED: For DOCUMENT_SHARE_REVOKE, use referenceId which is documentDetails.id
+        return {
+          path: `/all-documents?docId=${notification.referenceId}`,
+          label: translatedTexts.viewRevokedDocument,
         }
       default:
         return null

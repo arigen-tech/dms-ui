@@ -61,6 +61,7 @@ const Imports = React.lazy(() => import("./Pages/Imports"));
 const LanguageMasters = React.lazy(() => import("./Pages/LanguageMasters"));
 const TrashDocs = React.lazy(() => import("./Pages/TrashDocumentspage"));
 const DuplicateFilesPages = React.lazy(() => import("./Pages/DuplicateFilesPages"));
+const SharedDocuments = React.lazy(() => import("./Pages/SharedDocuments"));
 
 
 function App() {
@@ -144,6 +145,9 @@ function App() {
                 <Route path="/trash-documents" element={<TrashDocs />} />
 
                 <Route path="/duplicate-files" element={<DuplicateFilesPages />} />
+
+                <Route path="/shared-documents" element={<SharedDocuments />} />
+
               </Route>
 
               {/* Fallback */}
