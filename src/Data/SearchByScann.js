@@ -54,6 +54,9 @@ const SearchByScan = () => {
   const qrScannerRef = useRef(null)
   const fileInputRef = useRef(null)
   const scanSectionRef = useRef(null)
+  const showRejInfo = headerData?.ifRejected === true
+  const showAppro = headerData?.ifApproved === true
+  const showRejectionReason = headerData?.ifRejected === true
 
   const unauthorizedMessage = "You are not authorized to scan this QR code."
   const invalidQrMessage = <AutoTranslate>Invalid QR Code.</AutoTranslate>
@@ -168,16 +171,26 @@ const SearchByScan = () => {
     }
   }
 
+
   const handleQrCheck = (qrParams) => {
     let isUnauthorized = false
 
+
+    console.log("curr br", loginBranchid)
+    console.log("curr dept", loginDepartmentid)
+    console.log("doc br", qrParams.branchId)
+    console.log("doc dept", qrParams.departmentId)
+
     if (role === BRANCH_ADMIN) {
-      isUnauthorized = loginBranchid !== qrParams.branchId
+      isUnauthorized = Number(loginBranchid) !== Number(qrParams.branchId);
     } else if (role === DEPARTMENT_ADMIN) {
-      isUnauthorized = loginBranchid !== qrParams.branchId || loginDepartmentid !== qrParams.departmentId
+      isUnauthorized =
+        Number(loginBranchid) !== Number(qrParams.branchId) ||
+        Number(loginDepartmentid) !== Number(qrParams.departmentId);
     } else if (role === USER) {
-      isUnauthorized = userId !== qrParams.empId
+      isUnauthorized = Number(userId) !== Number(qrParams.empId);
     }
+
 
     if (isUnauthorized) {
       showPopup(unauthorizedMessage, "warning")
@@ -263,9 +276,14 @@ const SearchByScan = () => {
       type,
       onClose: () => {
         setPopupMessage(null);
+        setFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
-    })
-  }
+    });
+  };
+
 
   const fetchLoginUser = async () => {
     if (!userId || !token) {
@@ -518,9 +536,9 @@ const SearchByScan = () => {
   }
 
   const actionByName =
-    headerData?.approvalStatus === "REJECTED"
+    headerData?.ifRejected === true
       ? <AutoTranslate>Rejected</AutoTranslate>
-      : headerData?.approvalStatus === "APPROVED"
+      : headerData?.ifApproved === true
         ? <AutoTranslate>Approved</AutoTranslate>
         : null
 
@@ -676,7 +694,7 @@ const SearchByScan = () => {
         <div className="bg-white rounded-xl shadow-md p-6 mb-8 transition-all duration-300">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">
-              <AutoTranslate>Document Details</AutoTranslate>
+              <AutoTranslate>Document</AutoTranslate>
             </h2>
             <button
               onClick={() => {
@@ -737,60 +755,18 @@ const SearchByScan = () => {
               <label className="block text-sm font-medium text-gray-500 mb-1">
                 <AutoTranslate>Department</AutoTranslate>
               </label>
-              <p className="text-gray-800 font-medium">{headerData?.employee?.department?.name || "N/A"}</p>
+              <p className="text-gray-800 font-medium">{headerData?.departmentMaster?.name || "N/A"}</p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
               <label className="block text-sm font-medium text-gray-500 mb-1">
                 <AutoTranslate>Branch</AutoTranslate>
               </label>
-              <p className="text-gray-800 font-medium">{headerData?.employee?.branch?.name || "N/A"}</p>
+              <p className="text-gray-800 font-medium">{headerData?.branchMaster?.name || "N/A"}</p>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                <AutoTranslate>Status</AutoTranslate>
-              </label>
-              <p className={`font-medium ${headerData?.approvalStatus === "APPROVED" ? "text-green-600" :
-                headerData?.approvalStatus === "REJECTED" ? "text-red-600" : "text-yellow-600"
-                }`}>
-                {headerData?.approvalStatus || "N/A"}
-              </p>
-            </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                <AutoTranslate>Document Year</AutoTranslate>
-              </label>
-              <p className="text-gray-800 font-medium">{headerData?.yearMaster?.name || "N/A"}</p>
-            </div>
 
-            {headerData?.approvalStatus !== "PENDING" && (
-              <>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    {actionByName} <AutoTranslate>Date</AutoTranslate>
-                  </label>
-                  <p className="text-gray-800 font-medium">{formatDate(headerData?.approvalStatusOn) || "N/A"}</p>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    {actionByName} <AutoTranslate>By</AutoTranslate>
-                  </label>
-                  <p className="text-gray-800 font-medium">{headerData?.employeeBy?.name || "N/A"}</p>
-                </div>
-              </>
-            )}
-
-            {headerData?.approvalStatus === "REJECTED" && (
-              <div className="bg-gray-50 p-4 rounded-lg col-span-1 md:col-span-2 lg:col-span-4">
-                <label className="block text-sm font-medium text-gray-500 mb-1">
-                  <AutoTranslate>Rejection Reason</AutoTranslate>
-                </label>
-                <p className="text-gray-800 font-medium">{headerData?.rejectionReason || "N/A"}</p>
-              </div>
-            )}
           </div>
 
           {/* Attached Files Section */}
@@ -805,7 +781,7 @@ const SearchByScan = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder={<AutoTranslate>Search files...</AutoTranslate>}
+                  placeholder="Search files..."
                   value={searchFileTerm}
                   onChange={(e) => setSearchFileTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -823,43 +799,106 @@ const SearchByScan = () => {
 
             {filteredDocFiles?.length > 0 ? (
               <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="bg-indigo-50">
+                <div className="overflow-x-auto bg-indigo-50">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead>
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
                           <AutoTranslate>S.N.</AutoTranslate>
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
+
+                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
                           <AutoTranslate>Document Name</AutoTranslate>
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
+
+                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
+                          <AutoTranslate>Year</AutoTranslate>
+                        </th>
+
+                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
                           <AutoTranslate>Version</AutoTranslate>
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-indigo-700 uppercase tracking-wider">
+
+                        {showAppro && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
+                            <AutoTranslate>Approved By</AutoTranslate>
+                          </th>
+                        )}
+
+                        {showRejInfo && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
+                            <AutoTranslate>Rejected By</AutoTranslate>
+                          </th>
+                        )}
+
+                        {showRejectionReason && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
+                            <AutoTranslate>Rejection Reason</AutoTranslate>
+                          </th>
+                        )}
+
+                        <th className="px-6 py-3 text-center text-xs font-medium text-indigo-700 uppercase">
                           <AutoTranslate>Actions</AutoTranslate>
                         </th>
                       </tr>
                     </thead>
+
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredDocFiles.map((file, index) => {
                         const displayName = file.docName?.includes("_")
                           ? file.docName.split("_").slice(1).join("_")
-                          : file.docName
+                          : file.docName;
 
                         return (
                           <tr key={index} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {index + 1}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate" title={displayName}>
+
+                            <td
+                              className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate"
+                              title={displayName}
+                            >
                               {displayName}
                             </td>
+
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {file.yearMaster.name}
+                            </td>
+
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {file.version}
                             </td>
+
+                            {showAppro && (
+                              <td
+                                className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate"
+                                title={file?.approvedBy}
+                              >
+                                {file?.approvedBy || "N/A"}
+                              </td>
+                            )}
+
+                            {showRejInfo && (
+                              <td
+                                className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate"
+                                title={file?.rejectedBy}
+                              >
+                                {file?.rejectedBy || "N/A"}
+                              </td>
+                            )}
+
+                            {showRejectionReason && (
+                              <td
+                                className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate"
+                                title={file?.rejectionReason}
+                              >
+                                {file?.rejectionReason || "N/A"}
+                              </td>
+                            )}
+
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex justify-end space-x-2">
+                              <div className="flex justify-end space-x-2 flex-nowrap">
                                 <button
                                   onClick={() => openFile(file)}
                                   disabled={openingFiles[file.id]}
@@ -869,8 +908,13 @@ const SearchByScan = () => {
                                     }`}
                                 >
                                   <FiEye className="mr-1" />
-                                  {openingFiles[file.id] ? <AutoTranslate>Opening...</AutoTranslate> : <AutoTranslate>View</AutoTranslate>}
+                                  {openingFiles[file.id] ? (
+                                    <AutoTranslate>Opening...</AutoTranslate>
+                                  ) : (
+                                    <AutoTranslate>View</AutoTranslate>
+                                  )}
                                 </button>
+
                                 <button
                                   onClick={() => handleDownload(file)}
                                   className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
@@ -881,11 +925,12 @@ const SearchByScan = () => {
                               </div>
                             </td>
                           </tr>
-                        )
+                        );
                       })}
                     </tbody>
                   </table>
                 </div>
+
               </div>
             ) : (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
