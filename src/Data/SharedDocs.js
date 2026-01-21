@@ -1276,7 +1276,7 @@ const SharedDocs = () => {
                                 {share.expired || share.isExpired ? 'Expired' : 'Active'}
                               </span>
                             </td>
-                            <td className="border p-2">
+                            {/* <td className="border p-2">
                               {share.sharedByName !== localStorage.getItem("userName") ? (
                                 <span className="text-gray-500 text-sm">
                                   <AutoTranslate>Shared by others</AutoTranslate>
@@ -1294,7 +1294,7 @@ const SharedDocs = () => {
                                   <AutoTranslate>Revoke</AutoTranslate>
                                 </button>
                               )}
-                            </td>
+                            </td> */}
                           </tr>
                         ))}
                       </tbody>
