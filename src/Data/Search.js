@@ -76,6 +76,38 @@ const Search = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [openingFiles, setOpeningFiles] = useState(null);
+  const [metadataFilters, setMetadataFilters] = useState([
+    { key: '', value: '' }
+  ]);
+
+  const [isSearching, setIsSearching] = useState(false);
+
+  const [fileNo, setFileNo] = useState("");
+  const [title, setTitle] = useState("");
+  const [subject, setSubject] = useState("");
+  const [version, setVersion] = useState("");
+
+  const [categoryId, setCategoryId] = useState(null);
+  const [yearId, setYearId] = useState(null);
+  const userBranchId = userBranch?.id;
+  const userDepartmentId = userDepartment?.id;
+
+  const [branchId, setBranchId] = useState(
+    userRole === "ADMIN" ? null : userBranchId
+  );
+
+  const [departmentId, setDepartmentId] = useState(
+    userRole === "ADMIN" || userRole === "BRANCH_ADMIN"
+      ? null
+      : userDepartmentId
+  );
+
+  const normalizeRole = (role) => {
+    if (!role) return null;
+    return role.replace(" ", "_");
+  };
+
+
 
   // Pagination state
   const [itemsPerPage] = useState(5);
@@ -113,12 +145,15 @@ const Search = () => {
   }, [userBranch]);
 
   useEffect(() => {
-    if (searchCriteria.branch) {
-      fetchDepartments(searchCriteria.branch);
+    if (branchId) {
+      fetchDepartments(branchId);
     } else {
       setDepartmentOptions([]);
+      setDepartmentId(null);
     }
-  }, [searchCriteria.branch]);
+  }, [branchId]);
+
+
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
@@ -141,36 +176,42 @@ const Search = () => {
 
   const fetchUserDetails = async () => {
     setIsLoading(true);
-
     try {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
+
+      const res = await axios.get(
         `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setUserRole(response.data.role);
-      setUserBranch(response.data.branch);
-      setUserDepartment(response.data.department);
+      const role = normalizeRole(res.data.role?.role);
+      setUserRole(role);
 
-      if (response.data.role === 'BRANCH ADMIN' && response.data.branch) {
-        setSearchCriteria(prev => ({
-          ...prev,
-          branch: response.data.branch.id
-        }));
-        fetchDepartments(response.data.branch.id);
+      console.log("role", role)
+
+      setUserBranch(res.data.branch);
+      setUserDepartment(res.data.department);
+
+      // 🔐 Lock values based on role
+      if (role === "BRANCH_ADMIN") {
+        setBranchId(res.data.branch?.id || null);
+        setDepartmentId(null);
+        fetchDepartments(res.data.branch?.id);
       }
-    } catch (error) {
-      console.error("Error fetching user details:", error);
+
+      if (role === "DEPARTMENT_ADMIN" || role === "USER") {
+        setBranchId(res.data.branch?.id || null);
+        setDepartmentId(res.data.department?.id || null);
+        fetchDepartments(res.data.branch?.id);
+      }
+    } catch (err) {
+      console.error("User fetch error", err);
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const fetchCategories = async () => {
     setIsLoading(true);
@@ -255,7 +296,7 @@ const Search = () => {
 
       console.log(`Attempting to fetch paths for document ID: ${doc.id}`);
       const response = await axios.get(
-        `${DOCUMENTHEADER_API}/byDocumentHeader/${doc.id}`,
+        `${DOCUMENTHEADER_API}/byDocumentHeader/${doc.id}/ALL`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -285,37 +326,79 @@ const Search = () => {
     setCurrentPage(1);
   };
 
+
+  const addMetadataFilter = () => {
+    setMetadataFilters(prev => [...prev, { key: '', value: '' }]);
+  };
+
+  const removeMetadataFilter = (index) => {
+    setMetadataFilters(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateMetadataFilter = (index, field, value) => {
+    setMetadataFilters(prev =>
+      prev.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+
   const handleSearch = async () => {
+    if (isSearching) return;
+
     try {
+      setIsSearching(true);
+      setSearchResults([]);
+      setNoResultsFound(false);
+
       const token = localStorage.getItem('tokenKey');
 
-      // Validate that at least one search criterion is provided
-      const isCriteriaEmpty = !searchCriteria.fileNo &&
-        !searchCriteria.title &&
-        !searchCriteria.subject &&
-        !searchCriteria.version &&
-        !searchCriteria.category &&
-        !searchCriteria.branch &&
-        !searchCriteria.department &&
-        !searchCriteria.year;
+      const hasIncompleteMetadata = metadataFilters.some(
+        m => (m.key && !m.value) || (!m.key && m.value)
+      );
+
+      if (hasIncompleteMetadata) {
+        showPopup('Please provide both key and value for metadata filters.');
+        setIsSearching(false);
+        return;
+      }
+
+      const metadataPayload = metadataFilters
+        .filter(m => m.key && m.value)
+        .map(m => ({
+          key: m.key.trim(),
+          value: m.value.trim(),
+        }));
+
+      const isCriteriaEmpty =
+        !fileNo &&
+        !title &&
+        !subject &&
+        !version &&
+        !categoryId &&
+        !branchId &&
+        !departmentId &&
+        !yearId &&
+        metadataPayload.length === 0;
 
       if (isCriteriaEmpty) {
         showPopup('Please provide at least one search criterion.');
-        return; // Exit the function without making the API call
+        setIsSearching(false);
+        return;
       }
 
       const searchPayload = {
-        fileNo: searchCriteria.fileNo || null,
-        title: searchCriteria.title || null,
-        subject: searchCriteria.subject || null,
-        version: searchCriteria.version || null,
-        categoryId: searchCriteria.category ? parseInt(searchCriteria.category) : null,
-        branchId: searchCriteria.branch ? parseInt(searchCriteria.branch) :
-          (userBranch?.id ? parseInt(userBranch.id) : null),
-        departmentId: searchCriteria.department ? parseInt(searchCriteria.department) :
-          (userDepartment?.id ? parseInt(userDepartment.id) : null),
-        yearId: searchCriteria.year || null,
-        page: currentPage - 1, // Backend uses 0-indexed pages
+        fileNo,
+        title,
+        subject,
+        version,
+        categoryId,
+        branchId,
+        departmentId,
+        yearId,
+        metadata: metadataPayload.length ? metadataPayload : null,
+        page: currentPage - 1,
         size: itemsPerPage,
       };
 
@@ -336,8 +419,11 @@ const Search = () => {
     } catch (error) {
       console.error('Error searching documents:', error);
       showPopup('Failed to search documents. Please try again.');
+    } finally {
+      setIsSearching(false); // ✅ always stop loading
     }
   };
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -619,206 +705,141 @@ const Search = () => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-  userRole = localStorage.getItem('role');
   const renderSearchFields = () => {
-    return (
-      <div className="grid grid-cols-3 gap-4 mb-4 bg-slate-100 px-1 rounded-lg">
-        {userRole === 'ADMIN' ? (
-          <>
-            {/* Branch Select */}
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Branch</AutoTranslate>
-              <select
-                name="branch"
-                value={searchCriteria.branch}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
-                {branchOptions.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+  const isAdmin = userRole === "ADMIN";
+  const isBranchAdmin = userRole === "BRANCH_ADMIN";
+  const isDeptUser = userRole === "DEPARTMENT_ADMIN" || userRole === "USER";
 
-            {/* Department Select */}
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Department</AutoTranslate>
-              <select
-                name="department"
-                value={searchCriteria.department}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={!searchCriteria.branch}
-              >
-                <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
-                {departmentOptions.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </>
-        ) : userRole === 'BRANCH ADMIN' ? (
-          <>
-            {/* Branch Input (Fixed) */}
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Branch</AutoTranslate>
-              <select
-                name="branch"
-                value={searchCriteria.branch}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={true}
-              >
-                <option value={userBranch?.id}>{userBranch?.name}</option>
-              </select>
-            </label>
+  const fieldWrapper = "flex flex-col gap-1";
 
-            {/* Department Select */}
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Department</AutoTranslate>
-              <select
-                name="department"
-                value={searchCriteria.department}
-                onChange={handleInputChange}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
-                {departmentOptions.length > 0 ? (
-                  departmentOptions.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value=""><AutoTranslate>No Departments Available</AutoTranslate></option>
-                )}
-              </select>
-            </label>
-          </>
-        ) : (
-          <>
-            {/* Branch Input (Fixed) */}
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Branch</AutoTranslate>
-              <select
-                name="branch"
-                value={userBranch?.id || ''}
-                disabled
-                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={userBranch?.id}>{userBranch?.name}</option>
-              </select>
-            </label>
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-            {/* Department Input (Fixed) */}
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Department</AutoTranslate>
-              <select
-                name="department"
-                value={userDepartment?.id || ''}
-                disabled
-                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={userDepartment?.id}>{userDepartment?.name}</option>
-              </select>
-            </label>
-          </>
-        )}
-
-        {/* Category Select */}
-        <label className="block text-md font-medium text-gray-700">
-          <AutoTranslate>Category</AutoTranslate>
-          <select
-            name="category"
-            value={searchCriteria.category}
-            onChange={handleInputChange}
-            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value=""><AutoTranslate>Select Category</AutoTranslate></option>
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block text-md font-medium text-gray-700">
-          <AutoTranslate>Year</AutoTranslate>
-          <select
-            name="year"
-            value={searchCriteria.year}
-            onChange={handleInputChange}
-            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value=""><AutoTranslate>Select Year</AutoTranslate></option>
-            {yearOptions.map((yearID) => (
-              <option key={yearID.id} value={yearID.id}>
-                {yearID.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {/* File No. Input */}
-        <label className="block text-md font-medium text-gray-700">
-          <AutoTranslate>File No.</AutoTranslate>
-          <input
-            type="text"
-            name="fileNo"
-            placeholder={translateInstant('File No.', currentLanguage)}
-            value={searchCriteria.fileNo}
-            onChange={handleInputChange}
-            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </label>
-
-        {/* Title Input */}
-        <label className="block text-md font-medium text-gray-700">
-          <AutoTranslate>Title</AutoTranslate>
-          <input
-            type="text"
-            name="title"
-            placeholder={translateInstant('Title', currentLanguage)}
-            value={searchCriteria.title}
-            onChange={handleInputChange}
-            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </label>
-
-        {/* Subject Input */}
-        <label className="block text-md font-medium text-gray-700">
-          <AutoTranslate>Subject</AutoTranslate>
-          <input
-            type="text"
-            name="subject"
-            placeholder={translateInstant('Subject', currentLanguage)}
-            value={searchCriteria.subject}
-            onChange={handleInputChange}
-            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </label>
-
-        {/* Version Input */}
-        <label className="block text-md font-medium text-gray-700">
-          <AutoTranslate>Version</AutoTranslate>
-          <input
-            type="text"
-            name="version"
-            placeholder={translateInstant('Version', currentLanguage)}
-            value={searchCriteria.version}
-            onChange={handleInputChange}
-            className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </label>
+      {/* File No */}
+      <div className={fieldWrapper}>
+        <label className="text-sm font-medium"><AutoTranslate>File No</AutoTranslate></label>
+        <input
+          placeholder="Enter File No"
+          value={fileNo}
+          onChange={(e) => setFileNo(e.target.value)}
+          className="p-2 border rounded-md"
+        />
       </div>
-    );
-  };
+
+      {/* Title */}
+      <div className={fieldWrapper}>
+        <label className="text-sm font-medium"><AutoTranslate>Title</AutoTranslate></label>
+        <input
+          placeholder="Enter Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="p-2 border rounded-md"
+        />
+      </div>
+
+      {/* Subject */}
+      <div className={fieldWrapper}>
+        <label className="text-sm font-medium"><AutoTranslate>Subject</AutoTranslate></label>
+        <input
+          placeholder="Enter Subject"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          className="p-2 border rounded-md"
+        />
+      </div>
+
+      {/* Version */}
+      <div className={fieldWrapper}>
+        <label className="text-sm font-medium"><AutoTranslate>Version</AutoTranslate></label>
+        <input
+          placeholder="Enter Version"
+          value={version}
+          onChange={(e) => setVersion(e.target.value)}
+          className="p-2 border rounded-md"
+        />
+      </div>
+
+      {/* Category */}
+      <div className={fieldWrapper}>
+        <label className="text-sm font-medium"><AutoTranslate>Category</AutoTranslate></label>
+        <select
+          value={categoryId ?? ""}
+          onChange={(e) =>
+            setCategoryId(e.target.value ? Number(e.target.value) : null)
+          }
+          className="p-2 border rounded-md"
+        >
+          <option value="">All Categories</option>
+          {categoryOptions.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Branch */}
+      <div className={fieldWrapper}>
+        <label className="text-sm font-medium"><AutoTranslate>Branch</AutoTranslate></label>
+        <select
+          value={branchId ?? ""}
+          disabled={!isAdmin}
+          onChange={(e) => {
+            const value = e.target.value ? Number(e.target.value) : null;
+            setBranchId(value);
+            setDepartmentId(null);
+          }}
+          className={`p-2 border rounded-md ${
+            !isAdmin ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
+        >
+          <option value="">All Branches</option>
+          {branchOptions.map((b) => (
+            <option key={b.id} value={b.id}>{b.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Department */}
+      <div className={fieldWrapper}>
+        <label className="text-sm font-medium"><AutoTranslate>Department</AutoTranslate></label>
+        <select
+          value={departmentId ?? ""}
+          disabled={isDeptUser || !branchId}
+          onChange={(e) =>
+            setDepartmentId(e.target.value ? Number(e.target.value) : null)
+          }
+          className={`p-2 border rounded-md ${
+            isDeptUser || !branchId ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
+        >
+          <option value="">All Departments</option>
+          {departmentOptions.map((d) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Year */}
+      {/* <div className={fieldWrapper}>
+        <label className="text-sm font-medium"><AutoTranslate>Year</AutoTranslate></label>
+        <select
+          value={yearId ?? ""}
+          onChange={(e) =>
+            setYearId(e.target.value ? Number(e.target.value) : null)
+          }
+          className="p-2 border rounded-md"
+        >
+          <option value="">All Years</option>
+          {yearOptions.map((y) => (
+            <option key={y.id} value={y.id}>{y.name}</option>
+          ))}
+        </select>
+      </div> */}
+
+    </div>
+  );
+};
+
+
 
   return (
     <div className="p-1">
@@ -836,102 +857,161 @@ const Search = () => {
         )}
 
         {renderSearchFields()}
+
+        <div className="mt-4 bg-slate-50 p-3 rounded-lg border mb-3">
+          <h3 className="text-md font-semibold mb-2">
+            <AutoTranslate>Metadata Filters</AutoTranslate>
+          </h3>
+
+          {/* Header row */}
+          <div className="grid grid-cols-5 gap-2 mb-2 text-sm font-medium text-slate-600">
+            <div className="col-span-2">
+              <AutoTranslate>Key</AutoTranslate>
+            </div>
+            <div className="col-span-2">
+              <AutoTranslate>Value</AutoTranslate>
+            </div>
+            <div />
+          </div>
+
+          {metadataFilters.map((meta, index) => (
+            <div key={index} className="grid grid-cols-5 gap-2 mb-2 items-center">
+              <input
+                type="text"
+                value={meta.key}
+                onChange={(e) =>
+                  updateMetadataFilter(index, "key", e.target.value)
+                }
+                className="col-span-2 p-2 border rounded-md"
+              />
+
+              <input
+                type="text"
+                value={meta.value}
+                onChange={(e) =>
+                  updateMetadataFilter(index, "value", e.target.value)
+                }
+                className="col-span-2 p-2 border rounded-md"
+              />
+
+              <button
+                onClick={() => removeMetadataFilter(index)}
+                className="text-red-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+
+          <button
+            onClick={addMetadataFilter}
+            className="mt-4 px-3 py-1 bg-blue-600 text-white rounded-md text-sm"
+          >
+            + <AutoTranslate>Add Metadata</AutoTranslate>
+          </button>
+        </div>
+
+
         <button
           onClick={handleSearch}
-          className="bg-blue-900 text-white rounded-md py-2 px-4 hover:bg-blue-800 transition duration-300"
+          disabled={isSearching}
+          className={`rounded-md py-2 px-4 transition duration-300 text-white
+    ${isSearching
+              ? 'bg-blue-400 cursor-not-allowed'
+              : 'bg-blue-900 hover:bg-blue-800'
+            }`}
         >
-          <AutoTranslate>Search</AutoTranslate>
+          <AutoTranslate>
+            {isSearching ? 'Searching...' : 'Search'}
+          </AutoTranslate>
         </button>
 
+
         {/* Search Results Table */}
-        {noResultsFound ? (
-          <div className="mt-4 text-red-600">
-            <h3><AutoTranslate>No results found for your search.</AutoTranslate></h3>
+        {isSearching ? (
+          <div className="mt-6 flex justify-center items-center text-blue-900">
+            <svg
+              className="animate-spin h-6 w-6 mr-2 text-blue-900"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              />
+            </svg>
+            <AutoTranslate>Loading search results...</AutoTranslate>
           </div>
-        ) : (
-          searchResults.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold mb-3">
-                <AutoTranslate>Search Results</AutoTranslate>
-              </h3>
-              <table className="min-w-full table-auto bg-white shadow-md rounded-lg">
-                <thead>
-                  <tr className="bg-slate-100">
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>SN</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>File No</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>Title</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>Subject</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>Category</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>Year</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>Branch</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>Department</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>Approval Status</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>Uploaded Date</AutoTranslate>
-                    </th>
-                    <th className="border p-2 text-left">
-                      <AutoTranslate>View</AutoTranslate>
-                    </th>
+        ) : noResultsFound ? (
+          // ❌ No results
+          <div className="mt-4 text-red-600">
+            <h3>
+              <AutoTranslate>No results found for your search.</AutoTranslate>
+            </h3>
+          </div>
+        ) : searchResults.length > 0 ? (
+          // ✅ Results table
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold mb-3">
+              <AutoTranslate>Search Results</AutoTranslate>
+            </h3>
+
+            <table className="min-w-full table-auto bg-white shadow-md rounded-lg">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>File No</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>Title</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>Subject</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>Category</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>Branch</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>Department</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>No. Of Attached Files</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>Uploaded Date</AutoTranslate></th>
+                  <th className="border p-2 text-left"><AutoTranslate>View</AutoTranslate></th>
+                </tr>
+              </thead>
+              <tbody>
+                {getPaginatedResults().map((document, index) => (
+                  <tr key={document.id}>
+                    <td className="border p-2">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+                    <td className="border p-2">{document.fileNo}</td>
+                    <td className="border p-2">{document.title}</td>
+                    <td className="border p-2">{document.subject}</td>
+                    <td className="border p-2">
+                      {document.categoryMaster?.name || 'No Category'}
+                    </td>
+                    <td className="border p-2">
+                      {document.branchMaster?.name || 'No Branch'}
+                    </td>
+                    <td className="border p-2">
+                      {document.departmentMaster?.name || 'No Department'}
+                    </td>
+                    <td className="border p-2">{document.documentDetails.length}</td>
+                    <td className="border p-2">{formatDate(document.createdOn)}</td>
+                    <td className="border p-2">
+                      <button onClick={() => openModal(document)}>
+                        <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {getPaginatedResults().map((document, index) => (
-                    <tr key={document.id}>
-                      <td className="border p-2">
-                        {(currentPage - 1) * itemsPerPage + index + 1}
-                      </td>
-                      <td className="border p-2">{document.fileNo}</td>
-                      <td className="border p-2">{document.title}</td>
-                      <td className="border p-2">{document.subject}</td>
-                      <td className="border p-2">
-                        {document.categoryMaster?.name || "No Category"}
-                      </td>
-                      <td className="border p-2">
-                        {document.Year?.name || document.yearMaster?.name || "No Year"}
-                      </td>
-                      <td className="border p-2">
-                        {document.employee && document.employee.branch
-                          ? document.employee.branch.name
-                          : "No Branch"}
-                      </td>
-                      <td className="border p-2">
-                        {document.employee &&
-                          document.employee.department
-                          ? document.employee.department.name
-                          : "No Department"}
-                      </td>
-                      <td className="border p-2">{document.approvalStatus}</td>
-                      <td className="border p-2">{formatDate(document.createdOn)}</td>
-                      <td className="border p-2">
-                        <button onClick={() => openModal(document)}>
-                          <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
-        )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
 
         {/* Updated Pagination Controls */}
         <div className="flex items-center mt-4">
@@ -1052,7 +1132,7 @@ const Search = () => {
                           { label: "Title", value: selectedDoc?.title },
                           { label: "Subject", value: selectedDoc?.subject },
                           { label: "Category", value: selectedDoc?.categoryMaster?.name || "No Category" },
-                          { label: "Status", value: selectedDoc?.approvalStatus },
+                          // { label: "Status", value: selectedDoc?.approvalStatus },
                           { label: "Upload By", value: selectedDoc?.employee?.name },
                         ].map((item, idx) => (
                           <div key={idx} className="space-y-1">
@@ -1108,7 +1188,7 @@ const Search = () => {
                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                           type="text"
-                          placeholder={<AutoTranslate>Search files...</AutoTranslate>}
+                          placeholder="Search files..."
                           value={searchFileTerm}
                           onChange={(e) => setSearchFileTerm(e.target.value)}
                           className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -1177,38 +1257,38 @@ const Search = () => {
                                 <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
                                 <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
                                 <div className="flex justify-center no-print">
-  <button
-    onClick={() => {
-      setOpeningFileIndex(index);
-      setSelectedDocFiles(file);
-      openFile(file).finally(() => setOpeningFileIndex(null));
-    }}
-    disabled={openingFileIndex !== null}
-    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                                  <button
+                                    onClick={() => {
+                                      setOpeningFileIndex(index);
+                                      setSelectedDocFiles(file);
+                                      openFile(file).finally(() => setOpeningFileIndex(null));
+                                    }}
+                                    disabled={openingFileIndex !== null}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
       ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-  >
-    {openingFileIndex === index ? (
-      <>
-        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-        </AutoTranslate>
-      </>
-    ) : (
-      <>
-        {file.ltoArchived && !file.restored ? (
-          <ArrowPathIcon className="h-3 w-3" /> 
-        ) : (
-          <EyeIcon className="h-3 w-3" /> 
-        )}
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restore" : "View"}
-          
-        </AutoTranslate>
-      </>
-    )}
-  </button>
-</div>
+                                  >
+                                    {openingFileIndex === index ? (
+                                      <>
+                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                        </AutoTranslate>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {file.ltoArchived && !file.restored ? (
+                                          <ArrowPathIcon className="h-3 w-3" />
+                                        ) : (
+                                          <EyeIcon className="h-3 w-3" />
+                                        )}
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+
+                                        </AutoTranslate>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
                               </div>
 
                               {/* Mobile View */}
@@ -1260,38 +1340,38 @@ const Search = () => {
                                 </div>
 
                                 <div className="flex justify-center no-print">
-  <button
-    onClick={() => {
-      setOpeningFileIndex(index);
-      setSelectedDocFiles(file);
-      openFile(file).finally(() => setOpeningFileIndex(null));
-    }}
-    disabled={openingFileIndex !== null}
-    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                                  <button
+                                    onClick={() => {
+                                      setOpeningFileIndex(index);
+                                      setSelectedDocFiles(file);
+                                      openFile(file).finally(() => setOpeningFileIndex(null));
+                                    }}
+                                    disabled={openingFileIndex !== null}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
       ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-  >
-    {openingFileIndex === index ? (
-      <>
-        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-        </AutoTranslate>
-      </>
-    ) : (
-      <>
-        {file.ltoArchived && !file.restored ? (
-          <ArrowPathIcon className="h-3 w-3" /> 
-        ) : (
-          <EyeIcon className="h-3 w-3" /> 
-        )}
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restore" : "View"}
-          
-        </AutoTranslate>
-      </>
-    )}
-  </button>
-</div>
+                                  >
+                                    {openingFileIndex === index ? (
+                                      <>
+                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                        </AutoTranslate>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {file.ltoArchived && !file.restored ? (
+                                          <ArrowPathIcon className="h-3 w-3" />
+                                        ) : (
+                                          <EyeIcon className="h-3 w-3" />
+                                        )}
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+
+                                        </AutoTranslate>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}

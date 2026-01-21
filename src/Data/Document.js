@@ -119,6 +119,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [isMetadataComplete, setIsMetadataComplete] = useState(false);
   const [isWaitingRoomModalOpen, setIsWaitingRoomModalOpen] = useState(false);
   const [currYear, setCurrYear] = useState(null);
+  const [dynamicMetadata, setDynamicMetadata] = useState([
+    { id: "", key: "", value: "" }
+  ]);
+  const keys = dynamicMetadata.map(item => item.key.trim()).filter(Boolean);
+  const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
+  const [deletedMetaDataIds, setDeletedMetaDataIds] = useState([]);
+
 
   useEffect(() => {
     if (data) {
@@ -813,6 +820,25 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
+  const metadataObject = [];
+  const seenKeys = new Set();
+
+  dynamicMetadata.forEach(item => {
+    if (item.key && item.value && !seenKeys.has(item.key)) {
+      metadataObject.push({
+        id: item.id ?? null,
+        key: item.key,
+        value: item.value
+      });
+      seenKeys.add(item.key);
+    }
+  });
+
+
+
+
+  console.log("metadataObject", metadataObject)
+
   const handleCancelUpload = () => {
     if (uploadController) {
       uploadController.abort();
@@ -855,6 +881,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     setUploadedFileNames(existingFiles.map((file) => file.name));
     setUploadedFilePath(existingFiles);
+    const backendMetadata = doc.metadataList;
+    const formattedMetadata = backendMetadata.map(item => ({
+      id: item.id,
+      key: item.metaKey,
+      value: item.metaValue
+    }));
+
+    setDynamicMetadata(formattedMetadata);
+
 
     if (formSectionRef.current) {
       formSectionRef.current.scrollIntoView({ behavior: "smooth" });
@@ -902,8 +937,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         categoryMaster: { id: category.id },
         employee: { id: parseInt(userId, 10) },
       },
-      filePaths: versionedFilePaths
+      filePaths: versionedFilePaths,
+      metadata: metadataObject,
+      deletedMetaDataIds
     };
+
 
     try {
       setBProcess(true);
@@ -1017,7 +1055,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         qrPath: formData.qrPath || null,
         archive: false,
       },
-      filePaths: versionedFilePaths
+      filePaths: versionedFilePaths,
+      metadata: metadataObject
     };
 
     try {
@@ -1055,7 +1094,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       setUploadedFilePath([]);
       setUploadedFileNames([]);
       setSelectedFiles([]);
-
+      setDynamicMetadata([{ key: "", value: "" }]);
       fetchDocuments();
 
     } catch (error) {
@@ -1380,9 +1419,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           <div ref={formSectionRef} className="mb-2 bg-slate-100 p-4 rounded-lg">
             <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
-                📁 <AutoTranslate>Document Metadata</AutoTranslate>
+                📁 <AutoTranslate>Document Metadata</AutoTranslate> <span className="text-red-500">*</span>
               </h2>
-
               <div className="grid grid-cols-3 gap-4">
                 {/* File No Input */}
                 <label className="block text-md font-medium text-gray-700">
@@ -1392,7 +1430,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     placeholder={getFallbackTranslation(
                       'Enter File No.',
                       currentLanguage
-                    )||'Enter File No.'}
+                    ) || 'Enter File No.'}
                     name="fileNo"
                     value={formData.fileNo}
                     onChange={(e) => setFormData({ ...formData, fileNo: e.target.value })}
@@ -1412,7 +1450,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     placeholder={getFallbackTranslation(
                       'Enter Title',
                       currentLanguage
-                    )||'Enter Title'}
+                    ) || 'Enter Title'}
                     name="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -1432,7 +1470,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     placeholder={getFallbackTranslation(
                       'Enter Subject',
                       currentLanguage
-                    )||'Enter Subject'}
+                    ) || 'Enter Subject'}
                     name="subject"
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
@@ -1465,8 +1503,91 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               </div>
             </div>
             <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
+                  🧩 <AutoTranslate>Document Additional Metadata</AutoTranslate>{" "}
+                  <span className="text-gray-500">(optional)</span>
+                </h2>
+
+                {/* Duplicate warning message on the right */}
+                {(() => {
+                  const keys = dynamicMetadata
+                    .map(item => item.key.trim())
+                    .filter(Boolean);
+                  const duplicates = keys.filter(
+                    (key, index) => keys.indexOf(key) !== index
+                  );
+                  if (duplicates.length > 0) {
+                    return (
+                      <span className="text-red-500 text-sm ml-4 whitespace-nowrap">
+                        ⚠ Duplicate key: {duplicates.join(", ")}
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+
+              {dynamicMetadata.map((item, index) => (
+                <div key={index} className="grid grid-cols-10 gap-3 mb-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="Key"
+                    value={item.key}
+                    onChange={(e) => {
+                      const updated = [...dynamicMetadata];
+                      updated[index].key = e.target.value;
+                      setDynamicMetadata(updated);
+                    }}
+                    className="col-span-4 p-2 border rounded-md"
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    value={item.value}
+                    onChange={(e) => {
+                      const updated = [...dynamicMetadata];
+                      updated[index].value = e.target.value;
+                      setDynamicMetadata(updated);
+                    }}
+                    className="col-span-4 p-2 border rounded-md"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const itemToDelete = dynamicMetadata[index];
+
+                      if (itemToDelete.id) {
+                        setDeletedMetaDataIds(prev => [...prev, itemToDelete.id]);
+                      }
+                      setDynamicMetadata(dynamicMetadata.filter((_, i) => i !== index));
+                    }}
+                    className="col-span-1 bg-red-500 text-white px-1 py-2.5 rounded text-sm"
+                  >
+                    ✕
+                  </button>
+
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setDynamicMetadata([...dynamicMetadata, { id: "", key: "", value: "" }])
+                }
+                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                + Add Metadata
+              </button>
+            </div>
+
+
+
+            <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
-                📄 <AutoTranslate>File Metadata</AutoTranslate>
+                📄 <AutoTranslate>File Metadata</AutoTranslate> <span className="text-red-500">*</span>
               </h2>
 
               <div className="grid grid-cols-3 gap-4">
@@ -1507,7 +1628,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                     placeholder={getFallbackTranslation(
                       'Enter Version',
                       currentLanguage
-                    )||'Enter Version'}
+                    ) || 'Enter Version'}
                     name="version"
                     value={formData.version}
                     onChange={(e) =>
@@ -2043,9 +2164,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               <div className="ml-4">
                 <span className="text-sm text-gray-700">
                   <AutoTranslate>
-                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                  } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-              </AutoTranslate>
+                    {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+                  </AutoTranslate>
                 </span>
               </div>
             </div>
@@ -2210,38 +2331,38 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                                     <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
                                     <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
                                     <div className="flex justify-center no-print">
-  <button
-    onClick={() => {
-      setOpeningFileIndex(index);
-      setSelectedDocFiles(file);
-      openFile(file).finally(() => setOpeningFileIndex(null));
-    }}
-    disabled={openingFileIndex !== null}
-    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                                      <button
+                                        onClick={() => {
+                                          setOpeningFileIndex(index);
+                                          setSelectedDocFiles(file);
+                                          openFile(file).finally(() => setOpeningFileIndex(null));
+                                        }}
+                                        disabled={openingFileIndex !== null}
+                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
       ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-  >
-    {openingFileIndex === index ? (
-      <>
-        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-        </AutoTranslate>
-      </>
-    ) : (
-      <>
-        {file.ltoArchived && !file.restored ? (
-          <ArrowPathIcon className="h-3 w-3" /> 
-        ) : (
-          <EyeIcon className="h-3 w-3" /> 
-        )}
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restore" : "View"}
-          
-        </AutoTranslate>
-      </>
-    )}
-  </button>
-</div>
+                                      >
+                                        {openingFileIndex === index ? (
+                                          <>
+                                            <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                            <AutoTranslate>
+                                              {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                            </AutoTranslate>
+                                          </>
+                                        ) : (
+                                          <>
+                                            {file.ltoArchived && !file.restored ? (
+                                              <ArrowPathIcon className="h-3 w-3" />
+                                            ) : (
+                                              <EyeIcon className="h-3 w-3" />
+                                            )}
+                                            <AutoTranslate>
+                                              {file.ltoArchived && !file.restored ? "Restore" : "View"}
+
+                                            </AutoTranslate>
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
                                   </div>
 
                                   {/* Mobile View */}
