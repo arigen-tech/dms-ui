@@ -437,80 +437,117 @@ const SearchByScan = () => {
 
   const openFile = async (file) => {
     try {
-      setOpeningFiles(prev => ({ ...prev, [file.id]: true }))
-
-      if (!file?.docName) {
-        showPopup("Document name is missing. Please try again.")
-        return
-      }
-
-      const branch = headerData?.employee?.branch?.name.replace(/ /g, "_")
-      const department = headerData?.employee?.department?.name.replace(/ /g, "_")
-      const year = headerData?.yearMaster?.name.replace(/ /g, "_")
-      const category = headerData?.categoryMaster?.name.replace(/ /g, "_")
-
-      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch,
-      )}/${encodeURIComponent(department)}/${encodeURIComponent(
-        year,
-      )}/${encodeURIComponent(category)}/${encodeURIComponent(file.version)}/${encodeURIComponent(file.docName)}`
+      setOpeningFiles(true);
+      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
-      })
+      });
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] })
-      const url = URL.createObjectURL(blob)
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const url = URL.createObjectURL(blob);
 
-      setBlobUrl(url)
-      setContentType(response.headers["content-type"])
-      setSelectedDocFiles(file)
-      setIsModalOpen(true)
+      setBlobUrl(url);
+      setContentType(response.headers["content-type"]);
+      setSearchFileTerm("");
+      setIsModalOpen(true);
     } catch (error) {
-      console.error("Error:", error)
-      showPopup("Failed to fetch or preview the file.", "error")
+      console.error("❌ Error fetching file:", error);
+      alert("Failed to fetch or preview the file.");
     } finally {
-      setOpeningFiles(prev => ({ ...prev, [file.id]: false }))
+      setOpeningFiles(false);
     }
-  }
+  };
 
-  const handleDownload = async (file) => {
-    try {
-      const branch = headerData.employee.branch.name.replace(/ /g, "_")
+  const handleDownload = async (file, action = "download") => {
+    if (!headerData) return;
+
+    const branch = headerData.employee.branch.name.replace(/ /g, "_")
       const department = headerData.employee.department.name.replace(/ /g, "_")
       const year = headerData.yearMaster.name.replace(/ /g, "_")
       const category = headerData.categoryMaster.name.replace(/ /g, "_")
       const version = file.version
       const fileName = file.docName.replace(/ /g, "_")
 
-      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch,
-      )}/${encodeURIComponent(department)}/${encodeURIComponent(
-        year,
-      )}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}`
+    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+      branch
+    )}/${encodeURIComponent(department)}/${encodeURIComponent(
+      year
+    )}/${encodeURIComponent(category)}/${encodeURIComponent(
+      version
+    )}/${encodeURIComponent(fileName)}?action=${action}`; // ✅ ONLY CHANGE
 
+    try {
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
-      })
+      });
 
       const downloadBlob = new Blob([response.data], {
         type: response.headers["content-type"],
-      })
+      });
 
-      const link = document.createElement("a")
-      link.href = window.URL.createObjectURL(downloadBlob)
-      link.download = file.docName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(link.href)
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(downloadBlob);
+
+      if (action === "view") {
+        // 👁️ VIEW
+        window.open(link.href, "_blank");
+      } else {
+        // ⬇️ DOWNLOAD (existing behavior)
+        link.download = file.docName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      URL.revokeObjectURL(link.href);
+
     } catch (error) {
-      console.error("Download error:", error)
-      showPopup("Failed to download the file.", "error")
+      console.error("Error downloading file:", error);
+      showPopup("Failed to download file. Please try again!", "error");
     }
-  }
+  };
+
+
+  // const handleDownload = async (file) => {
+  //   try {
+  //     const branch = headerData.employee.branch.name.replace(/ /g, "_")
+  //     const department = headerData.employee.department.name.replace(/ /g, "_")
+  //     const year = headerData.yearMaster.name.replace(/ /g, "_")
+  //     const category = headerData.categoryMaster.name.replace(/ /g, "_")
+  //     const version = file.version
+  //     const fileName = file.docName.replace(/ /g, "_")
+
+  //     const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+  //       branch,
+  //     )}/${encodeURIComponent(department)}/${encodeURIComponent(
+  //       year,
+  //     )}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}`
+
+  //     const response = await apiClient.get(fileUrl, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //       responseType: "blob",
+  //     })
+
+  //     const downloadBlob = new Blob([response.data], {
+  //       type: response.headers["content-type"],
+  //     })
+
+  //     const link = document.createElement("a")
+  //     link.href = window.URL.createObjectURL(downloadBlob)
+  //     link.download = file.docName
+  //     document.body.appendChild(link)
+  //     link.click()
+  //     document.body.removeChild(link)
+  //     URL.revokeObjectURL(link.href)
+  //   } catch (error) {
+  //     console.error("Download error:", error)
+  //     showPopup("Failed to download the file.", "error")
+  //   }
+  // }
 
   const filteredDocFiles = useMemo(() => {
     const files = headerData?.documentDetails || []
@@ -946,8 +983,7 @@ const SearchByScan = () => {
       <FilePreviewModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onDownload={handleDownload}
-        fileType={contentType}
+        onDownload={(file, action = "download") => handleDownload(file, action)} fileType={contentType}
         fileUrl={blobUrl}
         fileName={selectedDocFile?.docName}
         fileData={selectedDocFile}

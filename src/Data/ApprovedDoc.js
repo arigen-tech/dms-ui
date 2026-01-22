@@ -838,7 +838,7 @@ const ApprovedDoc = () => {
     try {
       setOpeningFiles(true);
       const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
-      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
@@ -860,7 +860,7 @@ const ApprovedDoc = () => {
     }
   };
 
-  const handleDownload = async (file) => {
+  const handleDownload = async (file, action = "download") => {
     if (!selectedDoc) return;
 
     const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
@@ -876,7 +876,7 @@ const ApprovedDoc = () => {
       year
     )}/${encodeURIComponent(category)}/${encodeURIComponent(
       version
-    )}/${encodeURIComponent(fileName)}`;
+    )}/${encodeURIComponent(fileName)}?action=${action}`; // ✅ ONLY CHANGE
 
     try {
       const response = await apiClient.get(fileUrl, {
@@ -890,16 +890,26 @@ const ApprovedDoc = () => {
 
       const link = document.createElement("a");
       link.href = window.URL.createObjectURL(downloadBlob);
-      link.download = file.docName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+
+      if (action === "view") {
+        // 👁️ VIEW
+        window.open(link.href, "_blank");
+      } else {
+        // ⬇️ DOWNLOAD (existing behavior)
+        link.download = file.docName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
       URL.revokeObjectURL(link.href);
+
     } catch (error) {
       console.error("Error downloading file:", error);
-      showPopup('Failed to download file. Please try again!', 'error');
+      showPopup("Failed to download file. Please try again!", "error");
     }
   };
+
 
   const filteredDocFiles = useMemo(() => {
     return getCurrentFilteredFiles();
@@ -1510,8 +1520,8 @@ const ApprovedDoc = () => {
                             }}
                             title="Share document within department"
                             className={`p-1.5 rounded transition-colors duration-200 ${hasApprovedFiles
-                                ? 'hover:bg-green-100 text-green-600'
-                                : 'text-gray-400 cursor-not-allowed'
+                              ? 'hover:bg-green-100 text-green-600'
+                              : 'text-gray-400 cursor-not-allowed'
                               }`}
                             disabled={!hasApprovedFiles}
                           >
@@ -1540,8 +1550,8 @@ const ApprovedDoc = () => {
                             }}
                             title="Move to trash"
                             className={`p-1.5 rounded transition-colors duration-200 ${hasApprovedFiles
-                                ? 'hover:bg-red-100 text-red-600'
-                                : 'text-gray-400 cursor-not-allowed'
+                              ? 'hover:bg-red-100 text-red-600'
+                              : 'text-gray-400 cursor-not-allowed'
                               }`}
                             disabled={!hasApprovedFiles}
                           >
@@ -1569,7 +1579,7 @@ const ApprovedDoc = () => {
           <FilePreviewModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
-            onDownload={handleDownload}
+            onDownload={(file, action = "download") => handleDownload(file, action)}
             fileType={contentType}
             fileUrl={blobUrl}
             fileName={selectedDocFile?.docName}

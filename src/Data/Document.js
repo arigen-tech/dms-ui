@@ -460,11 +460,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setSelectedFiles(files);
   };
 
-  const openFile = async (file) => {
+   const openFile = async (file) => {
     try {
       setOpeningFiles(true);
       const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
-      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
@@ -480,11 +480,62 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       setIsModalOpen(true);
     } catch (error) {
       console.error("❌ Error fetching file:", error);
-      alert(<AutoTranslate>Failed to fetch or preview the file.</AutoTranslate>);
+      alert("Failed to fetch or preview the file.");
     } finally {
       setOpeningFiles(false);
     }
   };
+
+  const handleDownload = async (file, action = "download") => {
+    if (!selectedDoc) return;
+
+    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
+    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
+    const year = file.yearMaster?.name?.replace(/ /g, "_") || "unknown";
+    const category = selectedDoc.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
+    const version = file.version;
+    const fileName = file.docName.replace(/ /g, "_");
+
+    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
+      branch
+    )}/${encodeURIComponent(department)}/${encodeURIComponent(
+      year
+    )}/${encodeURIComponent(category)}/${encodeURIComponent(
+      version
+    )}/${encodeURIComponent(fileName)}?action=${action}`; // ✅ ONLY CHANGE
+
+    try {
+      const response = await apiClient.get(fileUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob",
+      });
+
+      const downloadBlob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
+
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(downloadBlob);
+
+      if (action === "view") {
+        // 👁️ VIEW
+        window.open(link.href, "_blank");
+      } else {
+        // ⬇️ DOWNLOAD (existing behavior)
+        link.download = file.docName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      showPopup("Failed to download file. Please try again!", "error");
+    }
+  };
+
 
   const openFileBeforeSubmit = async (file, index) => {
     setOpeningFiles(index);
@@ -542,27 +593,27 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-  const handleDownload = async (file) => {
-    const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
-    const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
+  // const handleDownload = async (file, action = "download") => {
+  //   const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
+  //   const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
 
-    const response = await apiClient.get(fileUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: "blob",
-    });
+  //   const response = await apiClient.get(fileUrl, {
+  //     headers: { Authorization: `Bearer ${token}` },
+  //     responseType: "blob",
+  //   });
 
-    const downloadBlob = new Blob([response.data], {
-      type: response.headers["content-type"],
-    });
+  //   const downloadBlob = new Blob([response.data], {
+  //     type: response.headers["content-type"],
+  //   });
 
-    const link = document.createElement("a");
-    link.href = window.URL.createObjectURL(downloadBlob);
-    link.download = file.docName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-  };
+  //   const link = document.createElement("a");
+  //   link.href = window.URL.createObjectURL(downloadBlob);
+  //   link.download = file.docName;
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  //   URL.revokeObjectURL(link.href);
+  // };
 
   const filteredDocFiles = useMemo(() => {
     if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
@@ -1984,7 +2035,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             <FilePreviewModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              onDownload={handleDownload}
+              onDownload={(file, action = "download") => handleDownload(file, action)}
               fileType={contentType}
               fileUrl={blobUrl}
               fileName={selectedDocFile?.docName}

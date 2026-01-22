@@ -239,15 +239,24 @@ const Approve = () => {
       setOpeningFiles(true);
 
       // Encode each segment separately to preserve folder structure
-      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
-      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
+      const encodedPath = file.path
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+
+      // ✅ Pass action=view
+      const fileUrl =
+        `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${tokenKey}` },
         responseType: "blob",
       });
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
+
       const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
@@ -262,38 +271,72 @@ const Approve = () => {
     }
   };
 
-  const handleDownload = async (file) => {
-    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
-    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
-    const version = file.version;
-    const fileName = file.docName.replace(/ /g, "_");
 
+  const handleDownload = async (file, action = "download") => {
+    if (!selectedDoc) return;
+
+    const branch = selectedDoc.employee?.branch?.name?.replace(/ /g, "_");
+    const department = selectedDoc.employee?.department?.name?.replace(/ /g, "_");
+
+    // FIX: Use file.year directly since that's what you're displaying
+    const year = file.year?.replace(/ /g, "_") || "unknown";
+
+    const category = selectedDoc.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
+    const version = file.version;
+    const fileName = file.docName?.replace(/ /g, "_");
+
+    // Debug log to see what values we have
+    console.log("Download params:", {
+      branch,
+      department,
+      year: file.year,
+      yearMaster: file.yearMaster,
+      category: selectedDoc.categoryMaster?.name,
+      version,
+      fileName
+    });
+
+    // Add action parameter to URL
     const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
       branch
     )}/${encodeURIComponent(department)}/${encodeURIComponent(
       year
     )}/${encodeURIComponent(category)}/${encodeURIComponent(
       version
-    )}/${encodeURIComponent(fileName)}`;
+    )}/${encodeURIComponent(fileName)}?action=${action}`;
 
-    const response = await apiClient.get(fileUrl, {
-      headers: { Authorization: `Bearer ${tokenKey}` },
-      responseType: "blob",
-    });
+    console.log("Download URL:", fileUrl);
 
-    const downloadBlob = new Blob([response.data], {
-      type: response.headers["content-type"],
-    });
+    try {
+      const response = await apiClient.get(fileUrl, {
+        headers: { Authorization: `Bearer ${tokenKey}` },
+        responseType: "blob",
+      });
 
-    const link = document.createElement("a");
-    link.href = window.URL.createObjectURL(downloadBlob);
-    link.download = file.docName; // download actual name with extension
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+      const downloadBlob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
+
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(downloadBlob);
+
+      if (action === "view") {
+        // 👁️ VIEW - Open in new tab
+        window.open(link.href, "_blank");
+      } else {
+        // ⬇️ DOWNLOAD - Trigger download
+        link.download = file.docName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+      console.error("Error downloading file:", error);
+
+    }
   };
 
   const filteredDocFiles = useMemo(() => {
@@ -471,7 +514,7 @@ const Approve = () => {
       setPrintTrue(false);
     }, 1000);
   };
-  
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = {
@@ -481,7 +524,7 @@ const Approve = () => {
     };
     return date.toLocaleString("en-GB", options).replace(",", "");
   };
-  
+
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch = (
       doc.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -498,7 +541,7 @@ const Approve = () => {
 
     return matchesSearch && matchesBranch && matchesDepartment;
   });
-  
+
   const totalItems = filteredDocuments.length;
   const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
   const paginatedDocuments = filteredDocuments.slice(
@@ -849,8 +892,8 @@ const Approve = () => {
                             {/* File List */}
                             <ul
                               className={`divide-y divide-gray-200 ${printTrue === false && filteredDocFiles.length > 5
-                                  ? "max-h-72 overflow-y-auto print:max-h-none print:overflow-visible"
-                                  : ""
+                                ? "max-h-72 overflow-y-auto print:max-h-none print:overflow-visible"
+                                : ""
                                 }`}
                             >
                               {filteredDocFiles.map((file, index) => (
@@ -898,40 +941,42 @@ const Approve = () => {
                                     </select>
                                   </div>
 
+
                                   {/* Open Button */}
                                   <div className="flex justify-center no-print">
-  <button
-    onClick={() => {
-      setOpeningFileIndex(index);
-      setSelectedDocFiles(file);
-      openFile(file).finally(() => setOpeningFileIndex(null));
-    }}
-    disabled={openingFileIndex !== null}
-    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                                    <button
+                                      onClick={() => {
+                                        setOpeningFileIndex(index);
+                                        setSelectedDocFiles(file);
+                                        openFile(file).finally(() => setOpeningFileIndex(null));
+                                        // Use handleDownload with "view" action for opening
+                                        // handleDownload(file, "view").finally(() => setOpeningFileIndex(null));
+                                      }}
+                                      disabled={openingFileIndex !== null}
+                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
       ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-  >
-    {openingFileIndex === index ? (
-      <>
-        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-        </AutoTranslate>
-      </>
-    ) : (
-      <>
-        {file.ltoArchived && !file.restored ? (
-          <ArrowPathIcon className="h-3 w-3" /> 
-        ) : (
-          <EyeIcon className="h-3 w-3" /> 
-        )}
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restore" : "View"}
-          
-        </AutoTranslate>
-      </>
-    )}
-  </button>
-</div>
+                                    >
+                                      {openingFileIndex === index ? (
+                                        <>
+                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                          <AutoTranslate>
+                                            {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                          </AutoTranslate>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {file.ltoArchived && !file.restored ? (
+                                            <ArrowPathIcon className="h-3 w-3" />
+                                          ) : (
+                                            <EyeIcon className="h-3 w-3" />
+                                          )}
+                                          <AutoTranslate>
+                                            {file.ltoArchived && !file.restored ? "Restore" : "View"}
+                                          </AutoTranslate>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
                                 </li>
                               ))}
                             </ul>
@@ -952,7 +997,7 @@ const Approve = () => {
         <FilePreviewModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onDownload={handleDownload}
+          onDownload={(file, action = "download") => handleDownload(file, action)}
           fileType={contentType}
           fileUrl={blobUrl}
           fileName={selectedDocFile?.docName}

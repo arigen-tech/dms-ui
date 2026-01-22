@@ -252,7 +252,7 @@ function RejectedDoc() {
 
       // Encode each segment separately to preserve folder structure
       const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
-      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
@@ -274,7 +274,7 @@ function RejectedDoc() {
     }
   };
 
-  const handleDownload = async (file) => {
+  const handleDownload = async (file, action = "download") => {
     const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
     const department = selectedDoc.employee.department.name.replace(/ /g, "_");
     const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
@@ -288,7 +288,7 @@ function RejectedDoc() {
       year
     )}/${encodeURIComponent(category)}/${encodeURIComponent(
       version
-    )}/${encodeURIComponent(fileName)}`;
+    )}/${encodeURIComponent(fileName)}?action=${action}`;
 
     const response = await apiClient.get(fileUrl, {
       headers: { Authorization: `Bearer ${token}` },
@@ -300,11 +300,19 @@ function RejectedDoc() {
     });
 
     const link = document.createElement("a");
-    link.href = window.URL.createObjectURL(downloadBlob);
-    link.download = file.docName; // download actual name with extension
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      link.href = window.URL.createObjectURL(downloadBlob);
+
+      if (action === "view") {
+        // 👁️ VIEW
+        window.open(link.href, "_blank");
+      } else {
+        // ⬇️ DOWNLOAD (existing behavior)
+        link.download = file.docName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
     URL.revokeObjectURL(link.href);
   };
 
@@ -1091,7 +1099,7 @@ function RejectedDoc() {
           <FilePreviewModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
-            onDownload={handleDownload}
+            onDownload={(file, action = "download") => handleDownload(file, action)}
             fileType={contentType}
             fileUrl={blobUrl}
             fileName={selectedDocFile?.docName}

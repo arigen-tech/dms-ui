@@ -454,13 +454,11 @@ const Search = () => {
     }, 1000);
   };
 
-  const openFile = async (file) => {
+   const openFile = async (file) => {
     try {
       setOpeningFiles(true);
-
-      // Encode each segment separately to preserve folder structure
       const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
-      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
@@ -482,11 +480,13 @@ const Search = () => {
     }
   };
 
-  const handleDownload = async (file) => {
+  const handleDownload = async (file, action = "download") => {
+    if (!selectedDoc) return;
+
     const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
     const department = selectedDoc.employee.department.name.replace(/ /g, "_");
-    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
+    const year = file.yearMaster?.name?.replace(/ /g, "_") || "unknown";
+    const category = selectedDoc.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
     const version = file.version;
     const fileName = file.docName.replace(/ /g, "_");
 
@@ -496,25 +496,40 @@ const Search = () => {
       year
     )}/${encodeURIComponent(category)}/${encodeURIComponent(
       version
-    )}/${encodeURIComponent(fileName)}`;
+    )}/${encodeURIComponent(fileName)}?action=${action}`; // ✅ ONLY CHANGE
 
-    const response = await apiClient.get(fileUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: "blob",
-    });
+    try {
+      const response = await apiClient.get(fileUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob",
+      });
 
-    const downloadBlob = new Blob([response.data], {
-      type: response.headers["content-type"],
-    });
+      const downloadBlob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
 
-    const link = document.createElement("a");
-    link.href = window.URL.createObjectURL(downloadBlob);
-    link.download = file.docName; // download actual name with extension
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(downloadBlob);
+
+      if (action === "view") {
+        // 👁️ VIEW
+        window.open(link.href, "_blank");
+      } else {
+        // ⬇️ DOWNLOAD (existing behavior)
+        link.download = file.docName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      showPopup("Failed to download file. Please try again!", "error");
+    }
   };
+
 
   const filteredDocFiles = useMemo(() => {
     if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
@@ -1075,7 +1090,7 @@ const Search = () => {
         <FilePreviewModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onDownload={handleDownload}
+          onDownload={(file, action = "download") => handleDownload(file, action)}
           fileType={contentType}
           fileUrl={blobUrl}
           fileName={selectedDocFile?.docName}
