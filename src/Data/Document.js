@@ -460,7 +460,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     setSelectedFiles(files);
   };
 
-   const openFile = async (file) => {
+  const openFile = async (file) => {
     try {
       setOpeningFiles(true);
       const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
@@ -491,10 +491,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
     const department = selectedDoc.employee.department.name.replace(/ /g, "_");
-    const year = file.yearMaster?.name?.replace(/ /g, "_") || "unknown";
+    const year = (file.year || file.yearMaster?.name || "")?.replace(/ /g, "_");
     const category = selectedDoc.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
     const version = file.version;
-    const fileName = file.docName.replace(/ /g, "_");
+    const fileName = file.docName?.replace(/ /g, "_");
+
+    if (!year) {
+      showPopup("Year information is missing for this file", "error");
+      return;
+    }
 
     const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
       branch
@@ -502,7 +507,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       year
     )}/${encodeURIComponent(category)}/${encodeURIComponent(
       version
-    )}/${encodeURIComponent(fileName)}?action=${action}`; // ✅ ONLY CHANGE
+    )}/${encodeURIComponent(fileName)}?action=${action}`;
 
     try {
       const response = await apiClient.get(fileUrl, {
@@ -518,10 +523,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       link.href = window.URL.createObjectURL(downloadBlob);
 
       if (action === "view") {
-        // 👁️ VIEW
         window.open(link.href, "_blank");
       } else {
-        // ⬇️ DOWNLOAD (existing behavior)
         link.download = file.docName;
         document.body.appendChild(link);
         link.click();
@@ -529,7 +532,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       }
 
       URL.revokeObjectURL(link.href);
-
     } catch (error) {
       console.error("Error downloading file:", error);
       showPopup("Failed to download file. Please try again!", "error");
