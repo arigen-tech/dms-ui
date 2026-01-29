@@ -807,7 +807,7 @@ const LoginPage = () => {
           )}
 
           {/* Language Dropdown */}
-          {currentView === "login" && !isOtpRequested && (
+          {/* {currentView === "login" && !isOtpRequested && (
             <div className="space-y-1 mb-3">
               <label className="block text-sm font-medium text-gray-700">
                 <AutoTranslate>Language</AutoTranslate>
@@ -842,7 +842,7 @@ const LoginPage = () => {
                 </select>
               )}
             </div>
-          )}
+          )} */}
 
           {/* Login Form */}
           {currentView === "login" && !isOtpRequested && (
