@@ -11,7 +11,7 @@ import { TbPasswordUser, TbUserCog } from "react-icons/tb";
 import { PiUserCircleGear } from "react-icons/pi";
 import { FiUser, FiGlobe } from "react-icons/fi";
 import axios from "axios";
-import { API_HOST } from "../API/apiConfig";
+import { API_HOST ,SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "../API/apiConfig";
 import Popup from "../Components/Popup";
 import { NotificationBell } from "../Data/Notification";
 import { ImSpinner2 } from "react-icons/im";
@@ -139,7 +139,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
         }
       );
 
-      const rolePriority = ["ADMIN", "BRANCH ADMIN", "DEPARTMENT ADMIN", "USER"];
+      const rolePriority = [SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER];
 
       const sortedRoles = response.data.roleNamesList.sort(
         (a, b) => rolePriority.indexOf(a) - rolePriority.indexOf(b)
@@ -347,9 +347,9 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
                     .filter((roleItem) => roleItem !== currentRole)
                     .map((roleItem) => {
                       let IconComponent = FiUser;
-                      if (roleItem === "ADMIN") IconComponent = TbPasswordUser;
-                      else if (roleItem === "BRANCH ADMIN") IconComponent = TbUserCog;
-                      else if (roleItem === "DEPARTMENT ADMIN") IconComponent = PiUserCircleGear;
+                      if (roleItem === SYSTEM_ADMIN) IconComponent = TbPasswordUser;
+                      else if (roleItem === BRANCH_ADMIN) IconComponent = TbUserCog;
+                      else if (roleItem === DEPARTMENT_ADMIN) IconComponent = PiUserCircleGear;
 
                       return {
                         label: (

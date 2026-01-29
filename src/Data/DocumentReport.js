@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
 import "jspdf-autotable";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -97,7 +97,7 @@ const DocumentReport = () => {
   }, [userBranch, userDepartment]);
 
   useEffect(() => {
-    if (role === "BRANCH ADMIN" && userBranch?.id) {
+    if (role === BRANCH_ADMIN && userBranch?.id) {
       setSearchCriteria((prev) => ({
         ...prev,
         branch: userBranch.id,
@@ -107,7 +107,7 @@ const DocumentReport = () => {
   }, [role, userBranch]);
 
   useEffect(() => {
-    if (role === "DEPARTMENT ADMIN" || role === "USER") {
+    if (role === DEPARTMENT_ADMIN || role === USER) {
       if (userBranch?.id) {
         setSearchCriteria((prev) => ({
           ...prev,
@@ -211,7 +211,7 @@ const DocumentReport = () => {
         ...(searchCriteria.branch && { branchId: searchCriteria.branch }),
         ...(searchCriteria.department && {
           departmentId: searchCriteria.department,
-          ...(role === "USER" && { employeeId: userId }),
+          ...(role === USER && { employeeId: userId }),
         }),
         startDate: formattedFromDate,
         endDate: formattedToDate,
@@ -220,7 +220,7 @@ const DocumentReport = () => {
 
       // Choose API endpoint based on role
       const apiUrl =
-        role === "USER"
+        role === USER
           ? `${DOCUMENTHEADER_API}/export/ById`
           : `${DOCUMENTHEADER_API}/export`;
 
@@ -311,7 +311,7 @@ const DocumentReport = () => {
           />
         )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
-          {role === "BRANCH ADMIN" ? (
+          {role === BRANCH_ADMIN ? (
             <>
               <div className="flex flex-col">
                 <label className="mb-1" htmlFor="branch">
@@ -348,7 +348,7 @@ const DocumentReport = () => {
                 </select>
               </div>
             </>
-          ) : role === "DEPARTMENT ADMIN" || role === "USER" ? (
+          ) : role === DEPARTMENT_ADMIN || role === USER ? (
             <>
               <div className="flex flex-col">
                 <label className="mb-1" htmlFor="branch">

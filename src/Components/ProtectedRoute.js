@@ -57,6 +57,7 @@ const validRoutes = [
   "/trash-documents",
   "/duplicate-files",
   "/shared-documents",
+  "/manage-allow-funcationality",
 ];
 
 const NotAuthorized = () => {

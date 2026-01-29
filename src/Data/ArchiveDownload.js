@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/24/outline"
 
 import { API_HOST } from "../API/apiConfig"
-import { FILETYPE_API } from "../API/apiConfig"
+import { FILETYPE_API, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig"
 
 // Make sure these components are properly exported
 import Popup from "../Components/Popup"
@@ -97,7 +97,7 @@ const ArchiveDownload = () => {
     let filtered = getFilteredDataByRole(archivedFileStatus)
 
     // FIXED: Admin sees ALL data - no branch filtering for Admin
-    if (userRole !== "ADMIN") {
+    if (userRole !== SYSTEM_ADMIN) {
       // Apply branch filter only for non-Admin users
       if (archiveCriteria.branchId && archiveCriteria.branchId !== "all") {
         filtered = filtered.filter(
@@ -159,7 +159,7 @@ const ArchiveDownload = () => {
     }
 
     // Non-Admin users need branch selection
-    if (userRole !== "ADMIN" && !archiveCriteria.branchId) {
+    if (userRole !== SYSTEM_ADMIN && !archiveCriteria.branchId) {
       errors.push("Please select a branch")
     }
 
@@ -391,7 +391,7 @@ const ArchiveDownload = () => {
       setUserDepartment(response.data.department)
 
       // For Admin, don't set default branch/department
-      if (response.data.role !== "ADMIN") {
+      if (response.data.role !== SYSTEM_ADMIN) {
         setArchiveCriteria((prev) => ({
           ...prev,
           branchId: response.data.branch?.id || "",
@@ -415,11 +415,11 @@ const ArchiveDownload = () => {
     const normalizedRole = userRole?.toUpperCase().replace(/_/g, " ")
 
     switch (normalizedRole) {
-      case "ADMIN":
+      case SYSTEM_ADMIN:
         // Admin sees ALL data from ALL branches and departments - no filtering whatsoever
         return data
 
-      case "BRANCH ADMIN":
+      case BRANCH_ADMIN:
         return data.filter(
           (file) =>
             file.branchId === userBranch?.id ||
@@ -427,7 +427,7 @@ const ArchiveDownload = () => {
             file.branch?.id === userBranch?.id,
         )
 
-      case "DEPARTMENT ADMIN":
+      case DEPARTMENT_ADMIN:
         return data.filter(
           (file) =>
             file.departmentId === userDepartment?.id ||
@@ -451,7 +451,7 @@ const ArchiveDownload = () => {
   }, [userBranch, userDepartment])
 
   useEffect(() => {
-    if (userRole === "BRANCH ADMIN" && userBranch?.id) {
+    if (userRole === BRANCH_ADMIN && userBranch?.id) {
       setArchiveCriteria((prev) => ({
         ...prev,
         branch: userBranch.id,
@@ -461,7 +461,7 @@ const ArchiveDownload = () => {
   }, [userRole, userBranch])
 
   useEffect(() => {
-    if (userRole === "DEPARTMENT ADMIN" || userRole === "USER") {
+    if (userRole === DEPARTMENT_ADMIN || userRole === USER) {
       if (userBranch?.id) {
         setArchiveCriteria((prev) => ({
           ...prev,
@@ -846,7 +846,7 @@ const ArchiveDownload = () => {
     return (
       <div className="flex flex-col">
         <label className="mb-1" htmlFor="fileTypes">
-          File Types {userRole !== "ADMIN" && "*"}
+          File Types {userRole !== SYSTEM_ADMIN && "*"}
         </label>
         <div className="relative">
           <button
@@ -915,7 +915,7 @@ const ArchiveDownload = () => {
     userRole = localStorage.getItem("role")
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
-        {userRole === "BRANCH ADMIN" ? (
+        {userRole === BRANCH_ADMIN ? (
           <>
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="branch">
@@ -956,7 +956,7 @@ const ArchiveDownload = () => {
 
             {renderFileTypeDropdown()}
           </>
-        ) : userRole === "DEPARTMENT ADMIN" || userRole === "USER" ? (
+        ) : userRole === DEPARTMENT_ADMIN || userRole === USER ? (
           <>
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="branch">
@@ -1211,7 +1211,7 @@ const ArchiveDownload = () => {
 
     return (
       <>
-        {(userRole === "ADMIN" || userRole === "BRANCH ADMIN" || userRole === "DEPARTMENT ADMIN") && (
+        {(userRole === SYSTEM_ADMIN || userRole === BRANCH_ADMIN || userRole === DEPARTMENT_ADMIN) && (
           <div className="bg-white p-4 rounded-xl shadow-md w-full mb-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-2xl mb-1 font-semibold">Archive Management</h3>

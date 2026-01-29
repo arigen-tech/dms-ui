@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { API_HOST } from '../API/apiConfig';
+import { API_HOST , SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from '../API/apiConfig';
 import apiClient from "../API/apiClient";
 import axios from 'axios';
 import {
@@ -200,7 +200,7 @@ const Search = () => {
         fetchDepartments(res.data.branch?.id);
       }
 
-      if (role === "DEPARTMENT_ADMIN" || role === "USER") {
+      if (role === "DEPARTMENT_ADMIN" || role === USER) {
         setBranchId(res.data.branch?.id || null);
         setDepartmentId(res.data.department?.id || null);
         fetchDepartments(res.data.branch?.id);
@@ -723,7 +723,7 @@ const Search = () => {
   const renderSearchFields = () => {
   const isAdmin = userRole === "ADMIN";
   const isBranchAdmin = userRole === "BRANCH_ADMIN";
-  const isDeptUser = userRole === "DEPARTMENT_ADMIN" || userRole === "USER";
+  const isDeptUser = userRole === "DEPARTMENT_ADMIN" || userRole === USER;
 
   const fieldWrapper = "flex flex-col gap-1";
 

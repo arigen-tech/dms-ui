@@ -13,7 +13,7 @@ import {
 import { BellAlertIcon } from "@heroicons/react/24/solid"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
-import { API_HOST } from "../API/apiConfig"
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig"
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -76,7 +76,7 @@ const getPriorityColor = (priority) => {
 
 // Helper function to get allowed notification types based on role
 const getAllowedNotificationTypes = (role) => {
-  if (role === "ADMIN" || role === "BRANCH ADMIN") {
+  if (role === SYSTEM_ADMIN || role === BRANCH_ADMIN) {
     return [
       "NEW_DOCUMENT",
       "EMPLOYEE_UPDATE",
@@ -85,7 +85,7 @@ const getAllowedNotificationTypes = (role) => {
       "DOCUMENT_SHARE",
       "DOCUMENT_SHARE_REVOKE"
     ]
-  } else if (role === "DEPARTMENT ADMIN") {
+  } else if (role === DEPARTMENT_ADMIN) {
     return ["NEW_DOCUMENT", "NEW_EMPLOYEE_ADDED", "DOCUMENT_SHARE", "DOCUMENT_SHARE_REVOKE"]
   } else {
     return [

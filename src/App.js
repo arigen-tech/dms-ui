@@ -45,6 +45,7 @@ const Scanner = React.lazy(() => import("./Pages/Scanner"));
 const IDCardGenerator = React.lazy(() => import("./Pages/IDCardGenerator"));
 const FilesType = React.lazy(() => import("./Pages/FilesTypes"));
 const RetentionPolicypage = React.lazy(() => import("./Pages/RetentionPolicypage"));
+const AllowFunctionalityByRoles = React.lazy(() => import("./Pages/AllowFunctionalityByRoles"));
 // const ArchivalDashboard = React.lazy(() => import("./Pages/ArchivalDashboard"));
 const ArchivalDashboardP5 = React.lazy(() => import("./Pages/ArchiveDashboardP5"));
 const FileComparepage = React.lazy(() => import("./Pages/FileComparepage"));
@@ -129,7 +130,7 @@ function App() {
                 <Route path="/retentionpolicy" element={<RetentionPolicypage />} />
                 {/* <Route path="/archivalDashboard" element={<ArchivalDashboard />} /> */}
                 <Route path="/archivalDashboard" element={<ArchivalDashboardP5 />} />
-
+                <Route path="/manage-allow-funcationality" element={<AllowFunctionalityByRoles />} />
                 <Route path="/FileCompare" element={<FileComparepage />} />
                 <Route path="/ManageUserApplications" element={<ManageUserApplications />} />
                 <Route path="/TemplateMasters" element={<TemplateMasters />} />

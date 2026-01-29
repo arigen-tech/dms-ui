@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API_HOST } from '../API/apiConfig';
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from '../API/apiConfig';
 import Popup from '../Components/Popup';
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import LoadingComponent from '../Components/LoadingComponent';
@@ -211,7 +211,7 @@ const ArchiveUpload = () => {
   const renderArchiveFields = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
-        {userRole === "BRANCH ADMIN" ? (
+        {userRole === BRANCH_ADMIN ? (
           <>
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="branch">
@@ -248,7 +248,7 @@ const ArchiveUpload = () => {
               </select>
             </div>
           </>
-        ) : userRole === "DEPARTMENT ADMIN" || userRole === "USER" ? (
+        ) : userRole === DEPARTMENT_ADMIN || userRole === USER ? (
           <>
             <div className="flex flex-col">
               <label className="mb-1" htmlFor="branch">

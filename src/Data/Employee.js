@@ -16,7 +16,8 @@ import {
   REGISTER_API,
   EMPLOYEE_API,
   BRANCH_API,
-  DEPAETMENT_API,
+  DEPAETMENT_API
+  , SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER
 } from "../API/apiConfig";
 import { API_HOST } from "../API/apiConfig";
 import AutoTranslate from '../i18n/AutoTranslate';
@@ -242,7 +243,7 @@ const UserAddEmployee = () => {
       setUserBranch(userBranch);
       setUserDepartment(userDepartment);
 
-      const isAdmin = userData.role?.role?.toUpperCase() === "ADMIN";
+      const isAdmin = userData.role?.role?.toUpperCase() === SYSTEM_ADMIN;
 
       if (isAdmin) {
         setFormData((prevData) => ({
@@ -906,7 +907,7 @@ const UserAddEmployee = () => {
 
             <label className="block text-md font-medium text-gray-700">
               <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
-              {role === "ADMIN" ? (
+              {role === SYSTEM_ADMIN ? (
                 <select
                   name="branch"
                   value={formData.branch?.id || ""}
@@ -934,7 +935,7 @@ const UserAddEmployee = () => {
 
             <label className="block text-md font-medium text-gray-700">
               <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
-              {role === "ADMIN" ? (
+              {role === SYSTEM_ADMIN ? (
                 <select
                   name="department"
                   value={formData.department?.id || ""}
@@ -986,7 +987,7 @@ const UserAddEmployee = () => {
           </div>
         </div>
 
-        {(role === "ADMIN" || role === "USER") && (
+        {(role === SYSTEM_ADMIN || role === USER) && (
           <>
             <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
@@ -1082,14 +1083,14 @@ const UserAddEmployee = () => {
                     <th className="border p-2 text-left"><AutoTranslate>Created Date</AutoTranslate></th>
                     <th className="border p-2 text-left"><AutoTranslate>Updated Date</AutoTranslate></th>
                     <th className="border p-2 text-left"><AutoTranslate>CreatedBy</AutoTranslate></th>
-                    {role === "ADMIN" && (
+                    {role === SYSTEM_ADMIN && (
                       <>
                         <th className="border p-2 text-left"><AutoTranslate>UpdatedBy</AutoTranslate></th>
                         <th className="border p-2 text-left"><AutoTranslate>Status</AutoTranslate></th>
                       </>
                     )}
                     <th className="border p-2 text-left"><AutoTranslate>Edit</AutoTranslate></th>
-                    {role === "ADMIN" && (
+                    {role === SYSTEM_ADMIN && (
                       <th className="border p-2 text-left"><AutoTranslate>Action</AutoTranslate></th>
                     )}
                   </tr>
@@ -1119,10 +1120,10 @@ const UserAddEmployee = () => {
                         {formatDate(employee.updatedOn)}
                       </td>
 
-                      {role === "USER" && (
+                      {role === USER && (
                         <td className="border p-2">{userName || "Unknown"}</td>
                       )}
-                      {role === "ADMIN" && (
+                      {role === SYSTEM_ADMIN && (
                         <>
                           <td className="border p-2">
                             {employee.createdBy?.name || "Unknown"}
@@ -1148,7 +1149,7 @@ const UserAddEmployee = () => {
                           <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                         </button>
                       </td>
-                      {role === "ADMIN" && (
+                      {role === SYSTEM_ADMIN && (
                         <td className="border p-2">
                           <button
                             onClick={() => handleToggleActive(employee)}

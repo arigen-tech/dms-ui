@@ -11,7 +11,7 @@ import {
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { DEPAETMENT_API } from "../../API/apiConfig";
-import { API_HOST } from "../../API/apiConfig";
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../../API/apiConfig";
 import Popup from '../../Components/Popup';
 import LoadingComponent from '../../Components/LoadingComponent';
 import AutoTranslate from '../../i18n/AutoTranslate';
@@ -773,7 +773,7 @@ const BranchEmployee = () => {
                     </div>
                 </div>
 
-                {role === "BRANCH ADMIN" && (
+                {role === BRANCH_ADMIN && (
                     <>
                         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">

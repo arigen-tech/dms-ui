@@ -20,7 +20,7 @@ import {
   UserGroupIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API, FILETYPE_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, FILETYPE_API , SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "../API/apiConfig";
 import apiClient from "../API/apiClient";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from "../Components/LoadingComponent";
@@ -363,7 +363,7 @@ const ApprovedDoc = () => {
       setLoading(true);
       let response;
 
-      if (role === "USER") {
+      if (role === USER) {
         response = await axios.get(
           `${API_HOST}/api/documents/approved/employee/${UserId}`,
           {
@@ -371,9 +371,9 @@ const ApprovedDoc = () => {
           }
         );
       } else if (
-        role === "ADMIN" ||
-        role === "BRANCH ADMIN" ||
-        role === "DEPARTMENT ADMIN"
+        role === SYSTEM_ADMIN ||
+        role === BRANCH_ADMIN ||
+        role === DEPARTMENT_ADMIN
       ) {
         response = await axios.get(`${API_HOST}/api/documents/approvedByEmp`, {
           headers: {

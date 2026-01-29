@@ -14,7 +14,7 @@ import {
   PrinterIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API, BRANCH_API, DEPAETMENT_API, FILETYPE_API } from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, BRANCH_API, DEPAETMENT_API, FILETYPE_API, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
 import { useNavigate } from "react-router-dom";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import apiClient from "../API/apiClient";
@@ -124,7 +124,7 @@ function RejectedDoc() {
       setLoading(true);
       let response;
 
-      if (role === "USER") {
+      if (role === USER) {
         response = await axios.get(
           `${API_HOST}/api/documents/rejected/employee/${UserId}`,
           {
@@ -134,9 +134,9 @@ function RejectedDoc() {
           }
         );
       } else if (
-        role === "ADMIN" ||
-        role === "BRANCH ADMIN" ||
-        role === "DEPARTMENT ADMIN"
+        role === SYSTEM_ADMIN ||
+        role === BRANCH_ADMIN ||
+        role === DEPARTMENT_ADMIN
       ) {
         response = await axios.get(`${API_HOST}/api/documents/rejectedByEmp`, {
           headers: {
@@ -678,7 +678,7 @@ function RejectedDoc() {
                 <th className="border p-2 text-left">
                   <AutoTranslate>No. Of Attached Files</AutoTranslate>
                 </th>
-                {role === "USER" && (
+                {role === USER && (
                   <th className="border p-2 text-left">
                     <AutoTranslate>Edit</AutoTranslate>
                   </th>
@@ -711,7 +711,7 @@ function RejectedDoc() {
                     <td className="border p-2">
                       {doc?.documentDetails?.length}
                     </td>
-                    {role === "USER" && (
+                    {role === USER && (
                       <td className="border p-2">
                         <button onClick={() => handleEdit(doc.id)}>
                           <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
@@ -732,7 +732,7 @@ function RejectedDoc() {
               ) : (
                 <tr>
                   <td
-                    colSpan={role === "USER" ? "8" : "7"}
+                    colSpan={role === USER ? "8" : "7"}
                     className="border p-4 text-center text-gray-500"
                   >
                     <AutoTranslate>No data found.</AutoTranslate>
