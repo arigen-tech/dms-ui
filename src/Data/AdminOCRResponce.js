@@ -137,42 +137,56 @@ const AdminOCRResponse = () => {
 
   const openFile = async (file) => {
     try {
-      // setIsOpeningFile(true);
+      // setOpeningFiles(true);
 
-      const branch = selectedDoc?.data?.employee.branch.name.replace(/ /g, "_");
-      const department = selectedDoc?.data?.employee.department.name.replace(/ /g, "_");
-      const year = selectedDoc?.data?.yearMaster.name.replace(/ /g, "_");
-      const category = selectedDoc?.data?.categoryMaster.name.replace(/ /g, "_");
-      const version = file.version;
-      const fileName = file.docName.replace(/ /g, "_");
+      const encodedPath = file.path
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
 
-      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-        branch
-      )}/${encodeURIComponent(department)}/${encodeURIComponent(
-        year
-      )}/${encodeURIComponent(category)}/${encodeURIComponent(
-        version
-      )}/${encodeURIComponent(fileName)}`;
+      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
-      let blob = new Blob([response.data], { type: response.headers["content-type"] });
-      let url = URL.createObjectURL(blob);
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
       setContentType(response.headers["content-type"]);
-      // setIsOpen(false);
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to fetch or preview the file.");
-    } finally {
-      // setIsOpeningFile(false);
-    }
+      let errorMessage = "Failed to fetch or preview the file.";
+
+      if (error.response) {
+        const data = error.response.data;
+
+        // If it's a Blob (common with responseType: 'blob'), read it as text
+        if (data instanceof Blob) {
+          try {
+            const text = await data.text();           // read blob as text
+            const json = JSON.parse(text);            // parse JSON
+            errorMessage = json.message || `Error: ${error.response.status}`;
+          } catch (e) {
+            errorMessage = `Error: ${error.response.status}`;
+          }
+        } else if (typeof data === "object") {
+          errorMessage = data.message || `Error: ${error.response.status}`;
+        } else {
+          errorMessage = `Error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        errorMessage = "No response from server";
+      } else {
+        errorMessage = error.message;
+      }
+
+      showPopup(errorMessage, "error");
+      console.error("Error fetching file:", errorMessage);
+    } 
   };
 
   const openModal = async (doc) => {
@@ -290,40 +304,69 @@ const AdminOCRResponse = () => {
     }
   };
 
-  const handleDownload = async (file) => {
-    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
-    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
-    const version = file.version;
-    const fileName = file.docName.replace(/ /g, "_");
+  const handleDownload = async (file, action = "download") => {
+    if (!selectedDoc) return;
 
-    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-      branch
-    )}/${encodeURIComponent(department)}/${encodeURIComponent(
-      year
-    )}/${encodeURIComponent(category)}/${encodeURIComponent(
-      version
-    )}/${encodeURIComponent(fileName)}`;
+    try {
+      const branch = selectedDoc.employee?.branch?.name?.replace(/ /g, "_");
+      const department = selectedDoc.employee?.department?.name?.replace(/ /g, "_");
+      const year = file.year?.replace(/ /g, "_") || "unknown";
+      const category = selectedDoc.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
+      const version = file.version;
+      const fileName = file.docName?.replace(/ /g, "_");
 
-    const response = await apiClient.get(fileUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: "blob",
-    });
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
-    const downloadBlob = new Blob([response.data], {
-      type: response.headers["content-type"],
-    });
+      const response = await apiClient.get(fileUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob",
+      });
 
-    const link = document.createElement("a");
-    link.href = window.URL.createObjectURL(downloadBlob);
-    link.download = file.docName; // download actual name with extension
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+      // Create a blob from the response
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+
+      if (action === "view") {
+        window.open(link.href, "_blank");
+      } else {
+        link.download = file.docName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      let msg = "Something went wrong";
+
+      if (error.response) {
+        const data = error.response.data;
+
+        // If server returned a blob (like JSON error), read it as text
+        if (data instanceof Blob) {
+          try {
+            const text = await data.text();       // read blob as text
+            const json = JSON.parse(text);        // parse JSON
+            msg = json.message || `Error: ${error.response.status}`;
+          } catch (e) {
+            // fallback if parsing fails
+            msg = `Error: ${error.response.status}`;
+          }
+        } else if (typeof data === "object") {
+          msg = data.message || `Error: ${error.response.status}`;
+        } else {
+          msg = `Error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        msg = "No response from server";
+      } else {
+        msg = error.message;
+      }
+
+      showPopup(msg, "error");
+    }
   };
-
   const printPage = () => {
     setPrintTrue(true);
     window.print();

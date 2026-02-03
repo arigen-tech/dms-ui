@@ -21,6 +21,8 @@ import apiClient from "../API/apiClient";
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
 import { useLanguage } from '../i18n/LanguageContext'; // Import useLanguage hook
+import Popup from "../Components/Popup";
+
 
 function RejectedDoc() {
   // Get language context
@@ -64,6 +66,7 @@ function RejectedDoc() {
   const [filesType, setFilesType] = useState([]);
   const [, setIsUploading] = useState(false);
   const [, setOpeningFiles] = useState(null);
+  const [popupMessage, setPopupMessage] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
@@ -84,6 +87,16 @@ function RejectedDoc() {
     fetchBranches();
     fetchDepartments();
   }, []);
+
+    const showPopup = (message, type = 'info') => {
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+      }
+    });
+  };
 
   useEffect(() => {
     // Check if there's a document ID passed from notification
@@ -250,8 +263,11 @@ function RejectedDoc() {
     try {
       setOpeningFiles(true);
 
-      // Encode each segment separately to preserve folder structure
-      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
+      const encodedPath = file.path
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
@@ -267,53 +283,100 @@ function RejectedDoc() {
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
-      console.error("❌ Error fetching file:", error);
-      alert("Failed to fetch or preview the file.");
+      let errorMessage = "Failed to fetch or preview the file.";
+
+      if (error.response) {
+        const data = error.response.data;
+
+        // If it's a Blob (common with responseType: 'blob'), read it as text
+        if (data instanceof Blob) {
+          try {
+            const text = await data.text();           // read blob as text
+            const json = JSON.parse(text);            // parse JSON
+            errorMessage = json.message || `Error: ${error.response.status}`;
+          } catch (e) {
+            errorMessage = `Error: ${error.response.status}`;
+          }
+        } else if (typeof data === "object") {
+          errorMessage = data.message || `Error: ${error.response.status}`;
+        } else {
+          errorMessage = `Error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        errorMessage = "No response from server";
+      } else {
+        errorMessage = error.message;
+      }
+
+      showPopup(errorMessage, "error");
+      console.error("Error fetching file:", errorMessage);
     } finally {
       setOpeningFiles(false);
     }
   };
 
   const handleDownload = async (file, action = "download") => {
-    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
-    const year = selectedDoc.yearMaster.name.replace(/ /g, "_");
-    const category = selectedDoc.categoryMaster.name.replace(/ /g, "_");
-    const version = file.version;
-    const fileName = file.docName.replace(/ /g, "_");
+    if (!selectedDoc) return;
 
-    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-      branch
-    )}/${encodeURIComponent(department)}/${encodeURIComponent(
-      year
-    )}/${encodeURIComponent(category)}/${encodeURIComponent(
-      version
-    )}/${encodeURIComponent(fileName)}?action=${action}`;
+    try {
+      const branch = selectedDoc.employee?.branch?.name?.replace(/ /g, "_");
+      const department = selectedDoc.employee?.department?.name?.replace(/ /g, "_");
+      const year = file.year?.replace(/ /g, "_") || "unknown";
+      const category = selectedDoc.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
+      const version = file.version;
+      const fileName = file.docName?.replace(/ /g, "_");
 
-    const response = await apiClient.get(fileUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: "blob",
-    });
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
-    const downloadBlob = new Blob([response.data], {
-      type: response.headers["content-type"],
-    });
+      const response = await apiClient.get(fileUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob",
+      });
 
-    const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(downloadBlob);
+      // Create a blob from the response
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
 
       if (action === "view") {
-        // 👁️ VIEW
         window.open(link.href, "_blank");
       } else {
-        // ⬇️ DOWNLOAD (existing behavior)
         link.download = file.docName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       }
 
-    URL.revokeObjectURL(link.href);
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      let msg = "Something went wrong";
+
+      if (error.response) {
+        const data = error.response.data;
+
+        // If server returned a blob (like JSON error), read it as text
+        if (data instanceof Blob) {
+          try {
+            const text = await data.text();       // read blob as text
+            const json = JSON.parse(text);        // parse JSON
+            msg = json.message || `Error: ${error.response.status}`;
+          } catch (e) {
+            // fallback if parsing fails
+            msg = `Error: ${error.response.status}`;
+          }
+        } else if (typeof data === "object") {
+          msg = data.message || `Error: ${error.response.status}`;
+        } else {
+          msg = `Error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        msg = "No response from server";
+      } else {
+        msg = error.message;
+      }
+
+      showPopup(msg, "error");
+    }
   };
 
   const filteredDocFiles = useMemo(() => {
@@ -567,6 +630,14 @@ function RejectedDoc() {
         <AutoTranslate>RejectedDocuments</AutoTranslate>
       </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
+        {popupMessage && (
+                <Popup
+                  message={popupMessage.message}
+                  type={popupMessage.type}
+                  onClose={popupMessage.onClose}
+                />
+              )}
+        
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">

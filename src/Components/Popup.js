@@ -54,7 +54,7 @@ const Popup = ({
   const styles = getStyleByType();
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[10000]">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 p-6 text-center relative">
         <div className={`
           ${styles.iconColor}

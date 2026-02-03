@@ -174,33 +174,52 @@ const AllowFunctionalityByRole = () => {
     };
 
     // Add new access
-    const handleAddAccess = async () => {
-        if (!formData.roleId || !formData.apiId) {
-            showPopup('Please select Role and API Endpoint', 'warning');
-            return;
-        }
-        if (isDuplicateAccess(formData.roleId, formData.apiId)) {
-            showPopup('This Role already has access to this API', 'error');
-            return;
-        }
+const handleAddAccess = async () => {
+    if (!formData.roleId || !formData.apiId) {
+        showPopup('Please select Role and API Endpoint', 'warning');
+        return;
+    }
 
-        setIsSubmitting(true);
-        try {
-            const newAccess = {
-                roleId: parseInt(formData.roleId),
-                apiId: parseInt(formData.apiId)
-            };
-            const res = await postRequest(`/api/role-api-access/create`, newAccess);
-            setRoleApiAccessList([...roleApiAccessList, res]);
-            setFormData({ roleId: '', endpointTypeId: '', apiId: '' });
-            showPopup('Access added successfully!', 'success');
-        } catch (err) {
-            console.error(err);
-            showPopup('Failed to add access', 'error');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    setIsSubmitting(true);
+    try {
+        const newAccess = {
+            roleId: parseInt(formData.roleId),
+            apiId: parseInt(formData.apiId)
+        };
+
+        const res = await postRequest(
+            `/api/role-api-access/create`,
+            newAccess
+        );
+
+        setRoleApiAccessList([...roleApiAccessList, res]);
+        setFormData({ roleId: '', endpointTypeId: '', apiId: '' });
+        showPopup('Access added successfully!', 'success');
+
+    } catch (err) {
+    console.error(err);
+
+    let message = 'Failed to add access';
+
+    // Handle fetch-style error
+    if (err.message.includes('409')) {
+        message = 'Functionality already assigned to this role';
+    } else if (err.message.includes('400')) {
+        message = 'Invalid request';
+    } else if (err.message.includes('403')) {
+        message = 'You are not authorized';
+    } else if (err.message.includes('500')) {
+        message = 'Server error. Please try again later';
+    }
+
+    showPopup(message, 'error');
+}
+ finally {
+        setIsSubmitting(false);
+    }
+};
+
+
 
     // Save edit
     const handleSaveEdit = async () => {
@@ -293,7 +312,7 @@ const AllowFunctionalityByRole = () => {
         <div className="px-2">
             {/* Page Header */}
             <h1 className="text-2xl mb-1 font-semibold">
-                <AutoTranslate>Manage Role API Access</AutoTranslate>
+                <AutoTranslate>Manage Role & Functionality Access</AutoTranslate>
             </h1>
             <p className="text-sm md:text-base text-gray-600 mb-4">
                 <AutoTranslate>This page allows you to control which roles can access which APIs.</AutoTranslate>{' '}

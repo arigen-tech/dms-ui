@@ -486,6 +486,17 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
+  const extractBlobMessage = async (blob) => {
+  try {
+    const text = await blob.text();
+    const json = JSON.parse(text);
+    return json.message || "Access denied";
+  } catch {
+    return "Access denied";
+  }
+};
+
+
   const handleDownload = async (file, action = "download") => {
     if (!selectedDoc) return;
 
@@ -533,9 +544,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       URL.revokeObjectURL(link.href);
     } catch (error) {
-      console.error("Error downloading file:", error);
-      showPopup("Failed to download file. Please try again!", "error");
-    }
+  if (error.response?.status === 403) {
+    const msg = await extractBlobMessage(error.response.data);
+    showPopup(msg, "error");
+    return;
+  }
+
+  showPopup("Failed to download file. Please try again.", "error");
+}
+
   };
 
 

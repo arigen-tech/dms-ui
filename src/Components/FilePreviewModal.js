@@ -5,7 +5,7 @@ import Papa from "papaparse";
 import { marked } from "marked";
 import { decode } from "tiff";
 
-const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fileUrl, fileName, fileData }) => {
+const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fileUrl, fileName, fileData,  onError }) => {
   const [previewContent, setPreviewContent] = useState(null);
   const [typeToPreview, setTypeToPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -296,9 +296,7 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
   // Removed pagination functions since we removed Previous/Next buttons
 
   // Removed useEffect for page changes since we removed pagination
-
-
-  const handleDownloadClick = async () => {
+const handleDownloadClick = async () => {
     if (isDownloading) return;
     
     setIsDownloading(true);
@@ -316,6 +314,10 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
       }
     } catch (error) {
       console.error("Download failed:", error);
+      // Call onError if provided
+      if (onError) {
+        onError(error.message || "Download failed");
+      }
     } finally {
       setIsDownloading(false);
     }

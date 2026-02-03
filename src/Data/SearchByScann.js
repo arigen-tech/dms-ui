@@ -43,12 +43,13 @@ const SearchByScan = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [blobUrl, setBlobUrl] = useState("")
   const [contentType, setContentType] = useState("")
-  const [selectedDocFile, setSelectedDocFiles] = useState(null)
+  const [selectedDocFile, setSelectedDocFile] = useState(null)
   const [searchFileTerm, setSearchFileTerm] = useState("")
   const [isCameraLoading, setIsCameraLoading] = useState(false)
   const [availableCameras, setAvailableCameras] = useState([])
   const [selectedCamera, setSelectedCamera] = useState(null)
   const [scanSuccess, setScanSuccess] = useState(false)
+  const [isOpeningFile, setIsOpeningFile] = useState(false)
 
   const videoRef = useRef(null)
   const qrScannerRef = useRef(null)
@@ -171,10 +172,8 @@ const SearchByScan = () => {
     }
   }
 
-
   const handleQrCheck = (qrParams) => {
     let isUnauthorized = false
-
 
     console.log("curr br", loginBranchid)
     console.log("curr dept", loginDepartmentid)
@@ -190,7 +189,6 @@ const SearchByScan = () => {
     } else if (role === USER) {
       isUnauthorized = Number(userId) !== Number(qrParams.empId);
     }
-
 
     if (isUnauthorized) {
       showPopup(unauthorizedMessage, "warning")
@@ -283,7 +281,6 @@ const SearchByScan = () => {
       }
     });
   };
-
 
   const fetchLoginUser = async () => {
     if (!userId || !token) {
@@ -437,117 +434,223 @@ const SearchByScan = () => {
 
   const openFile = async (file) => {
     try {
-      setOpeningFiles(true);
-      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
-      const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
+      // Set the selected file first
+      setSelectedDocFile(file);
+      setIsOpeningFile(true);
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      // Use the same approach as in Approve component
+      if (file.path) {
+        const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
+        const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
-      const url = URL.createObjectURL(blob);
+        const response = await apiClient.get(fileUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "blob",
+        });
 
-      setBlobUrl(url);
-      setContentType(response.headers["content-type"]);
-      setSearchFileTerm("");
-      setIsModalOpen(true);
+        const blob = new Blob([response.data], { type: response.headers["content-type"] });
+        const url = URL.createObjectURL(blob);
+
+        setBlobUrl(url);
+        setContentType(response.headers["content-type"]);
+        setSearchFileTerm("");
+        setIsModalOpen(true);
+      } else {
+        // Fallback to path-based URL (similar to Approve component)
+        const branch = headerData?.employee?.branch?.name?.replace(/ /g, "_");
+        const department = headerData?.employee?.department?.name?.replace(/ /g, "_");
+        const year = file.year || file.yearMaster?.name?.replace(/ /g, "_") || "unknown";
+        const category = headerData?.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
+        const version = file.version;
+        const fileName = file.docName?.replace(/ /g, "_");
+
+        const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch || '')}/${encodeURIComponent(department || '')}/${encodeURIComponent(year || '')}/${encodeURIComponent(category || '')}/${encodeURIComponent(version || '')}/${encodeURIComponent(fileName || '')}?action=view`;
+
+        const response = await apiClient.get(fileUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "blob",
+        });
+
+        const blob = new Blob([response.data], { type: response.headers["content-type"] });
+        const url = URL.createObjectURL(blob);
+
+        setBlobUrl(url);
+        setContentType(response.headers["content-type"]);
+        setSearchFileTerm("");
+        setIsModalOpen(true);
+      }
     } catch (error) {
       console.error("❌ Error fetching file:", error);
-      alert("Failed to fetch or preview the file.");
+
+      let errorMessage = "Failed to fetch or preview the file.";
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = "Unauthorized. Please login again.";
+        } else if (error.response.status === 404) {
+          errorMessage = "File not found on server.";
+        } else if (error.response.status === 403) {
+          errorMessage = "You don't have permission to access this file.";
+        }
+      }
+
+      showPopup(errorMessage, "error");
     } finally {
-      setOpeningFiles(false);
+      setIsOpeningFile(false);
     }
   };
 
   const handleDownload = async (file, action = "download") => {
-    if (!headerData) return;
-
-    const branch = headerData.employee.branch.name.replace(/ /g, "_")
-      const department = headerData.employee.department.name.replace(/ /g, "_")
-      const year = headerData.yearMaster.name.replace(/ /g, "_")
-      const category = headerData.categoryMaster.name.replace(/ /g, "_")
-      const version = file.version
-      const fileName = file.docName.replace(/ /g, "_")
-
-    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-      branch
-    )}/${encodeURIComponent(department)}/${encodeURIComponent(
-      year
-    )}/${encodeURIComponent(category)}/${encodeURIComponent(
-      version
-    )}/${encodeURIComponent(fileName)}?action=${action}`; // ✅ ONLY CHANGE
+    if (!headerData || !file) {
+      showPopup("Document data not available", "error");
+      return;
+    }
 
     try {
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      setLoading(true);
 
-      const downloadBlob = new Blob([response.data], {
-        type: response.headers["content-type"],
-      });
-
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(downloadBlob);
-
+      // Set the selected file for modal context
       if (action === "view") {
-        // 👁️ VIEW
-        window.open(link.href, "_blank");
+        setSelectedDocFile(file);
+      }
+
+      let fileUrl;
+
+      // Check if we have a simple path or need to construct URL
+      if (file.path && typeof file.path === 'string') {
+        // Clean the path - remove query parameters if any
+        const cleanPath = file.path.split('?')[0];
+        const encodedPath = cleanPath.split("/").map(encodeURIComponent).join("/");
+        fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
       } else {
-        // ⬇️ DOWNLOAD (existing behavior)
-        link.download = file.docName;
+        // Construct URL from data (fallback)
+        const branch = headerData?.branchMaster?.name || headerData?.employee?.branch?.name;
+        const department = headerData?.departmentMaster?.name || headerData?.employee?.department?.name;
+        const year = file.year || file.yearMaster?.name || "unknown";
+        const category = headerData?.categoryMaster?.name || "unknown";
+        const version = file.version || "1.0";
+        const fileName = file.docName || "document";
+
+        // Clean and encode values
+        const cleanBranch = branch ? branch.replace(/ /g, "_") : "unknown";
+        const cleanDept = department ? department.replace(/ /g, "_") : "unknown";
+        const cleanYear = year ? year.toString().replace(/ /g, "_") : "unknown";
+        const cleanCategory = category ? category.replace(/ /g, "_") : "unknown";
+        const cleanVersion = version ? version.toString().replace(/ /g, "_") : "1.0";
+        const cleanFileName = fileName ? fileName.replace(/ /g, "_") : "document";
+
+        fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(cleanBranch)
+          }/${encodeURIComponent(cleanDept)
+          }/${encodeURIComponent(cleanYear)
+          }/${encodeURIComponent(cleanCategory)
+          }/${encodeURIComponent(cleanVersion)
+          }/${encodeURIComponent(cleanFileName)
+          }`;
+      }
+
+      // Add action parameter only if it's NOT 'download' (default)
+      // Some APIs treat 'download' as default and 'view' as special
+      if (action && action !== 'download') {
+        fileUrl += `?action=${action}`;
+      }
+
+      console.log('Download URL:', fileUrl);
+
+      const response = await apiClient.get(fileUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: '*/*'
+        },
+        responseType: 'blob',
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Download failed with status: ${response.status}`);
+      }
+
+      // Extract filename
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = file.docName || 'document';
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/octet-stream'
+      });
+
+      if (action === 'view') {
+        // For viewing, set up modal
+        const url = window.URL.createObjectURL(blob);
+        setBlobUrl(url);
+        setContentType(response.headers['content-type']);
+        setIsModalOpen(true);
+      } else {
+        // For downloading, create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showPopup(`File "${filename}" downloaded successfully!`, "success");
       }
 
-      URL.revokeObjectURL(link.href);
-
     } catch (error) {
-      console.error("Error downloading file:", error);
-      showPopup("Failed to download file. Please try again!", "error");
+      console.error("Download error details:", error);
+
+      let errorMessage = "Failed to download file. Please try again.";
+
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = "Unauthorized. Please login again.";
+          navigate("/login");
+        } else if (error.response.status === 403) {
+          // 403 Forbidden - Common causes:
+          // 1. User doesn't have permission for this branch/department
+          // 2. Document is restricted
+          // 3. Token expired or invalid
+          errorMessage = "Access forbidden. You don't have permission to access this file.";
+
+          // Try to get more details from error response
+          try {
+            const errorData = await error.response.data.text();
+            const parsedError = JSON.parse(errorData);
+            if (parsedError.message) {
+              errorMessage = parsedError.message;
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        } else if (error.response.status === 404) {
+          errorMessage = "File not found on server.";
+        } else if (error.response.status === 400) {
+          errorMessage = "Bad request. The file path might be incorrect.";
+        }
+      } else if (error.request) {
+        errorMessage = "Network error. Please check your connection.";
+      }
+
+      showPopup(errorMessage, "error");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleModalDownload = (action = "download") => {
+    if (!selectedDocFile) {
+      showPopup("No file selected for download", "error");
+      return;
+    }
+    handleDownload(selectedDocFile, action);
+  };
 
-  // const handleDownload = async (file) => {
-  //   try {
-  //     const branch = headerData.employee.branch.name.replace(/ /g, "_")
-  //     const department = headerData.employee.department.name.replace(/ /g, "_")
-  //     const year = headerData.yearMaster.name.replace(/ /g, "_")
-  //     const category = headerData.categoryMaster.name.replace(/ /g, "_")
-  //     const version = file.version
-  //     const fileName = file.docName.replace(/ /g, "_")
-
-  //     const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-  //       branch,
-  //     )}/${encodeURIComponent(department)}/${encodeURIComponent(
-  //       year,
-  //     )}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}`
-
-  //     const response = await apiClient.get(fileUrl, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //       responseType: "blob",
-  //     })
-
-  //     const downloadBlob = new Blob([response.data], {
-  //       type: response.headers["content-type"],
-  //     })
-
-  //     const link = document.createElement("a")
-  //     link.href = window.URL.createObjectURL(downloadBlob)
-  //     link.download = file.docName
-  //     document.body.appendChild(link)
-  //     link.click()
-  //     document.body.removeChild(link)
-  //     URL.revokeObjectURL(link.href)
-  //   } catch (error) {
-  //     console.error("Download error:", error)
-  //     showPopup("Failed to download the file.", "error")
-  //   }
-  // }
 
   const filteredDocFiles = useMemo(() => {
     const files = headerData?.documentDetails || []
@@ -583,7 +686,6 @@ const SearchByScan = () => {
     <div className="p-4 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">
         <AutoTranslate>Search Document Using QR Code</AutoTranslate>
-
       </h1>
 
       {popupMessage && <Popup message={popupMessage.message} type={popupMessage.type} onClose={handlePopupClose} />}
@@ -703,8 +805,6 @@ const SearchByScan = () => {
                           {availableCameras.map((camera) => (
                             <option key={camera.deviceId} value={camera.deviceId}>
                               {camera.label || <AutoTranslate>Camera</AutoTranslate>}{availableCameras.indexOf(camera) + 1}
-
-
                             </option>
                           ))}
                         </select>
@@ -738,6 +838,7 @@ const SearchByScan = () => {
                 setHeaderData(null)
                 setFile(null)
                 setQrData(null)
+                setSelectedDocFile(null)
               }}
               className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
             >
@@ -801,9 +902,6 @@ const SearchByScan = () => {
               </label>
               <p className="text-gray-800 font-medium">{headerData?.branchMaster?.name || "N/A"}</p>
             </div>
-
-
-
           </div>
 
           {/* Attached Files Section */}
@@ -900,7 +998,7 @@ const SearchByScan = () => {
                             </td>
 
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {file.yearMaster.name}
+                              {file.yearMaster?.name || "N/A"}
                             </td>
 
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -938,14 +1036,14 @@ const SearchByScan = () => {
                               <div className="flex justify-end space-x-2 flex-nowrap">
                                 <button
                                   onClick={() => openFile(file)}
-                                  disabled={openingFiles[file.id]}
-                                  className={`inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${openingFiles[file.id]
+                                  disabled={isOpeningFile}
+                                  className={`inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${isOpeningFile
                                     ? "bg-indigo-300 cursor-not-allowed"
                                     : "bg-indigo-600 hover:bg-indigo-700"
                                     }`}
                                 >
                                   <FiEye className="mr-1" />
-                                  {openingFiles[file.id] ? (
+                                  {isOpeningFile ? (
                                     <AutoTranslate>Opening...</AutoTranslate>
                                   ) : (
                                     <AutoTranslate>View</AutoTranslate>
@@ -953,7 +1051,7 @@ const SearchByScan = () => {
                                 </button>
 
                                 <button
-                                  onClick={() => handleDownload(file)}
+                                  onClick={() => handleDownload(file, 'download')}
                                   className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                                 >
                                   <FiDownload className="mr-1" />
@@ -967,7 +1065,6 @@ const SearchByScan = () => {
                     </tbody>
                   </table>
                 </div>
-
               </div>
             ) : (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -982,8 +1079,17 @@ const SearchByScan = () => {
 
       <FilePreviewModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onDownload={(file, action = "download") => handleDownload(file, action)} fileType={contentType}
+        onClose={() => {
+          setIsModalOpen(false);
+          setBlobUrl("");
+          setSelectedDocFile(null);
+        }}
+        onDownload={(action) => {
+          // Ensure action is a string
+          const downloadAction = typeof action === 'string' ? action : 'download';
+          handleModalDownload(downloadAction);
+        }}
+        fileType={contentType}
         fileUrl={blobUrl}
         fileName={selectedDocFile?.docName}
         fileData={selectedDocFile}

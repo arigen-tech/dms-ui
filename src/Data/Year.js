@@ -27,7 +27,7 @@ const Year = () => {
 
   // State for tracking data loading only
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // State for translated placeholders
   const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
     search: 'Search...',
@@ -47,7 +47,7 @@ const Year = () => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Create a ref for the form section
   const formRef = useRef(null);
 
@@ -103,7 +103,7 @@ const Year = () => {
         yearRange: yearRangePlaceholder
       });
     };
-    
+
     updatePlaceholders();
   }, [currentLanguage, translatePlaceholder, isTranslationNeeded]);
 
@@ -263,8 +263,15 @@ const Year = () => {
         showPopup('Status Changed successfully!', 'success');
       } catch (error) {
         console.error('Error toggling Year status:', error.response ? error.response.data : error.message);
-        showPopup('Failed to changing the status. Please try again.', 'error');
+
+        const errorMessage =
+          error.response && error.response.data && error.response.data.message
+            ? error.response.data.message
+            : 'Failed to change the status. Please try again.';
+
+        showPopup(errorMessage, 'error'); 
       }
+
     } else {
       console.error('No Year selected for status toggle');
       showPopup('No year selected for status toggle!', 'error');
@@ -284,8 +291,8 @@ const Year = () => {
   };
 
   const showPopup = (message, type = 'info') => {
-    setPopupMessage({ 
-      message, 
+    setPopupMessage({
+      message,
       type,
       onClose: () => setPopupMessage(null)
     });
@@ -336,7 +343,7 @@ const Year = () => {
             onClose={popupMessage.onClose}
           />
         )}
-        
+
         {/* Add ref to the form section */}
         <div ref={formRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
           <div className="flex gap-6">
@@ -359,7 +366,7 @@ const Year = () => {
 
             <div className="w-1/5 flex items-end">
               {editingIndex === null ? (
-                <button 
+                <button
                   onClick={handleAddYear}
                   disabled={isSubmitting}
                   className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -373,7 +380,7 @@ const Year = () => {
                   )}
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={handleSaveEdit}
                   disabled={isSubmitting}
                   className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}

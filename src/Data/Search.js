@@ -454,10 +454,15 @@ const Search = () => {
     }, 1000);
   };
 
-   const openFile = async (file) => {
+  const openFile = async (file) => {
     try {
       setOpeningFiles(true);
-      const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
+
+      const encodedPath = file.path
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
@@ -473,8 +478,33 @@ const Search = () => {
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
-      console.error("❌ Error fetching file:", error);
-      alert("Failed to fetch or preview the file.");
+      let errorMessage = "Failed to fetch or preview the file.";
+
+      if (error.response) {
+        const data = error.response.data;
+
+        // If it's a Blob (common with responseType: 'blob'), read it as text
+        if (data instanceof Blob) {
+          try {
+            const text = await data.text();           // read blob as text
+            const json = JSON.parse(text);            // parse JSON
+            errorMessage = json.message || `Error: ${error.response.status}`;
+          } catch (e) {
+            errorMessage = `Error: ${error.response.status}`;
+          }
+        } else if (typeof data === "object") {
+          errorMessage = data.message || `Error: ${error.response.status}`;
+        } else {
+          errorMessage = `Error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        errorMessage = "No response from server";
+      } else {
+        errorMessage = error.message;
+      }
+
+      showPopup(errorMessage, "error");
+      console.error("Error fetching file:", errorMessage);
     } finally {
       setOpeningFiles(false);
     }
@@ -483,39 +513,29 @@ const Search = () => {
   const handleDownload = async (file, action = "download") => {
     if (!selectedDoc) return;
 
-    const branch = selectedDoc.employee.branch.name.replace(/ /g, "_");
-    const department = selectedDoc.employee.department.name.replace(/ /g, "_");
-    const year = file.yearMaster?.name?.replace(/ /g, "_") || "unknown";
-    const category = selectedDoc.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
-    const version = file.version;
-    const fileName = file.docName.replace(/ /g, "_");
-
-    const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(
-      branch
-    )}/${encodeURIComponent(department)}/${encodeURIComponent(
-      year
-    )}/${encodeURIComponent(category)}/${encodeURIComponent(
-      version
-    )}/${encodeURIComponent(fileName)}?action=${action}`; // ✅ ONLY CHANGE
-
     try {
+      const branch = selectedDoc.employee?.branch?.name?.replace(/ /g, "_");
+      const department = selectedDoc.employee?.department?.name?.replace(/ /g, "_");
+      const year = file.year?.replace(/ /g, "_") || "unknown";
+      const category = selectedDoc.categoryMaster?.name?.replace(/ /g, "_") || "unknown";
+      const version = file.version;
+      const fileName = file.docName?.replace(/ /g, "_");
+
+      const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
+
       const response = await apiClient.get(fileUrl, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
-      const downloadBlob = new Blob([response.data], {
-        type: response.headers["content-type"],
-      });
-
+      // Create a blob from the response
+      const blob = new Blob([response.data], { type: response.headers["content-type"] });
       const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(downloadBlob);
+      link.href = window.URL.createObjectURL(blob);
 
       if (action === "view") {
-        // 👁️ VIEW
         window.open(link.href, "_blank");
       } else {
-        // ⬇️ DOWNLOAD (existing behavior)
         link.download = file.docName;
         document.body.appendChild(link);
         link.click();
@@ -523,10 +543,34 @@ const Search = () => {
       }
 
       URL.revokeObjectURL(link.href);
-
     } catch (error) {
-      console.error("Error downloading file:", error);
-      showPopup("Failed to download file. Please try again!", "error");
+      let msg = "Something went wrong";
+
+      if (error.response) {
+        const data = error.response.data;
+
+        // If server returned a blob (like JSON error), read it as text
+        if (data instanceof Blob) {
+          try {
+            const text = await data.text();       // read blob as text
+            const json = JSON.parse(text);        // parse JSON
+            msg = json.message || `Error: ${error.response.status}`;
+          } catch (e) {
+            // fallback if parsing fails
+            msg = `Error: ${error.response.status}`;
+          }
+        } else if (typeof data === "object") {
+          msg = data.message || `Error: ${error.response.status}`;
+        } else {
+          msg = `Error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        msg = "No response from server";
+      } else {
+        msg = error.message;
+      }
+
+      showPopup(msg, "error");
     }
   };
 
