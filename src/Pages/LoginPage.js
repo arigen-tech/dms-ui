@@ -789,7 +789,7 @@ const LoginPage = () => {
 
 
                   <div className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-1 shadow-lg z-10 whitespace-nowrap">
-                    <AutoTranslate>This website is running on Release Version 2.0, which is currently under testing.</AutoTranslate>
+                    <AutoTranslate>This website is running on Release Version 2.1, which is currently under testing.</AutoTranslate>
                   </div>
 
                 )}
