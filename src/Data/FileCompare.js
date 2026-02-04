@@ -22,8 +22,10 @@ import Popup from '../Components/Popup'
 import AutoTranslate from '../i18n/AutoTranslate'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translateInstant } from '../i18n/autoTranslator'
+import apiClient from "../API/apiClient";
 
-const tokenKey = "tokenKey"
+// ✅ FIX: Get the actual token from localStorage, not the string literal
+const tokenKey = typeof window !== "undefined" ? localStorage.getItem("tokenKey") : null
 
 const imageExtensions = ["png", "jpg", "jpeg", "gif", "bmp", "svg", "tiff", "webp", "heic", "heif"]
 const textExtensions = ["txt", "csv", "log", "xml", "html", "htm", "js", "jsx", "ts",
@@ -125,7 +127,7 @@ const FileCompare = () => {
   const [secondSelectedCategory, setSecondSelectedCategory] = useState("")
   const [secondShowDropdown, setSecondShowDropdown] = useState(false)
 
-  const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null
+  const [selectedDoc, setSelectedDoc] = useState(null);
 
   // ============================================================
   // EFFECT 1: Initialize on mount
@@ -140,7 +142,7 @@ const FileCompare = () => {
     setIsLoading(true)
     try {
       const response = await axios.get(`${DOCUMENTHEADER_API}/getAllDocument`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${tokenKey}` },
       })
       setDocumentHeaders(response.data || [])
     } catch (error) {
@@ -156,7 +158,7 @@ const FileCompare = () => {
       const response = await axios.get(
         `${API_HOST}/CategoryMaster/findActiveCategory`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${tokenKey}` },
         }
       )
       setCategoryOptions(response.data)
@@ -170,33 +172,41 @@ const FileCompare = () => {
   // ============================================================
   const fetchDocumentsByFileNo = async (fileNo, isFirst = true) => {
     try {
+      console.log(`📋 Fetching documents for file: ${fileNo}`);
+
       const response = await axios.get(`${DOCUMENTHEADER_API}/getFile/${fileNo}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+        headers: { Authorization: `Bearer ${tokenKey}` },
+      });
 
-      const data = response.data || {}
-      const fileList = data.fileList || []
+      const data = response.data || {};
+      const fileList = data.fileList || [];
 
-      console.log(`✅ Received ${fileList.length} documents for ${isFirst ? 'first' : 'second'} file`)
+      // Find the document header for this file
+      const docHeader = documentHeaders.find(header => header.fileNo === fileNo);
+
+      console.log(`✅ Found ${fileList.length} documents for file ${fileNo}`);
+      console.log('Document Header:', docHeader);
+
+      // Add document header info to each file (for reference)
+      const filesWithHeader = fileList.map(file => ({
+        ...file,
+        docHeader: docHeader
+      }));
 
       if (isFirst) {
-        setFirstFileDocuments(fileList)
-        // Don't auto-select anything
-        // setSelectedFirstFileIds([])
+        setFirstFileDocuments(filesWithHeader);
       } else {
-        setSecondFileDocuments(fileList)
-        // Don't auto-select anything
-        // setSelectedSecondFileIds([])
+        setSecondFileDocuments(filesWithHeader);
       }
 
-      setWarningMessage("")
-      return fileList
+      setWarningMessage("");
+      return filesWithHeader;
     } catch (error) {
-      console.error("Error fetching documents:", error)
-      showPopup("Failed to fetch documents", "error")
-      return []
+      console.error("❌ Error fetching documents:", error);
+      showPopup("Failed to fetch documents", "error");
+      return [];
     }
-  }
+  };
 
   const filteredFirstFileHeaders = useMemo(() => {
     let filtered = documentHeaders
@@ -318,24 +328,170 @@ const FileCompare = () => {
     }
   }
 
+  // 🔧 COPY-PASTE THIS FUNCTION
+  // Replace your entire getFilePreviewUrl function with this version
+
   const getFilePreviewUrl = async (file, docHeader) => {
+    console.log("🔍 getFilePreviewUrl called with:", {
+      file: {
+        docName: file?.docName,
+        fileName: file?.fileName,
+        year: file?.year,
+        version: file?.version,
+        fileType: file?.fileType
+      },
+      docHeader: {
+        fileNo: docHeader?.fileNo,
+        branch: docHeader?.employee?.branch?.name || docHeader?.branchMaster?.name,
+        department: docHeader?.employee?.department?.name || docHeader?.departmentMaster?.name,
+        category: docHeader?.categoryMaster?.name
+      }
+    });
+
+    // Guard clauses
+    if (!docHeader) {
+      console.error("❌ docHeader is missing");
+      return null;
+    }
+
+    if (!file) {
+      console.error("❌ file is missing");
+      return null;
+    }
+
     try {
-      const fileUrl = `${API_HOST}/api/documents/download/${file.path}`;
+      // Extract branch with fallbacks
+      const branch = (
+        docHeader.employee?.branch?.name ||
+        docHeader.branchMaster?.name ||
+        ""
+      )?.replace(/ /g, "_")?.trim();
 
-      const response = await axios.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
+      // Extract department with fallbacks
+      const department = (
+        docHeader.employee?.department?.name ||
+        docHeader.departmentMaster?.name ||
+        ""
+      )?.replace(/ /g, "_")?.trim();
+
+      // Extract year
+      const year = (file.year || "")?.toString()?.replace(/ /g, "_")?.trim();
+
+      // Extract category
+      const category = (docHeader.categoryMaster?.name || "")?.replace(/ /g, "_")?.trim();
+
+      // Extract version
+      const version = (file.version || "")?.toString()?.trim();
+
+      // Extract fileName - TRY MULTIPLE PROPERTIES
+      const fileName = (
+        file.docName ||
+        file.fileName ||
+        file.name ||
+        ""
+      )?.replace(/ /g, "_")?.trim();
+
+      // Log exactly what we have
+      console.log("✅ Extracted path components:", {
+        branch: `"${branch}"`,
+        department: `"${department}"`,
+        year: `"${year}"`,
+        category: `"${category}"`,
+        version: `"${version}"`,
+        fileName: `"${fileName}"`
       });
 
+      // Validate - tell us WHICH ones are missing
+      const missing = [];
+      if (!branch || branch === "") missing.push("branch");
+      if (!department || department === "") missing.push("department");
+      if (!year || year === "") missing.push("year");
+      if (!category || category === "") missing.push("category");
+      if (!version || version === "") missing.push("version");
+      if (!fileName || fileName === "") missing.push("fileName");
+
+      if (missing.length > 0) {
+        console.error("❌ MISSING FIELDS:", missing);
+        console.error("Debug info:", {
+          branch,
+          department,
+          year,
+          category,
+          version,
+          fileName,
+          file,
+          docHeader
+        });
+        return null;
+      }
+
+      // Build the URL
+      const fileUrl =
+        `${API_HOST}/api/documents/download/` +
+        `${encodeURIComponent(branch)}/` +
+        `${encodeURIComponent(department)}/` +
+        `${encodeURIComponent(year)}/` +
+        `${encodeURIComponent(category)}/` +
+        `${encodeURIComponent(version)}/` +
+        `${encodeURIComponent(fileName)}?action=view`;
+
+      console.log("🔗 Full URL:", fileUrl);
+
+      // Check token
+      if (!tokenKey) {
+        console.error("❌ No authentication token");
+        return null;
+      }
+
+      console.log("📡 Making API request...");
+
+      // Fetch the file
+      const response = await apiClient.get(fileUrl, {
+        headers: {
+          Authorization: `Bearer ${tokenKey}`
+        },
+        responseType: "blob"
+      });
+
+      console.log("✅ API response received:", {
+        status: response.status,
+        contentType: response.headers["content-type"],
+        dataSize: response.data.size
+      });
+
+      // Create blob and URL
       const blob = new Blob([response.data], {
-        type: response.headers["content-type"],
+        type: response.headers["content-type"]
       });
 
-      const url = URL.createObjectURL(blob);
+      const blobUrl = URL.createObjectURL(blob);
 
-      return { url, contentType: response.headers["content-type"] };
+      console.log("✅ File preview loaded successfully");
+      console.log("📄 Preview URL:", blobUrl);
+
+      return {
+        url: blobUrl,
+        fileName,
+        contentType: response.headers["content-type"]
+      };
+
     } catch (error) {
-      console.error("Error fetching file preview:", error);
+      console.error("❌ Error in getFilePreviewUrl:");
+      console.error({
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          console.error("Server error response:", text);
+        } catch (e) {
+          console.error("Could not parse error blob");
+        }
+      }
+
       return null;
     }
   };
@@ -549,131 +705,194 @@ const FileCompare = () => {
     return category1 === category2;
   };
 
+
+
   const compareFiles = async () => {
-    const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length
+    const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length;
+
     if (totalSelected !== 2) {
-      setWarningMessage(<AutoTranslate>Please select exactly 2 documents to compare (can be from same file or different files).</AutoTranslate>)
-      return
+      setWarningMessage(<AutoTranslate>Please select exactly 2 documents to compare.</AutoTranslate>);
+      return;
     }
 
+    // Get the selected files
     let firstFile, secondFile;
+    let firstDocHeader, secondDocHeader;
 
     if (selectedFirstFileIds.length === 2) {
       firstFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0]);
       secondFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[1]);
+      // Find document headers for these files
+      firstDocHeader = documentHeaders.find(header => header.fileNo === selectedFirstFileNo);
+      secondDocHeader = firstDocHeader; // Same file, same header
     } else if (selectedSecondFileIds.length === 2) {
       firstFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
       secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[1]);
+      // Find document headers for these files
+      secondDocHeader = documentHeaders.find(header => header.fileNo === selectedSecondFileNo);
+      firstDocHeader = secondDocHeader; // Same file, same header
     } else if (selectedFirstFileIds.length === 1 && selectedSecondFileIds.length === 1) {
       firstFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0]);
       secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
+      // Find document headers for these files
+      firstDocHeader = documentHeaders.find(header => header.fileNo === selectedFirstFileNo);
+      secondDocHeader = documentHeaders.find(header => header.fileNo === selectedSecondFileNo);
     }
 
-    if (!areFilesComparable(firstFile, secondFile)) {
-      const fileName1 = firstFile?.fileName || firstFile?.docName || "File 1";
-      const fileName2 = secondFile?.fileName || secondFile?.docName || "File 2";
-      const ext1 = fileName1.split('.').pop()?.toUpperCase() || "Unknown";
-      const ext2 = fileName2.split('.').pop()?.toUpperCase() || "Unknown";
-
-      setWarningMessage(<AutoTranslate>Cannot compare different file types. {ext1} files can only be compared with {ext1} files.</AutoTranslate>);
+    // Validate files exist
+    if (!firstFile || !secondFile) {
+      setWarningMessage(<AutoTranslate>Selected files not found. Please try again.</AutoTranslate>);
       return;
     }
 
-    setIsComparing(true)
-    setIsLoadingFiles(true)
-    setComparisonResult(null)
+    // Validate document headers exist
+    if (!firstDocHeader || !secondDocHeader) {
+      setWarningMessage(<AutoTranslate>Document headers not found. Please try again.</AutoTranslate>);
+      return;
+    }
+
+    // Check if trying to compare the same file (same detailsId)
+    if (firstFile.detailsId === secondFile.detailsId) {
+      setWarningMessage(<AutoTranslate>Cannot compare the same document. Please select two different documents.</AutoTranslate>);
+      return;
+    }
+
+    setIsComparing(true);
+    setIsLoadingFiles(true);
+    setComparisonResult(null);
 
     try {
-      let firstFileId
-      let secondFileId
+      // Get file IDs for comparison
+      const firstFileId = firstFile.detailsId;
+      const secondFileId = secondFile.detailsId;
 
-      if (selectedFirstFileIds.length === 2) {
-        firstFileId = selectedFirstFileIds[0]
-        secondFileId = selectedFirstFileIds[1]
-      } else if (selectedSecondFileIds.length === 2) {
-        firstFileId = selectedSecondFileIds[0]
-        secondFileId = selectedSecondFileIds[1]
-      } else if (selectedFirstFileIds.length === 1 && selectedSecondFileIds.length === 1) {
-        firstFileId = selectedFirstFileIds[0]
-        secondFileId = selectedSecondFileIds[0]
-      }
+      console.log('📊 Comparing files with IDs:', { firstFileId, secondFileId });
+      console.log('📄 First file metadata:', {
+        fileName: firstFile.docName,
+        branch: firstDocHeader?.employee?.branch?.name,
+        department: firstDocHeader?.employee?.department?.name,
+        category: firstDocHeader?.categoryMaster?.name,
+        year: firstFile.year,
+        version: firstFile.version
+      });
+      console.log('📄 Second file metadata:', {
+        fileName: secondFile.docName,
+        branch: secondDocHeader?.employee?.branch?.name,
+        department: secondDocHeader?.employee?.department?.name,
+        category: secondDocHeader?.categoryMaster?.name,
+        year: secondFile.year,
+        version: secondFile.version
+      });
 
+      // Make API call to compare files
       const response = await axios.post(
         `${DOCUMENTHEADER_API}/compare`,
-        { firstFileId, secondFileId },
-        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } },
-      )
+        {
+          firstFileId: firstFileId.toString(),
+          secondFileId: secondFileId.toString()
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${tokenKey}`,  // ✅ FIXED: Use correct tokenKey
+            "Content-Type": "application/json"
+          },
+          timeout: 60000
+        }
+      );
 
-      const result = response.data
+      console.log('✅ Compare API response:', response.data);
+
+      const result = response.data;
 
       if (result.status === 200 && result.message === "success") {
-        const apiResponse = result.response
+        const apiResponse = result.response;
 
-        const file1 =
-          firstFileDocuments.find((doc) => doc.detailsId === firstFileId) ||
-          secondFileDocuments.find((doc) => doc.detailsId === firstFileId)
-        const file2 =
-          firstFileDocuments.find((doc) => doc.detailsId === secondFileId) ||
-          secondFileDocuments.find((doc) => doc.detailsId === secondFileId)
-
+        // ✅ FIX: Pass docHeader to getFilePreviewUrl function
+        console.log('🔄 Loading file previews...');
         const [firstFileData, secondFileData] = await Promise.all([
-          getFilePreviewUrl(file1),
-          getFilePreviewUrl(file2),
-        ])
+          getFilePreviewUrl(firstFile, firstDocHeader),
+          getFilePreviewUrl(secondFile, secondDocHeader)
+        ]);
 
-        setFileUrls({ firstFile: firstFileData, secondFile: secondFileData })
+        console.log('📸 File preview data loaded:', {
+          firstFile: firstFileData ? '✅ Loaded' : '❌ Failed',
+          secondFile: secondFileData ? '✅ Loaded' : '❌ Failed'
+        });
 
-        const leftFileType = apiResponse.comparisonResult?.leftFile?.fileType || "Unknown"
-        const rightFileType = apiResponse.comparisonResult?.rightFile?.fileType || "Unknown"
+        setFileUrls({ firstFile: firstFileData, secondFile: secondFileData });
 
-        const next = {
+        const comparisonResultData = {
           identical: apiResponse.identical,
           message: apiResponse.message,
           similarityPercentage: apiResponse.similarityPercentage,
           differences: apiResponse.differences || [],
           comparisonResult: apiResponse.comparisonResult,
           leftFile: {
-            fileName:
-              apiResponse.comparisonResult?.leftFile?.fileName || file1?.fileName || file1?.docName || "Unknown",
-            version: apiResponse.comparisonResult?.leftFile?.version || file1?.version || "Unknown",
-            fileType: leftFileType,
-            path: apiResponse.comparisonResult?.leftFile?.filePath || file1?.path || "",
-            detailsId: file1?.detailsId || null,
+            fileName: apiResponse.comparisonResult?.leftFile?.fileName || firstFile?.fileName || firstFile?.docName || "Unknown",
+            version: apiResponse.comparisonResult?.leftFile?.version || firstFile?.version || "Unknown",
+            fileType: apiResponse.comparisonResult?.leftFile?.fileType || firstFile?.fileType || "Unknown",
+            path: apiResponse.comparisonResult?.leftFile?.filePath || firstFile?.path || "",
+            detailsId: firstFile?.detailsId || null,
             highlightedContent: apiResponse.comparisonResult?.leftFile?.highlightedContent || "",
-            fileData: file1
+            fileData: firstFile,
+            docHeader: firstDocHeader
           },
           rightFile: {
-            fileName:
-              apiResponse.comparisonResult?.rightFile?.fileName || file2?.fileName || file2?.docName || "Unknown",
-            version: apiResponse.comparisonResult?.rightFile?.version || file2?.version || "Unknown",
-            fileType: rightFileType,
-            path: apiResponse.comparisonResult?.rightFile?.filePath || file2?.path || "",
-            detailsId: file2?.detailsId || null,
+            fileName: apiResponse.comparisonResult?.rightFile?.fileName || secondFile?.fileName || secondFile?.docName || "Unknown",
+            version: apiResponse.comparisonResult?.rightFile?.version || secondFile?.version || "Unknown",
+            fileType: apiResponse.comparisonResult?.rightFile?.fileType || secondFile?.fileType || "Unknown",
+            path: apiResponse.comparisonResult?.rightFile?.filePath || secondFile?.path || "",
+            detailsId: secondFile?.detailsId || null,
             highlightedContent: apiResponse.comparisonResult?.rightFile?.highlightedContent || "",
-            fileData: file2
+            fileData: secondFile,
+            docHeader: secondDocHeader
           },
           diffImagePath: apiResponse.diffImagePath,
-        }
+        };
 
-        setComparisonResult(next)
-        setShowComparisonModal(true)
-        showPopup(apiResponse.message, apiResponse.identical ? "success" : "info")
+        setComparisonResult(comparisonResultData);
+        setShowComparisonModal(true);
+
+        if (apiResponse.identical) {
+          showPopup(
+            <AutoTranslate>Files are identical ({apiResponse.similarityPercentage?.toFixed(1)}% similar)</AutoTranslate>,
+            "success"
+          );
+        } else {
+          showPopup(
+            <AutoTranslate>Differences found ({apiResponse.similarityPercentage?.toFixed(1)}% similar)</AutoTranslate>,
+            "info"
+          );
+        }
       } else {
-        showPopup(result.message || "Failed to compare files", "error")
+        showPopup(result.message || <AutoTranslate>Failed to compare files</AutoTranslate>, "error");
       }
     } catch (error) {
-      console.error("Error comparing files:", error)
-      showPopup("Failed to compare files", "error")
+      console.error("❌ Error comparing files:", error);
+
+      let errorMessage = <AutoTranslate>Failed to compare files</AutoTranslate>;
+
+      if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || <AutoTranslate>Invalid file paths or files are missing</AutoTranslate>;
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = <AutoTranslate>Comparison timeout. Files might be too large.</AutoTranslate>;
+      } else if (error.response) {
+        errorMessage = error.response.data?.message || <AutoTranslate>Server error occurred</AutoTranslate>;
+      } else if (error.request) {
+        errorMessage = <AutoTranslate>No response from server. Please check your connection.</AutoTranslate>;
+      }
+
+      showPopup(errorMessage, "error");
     } finally {
-      setIsComparing(false)
-      setIsLoadingFiles(false)
+      setIsComparing(false);
+      setIsLoadingFiles(false);
     }
-  }
+  };
 
   const downloadFile = async (fileId, fileName) => {
     try {
       const response = await axios.get(`${DOCUMENTHEADER_API}/download/${fileId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${tokenKey}` },  // ✅ FIXED: Use correct tokenKey
         responseType: "blob",
       })
 
