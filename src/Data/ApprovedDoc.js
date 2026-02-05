@@ -20,7 +20,7 @@ import {
   UserGroupIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API, FILETYPE_API , SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API, FILETYPE_API, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from "../Components/LoadingComponent";
@@ -97,6 +97,9 @@ const ApprovedDoc = () => {
   const [shareToRevoke, setShareToRevoke] = useState(null);
   const [revokeReason, setRevokeReason] = useState("");
 
+
+  const [shareDate, setShareDate] = useState("");
+  const [shareTime, setShareTime] = useState("");
   // State for bulk sharing
   const [bulkShareModalVisible, setBulkShareModalVisible] = useState(false);
   const [isBulkSharing, setIsBulkSharing] = useState(false);
@@ -110,6 +113,126 @@ const ApprovedDoc = () => {
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
+
+  // Get current date-time in format for datetime-local input (YYYY-MM-DDTHH:mm)
+  const getCurrentDateTimeLocal = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Get minimum future datetime (current datetime)
+  const getMinDateTime = () => {
+    const now = new Date();
+
+    // Get current date-time in ISO format (removing seconds/milliseconds)
+    const isoString = now.toISOString();
+    // Return format: YYYY-MM-DDTHH:mm (HTML5 datetime-local expects this)
+    return isoString.substring(0, 16);
+  };
+
+  // Function to validate date-time input
+  const validateDateTime = (selectedDateTime) => {
+    if (!selectedDateTime) return { isValid: true, message: '' };
+
+    const selected = new Date(selectedDateTime);
+    const now = new Date();
+
+    // If selected is in the past
+    if (selected < now) {
+      return {
+        isValid: false,
+        message: 'Cannot select past date/time'
+      };
+    }
+
+    return { isValid: true, message: '' };
+  };
+
+
+
+  const getNextAvailableTime = () => {
+    const now = new Date();
+    let nextHour = now.getHours();
+    let nextMinute = now.getMinutes();
+
+    // Round up to next 30-minute interval
+    if (nextMinute < 30) {
+      nextMinute = 30;
+    } else {
+      nextMinute = 0;
+      nextHour = nextHour + 1;
+      if (nextHour >= 24) {
+        nextHour = 0;
+      }
+    }
+
+    return {
+      hour: String(nextHour).padStart(2, '0'),
+      minute: String(nextMinute).padStart(2, '0')
+    };
+  };
+  const generateTimeOptions = () => {
+    const options = [];
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
+    // If no date is selected or date is today, disable past times
+    const isToday = !shareDate ||
+      shareDate === now.toISOString().split('T')[0];
+
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) { // 30-minute intervals
+        const hourStr = String(hour).padStart(2, '0');
+        const minuteStr = String(minute).padStart(2, '0');
+        const timeValue = `${hourStr}:${minuteStr}`;
+        const displayTime = `${hourStr}:${minuteStr}`;
+
+        let disabled = false;
+
+        // If it's today, disable times in the past
+        if (isToday) {
+          if (hour < currentHour) {
+            disabled = true;
+          } else if (hour === currentHour && minute < currentMinute) {
+            disabled = true;
+          }
+        }
+
+        options.push({
+          value: timeValue,
+          label: displayTime,
+          disabled: disabled
+        });
+      }
+    }
+
+    return options;
+  };
+
+  // Handle date-time change with validation
+  const handleDateTimeChange = (e) => {
+    const selectedValue = e.target.value;
+
+    if (!selectedValue) {
+      setShareEndTime("");
+      return;
+    }
+
+    const validation = validateDateTime(selectedValue);
+    if (!validation.isValid) {
+      showPopup(validation.message, 'warning');
+      // Set to current date-time
+      setShareEndTime(getMinDateTime());
+    } else {
+      setShareEndTime(selectedValue);
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "--";
@@ -2305,18 +2428,109 @@ const ApprovedDoc = () => {
                       <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
                     </div>
                   </label>
-                  <input
-                    type="datetime-local"
-                    value={shareEndTime}
-                    onChange={(e) => setShareEndTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min={new Date().toISOString().slice(0, 16)}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
+
+                  <div className="grid grid-cols-2 gap-3 mb-2">
+                    {/* Date Picker */}
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        <AutoTranslate>Date</AutoTranslate>
+                      </label>
+                      <input
+                        type="date"
+                        value={shareDate}
+                        onChange={(e) => {
+                          setShareDate(e.target.value);
+                          if (!e.target.value) {
+                            setShareTime("");
+                          } else if (e.target.value === new Date().toISOString().split('T')[0]) {
+                            // If selecting today, auto-select next available time
+                            const nextTime = getNextAvailableTime();
+                            setShareTime(`${nextTime.hour}:${nextTime.minute}`);
+                          }
+                        }}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Time Picker */}
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        <AutoTranslate>Time</AutoTranslate>
+                      </label>
+                      <select
+                        value={shareTime}
+                        onChange={(e) => setShareTime(e.target.value)}
+                        disabled={!shareDate}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">--:--</option>
+                        {generateTimeOptions().map((time, index) => (
+                          <option
+                            key={index}
+                            value={time.value}
+                            disabled={time.disabled}
+                            className={time.disabled ? 'text-gray-400 bg-gray-100' : ''}
+                          >
+                            {time.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Display selected date-time */}
+                  {shareDate && shareTime && (
+                    <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200 mb-2">
+                      <AutoTranslate>Selected:</AutoTranslate> {shareDate} {shareTime}
+                      {(() => {
+                        const selectedDateTime = new Date(`${shareDate}T${shareTime}`);
+                        const now = new Date();
+                        if (selectedDateTime < now) {
+                          return (
+                            <span className="text-red-600 ml-2">
+                              <ExclamationTriangleIcon className="h-4 w-4 inline mr-1" />
+                              <AutoTranslate>(Past time!)</AutoTranslate>
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  )}
+
+                  <div className="flex items-center mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        setShareDate(now.toISOString().split('T')[0]);
+                        const nextTime = getNextAvailableTime();
+                        setShareTime(`${nextTime.hour}:${nextTime.minute}`);
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                    >
+                      <ClockIcon className="h-4 w-4 mr-1" />
+                      <AutoTranslate>Set to next available time</AutoTranslate>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShareDate("");
+                        setShareTime("");
+                      }}
+                      className="ml-4 text-sm text-gray-600 hover:text-gray-800 flex items-center"
+                    >
+                      <XMarkIcon className="h-4 w-4 mr-1" />
+                      <AutoTranslate>Clear</AutoTranslate>
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-2">
                     <AutoTranslate>Leave empty for permanent access</AutoTranslate>
                   </p>
                 </div>
-
                 <div className="flex justify-end gap-4">
                   <button
                     onClick={() => {
@@ -2449,7 +2663,7 @@ const ApprovedDoc = () => {
                     value={shareEndTime}
                     onChange={(e) => setShareEndTime(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min={new Date().toISOString().slice(0, 16)}
+                    min={getMinDateTime()} // FIXED: This prevents past dates/times
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     <AutoTranslate>Leave empty for permanent access</AutoTranslate>

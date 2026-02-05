@@ -61,7 +61,7 @@ const SharedDocs = () => {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [openingFileIndex, setOpeningFileIndex] = useState(null);
   const [openingFiles, setOpeningFiles] = useState(null);
-  
+
   // State for viewing shares
   const [viewSharesModalVisible, setViewSharesModalVisible] = useState(false);
   const [selectedDocShares, setSelectedDocShares] = useState([]);
@@ -74,11 +74,37 @@ const SharedDocs = () => {
   const [selectedDocShareInfo, setSelectedDocShareInfo] = useState(null);
   const [shareInfoPosition, setShareInfoPosition] = useState({ x: 0, y: 0 });
 
+  // State for sharing documents
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [documentToShare, setDocumentToShare] = useState(null);
+  const [shareRecipients, setShareRecipients] = useState([]);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+  const [shareEndTime, setShareEndTime] = useState("");
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [sharingDocument, setSharingDocument] = useState(false);
+  const [selectedFileIds, setSelectedFileIds] = useState([]);
+
   const [popupMessage, setPopupMessage] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
+
+  // Get current date-time in format for datetime-local input (YYYY-MM-DDTHH:mm)
+  const getCurrentDateTimeLocal = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Get minimum future datetime (current datetime)
+  const getMinDateTime = () => {
+    return getCurrentDateTimeLocal();
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "--";
@@ -133,7 +159,7 @@ const SharedDocs = () => {
   // Calculate filtered documents
   const filteredDocuments = useMemo(() => {
     if (!documents) return [];
-    
+
     return documents.filter((doc) =>
       Object.entries(doc).some(([key, value]) => {
         if (key === "documentHeader" && value?.categoryMaster) {
@@ -164,11 +190,11 @@ const SharedDocs = () => {
         return false;
       })
     )
-    .sort((a, b) => {
-      const dateA = a.sharedDate ? new Date(...a.sharedDate) : new Date(0);
-      const dateB = b.sharedDate ? new Date(...b.sharedDate) : new Date(0);
-      return dateB - dateA;
-    });
+      .sort((a, b) => {
+        const dateA = a.sharedDate ? new Date(...a.sharedDate) : new Date(0);
+        const dateB = b.sharedDate ? new Date(...b.sharedDate) : new Date(0);
+        return dateB - dateA;
+      });
   }, [documents, searchTerm]);
 
   // Calculate pagination values
@@ -179,7 +205,7 @@ const SharedDocs = () => {
       (currentPage - 1) * itemsPerPage,
       currentPage * itemsPerPage
     );
-    
+
     return { totalItems, totalPages, paginatedDocuments };
   }, [filteredDocuments, currentPage, itemsPerPage]);
 
@@ -223,7 +249,7 @@ const SharedDocs = () => {
   const fetchSharedDocuments = async () => {
     try {
       setLoading(true);
-      
+
       const response = await axios.get(
         `${API_HOST}/document-share/shared-with-me`,
         {
@@ -234,13 +260,13 @@ const SharedDocs = () => {
       // The response is already an array of share records
       const sharedRecords = Array.isArray(response.data) ? response.data : [];
       console.log("Shared records:", sharedRecords);
-      
+
       // Group by document header to show unique documents
       const groupedByDocument = sharedRecords.reduce((acc, share) => {
         const docHeaderId = share.documentHeader?.id;
-        
+
         if (!docHeaderId) return acc;
-        
+
         if (!acc[docHeaderId]) {
           // First share for this document
           acc[docHeaderId] = {
@@ -264,46 +290,46 @@ const SharedDocs = () => {
           acc[docHeaderId].shares.push(share);
           acc[docHeaderId].allShareRecords.push(share);
           acc[docHeaderId].totalSharesCount += 1;
-          
+
           // Add share IDs
           if (share.shareIds) {
             acc[docHeaderId].shareIds = [...new Set([...acc[docHeaderId].shareIds, ...share.shareIds])];
           } else {
             acc[docHeaderId].shareIds = [...new Set([...acc[docHeaderId].shareIds, share.id])];
           }
-          
+
           // Add shared file names
           acc[docHeaderId].sharedFileNames = [
             ...new Set([...acc[docHeaderId].sharedFileNames, ...share.sharedFileNames])
           ];
-          
+
           // Keep track of all shared files
           acc[docHeaderId].allSharedFileNames = [
             ...new Set([...acc[docHeaderId].allSharedFileNames, ...share.sharedFileNames])
           ];
-          
+
           // Sum total files shared
           acc[docHeaderId].totalFilesShared += share.totalFilesShared || 0;
-          
+
           // Keep the most recent share date
           const currentDate = acc[docHeaderId].sharedDate;
           const newDate = share.sharedDate;
-          if (newDate && (!currentDate || 
-              (Array.isArray(newDate) && Array.isArray(currentDate) && 
-               new Date(...newDate) > new Date(...currentDate)))) {
+          if (newDate && (!currentDate ||
+            (Array.isArray(newDate) && Array.isArray(currentDate) &&
+              new Date(...newDate) > new Date(...currentDate)))) {
             acc[docHeaderId].sharedDate = newDate;
             acc[docHeaderId].sharedByName = share.sharedByName;
           }
         }
-        
+
         return acc;
       }, {});
-      
+
       // Convert to array
       const uniqueDocuments = Object.values(groupedByDocument);
       console.log("Grouped documents:", uniqueDocuments);
       setDocuments(uniqueDocuments);
-      
+
     } catch (error) {
       console.error("Error fetching shared documents:", error);
       setError("Failed to fetch shared documents. Please try again.");
@@ -321,11 +347,60 @@ const SharedDocs = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      
+
       return response.data;
     } catch (error) {
       console.error('Error fetching document shares:', error);
       return [];
+    }
+  };
+
+  const fetchDepartmentEmployees = async () => {
+    try {
+      setLoadingEmployees(true);
+
+      // Call the API endpoint that returns employees in current user's branch and department
+      const response = await axios.get(
+        `${API_HOST}/employee/current/branch-department`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const employees = response?.data?.response || [];
+
+      if (!Array.isArray(employees)) {
+        console.error('Invalid response format:', response.data);
+        showPopup('Invalid response format from server', 'error');
+        setAvailableEmployees([]);
+        return;
+      }
+
+      // ✅ Filter out current user & inactive employees
+      const filteredEmployees = employees.filter(emp =>
+        emp.id !== parseInt(UserId) && emp.active === true
+      );
+
+      setAvailableEmployees(filteredEmployees);
+
+    } catch (error) {
+      console.error('Error fetching department employees:', error);
+
+      let errorMessage = 'Failed to load department employees';
+      if (error.response?.status === 404) {
+        errorMessage = 'API endpoint not found. Please check the URL.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please login again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      showPopup(errorMessage, 'error');
+      setAvailableEmployees([]);
+    } finally {
+      setLoadingEmployees(false);
     }
   };
 
@@ -376,7 +451,7 @@ const SharedDocs = () => {
 
   const handleDownload = async (file) => {
     if (!selectedDoc) return;
-    
+
     const branch = selectedDoc.documentHeader?.employee?.branch?.name?.replace(/ /g, "_") || "unknown";
     const department = selectedDoc.documentHeader?.employee?.department?.name?.replace(/ /g, "_") || "unknown";
     const year = file.yearMaster?.name?.replace(/ /g, "_") || "unknown";
@@ -417,15 +492,15 @@ const SharedDocs = () => {
 
   const filteredDocFiles = useMemo(() => {
     if (!selectedDoc || !selectedDoc.documentHeader?.documentDetails) return [];
-    
+
     // Filter files that are actually shared (based on allSharedFileNames)
     const sharedFileNames = selectedDoc.allSharedFileNames || selectedDoc.sharedFileNames || [];
     const allFiles = selectedDoc.documentHeader.documentDetails || [];
-    
-    const sharedFiles = allFiles.filter(file => 
+
+    const sharedFiles = allFiles.filter(file =>
       sharedFileNames.includes(file.docName)
     );
-    
+
     // Apply search filter
     return sharedFiles.filter((file) => {
       const name = file.docName.toLowerCase();
@@ -568,7 +643,7 @@ const SharedDocs = () => {
       y: event.clientY
     });
     setShareInfoVisible(true);
-    
+
     // Auto-hide after 5 seconds
     setTimeout(() => {
       setShareInfoVisible(false);
@@ -606,13 +681,13 @@ const SharedDocs = () => {
         setRevokeShareModalVisible(false);
         setShareToRevoke(null);
         setRevokeReason("");
-        
+
         // Refresh the shares list
         if (selectedDoc) {
           const updatedShares = await fetchDocumentShares(selectedDoc.id);
           setSelectedDocShares(updatedShares);
         }
-        
+
         // Refresh documents list
         fetchSharedDocuments();
       } else {
@@ -621,6 +696,90 @@ const SharedDocs = () => {
     } catch (error) {
       console.error('Error revoking share:', error);
       showPopup('Failed to revoke share. Please try again.', 'error');
+    }
+  };
+
+  // ==================== Document Sharing Functions ====================
+
+  const handleShareDocument = (doc) => {
+    setDocumentToShare(doc);
+    setShareModalVisible(true);
+    setShareRecipients([]);
+    setShareEndTime("");
+
+    // Auto-select all shared file IDs for this document
+    if (doc.allSharedFileNames && doc.documentHeader?.documentDetails) {
+      const sharedFiles = doc.documentHeader.documentDetails.filter(file =>
+        doc.allSharedFileNames.includes(file.docName)
+      );
+      setSelectedFileIds(sharedFiles.map(file => file.id));
+    } else {
+      setSelectedFileIds([]);
+    }
+
+    fetchDepartmentEmployees();
+  };
+
+  const handleShareSubmit = async () => {
+    if (!documentToShare || shareRecipients.length === 0) {
+      showPopup('Please select at least one recipient', 'warning');
+      return;
+    }
+
+    if (selectedFileIds.length === 0) {
+      showPopup('No files selected to share', 'warning');
+      return;
+    }
+
+    setSharingDocument(true);
+
+    try {
+      // Prepare share request - sending specific file IDs
+      const shareRequest = {
+        documentHeaderId: documentToShare.id,
+        documentDetailIds: selectedFileIds,
+        recipientIds: shareRecipients,
+        endTime: shareEndTime ? new Date(shareEndTime).toISOString() : null
+      };
+
+      const response = await axios.post(
+        `${API_HOST}/document-share/share`,
+        shareRequest,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.data.status === 200) {
+        const shareResponse = response.data.response;
+
+        // Show success message
+        if (shareResponse.totalFilesShared > 0) {
+          showPopup(`Successfully shared ${shareResponse.totalFilesShared} file(s)!`, 'success');
+        } else {
+          showPopup('Document shared successfully!', 'success');
+        }
+
+        setShareModalVisible(false);
+        setDocumentToShare(null);
+        setShareRecipients([]);
+        setShareEndTime("");
+        setSelectedFileIds([]);
+
+        // Refresh the documents list
+        fetchSharedDocuments();
+      } else {
+        showPopup(response.data.message || 'Failed to share document', 'error');
+      }
+    } catch (error) {
+      console.error('Error sharing document:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to share document. Please try again.';
+      showPopup(errorMessage, 'error');
+    } finally {
+      setSharingDocument(false);
     }
   };
 
@@ -633,7 +792,7 @@ const SharedDocs = () => {
       <h1 className="text-xl mb-4 font-semibold">
         <AutoTranslate>Shared Documents</AutoTranslate>
       </h1>
-      
+
       {popupMessage && (
         <Popup
           message={popupMessage.message}
@@ -718,7 +877,7 @@ const SharedDocs = () => {
                   const documentHeader = doc.documentHeader || {};
                   const sharedByName = doc.sharedByName || doc.shares?.[0]?.sharedByName || "N/A";
                   const sharedDate = doc.sharedDate || doc.shares?.[0]?.sharedDate;
-                  
+
                   return (
                     <tr
                       key={doc.id}
@@ -788,10 +947,10 @@ const SharedDocs = () => {
               )}
             </tbody>
           </table>
-          
+
           {/* Share Info Tooltip */}
           {shareInfoVisible && selectedDocShareInfo && (
-            <div 
+            <div
               className="fixed z-[9999] bg-white border border-gray-300 rounded-lg shadow-xl p-4 max-w-sm"
               style={{
                 left: `${shareInfoPosition.x}px`,
@@ -810,7 +969,7 @@ const SharedDocs = () => {
                   <XMarkIcon className="h-4 w-4" />
                 </button>
               </div>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600"><AutoTranslate>Total Shares:</AutoTranslate></span>
@@ -828,7 +987,7 @@ const SharedDocs = () => {
                   <span className="text-gray-600"><AutoTranslate>Last Shared:</AutoTranslate></span>
                   <span className="font-medium">{formatDateArray(selectedDocShareInfo.sharedDate)}</span>
                 </div>
-                
+
                 {selectedDocShareInfo.shares && selectedDocShareInfo.shares.length > 1 && (
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     <h4 className="font-medium text-gray-700 mb-1">
@@ -855,7 +1014,7 @@ const SharedDocs = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="mt-3 flex justify-end">
                 <button
                   onClick={() => handleViewShares(selectedDocShareInfo)}
@@ -866,7 +1025,7 @@ const SharedDocs = () => {
               </div>
             </div>
           )}
-          
+
           <FilePreviewModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
@@ -876,7 +1035,7 @@ const SharedDocs = () => {
             fileName={selectedDocFile?.docName}
             fileData={selectedDocFile}
           />
-          
+
           {/* Document Details Modal */}
           {isOpen && selectedDoc && (
             <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900/80 backdrop-blur-sm print:bg-white overflow-y-auto p-4">
@@ -901,6 +1060,14 @@ const SharedDocs = () => {
                       >
                         <ShareIcon className="h-5 w-5" />
                         <AutoTranslate>View Shares</AutoTranslate>
+                      </button>
+                      <button
+                        onClick={() => handleShareDocument(selectedDoc)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                        title="Share document with others"
+                      >
+                        <ShareIcon className="h-5 w-5" />
+                        <AutoTranslate>Share</AutoTranslate>
                       </button>
                       <button
                         onClick={() => handlePrintReport(selectedDoc?.id)}
@@ -1086,9 +1253,9 @@ const SharedDocs = () => {
                                     ) : (
                                       <>
                                         {file.ltoArchived && !file.restored ? (
-                                          <ArrowPathIcon className="h-3 w-3" /> 
+                                          <ArrowPathIcon className="h-3 w-3" />
                                         ) : (
-                                          <EyeIcon className="h-3 w-3" /> 
+                                          <EyeIcon className="h-3 w-3" />
                                         )}
                                         <AutoTranslate>
                                           {file.ltoArchived && !file.restored ? "Restore" : "View"}
@@ -1160,9 +1327,9 @@ const SharedDocs = () => {
                                     ) : (
                                       <>
                                         {file.ltoArchived && !file.restored ? (
-                                          <ArrowPathIcon className="h-3 w-3" /> 
+                                          <ArrowPathIcon className="h-3 w-3" />
                                         ) : (
-                                          <EyeIcon className="h-3 w-3" /> 
+                                          <EyeIcon className="h-3 w-3" />
                                         )}
                                         <AutoTranslate>
                                           {file.ltoArchived && !file.restored ? "Restore" : "View File"}
@@ -1195,6 +1362,121 @@ const SharedDocs = () => {
             </div>
           )}
 
+          {/* Share Document Modal */}
+          {shareModalVisible && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+              <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4">
+                <h2 className="text-lg font-semibold mb-4">
+                  <AutoTranslate>Share Document</AutoTranslate>
+                </h2>
+
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <AutoTranslate>Document:</AutoTranslate> {documentToShare?.documentHeader?.title}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <AutoTranslate>Selected {selectedFileIds.length} shared file(s) to share with employees in your department.</AutoTranslate>
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <AutoTranslate>Select Employees</AutoTranslate>
+                  </label>
+                  {loadingEmployees ? (
+                    <div className="flex items-center">
+                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                      <AutoTranslate>Loading employees...</AutoTranslate>
+                    </div>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
+                      {availableEmployees.length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          <AutoTranslate>No other employees in this department</AutoTranslate>
+                        </p>
+                      ) : (
+                        availableEmployees.map(emp => (
+                          <div key={emp.id} className="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              id={`emp-${emp.id}`}
+                              checked={shareRecipients.includes(emp.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setShareRecipients([...shareRecipients, emp.id]);
+                                } else {
+                                  setShareRecipients(shareRecipients.filter(id => id !== emp.id));
+                                }
+                              }}
+                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                            />
+                            <label htmlFor={`emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
+                              {emp.name} ({emp.email})
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="flex items-center">
+                      <ClockIcon className="h-4 w-4 mr-1" />
+                      <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
+                    </div>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={shareEndTime}
+                    onChange={(e) => setShareEndTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min={getMinDateTime()}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    <AutoTranslate>Leave empty for permanent access</AutoTranslate>
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => {
+                      setShareModalVisible(false);
+                      setDocumentToShare(null);
+                      setShareRecipients([]);
+                      setShareEndTime("");
+                      setSelectedFileIds([]);
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+                    disabled={sharingDocument}
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={handleShareSubmit}
+                    disabled={sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0}
+                    className={`px-4 py-2 rounded-md text-white ${(sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0)
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'} transition-colors flex items-center`}
+                  >
+                    {sharingDocument ? (
+                      <>
+                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                        <AutoTranslate>Sharing...</AutoTranslate>
+                      </>
+                    ) : (
+                      <>
+                        <ShareIcon className="h-4 w-4 mr-2" />
+                        <AutoTranslate>Share {selectedFileIds.length} File(s)</AutoTranslate>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* View Shares Modal */}
           {viewSharesModalVisible && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
@@ -1210,7 +1492,7 @@ const SharedDocs = () => {
                     <XMarkIcon className="h-6 w-6" />
                   </button>
                 </div>
-                
+
                 {selectedDocShares.length === 0 ? (
                   <div className="text-center py-8">
                     <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
@@ -1270,9 +1552,8 @@ const SharedDocs = () => {
                               </div>
                             </td>
                             <td className="border p-2">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                share.expired || share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                              }`}>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${share.expired || share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                }`}>
                                 {share.expired || share.isExpired ? 'Expired' : 'Active'}
                               </span>
                             </td>
@@ -1397,10 +1678,10 @@ const SharedDocs = () => {
             </button>
             <div className="ml-4">
               <span className="text-sm text-gray-700">
-              <AutoTranslate>
-                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                  } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-              </AutoTranslate>
+                <AutoTranslate>
+                  {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+                </AutoTranslate>
               </span>
             </div>
           </div>
