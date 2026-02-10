@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -11,12 +10,15 @@ import {
   PlusCircleIcon,
 } from '@heroicons/react/24/solid';
 import { DEPAETMENT_API, BRANCH_API } from '../API/apiConfig';
+import {
+  getRequest,
+  postRequest,
+  putRequest
+} from '../API/apiService';
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
-
-const tokenKey = 'tokenKey';
 
 const Department = () => {
   const {
@@ -36,9 +38,9 @@ const Department = () => {
   // State for translated placeholders
   const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
     enterName: 'Enter department name',
-    selectBranche: 'Select branch',
+    selectBranch: 'Select branch',
     search: 'Search...',
-    allBranches: 'All Branch'
+    allBranches: 'All Branches'
   });
 
   // Debug log
@@ -71,8 +73,6 @@ const Department = () => {
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formSectionRef = useRef(null);
-
-  const token = localStorage.getItem('tokenKey');
 
   // Function to translate placeholder text
   const translatePlaceholder = useCallback(async (text) => {
@@ -124,20 +124,12 @@ const Department = () => {
       setIsLoading(true);
       try {
         // Fetch branches
-        const branchesResponse = await axios.get(`${BRANCH_API}/findActiveRole`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const branchesResponse = await getRequest(`${BRANCH_API}/findActiveRole`);
         setBranches(branchesResponse.data);
         console.log('✅ Branches loaded');
 
         // Fetch departments
-        const departmentsResponse = await axios.get(`${DEPAETMENT_API}/findAll`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const departmentsResponse = await getRequest(`${DEPAETMENT_API}/findAll`);
         setDepartments(departmentsResponse.data);
         console.log('✅ Departments loaded');
       } catch (error) {
@@ -149,7 +141,7 @@ const Department = () => {
     };
 
     loadInitialData();
-  }, [token]);
+  }, []);
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({
@@ -220,18 +212,12 @@ const Department = () => {
         isActive: formData.isActive ? 1 : 0,
       };
 
-      const response = await axios.post(`${DEPAETMENT_API}/save`, newDepartment, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
+      const response = await postRequest(`${DEPAETMENT_API}/save`, newDepartment);
       setDepartments([...departments, response.data]);
       setFormData({ name: '', branch: null, isActive: true });
       showPopup('Department added successfully!', "success");
     } catch (error) {
-      console.error('Error adding department:', error.response ? error.response.data : error.message);
+      console.error('Error adding department:', error);
       showPopup('Failed to add the Department. Please try again.', "error");
     } finally {
       setIsSubmitting(false);
@@ -277,12 +263,10 @@ const Department = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.put(`${DEPAETMENT_API}/update/${updatedDepartment.id}`, updatedDepartment, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await putRequest(
+        `${DEPAETMENT_API}/update/${updatedDepartment.id}`,
+        updatedDepartment
+      );
 
       const updatedDepartments = departments.map(department =>
         department.id === updatedDepartment.id ? response.data : department
@@ -293,7 +277,7 @@ const Department = () => {
       setEditingIndex(null);
       showPopup('Department updated successfully!', "success");
     } catch (error) {
-      console.error('Error updating department:', error.response ? error.response.data : error.message);
+      console.error('Error updating department:', error);
       showPopup('Failed to update the department. Please try again.', "error");
     } finally {
       setIsSubmitting(false);
@@ -311,15 +295,9 @@ const Department = () => {
       try {
         const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
 
-        const response = await axios.put(
+        const response = await putRequest(
           `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
-          isActive,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          }
+          isActive
         );
 
         const updatedDepartments = departments.map(dept =>
@@ -332,7 +310,7 @@ const Department = () => {
         showPopup('Status changed successfully!', "success");
         console.log('Status change response:', response.data);
       } catch (error) {
-        console.error('Error toggling department status:', error.response ? error.response.data : error.message);
+        console.error('Error toggling department status:', error);
         showPopup('Failed to change the status. Please try again.', "error");
       } finally {
         setIsConfirmDisabled(false);

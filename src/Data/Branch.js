@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -11,6 +10,11 @@ import {
   PlusCircleIcon
 } from '@heroicons/react/24/solid';
 import { BRANCH_API } from '../API/apiConfig';
+import {
+  getRequest,
+  postRequest,
+  putRequest
+} from '../API/apiService';
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
@@ -69,8 +73,6 @@ const Branch = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formSectionRef = useRef(null);
 
-  const token = localStorage.getItem('tokenKey');
-
   // Function to translate placeholder text
   const translatePlaceholder = useCallback(async (text) => {
     if (isTranslationNeeded()) {
@@ -116,11 +118,7 @@ const Branch = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const response = await axios.get(`${BRANCH_API}/findAll`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const response = await getRequest(`${BRANCH_API}/findAll`);
         setBranches(response.data);
         console.log('✅ Branches loaded');
       } catch (error) {
@@ -132,7 +130,7 @@ const Branch = () => {
     };
 
     loadInitialData();
-  }, [token]);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -184,18 +182,12 @@ const Branch = () => {
         isActive: formData.isActive ? 1 : 0,
       };
 
-      const response = await axios.post(`${BRANCH_API}/save`, newBranch, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
+      const response = await postRequest(`${BRANCH_API}/save`, newBranch);
       setBranches([...branches, response.data]);
       setFormData({ name: '', address: '', isActive: true });
       showPopup('Branch added successfully!', "success");
     } catch (error) {
-      console.error('Error adding branch:', error.response ? error.response.data : error.message);
+      console.error('Error adding branch:', error);
       showPopup('Failed to add the Branch. Please try again!', "error");
     } finally {
       setIsSubmitting(false);
@@ -249,11 +241,10 @@ const Branch = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const response = await axios.put(`${BRANCH_API}/update/${updatedBranch.id}`, updatedBranch, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await putRequest(
+          `${BRANCH_API}/update/${updatedBranch.id}`,
+          updatedBranch
+        );
 
         const updatedBranches = branches.map(branch =>
           branch.id === updatedBranch.id ? response.data : branch
@@ -264,7 +255,7 @@ const Branch = () => {
         setEditingBranchId(null);
         showPopup('Branch updated successfully!', "success");
       } catch (error) {
-        console.error('Error updating branch:', error.response ? error.response.data : error.message);
+        console.error('Error updating branch:', error);
         showPopup('Failed to update the branch. Please try again!', "error");
       } finally {
         setIsSubmitting(false);
@@ -288,16 +279,9 @@ const Branch = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const token = localStorage.getItem(tokenKey);
-        const response = await axios.put(
+        const response = await putRequest(
           `${BRANCH_API}/updatestatus/${updatedBranch.id}`,
-          updatedBranch,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          updatedBranch
         );
 
         const updatedBranches = branches.map(branch =>
@@ -310,7 +294,7 @@ const Branch = () => {
         setIsConfirmDisabled(false);
         showPopup('Status changed successfully!', "success");
       } catch (error) {
-        console.error('Error toggling branch status:', error.response ? error.response.data : error.message);
+        console.error('Error toggling branch status:', error);
         showPopup('Failed to change the status. Please try again!', "error");
       }
     } else {

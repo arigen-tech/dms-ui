@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-import { API_HOST , DOCUMENTHEADER_API} from "../API/apiConfig";
+import { API_HOST, DOCUMENTHEADER_API } from "../API/apiConfig";
+import {
+  getRequest,
+  putRequest
+} from "../API/apiService"; // Import your API functions
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -46,8 +49,6 @@ const AuditForm = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedForm, setSelectedForm] = useState(null);
   const [actionType, setActionType] = useState("");
-
-  const token = localStorage.getItem("tokenKey");
 
   // Debug log
   useEffect(() => {
@@ -122,9 +123,7 @@ const AuditForm = () => {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await getRequest(`${API_HOST}/branchmaster/findActiveRole`);
       setBranchData(response.data);
       console.log('✅ Branches loaded');
     } catch (error) {
@@ -134,9 +133,8 @@ const AuditForm = () => {
 
   const fetchDepartments = async (branchId) => {
     try {
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await getRequest(
+        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`
       );
       setDepartmentData(response.data);
       console.log('✅ Departments loaded');
@@ -148,9 +146,7 @@ const AuditForm = () => {
   const fetchForms = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/getAllDocumentsAuditLog`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await getRequest(`${DOCUMENTHEADER_API}/getAllDocumentsAuditLog`);
       
       // Map the API response to match component expectations
       const mappedForms = response.data.map(log => ({
@@ -198,10 +194,9 @@ const AuditForm = () => {
 
   const confirmAction = async () => {
     try {
-      await axios.put(
+      await putRequest(
         `${DOCUMENTHEADER_API}/auditlog/${selectedForm.id}/${actionType}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        {}
       );
       showPopup(`Form ${actionType} successfully!`, "success");
       fetchForms();

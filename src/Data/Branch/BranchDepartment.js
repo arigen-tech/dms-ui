@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -11,7 +10,11 @@ import {
   PlusCircleIcon,
 } from '@heroicons/react/24/solid';
 import { DEPAETMENT_API } from '../../API/apiConfig';
-import { API_HOST } from "../../API/apiConfig";
+import {
+  getRequest,
+  postRequest,
+  putRequest
+} from '../../API/apiService';
 import Popup from '../../Components/Popup';
 import LoadingComponent from '../../Components/LoadingComponent';
 import AutoTranslate from '../../i18n/AutoTranslate';
@@ -56,8 +59,6 @@ const BranchDepartments = () => {
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formSectionRef = useRef(null);
-
-  const token = localStorage.getItem('tokenKey');
 
   // Function to translate placeholder text
   const translatePlaceholder = useCallback(async (text) => {
@@ -115,14 +116,7 @@ const BranchDepartments = () => {
     setIsLoading(true);
     try {
       const userId = localStorage.getItem("userId");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await getRequest(`/employee/findById/${userId}`);
       setUserBranch(response.data.branch);
       setFormData(prev => ({
         ...prev,
@@ -139,11 +133,7 @@ const BranchDepartments = () => {
   const fetchDepartments = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${DEPAETMENT_API}/findByBranch/${userBranch.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await getRequest(`${DEPAETMENT_API}/findByBranch/${userBranch.id}`);
       setDepartments(response.data);
     } catch (error) {
       showPopup('Error fetching departments', 'error');
@@ -214,13 +204,7 @@ const BranchDepartments = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.post(`${DEPAETMENT_API}/save`, newDepartment, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
+      const response = await postRequest(`${DEPAETMENT_API}/save`, newDepartment);
       setDepartments([...departments, response.data]);
       setFormData({ name: '', isActive: true });
       showPopup('Department added successfully!', "success");
@@ -261,15 +245,9 @@ const BranchDepartments = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.put(
+      const response = await putRequest(
         `${DEPAETMENT_API}/update/${formData.id}`,
-        updatedDepartment,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        }
+        updatedDepartment
       );
 
       const updatedDepartments = departments.map(dept =>
@@ -299,15 +277,9 @@ const BranchDepartments = () => {
       try {
         const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
 
-        await axios.put(
+        await putRequest(
           `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
-          isActive,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          }
+          isActive
         );
 
         const updatedDepartments = departments.map(dept =>

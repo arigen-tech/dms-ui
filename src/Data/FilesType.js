@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -11,12 +10,15 @@ import {
   PlusCircleIcon
 } from '@heroicons/react/24/solid';
 import { FILETYPE_API } from '../API/apiConfig';
+import {
+  getRequest,
+  postRequest,
+  putRequest
+} from '../API/apiService';
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
-
-const tokenKey = 'tokenKey';
 
 const FilesType = () => {
   // Get language context
@@ -57,8 +59,6 @@ const FilesType = () => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const token = localStorage.getItem('tokenKey');
 
   // Debug log
   useEffect(() => {
@@ -124,11 +124,7 @@ const FilesType = () => {
   const fetchFilesType = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${FILETYPE_API}/getAll`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await getRequest(`${FILETYPE_API}/getAll`);
       setFilesType(response?.data?.response || []);
       console.log('✅ File types loaded');
     } catch (error) {
@@ -204,27 +200,17 @@ const FilesType = () => {
         isActive: formData.isActive ? 1 : 0,
       };
 
-      const response = await axios.post(`${FILETYPE_API}/create`, newFileType, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
+      const response = await postRequest(`${FILETYPE_API}/create`, newFileType);
       setFilesType([...filesType, response.data.data]);
       setFormData({ filetype: '', extension: '', isActive: 1 });
-
       showPopup('FileType added successfully!', "success");
       fetchFilesType();
 
     } catch (error) {
-      console.error('Error adding FileType:', error.response ? error.response.data : error.message);
-
-      const errorMessage =
-        error.response?.data?.message ||
+      console.error('Error adding FileType:', error);
+      const errorMessage = error.response?.data?.message ||
         error.response?.data?.error ||
         'Failed to add FileType';
-
       showPopup(errorMessage, "error");
     } finally {
       setIsSubmitting(false);
@@ -233,7 +219,6 @@ const FilesType = () => {
 
   const handleEditFileType = (fileTypeId) => {
     seteditingFileTypeId(fileTypeId);
-
     const fileTypeToEdit = filesType.find(fileType => fileType.id === fileTypeId);
 
     if (fileTypeToEdit) {
@@ -283,11 +268,10 @@ const FilesType = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const response = await axios.put(`${FILETYPE_API}/updateById/${updatedFileType.id}`, updatedFileType, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await putRequest(
+          `${FILETYPE_API}/updateById/${updatedFileType.id}`,
+          updatedFileType
+        );
 
         const updatedFileTypes = filesType?.map(branch =>
           branch.id === updatedFileType.id ? response.data : branch
@@ -299,7 +283,7 @@ const FilesType = () => {
         showPopup('File Type updated successfully!', "success");
         fetchFilesType();
       } catch (error) {
-        console.error('Error updating File Type:', error.response ? error.response.data : error.message);
+        console.error('Error updating File Type:', error);
         showPopup('Failed to update the File Type. Please try again!', "error");
       } finally {
         setIsSubmitting(false);
@@ -323,15 +307,9 @@ const FilesType = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const response = await axios.put(
+        const response = await putRequest(
           `${FILETYPE_API}/update/status/${updatedFilesType.id}?status=${updatedFilesType.status}`,
-          {},
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          {}
         );
 
         const updatedFilesTypes = filesType?.map(filesTypes =>
@@ -345,7 +323,7 @@ const FilesType = () => {
         fetchFilesType();
 
       } catch (error) {
-        console.error('Error toggling file type status:', error.response ? error.response.data : error.message);
+        console.error('Error toggling file type status:', error);
         showPopup('Failed to change the status. Please try again!', "error");
       } finally {
         setIsConfirmDisabled(false);

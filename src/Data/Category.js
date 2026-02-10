@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -11,6 +10,11 @@ import {
   PlusCircleIcon
 } from '@heroicons/react/24/solid';
 import { CATEGORI_API } from '../API/apiConfig';
+import {
+  getRequest,
+  postRequest,
+  putRequest
+} from '../API/apiService'; 
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
@@ -107,11 +111,7 @@ const Category = () => {
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(`${CATEGORI_API}/findAll`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await getRequest(`${CATEGORI_API}/findAll`);
         setCategories(response.data);
         console.log('✅ Categories loaded');
       } catch (error) {
@@ -158,17 +158,12 @@ const Category = () => {
     }
     setIsSubmitting(true);
     try {
-      const response = await axios.post(`${CATEGORI_API}/save`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-        },
-      });
-
+      const response = await postRequest(`${CATEGORI_API}/save`, formData);
       setCategories([...categories, response.data]);
       setFormData({ name: '' });
       showPopup('Category added successfully!', "success");
     } catch (error) {
-      console.error('Error adding category:', error.response ? error.response.data : error.message);
+      console.error('Error adding category:', error);
       showPopup('Failed to add the category. Please try again!', "error");
     } finally {
       setIsSubmitting(false);
@@ -218,11 +213,10 @@ const Category = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const response = await axios.put(`${CATEGORI_API}/update/${updatedCategory.id}`, updatedCategory, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await putRequest(
+          `${CATEGORI_API}/update/${updatedCategory.id}`,
+          updatedCategory
+        );
 
         const updatedCategories = categories.map(category =>
           category.id === updatedCategory.id ? response.data : category
@@ -233,7 +227,7 @@ const Category = () => {
         setEditingCategoryId(null);
         showPopup('Category updated successfully!', "success");
       } catch (error) {
-        console.error('Error updating category:', error.response ? error.response.data : error.message);
+        console.error('Error updating category:', error);
         showPopup('Failed to update the category. Please try again!', "error");
       } finally {
         setIsSubmitting(false);
@@ -257,16 +251,9 @@ const Category = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const token = localStorage.getItem(tokenKey);
-        const response = await axios.put(
+        const response = await putRequest(
           `${CATEGORI_API}/updatestatus/${updatedCategory.id}`,
-          updatedCategory,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          updatedCategory
         );
 
         if (response.status === 200) {
@@ -283,7 +270,7 @@ const Category = () => {
           showPopup('Failed to change the category status. Please try again.', "error");
         }
       } catch (error) {
-        console.error('Error toggling Category status:', error.response ? error.response.data : error.message);
+        console.error('Error toggling Category status:', error);
         showPopup('Failed to change the category status. Please try again.', "error");
       }
     } else {

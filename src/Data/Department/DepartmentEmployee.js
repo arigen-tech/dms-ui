@@ -9,13 +9,16 @@ import {
     PlusCircleIcon,
 } from "@heroicons/react/24/solid";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import axios from "axios";
 import { API_HOST } from "../../API/apiConfig";
+import {
+    getRequest,
+    postRequest,
+    putRequest
+} from "../../API/apiService"; 
 import Popup from '../../Components/Popup';
 import LoadingComponent from "../../Components/LoadingComponent";
 import AutoTranslate from '../../i18n/AutoTranslate';
 import { useLanguage } from '../../i18n/LanguageContext';
-import { getFallbackTranslation } from '../../i18n/autoTranslator';
 
 const DepartmentEmployee = () => {
     const {
@@ -129,10 +132,7 @@ const DepartmentEmployee = () => {
 
     const fetchBranches = async () => {
         try {
-            const token = localStorage.getItem("tokenKey");
-            const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await getRequest(`${API_HOST}/branchmaster/findActiveRole`);
             setBranchData(response.data);
         } catch (error) {
             console.error("Error fetching branches:", error);
@@ -141,13 +141,7 @@ const DepartmentEmployee = () => {
 
     const fetchFilterDepartments = async (branchId) => {
         try {
-            const token = localStorage.getItem("tokenKey");
-            const response = await axios.get(
-                `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            const response = await getRequest(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
             setDepartmentData(response.data);
         } catch (error) {
             console.error("Error fetching departments:", error);
@@ -175,16 +169,7 @@ const DepartmentEmployee = () => {
         setError("");
         try {
             const userId = localStorage.getItem("userId");
-            const token = localStorage.getItem("tokenKey");
-
-            const response = await axios.get(
-                `${API_HOST}/employee/findById/${userId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await getRequest(`${API_HOST}/employee/findById/${userId}`);
 
             setUserBranch(response.data.branch);
             setUserDepartment(response.data.department);
@@ -205,15 +190,7 @@ const DepartmentEmployee = () => {
         setIsLoading(true);
         setError("");
         try {
-            const token = localStorage.getItem("tokenKey");
-            const response = await axios.get(
-                `${API_HOST}/employee/department/${userDepartment.id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await getRequest(`${API_HOST}/employee/department/${userDepartment.id}`);
             setEmployees(response.data.response);
         } catch (error) {
             setError("Error fetching department employees.");
@@ -271,7 +248,6 @@ const DepartmentEmployee = () => {
         setIsButtonDisabled(true);
 
         try {
-            const token = localStorage.getItem("tokenKey");
             const userId = localStorage.getItem("userId");
 
             if (!userId) {
@@ -298,15 +274,9 @@ const DepartmentEmployee = () => {
                 branch: userBranch,
             };
 
-            const response = await axios.post(
+            const response = await postRequest(
                 `${API_HOST}/register/create`,
-                employeeData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
+                employeeData
             );
 
             if (response.data) {
@@ -386,8 +356,6 @@ const DepartmentEmployee = () => {
         setIsButtonDisabled(true);
 
         try {
-            const token = localStorage.getItem("tokenKey");
-
             const updatedEmployeeData = {
                 name: formData.name,
                 email: formData.email,
@@ -399,15 +367,9 @@ const DepartmentEmployee = () => {
                 enabled: formData.enabled,
             };
 
-            const response = await axios.put(
+            const response = await putRequest(
                 `${API_HOST}/employee/update/${formData.id}`,
-                updatedEmployeeData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
+                updatedEmployeeData
             );
 
             if (response.data) {
@@ -461,15 +423,9 @@ const DepartmentEmployee = () => {
         try {
             const newStatus = !employeeToToggle.active;
 
-            const response = await axios.put(
+            const response = await putRequest(
                 `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`,
-                newStatus,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
-                        "Content-Type": "application/json",
-                    },
-                }
+                newStatus
             );
 
             if (response.data) {

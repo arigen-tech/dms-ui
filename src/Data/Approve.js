@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
 import { useLocation } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -11,11 +10,15 @@ import {
   EyeIcon,
 } from "@heroicons/react/24/solid";
 import { API_HOST, DOCUMENTHEADER_API, BRANCH_API, DEPAETMENT_API } from "../API/apiConfig";
+import {
+  getRequest,
+  patchRequest
+} from "../API/apiService";
 import FilePreviewModal from "../Components/FilePreviewModal";
 import apiClient from "../API/apiClient";
 import LoadingComponent from '../Components/LoadingComponent';
-import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
-import { useLanguage } from '../i18n/LanguageContext'; // Import useLanguage hook
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
 import Popup from '../Components/Popup';
 
 const Approve = () => {
@@ -60,7 +63,6 @@ const Approve = () => {
   const [contentType, setContentType] = useState("");
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
-  const tokenKey = localStorage.getItem("tokenKey");
   const [, setIsOpeningFile] = useState(false);
   const [, setUserBranch] = useState(null);
   const [openingFileIndex, setOpeningFileIndex] = useState(null);
@@ -131,12 +133,7 @@ const Approve = () => {
     setError("");
     try {
       const userId = localStorage.getItem("userId");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/employee/findById/${userId}`);
       setUserBranch(response.data.branch);
     } catch (error) {
       console.error("Error fetching user branch:", error);
@@ -152,17 +149,13 @@ const Approve = () => {
     try {
       const userId = localStorage.getItem("userId");
 
-      if (!tokenKey || !userId) {
+      if (!userId) {
         setError("Authentication details missing. Please log in again.");
         setLoading(false);
         return;
       }
-      const userResponse = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        }
-      );
+
+      const userResponse = await getRequest(`${API_HOST}/employee/findById/${userId}`);
 
       const departmentId = userResponse.data?.department?.id;
       const branchId = userResponse.data?.branch?.id;
@@ -176,10 +169,7 @@ const Approve = () => {
         url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`;
       }
 
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      });
-
+      const response = await getRequest(url);
       setDocuments(response.data);
 
       console.log("all doc ", response.data);
@@ -200,9 +190,7 @@ const Approve = () => {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      });
+      const response = await getRequest(`${BRANCH_API}/findActiveRole`);
       setBranches(response.data || []);
     } catch (error) {
       console.error('Error fetching branches:', error?.response?.data || error.message);
@@ -211,9 +199,7 @@ const Approve = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(`${DEPAETMENT_API}/findAll`, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      });
+      const response = await getRequest(`${DEPAETMENT_API}/findAll`);
       setDepartments(response.data || []);
     } catch (error) {
       console.error('Error fetching departments:', error?.response?.data || error.message);
@@ -222,16 +208,7 @@ const Approve = () => {
 
   const fetchPaths = async (doc) => {
     try {
-      if (!tokenKey) {
-        throw new Error("No authentication tokenKey found.");
-      }
-
-      const response = await axios.get(
-        `${API_HOST}/api/documents/byDocumentHeader/${doc.id}/PENDING`,
-        {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/api/documents/byDocumentHeader/${doc.id}/PENDING`);
 
       console.log("paths", response.data);
 
@@ -256,7 +233,6 @@ const Approve = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
         responseType: "blob",
       });
 
@@ -300,9 +276,6 @@ const Approve = () => {
     }
   };
 
-
-
-
   const handleDownload = async (file, action = "download") => {
     if (!selectedDoc) return;
 
@@ -317,7 +290,6 @@ const Approve = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
         responseType: "blob",
       });
 
@@ -367,7 +339,6 @@ const Approve = () => {
     }
   };
 
-
   const filteredDocFiles = useMemo(() => {
     if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
 
@@ -393,14 +364,13 @@ const Approve = () => {
     try {
       const employeeId = localStorage.getItem("userId");
 
-      const response = await axios.patch(
+      const response = await patchRequest(
         `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`,
         null,
         {
-          headers: {
-            Authorization: `Bearer ${tokenKey}`,
-            employeeId: employeeId,
-          },
+          employeeId: employeeId,
+        },
+        {
           params: {
             status: "APPROVED",
           },
@@ -423,14 +393,13 @@ const Approve = () => {
     try {
       const employeeId = localStorage.getItem("userId");
 
-      const response = await axios.patch(
+      const response = await patchRequest(
         `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`,
         null,
         {
-          headers: {
-            Authorization: `Bearer ${tokenKey}`,
-            employeeId: employeeId,
-          },
+          employeeId: employeeId,
+        },
+        {
           params: {
             status: "REJECTED",
             rejectionReason: rejectReason,
@@ -457,17 +426,10 @@ const Approve = () => {
     }
 
     try {
-      if (!tokenKey) {
-        throw new Error("Authentication tokenKey is missing");
-      }
-
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
       const response = await fetch(apiUrl, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${tokenKey}`,
-        },
       });
 
       if (!response.ok) {
@@ -504,17 +466,10 @@ const Approve = () => {
 
   const fetchQRCode = async (documentId) => {
     try {
-      if (!tokenKey) {
-        throw new Error("Authentication tokenKey is missing");
-      }
-
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
 
       const response = await fetch(apiUrl, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${tokenKey}`,
-        },
       });
 
       if (!response.ok) {

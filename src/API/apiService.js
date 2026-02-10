@@ -190,6 +190,50 @@ export const putRequest = async (endpoint, data, headers = {}) => {
   }
 };
 
+/**
+ * Function to call PATCH API
+ * @param {string} endpoint - The API endpoint
+ * @param {object} data - Request body
+ * @param {object} headers - Optional headers
+ * @param {object} params - Optional query parameters
+ * @returns {Promise<object>} - API response
+ */
+export const patchRequest = async (endpoint, data = null, headers = {}, params = {}) => {
+  try {
+    let token;
+    if (localStorage.tokenKey) {
+      token = { Authorization: `Bearer ${localStorage.getItem("tokenKey")}` };
+    } else {
+      token = { Authorization: `Bearer ${sessionStorage.getItem("tokenKey")}` };
+    }
+    
+    // Build URL with query parameters
+    let url = `${API_HOST}${endpoint}`;
+    if (Object.keys(params).length > 0) {
+      const queryParams = new URLSearchParams(params);
+      url += `?${queryParams.toString()}`;
+    }
+    
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...token,
+        ...headers,
+      },
+      body: data ? JSON.stringify(data) : null,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`PATCH request failed: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("PATCH Error:", error);
+    throw error;
+  }
+};
 
 
 const uploadFileWithJson = async (endpoint, jsonData, files) => {

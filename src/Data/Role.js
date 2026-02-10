@@ -10,13 +10,15 @@ import {
   PencilIcon,
   PlusCircleIcon,
 } from "@heroicons/react/24/solid";
-import axios from "axios";
+import {
+  getRequest,
+  postRequest,
+  putRequest
+} from '../API/apiService';
 import Popup from "../Components/Popup";
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
-
-const tokenKey = "tokenKey";
 
 const Role = () => {
   // Get language context
@@ -116,10 +118,7 @@ const Role = () => {
     const fetchRoles = async () => {
       setIsLoading(true);
       try {
-        const token = localStorage.getItem(tokenKey);
-        const response = await axios.get(`${ROLE_API}/findAll`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await getRequest(`${ROLE_API}/findAll`);
         setRoles(response.data);
         console.log('✅ Roles loaded');
       } catch (error) {
@@ -205,16 +204,12 @@ const Role = () => {
         isActive: 1,
       };
 
-      const token = localStorage.getItem(tokenKey);
-      const response = await axios.post(`${ROLE_API}/save`, newRole, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const response = await postRequest(`${ROLE_API}/save`, newRole);
       setRoles([...roles, response.data]);
       setFormData({ role: "", roleCode: "" });
       showPopup("Role added successfully!", "success");
     } catch (error) {
-      console.error("Error adding role:", error.response ? error.response.data : error.message);
+      console.error("Error adding role:", error);
       showPopup("Failed to add the role. Please try again!", "error");
     } finally {
       setIsSubmitting(false); // Re-enable button after submission
@@ -258,14 +253,9 @@ const Role = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.put(
+      const response = await putRequest(
         `${ROLE_API}/update/${updatedRole.id}`,
-        updatedRole,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        }
+        updatedRole
       );
 
       const updatedRoles = roles.map(role =>
@@ -277,7 +267,7 @@ const Role = () => {
       setEditingRoleId(null);
       showPopup("Role updated successfully!", "success");
     } catch (error) {
-      console.error("Error updating role:", error.response ? error.response.data : error.message);
+      console.error("Error updating role:", error);
       showPopup("Failed to update the role. Please try again!", "error");
     } finally {
       setIsSubmitting(false); // Re-enable button after submission
@@ -300,16 +290,9 @@ const Role = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const token = localStorage.getItem(tokenKey);
-        const response = await axios.put(
+        const response = await putRequest(
           `${ROLE_API}/updatestatus/${updatedRole.id}`,
-          updatedRole,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          updatedRole
         );
 
         const updatedRoles = roles.map(role =>
@@ -321,7 +304,7 @@ const Role = () => {
         setRoleToToggle(null);
         showPopup("Role status changed successfully!", "success");
       } catch (error) {
-        console.error("Error toggling role status:", error.response ? error.response.data : error.message);
+        console.error("Error toggling role status:", error);
         showPopup("Failed to change the status. Please try again.", "error");
       } finally {
         setIsConfirmDisabled(false);

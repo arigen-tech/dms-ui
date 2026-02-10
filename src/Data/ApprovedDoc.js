@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import axios from "axios";
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   PencilIcon,
@@ -21,7 +20,12 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/solid";
 import { API_HOST, DOCUMENTHEADER_API, FILETYPE_API, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
-import apiClient from "../API/apiClient";
+import {
+  getRequest,
+  postRequest,
+  putRequest,
+  getImageRequest
+} from "../API/apiService"; // Import your API functions
 import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from "../Components/LoadingComponent";
 import Popup from "../Components/Popup";
@@ -110,7 +114,6 @@ const ApprovedDoc = () => {
   // New state to track if modal was opened from a selected document
   const [modalOpenedFromSelectedDoc, setModalOpenedFromSelectedDoc] = useState(false);
 
-  const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
 
@@ -374,20 +377,13 @@ const ApprovedDoc = () => {
   // Check if a document has shares
   const checkIfDocumentHasShares = useCallback(async (docId) => {
     try {
-      const response = await axios.get(
-        `${API_HOST}/document-share/document/${docId}/shares`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const shares = response.data || [];
-      return shares.length > 0;
+      const shares = await getRequest(`/document-share/document/${docId}/shares`);
+      return Array.isArray(shares) && shares.length > 0;
     } catch (error) {
       console.error('Error checking document shares:', error);
       return false;
     }
-  }, [token]);
+  }, []);
 
   // Load all document shares on component mount
   const loadAllDocumentShares = useCallback(async () => {
@@ -397,15 +393,9 @@ const ApprovedDoc = () => {
 
     for (const doc of documents) {
       try {
-        const response = await axios.get(
-          `${API_HOST}/document-share/document/${doc.id}/shares`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        const shares = response.data || [];
-        if (shares.length > 0) {
+        const shares = await getRequest(`/document-share/document/${doc.id}/shares`);
+        
+        if (Array.isArray(shares) && shares.length > 0) {
           sharesSet.add(doc.id);
 
           // Store the shares for this document
@@ -420,7 +410,7 @@ const ApprovedDoc = () => {
     }
 
     setDocumentsWithShares(sharesSet);
-  }, [documents, token]);
+  }, [documents]);
 
   useEffect(() => {
     console.log('🔍 ApprovedDoc Component - Language Status:', {
@@ -487,26 +477,16 @@ const ApprovedDoc = () => {
       let response;
 
       if (role === USER) {
-        response = await axios.get(
-          `${API_HOST}/api/documents/approved/employee/${UserId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        response = await getRequest(`/api/documents/approved/employee/${UserId}`);
       } else if (
         role === SYSTEM_ADMIN ||
         role === BRANCH_ADMIN ||
         role === DEPARTMENT_ADMIN
       ) {
-        response = await axios.get(`${API_HOST}/api/documents/approvedByEmp`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            employeeId: UserId,
-          },
-        });
+        response = await getRequest(`/api/documents/approvedByEmp`);
       }
 
-      const allDocuments = Array.isArray(response.data) ? response.data : [];
+      const allDocuments = Array.isArray(response) ? response : [];
       // Filter to show only non-deleted documents
       const activeDocuments = allDocuments.filter(doc => !doc.isDeleted);
       setDocuments(activeDocuments);
@@ -577,17 +557,9 @@ const ApprovedDoc = () => {
 
       // Move all approved files to trash
       const deletePromises = allFilesToDelete.map(file =>
-        axios.put(
-          `${DOCUMENTHEADER_API}/delete-status/${file.id}`,
-          null,
-          {
-            params: { isDeleted: true },
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
+        putRequest(`${DOCUMENTHEADER_API}/delete-status/${file.id}`, null, {
+          params: { isDeleted: true }
+        })
       );
 
       await Promise.all(deletePromises);
@@ -650,19 +622,10 @@ const ApprovedDoc = () => {
       };
 
       // Call bulk share endpoint
-      const response = await axios.post(
-        `${API_HOST}/document-share/bulk-share`,
-        bulkShareRequest,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await postRequest(`/document-share/bulk-share`, bulkShareRequest);
 
-      if (response.data.status === 200) {
-        const shareResponse = response.data.response;
+      if (response.status === 200) {
+        const shareResponse = response.response;
 
         // Show success message
         if (shareResponse.totalFilesShared > 0) {
@@ -679,7 +642,7 @@ const ApprovedDoc = () => {
           showPopup('No new files were shared. All files may have already been shared.', 'info');
         }
       } else {
-        showPopup(response.data.message || 'Failed to share documents', 'error');
+        showPopup(response.message || 'Failed to share documents', 'error');
       }
 
       // Close modal and reset
@@ -726,15 +689,11 @@ const ApprovedDoc = () => {
     if (fileToDelete) {
       try {
         // Call the API to move file to trash (set isDeleted = true)
-        const response = await axios.put(
+        const response = await putRequest(
           `${DOCUMENTHEADER_API}/delete-status/${fileToDelete.id}`,
           null,
           {
-            params: { isDeleted: true },
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
+            params: { isDeleted: true }
           }
         );
 
@@ -781,7 +740,7 @@ const ApprovedDoc = () => {
 
         showPopup('File moved to trash successfully!', 'success');
       } catch (error) {
-        console.error('Error deleting file:', error.response ? error.response.data : error.message);
+        console.error('Error deleting file:', error);
         showPopup('Failed to move file to trash. Please try again!', 'error');
         setIsDeleteConfirmDisabled(false);
       }
@@ -842,15 +801,11 @@ const ApprovedDoc = () => {
 
     try {
       const deletePromises = selectedFiles.map(file =>
-        axios.put(
+        putRequest(
           `${DOCUMENTHEADER_API}/delete-status/${file.id}`,
           null,
           {
-            params: { isDeleted: true },
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
+            params: { isDeleted: true }
           }
         )
       );
@@ -968,16 +923,13 @@ const ApprovedDoc = () => {
 
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      // Use getImageRequest for blob responses
+      const blob = await getImageRequest(fileUrl, {}, "blob");
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
       const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
-      setContentType(response.headers["content-type"]);
+      setContentType(blob.type || "application/octet-stream");
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
@@ -1026,13 +978,10 @@ const ApprovedDoc = () => {
 
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      // Use getImageRequest for blob responses
+      const blob = await getImageRequest(fileUrl, {}, "blob");
 
       // Create a blob from the response
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
       const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
 
@@ -1083,24 +1032,10 @@ const ApprovedDoc = () => {
 
   const fetchQRCode = async (documentId) => {
     try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
-
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
+      // Use getImageRequest for image blob responses
+      const qrCodeBlob = await getImageRequest(apiUrl, {}, "blob");
 
       if (!qrCodeBlob.type.includes("image/png")) {
         throw new Error("Received data is not a valid image");
@@ -1127,24 +1062,10 @@ const ApprovedDoc = () => {
     }
 
     try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
-
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
+      // Use getImageRequest for image blob responses
+      const qrCodeBlob = await getImageRequest(apiUrl, {}, "blob");
       const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
 
       const link = document.createElement("a");
@@ -1167,7 +1088,7 @@ const ApprovedDoc = () => {
         method: "GET",
         headers: {
           "Content-Type": "application/pdf",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
         },
       });
 
@@ -1191,12 +1112,8 @@ const ApprovedDoc = () => {
 
   const fetchFilesType = async () => {
     try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      setFilesType(response?.data?.response ?? []);
+      const response = await getRequest(`${FILETYPE_API}/getAllActive`);
+      setFilesType(response?.response ?? []);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
       setFilesType([]);
@@ -1242,20 +1159,13 @@ const ApprovedDoc = () => {
       setLoadingEmployees(true);
 
       // Call the API endpoint that returns employees in current user's branch and department
-      const response = await axios.get(
-        `${API_HOST}/employee/current/branch-department`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await getRequest(`/employee/current/branch-department`);
 
-      // Based on your response, the data is in response.data.response
-      const employees = response?.data?.response || [];
+      // Based on your response, the data is in response.response
+      const employees = response?.response || [];
 
       if (!Array.isArray(employees)) {
-        console.error('Invalid response format:', response.data);
+        console.error('Invalid response format:', response);
         showPopup('Invalid response format from server', 'error');
         setAvailableEmployees([]);
         return;
@@ -1322,19 +1232,10 @@ const ApprovedDoc = () => {
         endTime: shareEndTime ? new Date(shareEndTime).toISOString() : null
       };
 
-      const response = await axios.post(
-        `${API_HOST}/document-share/share`,
-        shareRequest,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await postRequest(`/document-share/share`, shareRequest);
 
-      if (response.data.status === 200) {
-        const shareResponse = response.data.response;
+      if (response.status === 200) {
+        const shareResponse = response.response;
 
         // Update share status for this document
         setDocumentsWithShares(prev => new Set(prev).add(documentToShare.id));
@@ -1355,7 +1256,7 @@ const ApprovedDoc = () => {
         setShareEndTime("");
         setSelectedFileIds([]);
       } else {
-        showPopup(response.data.message || 'Failed to share document', 'error');
+        showPopup(response.message || 'Failed to share document', 'error');
       }
     } catch (error) {
       console.error('Error sharing document:', error);
@@ -1368,23 +1269,16 @@ const ApprovedDoc = () => {
 
   const fetchDocumentShares = async (documentHeaderId) => {
     try {
-      const response = await axios.get(
-        `${API_HOST}/document-share/document/${documentHeaderId}/shares`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const shares = response.data || [];
+      const shares = await getRequest(`/document-share/document/${documentHeaderId}/shares`);
 
       // Update document shares state
       setDocumentShares(prev => ({
         ...prev,
-        [documentHeaderId]: shares
+        [documentHeaderId]: shares || []
       }));
 
       // Update documents with shares set
-      if (shares.length > 0) {
+      if (shares && shares.length > 0) {
         setDocumentsWithShares(prev => new Set(prev).add(documentHeaderId));
       } else {
         setDocumentsWithShares(prev => {
@@ -1394,7 +1288,7 @@ const ApprovedDoc = () => {
         });
       }
 
-      return shares;
+      return shares || [];
     } catch (error) {
       console.error('Error fetching document shares:', error);
       return [];
@@ -1422,18 +1316,9 @@ const ApprovedDoc = () => {
         reason: revokeReason
       };
 
-      const response = await axios.post(
-        `${API_HOST}/document-share/revoke`,
-        revokeRequest,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await postRequest(`/document-share/revoke`, revokeRequest);
 
-      if (response.data.status === 200) {
+      if (response.status === 200) {
         showPopup('Share revoked successfully!', 'success');
         setRevokeShareModalVisible(false);
         setShareToRevoke(null);
@@ -1465,7 +1350,7 @@ const ApprovedDoc = () => {
           }
         }
       } else {
-        showPopup(response.data.message || 'Failed to revoke share', 'error');
+        showPopup(response.message || 'Failed to revoke share', 'error');
       }
     } catch (error) {
       console.error('Error revoking share:', error);
@@ -2602,8 +2487,8 @@ const ApprovedDoc = () => {
                           ... and {selectedDocuments.length - 5} more
                         </li>
                       )}
-                    </ul>
-                  </div>
+                </ul>
+              </div>
 
                   <p className="text-sm text-blue-600">
                     <AutoTranslate>This will share ALL approved files from each selected document.</AutoTranslate>

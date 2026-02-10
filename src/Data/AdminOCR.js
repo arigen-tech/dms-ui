@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   DOCUMENTHEADER_API,
   DEPAETMENT_API,
@@ -9,6 +8,11 @@ import {
   CATEGORI_API,
   API_OCR_HOST,
 } from "../API/apiConfig";
+import {
+    getRequest,
+    postRequest,
+    putRequest
+} from "../API/apiService"; 
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
@@ -47,7 +51,6 @@ const AdminOCR = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const token = localStorage.getItem("tokenKey");
 
   // Debug log
   useEffect(() => {
@@ -68,24 +71,18 @@ const AdminOCR = () => {
     const fetchData = async () => {
       try {
         // Fetch years
-        const yearsResponse = await axios.get(`${YEAR_API}/findActiveYear`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const yearsResponse = await getRequest(`${YEAR_API}/findActiveYear`);
         const filteredYears = yearsResponse.data
           .filter((yearObj) => parseInt(yearObj.name) <= currentYear)
           .sort((a, b) => parseInt(b.name) - parseInt(a.name));
         setYears([...filteredYears]);
 
         // Fetch branches
-        const branchesResponse = await axios.get(`${BRANCH_API}/findActiveRole`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const branchesResponse = await getRequest(`${BRANCH_API}/findActiveRole`);
         setBranches(branchesResponse.data);
 
         // Fetch categories
-        const categoriesResponse = await axios.get(`${CATEGORI_API}/findActiveCategory`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const categoriesResponse = await getRequest(`${CATEGORI_API}/findActiveCategory`);
         setCategories(categoriesResponse.data);
       } catch (error) {
         console.error("Error fetching dropdown data:", error);
@@ -93,7 +90,7 @@ const AdminOCR = () => {
     };
 
     fetchData();
-  }, [token]);
+  }, []);
 
   // Fetch documents when branch is selected
   const fetchDocuments = async (brId) => {
@@ -107,11 +104,7 @@ const AdminOCR = () => {
     setSearchError("");
 
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/findByBranchId/${brId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await getRequest(`${DOCUMENTHEADER_API}/findByBranchId/${brId}`);
 
       const sortedDocuments = response.data.sort((a, b) => {
         const order = { PENDING: 1, REJECTED: 2, APPROVED: 3 };
@@ -133,9 +126,8 @@ const AdminOCR = () => {
     const fetchDepartments = async () => {
       if (filters.branch) {
         try {
-          const response = await axios.get(
-            `${DEPAETMENT_API}/findByBranch/${filters.branch}`,
-            { headers: { Authorization: `Bearer ${token}` } }
+          const response = await getRequest(
+            `${DEPAETMENT_API}/findByBranch/${filters.branch}`
           );
           setDepartments(response.data);
         } catch (error) {
@@ -148,7 +140,7 @@ const AdminOCR = () => {
     };
 
     fetchDepartments();
-  }, [filters.branch, token]);
+  }, [filters.branch]);
 
   // Apply filters whenever filters or documents change
   useEffect(() => {
@@ -235,6 +227,7 @@ const AdminOCR = () => {
       selected_files: docNames,
     };
 
+    // Note: Using fetch for OCR API since it doesn't require token
     fetch(apiEndpoint, {
       method: "POST",
       headers: {
@@ -415,7 +408,6 @@ const AdminOCR = () => {
                     'Enter exact text to search in documents',
                     currentLanguage
                   )}
-
                 />
               </div>
               <div className="flex items-end">

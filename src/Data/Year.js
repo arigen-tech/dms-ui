@@ -1,16 +1,18 @@
 import { YEAR_API } from '../API/apiConfig';
 import {
+  getRequest,
+  postRequest,
+  putRequest
+} from '../API/apiService';
+import {
   ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, PencilIcon,
   PlusCircleIcon, LockClosedIcon, LockOpenIcon, MagnifyingGlassIcon
 } from '@heroicons/react/24/solid';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
-
-const tokenKey = 'tokenKey';
 
 const Year = () => {
   // Get language context
@@ -115,10 +117,7 @@ const Year = () => {
   const fetchYears = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem(tokenKey);
-      const response = await axios.get(`${YEAR_API}/findAll`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await getRequest(`${YEAR_API}/findAll`);
       setYears(response.data);
       console.log('✅ Years loaded');
     } catch (error) {
@@ -164,10 +163,7 @@ const Year = () => {
       const newYear = { name: formData.year };
 
       try {
-        const token = localStorage.getItem(tokenKey);
-        const response = await axios.post(`${YEAR_API}/save`, newYear, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await postRequest(`${YEAR_API}/save`, newYear);
         setYears([...years, response.data]);
         setFormData({ year: '' });
         showPopup("Year added successfully!", "success");
@@ -205,10 +201,9 @@ const Year = () => {
           name: formData.year,
           updatedOn: new Date().toISOString(),
         };
-        const token = localStorage.getItem(tokenKey);
-        await axios.put(`${YEAR_API}/update/${updatedYear.id}`, updatedYear, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        
+        await putRequest(`${YEAR_API}/update/${updatedYear.id}`, updatedYear);
+        
         setYears(years.map((year, index) =>
           index === editingIndex ? updatedYear : year
         ));
@@ -241,16 +236,9 @@ const Year = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const token = localStorage.getItem(tokenKey);
-        const response = await axios.put(
+        const response = await putRequest(
           `${YEAR_API}/updatestatus/${updatedYear.id}`,
-          updatedYear,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          updatedYear
         );
 
         const updatedYears = years.map(year =>
@@ -262,7 +250,7 @@ const Year = () => {
         setYearToToggle(null);
         showPopup('Status Changed successfully!', 'success');
       } catch (error) {
-        console.error('Error toggling Year status:', error.response ? error.response.data : error.message);
+        console.error('Error toggling Year status:', error);
 
         const errorMessage =
           error.response && error.response.data && error.response.data.message
