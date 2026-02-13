@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
 import { API_HOST, ROLE_API, BRANCH_ADMIN } from "../API/apiConfig";
+import {
+  getRequest,
+  postRequest,
+  putRequest
+} from "../API/apiService"; 
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -11,7 +15,6 @@ import Popup from "../Components/Popup";
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
-
 
 const ManageUserRole = () => {
   const [users, setUsers] = useState([]);
@@ -49,11 +52,6 @@ const ManageUserRole = () => {
   const [showForm, setShowForm] = useState(false);
 
   const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
-    // enterName: 'Enter name',
-    // enterEmail: 'Enter email',
-    // enterPhone: 'Enter phone number',
-    // selectBranch: 'Select Branch',
-    // selectDepartment: 'Select Department',
     search: 'Search...'
   });
 
@@ -69,7 +67,6 @@ const ManageUserRole = () => {
     fetchLoginEmployees();
     fetchBranches();
   }, []);
-
 
   const {
     currentLanguage,
@@ -94,45 +91,25 @@ const ManageUserRole = () => {
     return text;
   }, [isTranslationNeeded, translate]);
 
-
-
   // Update placeholders when language changes
   useEffect(() => {
     const updatePlaceholders = async () => {
       if (!isTranslationNeeded()) {
         setTranslatedPlaceholders({
-          // enterName: 'Enter name',
-          // enterEmail: 'Enter email',
-          // enterPhone: 'Enter phone number',
-          // selectBranch: 'Select Branch',
-          // selectDepartment: 'Select Department',
           search: 'Search...'
         });
         return;
       }
 
-      // const namePlaceholder = await translatePlaceholder('Enter name');
-      // const emailPlaceholder = await translatePlaceholder('Enter email');
-      // const phonePlaceholder = await translatePlaceholder('Enter phone number');
-      // const branchPlaceholder = await translatePlaceholder('Select Branch');
-      // const departmentPlaceholder = await translatePlaceholder('Select Department');
       const searchPlaceholder = await translatePlaceholder('Search...');
 
       setTranslatedPlaceholders({
-        // enterName: namePlaceholder,
-        // enterEmail: emailPlaceholder,
-        // enterPhone: phonePlaceholder,
-        // selectBranch: branchPlaceholder,
-        // selectDepartment: departmentPlaceholder,
         search: searchPlaceholder
       });
     };
 
     updatePlaceholders();
   }, [currentLanguage, translatePlaceholder, isTranslationNeeded]);
-
-
-
 
   useEffect(() => {
     if (selectedBranch) {
@@ -144,10 +121,7 @@ const ManageUserRole = () => {
 
   const fetchBranches = async () => {
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await getRequest(`${API_HOST}/branchmaster/findActiveRole`);
       setBranchData(response.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
@@ -156,13 +130,7 @@ const ManageUserRole = () => {
 
   const fetchDepartments = async (branchId) => {
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentData(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -194,10 +162,7 @@ const ManageUserRole = () => {
 
   const fetchLoginEmployees = async () => {
     try {
-      const userResponse = await axios.get(
-        `${API_HOST}/employee/findById/${employeId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const userResponse = await getRequest(`${API_HOST}/employee/findById/${employeId}`);
 
       if (userResponse.data && userResponse.data.role && userResponse.data.role.roleCode != null) {
         fetchAvailableRolesForUser(userResponse.data.role.roleCode);
@@ -215,14 +180,9 @@ const ManageUserRole = () => {
     try {
       let response;
       if (loginEmpRole === BRANCH_ADMIN && currBranchId) {
-        response = await axios.get(
-          `${API_HOST}/api/EmpRole/branch/${currBranchId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        response = await getRequest(`${API_HOST}/api/EmpRole/branch/${currBranchId}`);
       } else {
-        response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        response = await getRequest(`${API_HOST}/api/EmpRole/employees`);
       }
 
       if (response && response.status === 200) {
@@ -237,7 +197,6 @@ const ManageUserRole = () => {
     }
   };
 
-  // debugger;
   useEffect(() => {
     if (loginEmpRole === BRANCH_ADMIN) {
       fetchLoginEmployees().then(() => {
@@ -250,9 +209,7 @@ const ManageUserRole = () => {
 
   const fetchAvailableRolesForUser = async (userRoleCode) => {
     try {
-      const rolesResponse = await axios.get(`${ROLE_API}/findAll`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const rolesResponse = await getRequest(`${ROLE_API}/findAll`);
 
       const filteredRoles = (rolesResponse.data || []).filter(
         (role) => role.roleCode < userRoleCode
@@ -327,18 +284,9 @@ const ManageUserRole = () => {
         showPopup("User is not authenticated. Please log in again.");
         return false;
       }
-      const response = await axios.post(
-        `${API_HOST}/api/EmpRole/assign`,
-        null, // no body, using query params
-        {
-          params: {
-            empId: selectedUser.employeeId,
-            roleId: roleId,
-          },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await postRequest(
+        `${API_HOST}/api/EmpRole/assign?empId=${selectedUser.employeeId}&roleId=${roleId}`,
+        {} // empty body
       );
 
       if (response.status !== 200) {
@@ -352,7 +300,6 @@ const ManageUserRole = () => {
     }
   };
 
-
   const changeRoleStatus = async (roleId, status) => {
     if (!empId) return false;
     try {
@@ -361,15 +308,9 @@ const ManageUserRole = () => {
         roleId,
         empId,
       };
-      const response = await axios.put(
+      const response = await putRequest(
         `${API_HOST}/api/EmpRole/changeRoleStatus`,
-        updatedRoleRequest,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        updatedRoleRequest
       );
       if (response.status !== 200) throw new Error("Failed to toggle role status");
       return true;
@@ -445,9 +386,6 @@ const ManageUserRole = () => {
 
     return matchesSearch && matchesBranch && matchesDepartment;
   });
-
-
-
 
   const totalItems = filteredUsers.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -528,7 +466,6 @@ const ManageUserRole = () => {
               </select>
             </div>
 
-
             {/* Department Filter */}
             <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
               <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
@@ -555,8 +492,6 @@ const ManageUserRole = () => {
               </select>
             </div>
 
-
-
             {/* Search */}
             <div className="flex items-center w-full md:w-1/4 flex-1">
               <input
@@ -570,7 +505,6 @@ const ManageUserRole = () => {
             </div>
           </div>
         )}
-
 
         {/* List or Inline Form */}
         {!showForm ? (
@@ -591,7 +525,6 @@ const ManageUserRole = () => {
                   <th className="border p-2 text-left"><AutoTranslate>Role</AutoTranslate></th>
                   <th className="border p-2 text-left"><AutoTranslate>Manage Role</AutoTranslate></th>
                 </tr>
-
               </thead>
               <tbody>
                 {paginatedUsers.length > 0 ? (
@@ -642,9 +575,7 @@ const ManageUserRole = () => {
                   }`}
               >
                 <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-
                 <AutoTranslate>Previous</AutoTranslate>
-
               </button>
 
               {totalPages > 0 &&
@@ -661,8 +592,7 @@ const ManageUserRole = () => {
                   </button>
                 ))}
 
-              
-                <span className="text-sm text-gray-700 mx-2">
+              <span className="text-sm text-gray-700 mx-2">
                 <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
               </span>
               
@@ -675,7 +605,6 @@ const ManageUserRole = () => {
                   }`}
               >
                 <AutoTranslate>Next</AutoTranslate>
-
                 <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
               </button>
               <div className="ml-4">
@@ -690,13 +619,11 @@ const ManageUserRole = () => {
         ) : (
           <form className="space-y-4">
             <div className="flex items-center justify-between">
-
               <h2 className="text-xl font-semibold">
                 <AutoTranslate>
                   {selectedUser ? `Edit Roles for ${selectedUser.name || "User"}` : "Edit User"}
                 </AutoTranslate>
               </h2>
-
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -724,7 +651,6 @@ const ManageUserRole = () => {
             {/* Read-only identity fields */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-
                 <label className="text-sm text-gray-700">
                   <AutoTranslate>Name</AutoTranslate>
                 </label>
@@ -735,7 +661,6 @@ const ManageUserRole = () => {
                 />
               </div>
               <div>
-
                 <label className="text-sm text-gray-700">
                   <AutoTranslate>Email</AutoTranslate>
                 </label>
@@ -746,11 +671,9 @@ const ManageUserRole = () => {
                 />
               </div>
               <div>
-
                 <label className="text-sm text-gray-700">
                   <AutoTranslate>Mobile</AutoTranslate>
                 </label>
-
                 <input
                   className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={
@@ -763,11 +686,9 @@ const ManageUserRole = () => {
               </div>
 
               <div>
-
                 <label className="text-sm text-gray-700">
                   <AutoTranslate>Branch</AutoTranslate>
                 </label>
-
                 <input
                   className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={selectedUser?.branchName || "N/A"}
@@ -775,11 +696,9 @@ const ManageUserRole = () => {
                 />
               </div>
               <div>
-
                 <label className="text-sm text-gray-700">
                   <AutoTranslate>Department</AutoTranslate>
                 </label>
-
                 <input
                   className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={selectedUser?.departmentName || "N/A"}
@@ -787,11 +706,9 @@ const ManageUserRole = () => {
                 />
               </div>
               <div>
-
                 <label className="text-sm text-gray-700">
                   <AutoTranslate>Status</AutoTranslate>
                 </label>
-
                 <input
                   className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={selectedUser?.status || "N/A"}
@@ -802,7 +719,6 @@ const ManageUserRole = () => {
 
             {/* Dual list for roles */}
             <div className="mt-2">
-
               <label className="block font-semibold mb-2">
                 <AutoTranslate>Role Assigned</AutoTranslate>
               </label>
@@ -813,7 +729,6 @@ const ManageUserRole = () => {
                   <label className="text-sm font-medium mb-1 block">
                     <AutoTranslate>All Roles</AutoTranslate>
                   </label>
-
                   <select
                     multiple
                     size={8}
@@ -850,7 +765,6 @@ const ManageUserRole = () => {
 
                 {/* Assigned Roles */}
                 <div className="md:col-span-2">
-
                   <label className="text-sm font-medium mb-1 block">
                     <AutoTranslate>Assigned Roles</AutoTranslate>
                   </label>

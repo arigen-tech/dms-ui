@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   EyeIcon,
   XMarkIcon,
@@ -14,15 +13,26 @@ import {
   PrinterIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid";
-import { API_HOST, DOCUMENTHEADER_API, BRANCH_API, DEPAETMENT_API, FILETYPE_API, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
-import { useNavigate } from "react-router-dom";
+import { 
+  API_HOST, 
+  DOCUMENTHEADER_API, 
+  BRANCH_API, 
+  DEPAETMENT_API, 
+  FILETYPE_API, 
+  SYSTEM_ADMIN, 
+  BRANCH_ADMIN, 
+  DEPARTMENT_ADMIN, 
+  USER 
+} from "../API/apiConfig";
+import {
+  getRequest,
+  getImageRequest
+} from "../API/apiService"; 
 import FilePreviewModal from "../Components/FilePreviewModal";
-import apiClient from "../API/apiClient";
 import LoadingComponent from '../Components/LoadingComponent';
-import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
-import { useLanguage } from '../i18n/LanguageContext'; // Import useLanguage hook
+import AutoTranslate from '../i18n/AutoTranslate';
+import { useLanguage } from '../i18n/LanguageContext';
 import Popup from "../Components/Popup";
-
 
 function RejectedDoc() {
   // Get language context
@@ -68,7 +78,6 @@ function RejectedDoc() {
   const [, setOpeningFiles] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
 
-  const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
 
@@ -88,7 +97,7 @@ function RejectedDoc() {
     fetchDepartments();
   }, []);
 
-    const showPopup = (message, type = 'info') => {
+  const showPopup = (message, type = 'info') => {
     setPopupMessage({
       message,
       type,
@@ -138,31 +147,20 @@ function RejectedDoc() {
       let response;
 
       if (role === USER) {
-        response = await axios.get(
-          `${API_HOST}/api/documents/rejected/employee/${UserId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        response = await getRequest(`/api/documents/rejected/employee/${UserId}`);
       } else if (
         role === SYSTEM_ADMIN ||
         role === BRANCH_ADMIN ||
         role === DEPARTMENT_ADMIN
       ) {
-        response = await axios.get(`${API_HOST}/api/documents/rejectedByEmp`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            employeeId: UserId,
-          },
-        });
+        response = await getRequest(`/api/documents/rejectedByEmp`);
       }
 
-      setDocuments(response.data);
+      setDocuments(response || []);
     } catch (error) {
       console.error("Error fetching documents:", error);
       setError("Failed to fetch documents. Please try again.");
+      showPopup('Failed to fetch documents. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -170,32 +168,26 @@ function RejectedDoc() {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBranches(response.data || []);
+      const response = await getRequest(`${BRANCH_API}/findActiveRole`);
+      setBranches(response || []);
     } catch (error) {
-      console.error('Error fetching branches:', error?.response?.data || error.message);
+      console.error('Error fetching branches:', error);
+      showPopup('Error fetching branches', 'error');
     }
   };
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(`${DEPAETMENT_API}/findAll`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDepartments(response.data || []);
+      const response = await getRequest(`${DEPAETMENT_API}/findAll`);
+      setDepartments(response || []);
     } catch (error) {
-      console.error('Error fetching departments:', error?.response?.data || error.message);
+      console.error('Error fetching departments:', error);
+      showPopup('Error fetching departments', 'error');
     }
   };
 
   const fetchPaths = async (doc) => {
     try {
-      if (!token) {
-        throw new Error("No authentication token found.");
-      }
-
       if (!doc) {
         console.error("Document is null or undefined");
         return null;
@@ -213,46 +205,22 @@ function RejectedDoc() {
       }
 
       console.log(`Attempting to fetch paths for document ID: ${documentId}`);
-      console.log(
-        `Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`
+
+      const response = await getRequest(
+        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}/REJECTED`
       );
 
-      const response = await axios.get(
-        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}/REJECTED`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      console.log("Paths response:", response.data);
+      console.log("Paths response:", response);
 
       setSelectedDoc((prevDoc) => ({
         ...prevDoc,
-        paths: Array.isArray(response.data) ? response.data : [],
+        paths: Array.isArray(response) ? response : [],
       }));
 
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error in fetchPaths:", error);
-
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          console.error("Server responded with error:", {
-            status: error.response.status,
-            data: error.response.data,
-          });
-        } else if (error.request) {
-          console.error("No response received:", error.request);
-        }
-      }
-
-      alert(
-        `Failed to fetch document paths: ${error.message || "Unknown error"}`
-      );
-
+      showPopup(`Failed to fetch document paths: ${error.message || "Unknown error"}`, 'error');
       return null;
     }
   };
@@ -270,16 +238,13 @@ function RejectedDoc() {
 
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      // Use getImageRequest for blob responses
+      const blob = await getImageRequest(fileUrl, {}, "blob");
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
       const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
-      setContentType(response.headers["content-type"]);
+      setContentType(blob.type || "application/octet-stream");
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
@@ -328,13 +293,10 @@ function RejectedDoc() {
 
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      // Use getImageRequest for blob responses
+      const blob = await getImageRequest(fileUrl, {}, "blob");
 
       // Create a blob from the response
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
       const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
 
@@ -392,36 +354,23 @@ function RejectedDoc() {
 
   const fetchQRCode = async (documentId) => {
     try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
-
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
+      // Use getImageRequest for image blob responses
+      const qrCodeBlob = await getImageRequest(apiUrl, {}, "blob");
 
       if (!qrCodeBlob.type.includes("image/png")) {
         throw new Error("Received data is not a valid image");
       }
 
       const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-
       setQrCodeUrl(qrCodeUrl);
       setError(""); // Clear any previous errors
     } catch (error) {
+      console.error("Error fetching QR code:", error);
       setQrCodeUrl(null);
       setError("Error displaying QR Code: " + error.message);
+      showPopup('Error displaying QR Code: ' + error.message, 'error');
     }
   };
 
@@ -432,24 +381,10 @@ function RejectedDoc() {
     }
 
     try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
-
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
+      // Use getImageRequest for image blob responses
+      const qrCodeBlob = await getImageRequest(apiUrl, {}, "blob");
       const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
 
       const link = document.createElement("a");
@@ -459,8 +394,9 @@ function RejectedDoc() {
 
       window.URL.revokeObjectURL(qrCodeUrl);
     } catch (error) {
+      console.error("Error downloading QR Code:", error);
       setError("Error downloading QR Code: " + error.message);
-    } finally {
+      showPopup('Error downloading QR Code: ' + error.message, 'error');
     }
   };
 
@@ -472,13 +408,18 @@ function RejectedDoc() {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const options = {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    };
-    return date.toLocaleString("en-GB", options).replace(",", "");
+    if (!dateString) return "--";
+    try {
+      const date = new Date(dateString);
+      const options = {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      };
+      return date.toLocaleString("en-GB", options).replace(",", "");
+    } catch (error) {
+      return "--";
+    }
   };
 
   // Enhanced filtering logic with branch/department filters and null-safe search
@@ -503,7 +444,7 @@ function RejectedDoc() {
             value.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
           );
         }
-        if (key === "paths" && Array.isArray(value)) {
+        if (key === "documentDetails" && Array.isArray(value)) {
           return value.some((file) => file.docName?.toLowerCase().includes(searchTerm.toLowerCase()));
         }
         if (key === "updatedOn" || key === "createdOn") {
@@ -558,6 +499,8 @@ function RejectedDoc() {
   const closeModal = () => {
     setIsOpen(false);
     setSelectedDoc(null);
+    setQrCodeUrl(null);
+    setSearchFileTerm("");
   };
 
   const handlePrintReport = async (id) => {
@@ -568,7 +511,7 @@ function RejectedDoc() {
         method: "GET",
         headers: {
           "Content-Type": "application/pdf",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
         },
       });
 
@@ -587,20 +530,18 @@ function RejectedDoc() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading PDF:", error);
+      showPopup('Error printing report: ' + error.message, 'error');
     }
   };
 
   const fetchFilesType = async () => {
     try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      setFilesType(response?.data?.response ?? []);
+      const response = await getRequest(`${FILETYPE_API}/getAllActive`);
+      setFilesType(response?.response ?? []);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
       setFilesType([]);
+      showPopup('Error fetching file types', 'error');
     }
   };
 
@@ -608,12 +549,13 @@ function RejectedDoc() {
     fetchFilesType();
     setViewFileTypeModel(true);
     setIsUploading(false);
-  }
+  };
 
   const handlecloseFileType = () => {
     setViewFileTypeModel(false);
     setIsUploading(false);
-  }
+    setSearchFileTerm("");
+  };
 
   const filteredFiles = (filesType ?? []).filter((file) =>
     file.filetype?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -631,13 +573,13 @@ function RejectedDoc() {
       </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
         {popupMessage && (
-                <Popup
-                  message={popupMessage.message}
-                  type={popupMessage.type}
-                  onClose={popupMessage.onClose}
-                />
-              )}
-        
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={popupMessage.onClose}
+          />
+        )}
+
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Items Per Page (50%) */}
           <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
@@ -780,7 +722,7 @@ function RejectedDoc() {
                       {doc.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>}
                     </td>
                     <td className="border p-2">
-                      {doc?.documentDetails?.length}
+                      {doc?.documentDetails?.length || 0}
                     </td>
                     {role === USER && (
                       <td className="border p-2">
@@ -862,7 +804,6 @@ function RejectedDoc() {
                             { label: "Title", value: selectedDoc?.title },
                             { label: "Subject", value: selectedDoc?.subject },
                             { label: "Category", value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate> },
-                            // { label: "Status", value: selectedDoc?.approvalStatus },
                             { label: "Upload By", value: selectedDoc?.employee?.name },
                           ].map((item, idx) => (
                             <div key={idx} className="space-y-1">
@@ -987,38 +928,37 @@ function RejectedDoc() {
                                   <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
                                   <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
                                   <div className="flex justify-center no-print">
-  <button
-    onClick={() => {
-      setOpeningFileIndex(index);
-      setSelectedDocFiles(file);
-      openFile(file).finally(() => setOpeningFileIndex(null));
-    }}
-    disabled={openingFileIndex !== null}
-    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-      ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-  >
-    {openingFileIndex === index ? (
-      <>
-        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-        </AutoTranslate>
-      </>
-    ) : (
-      <>
-        {file.ltoArchived && !file.restored ? (
-          <ArrowPathIcon className="h-3 w-3" /> 
-        ) : (
-          <EyeIcon className="h-3 w-3" /> 
-        )}
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restore" : "View"}
-          
-        </AutoTranslate>
-      </>
-    )}
-  </button>
-</div>
+                                    <button
+                                      onClick={() => {
+                                        setOpeningFileIndex(index);
+                                        setSelectedDocFiles(file);
+                                        openFile(file).finally(() => setOpeningFileIndex(null));
+                                      }}
+                                      disabled={openingFileIndex !== null}
+                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                        ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                    >
+                                      {openingFileIndex === index ? (
+                                        <>
+                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                          <AutoTranslate>
+                                            {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                          </AutoTranslate>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {file.ltoArchived && !file.restored ? (
+                                            <ArrowPathIcon className="h-3 w-3" />
+                                          ) : (
+                                            <EyeIcon className="h-3 w-3" />
+                                          )}
+                                          <AutoTranslate>
+                                            {file.ltoArchived && !file.restored ? "Restore" : "View"}
+                                          </AutoTranslate>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
                                 </div>
 
                                 {/* Mobile View */}
@@ -1060,38 +1000,37 @@ function RejectedDoc() {
                                   </div>
 
                                   <div className="flex justify-center no-print">
-  <button
-    onClick={() => {
-      setOpeningFileIndex(index);
-      setSelectedDocFiles(file);
-      openFile(file).finally(() => setOpeningFileIndex(null));
-    }}
-    disabled={openingFileIndex !== null}
-    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-      ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-  >
-    {openingFileIndex === index ? (
-      <>
-        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-        </AutoTranslate>
-      </>
-    ) : (
-      <>
-        {file.ltoArchived && !file.restored ? (
-          <ArrowPathIcon className="h-3 w-3" /> 
-        ) : (
-          <EyeIcon className="h-3 w-3" /> 
-        )}
-        <AutoTranslate>
-          {file.ltoArchived && !file.restored ? "Restore" : "View"}
-          
-        </AutoTranslate>
-      </>
-    )}
-  </button>
-</div>
+                                    <button
+                                      onClick={() => {
+                                        setOpeningFileIndex(index);
+                                        setSelectedDocFiles(file);
+                                        openFile(file).finally(() => setOpeningFileIndex(null));
+                                      }}
+                                      disabled={openingFileIndex !== null}
+                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                        ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                    >
+                                      {openingFileIndex === index ? (
+                                        <>
+                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                          <AutoTranslate>
+                                            {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                          </AutoTranslate>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {file.ltoArchived && !file.restored ? (
+                                            <ArrowPathIcon className="h-3 w-3" />
+                                          ) : (
+                                            <EyeIcon className="h-3 w-3" />
+                                          )}
+                                          <AutoTranslate>
+                                            {file.ltoArchived && !file.restored ? "Restore" : "View"}
+                                          </AutoTranslate>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -1139,7 +1078,7 @@ function RejectedDoc() {
                     type="text"
                     placeholder="Search file type..."
                     value={searchTerm}
-                    onChange={(e) => setSearchFileTerm(e.target.value)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     maxLength={20}
                     className="w-full p-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -1165,7 +1104,6 @@ function RejectedDoc() {
                 </div>
               </div>
             )}
-
           </>
           <FilePreviewModal
             isOpen={isModalOpen}
@@ -1218,10 +1156,10 @@ function RejectedDoc() {
             </button>
             <div className="ml-4">
               <span className="text-sm text-gray-700">
-              <AutoTranslate>
-                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                  } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-              </AutoTranslate>
+                <AutoTranslate>
+                  {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+                </AutoTranslate>
               </span>
             </div>
           </div>

@@ -12,8 +12,11 @@ import {
 } from "@heroicons/react/24/solid"
 import { BellAlertIcon } from "@heroicons/react/24/solid"
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
 import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig"
+import {
+  getRequest,
+  putRequest
+} from "../API/apiService"; 
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -109,10 +112,7 @@ export const NotificationBell = () => {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_HOST}/notifications`, {
-        params: { employeeId: userId },
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      })
+      const response = await getRequest(`${API_HOST}/notifications?employeeId=${userId}`);
 
       const allNotifications = response.data.response
       const allowedTypes = getAllowedNotificationTypes(role)
@@ -285,10 +285,7 @@ export const Notification = () => {
   const fetchNotifications = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`${API_HOST}/notifications`, {
-        params: { employeeId: userId },
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      })
+      const response = await getRequest(`${API_HOST}/notifications?employeeId=${userId}`);
       const allNotifications = response.data.response
 
       // Filter by role using the helper function
@@ -332,9 +329,7 @@ export const Notification = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      await axios.put(`${API_HOST}/notifications/${notificationId}/read`, null, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      })
+      await putRequest(`${API_HOST}/notifications/${notificationId}/read`, {});
 
       // Immediately remove the notification from the list
       setNotifications(prevNotifications =>
@@ -376,9 +371,7 @@ export const Notification = () => {
 
     try {
       const markAsReadPromises = notifications.map(notification =>
-        axios.put(`${API_HOST}/notifications/${notification.id}/read`, null, {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        })
+        putRequest(`${API_HOST}/notifications/${notification.id}/read`, {})
       );
 
       await Promise.all(markAsReadPromises);

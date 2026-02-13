@@ -1,5 +1,4 @@
-import Popup from "../Components/Popup";
-import LoadingComponent from '../Components/LoadingComponent';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -10,16 +9,24 @@ import {
   PencilIcon,
   PlusCircleIcon,
 } from "@heroicons/react/24/solid";
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import axios from "axios";
 import {
   REGISTER_API,
   EMPLOYEE_API,
   BRANCH_API,
-  DEPAETMENT_API
-  , SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER
+  DEPAETMENT_API,
+  SYSTEM_ADMIN,
+  BRANCH_ADMIN,
+  DEPARTMENT_ADMIN,
+  API_HOST,
+  USER
 } from "../API/apiConfig";
-import { API_HOST } from "../API/apiConfig";
+import {
+  getRequest,
+  postRequest,
+  putRequest
+} from "../API/apiService"; 
+import Popup from "../Components/Popup";
+import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
@@ -150,28 +157,21 @@ const UserAddEmployee = () => {
 
   const fetchBranches = async () => {
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBranchData(response.data);
+      const response = await getRequest(`${BRANCH_API}/findActiveRole`);
+      setBranchData(response || []);
     } catch (error) {
       console.error("Error fetching branches:", error);
+      showPopupMessage('Error fetching branches', 'error');
     }
   };
 
   const fetchFilterDepartments = async (branchId) => {
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setDepartmentData(response.data);
+      const response = await getRequest(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
+      setDepartmentData(response || []);
     } catch (error) {
       console.error("Error fetching departments:", error);
+      showPopupMessage('Error fetching departments', 'error');
     }
   };
 
@@ -214,23 +214,24 @@ const UserAddEmployee = () => {
     return re.test(mobile);
   };
 
+  const showPopupMessage = (message, type = 'info') => {
+    setShowPopup(true);
+    setPopupConfig({
+      message,
+      type,
+    });
+    setTimeout(() => setShowPopup(false), 3000);
+  };
+
   const fetchEmployees = async () => {
     setIsLoading(true);
     try {
       const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("tokenKey");
 
-      const userResponse = await axios.get(
-        `${EMPLOYEE_API}/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const userResponse = await getRequest(`${EMPLOYEE_API}/findById/${userId}`);
 
-      const userData = userResponse.data;
-      setUserName(userResponse.data.name);
+      const userData = userResponse;
+      setUserName(userData.name);
 
       const userBranch = userData.branch
         ? { id: userData.branch.id, name: userData.branch.name }
@@ -260,34 +261,16 @@ const UserAddEmployee = () => {
       }
 
       if (isAdmin) {
-        const allEmployeesResponse = await axios.get(
-          `${API_HOST}/employee/findAll`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setEmployees(allEmployeesResponse.data);
+        const allEmployeesResponse = await getRequest(`${API_HOST}/employee/findAll`);
+        setEmployees(allEmployeesResponse || []);
       } else {
-        const createdByResponse = await axios.get(
-          `${API_HOST}/employee/employeeCreateby/${userData.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setEmployees(createdByResponse.data.response);
+        const createdByResponse = await getRequest(`${API_HOST}/employee/employeeCreateby/${userData.id}`);
+        setEmployees(createdByResponse?.response || []);
       }
     } catch (error) {
       console.error("Error fetching user details or employees:", error);
       setError("Could not fetch user details or employees");
-      setShowPopup(true);
-      setPopupConfig({
-        message: "Error fetching data. Please try again.",
-        type: "error",
-      });
+      showPopupMessage("Error fetching data. Please try again.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -295,46 +278,21 @@ const UserAddEmployee = () => {
 
   const fetchOptions = async () => {
     try {
-      const token = localStorage.getItem("tokenKey");
-
-      const branchesRes = await axios.get(`${BRANCH_API}/findActiveRole`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setBranchOptions(branchesRes.data);
+      const branchesRes = await getRequest(`${BRANCH_API}/findActiveRole`);
+      setBranchOptions(branchesRes || []);
     } catch (error) {
       setError("Error fetching branch options.");
-      setShowPopup(true);
-      setPopupConfig({
-        message: "Error fetching branch options.",
-        type: "error",
-      });
+      showPopupMessage("Error fetching branch options.", "error");
     }
   };
 
   const fetchDepartments = async (branchId) => {
     try {
-      const token = localStorage.getItem("tokenKey");
-
-      const departmentsRes = await axios.get(
-        `${DEPAETMENT_API}/findByBranch/${branchId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setDepartmentOptions(departmentsRes.data);
+      const departmentsRes = await getRequest(`${DEPAETMENT_API}/findByBranch/${branchId}`);
+      setDepartmentOptions(departmentsRes || []);
     } catch (error) {
       setError("Error fetching departments.");
-      setShowPopup(true);
-      setPopupConfig({
-        message: "Error fetching departments.",
-        type: "error",
-      });
+      showPopupMessage("Error fetching departments.", "error");
     }
   };
 
@@ -474,7 +432,6 @@ const UserAddEmployee = () => {
     setIsButtonDisabled(true);
 
     try {
-      const token = localStorage.getItem("tokenKey");
       const userId = parseInt(localStorage.getItem("userId"), 10);
 
       const fullMobileNumber = `${formData.mobile}`;
@@ -493,24 +450,11 @@ const UserAddEmployee = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.post(
-        `${REGISTER_API}/create`,
-        employeeData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await postRequest(`${REGISTER_API}/create`, employeeData);
 
-      setShowPopup(true);
-      setPopupConfig({
-        message: "Employee added successfully!",
-        type: "success",
-      });
+      showPopupMessage("Employee added successfully!", "success");
 
-      setEmployees(prev => [...prev, response.data]);
+      setEmployees(prev => [...prev, response]);
 
       setFormData({
         name: "",
@@ -525,20 +469,16 @@ const UserAddEmployee = () => {
       setMobileError("");
       setError("");
 
-      setTimeout(() => setShowPopup(false), 3000);
-
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data ||
         "Failed to add employee. Please try again.";
 
-      setShowPopup(true);
-      setPopupConfig({
-        message: typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage,
-        type: "error",
-      });
-      setTimeout(() => setShowPopup(false), 3000);
+      showPopupMessage(
+        typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage,
+        "error"
+      );
     } finally {
       setIsSubmitting(false);
       setIsButtonDisabled(false);
@@ -600,7 +540,6 @@ const UserAddEmployee = () => {
     setIsButtonDisabled(true);
 
     try {
-      const token = localStorage.getItem("tokenKey");
       const fullMobileNumber = `${formData.countryCode}${formData.mobile}`;
 
       const updatedEmployeeData = {
@@ -617,25 +556,15 @@ const UserAddEmployee = () => {
         enabled: formData.enabled,
       };
 
-      const response = await axios.put(
+      const response = await putRequest(
         `${API_HOST}/employee/update/${formData.id}`,
-        updatedEmployeeData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+        updatedEmployeeData
       );
 
-      setShowPopup(true);
-      setPopupConfig({
-        message: "Employee updated successfully!",
-        type: "success",
-      });
+      showPopupMessage("Employee updated successfully!", "success");
 
       const updatedEmployees = employees.map((emp) =>
-        emp.id === formData.id ? response.data : emp
+        emp.id === formData.id ? response : emp
       );
       setEmployees(updatedEmployees);
 
@@ -656,24 +585,18 @@ const UserAddEmployee = () => {
       setMobileError("");
       setError("");
 
-      setTimeout(() => setShowPopup(false), 3000);
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
         "Error updating employee. Please try again.";
-      setShowPopup(true);
-      setPopupConfig({
-        message: errorMessage,
-        type: "error",
-      });
-      setTimeout(() => setShowPopup(false), 3000);
+      showPopupMessage(errorMessage, "error");
     } finally {
       setIsSubmitting(false);
       setIsButtonDisabled(false);
     }
   };
 
-  const handleToggleActive = async (employee) => {
+  const handleToggleActive = (employee) => {
     setEmployeeToToggle(employee);
     setModalVisible(true);
   };
@@ -684,28 +607,18 @@ const UserAddEmployee = () => {
     try {
       const newStatus = !employeeToToggle.active;
 
-      const response = await axios.put(
+      const response = await putRequest(
         `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`,
-        newStatus,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
-            "Content-Type": "application/json",
-          },
-        }
+        newStatus
       );
 
-      console.log("Toggle status response:", response.data);
+      console.log("Toggle status response:", response);
 
       const message = newStatus
         ? "Employee has been activated."
         : "Employee has been deactivated.";
 
-      setShowPopup(true);
-      setPopupConfig({
-        message: message,
-        type: "success",
-      });
+      showPopupMessage(message, "success");
 
       const updatedEmployees = employees.map((employee) =>
         employee.id === employeeToToggle.id
@@ -714,17 +627,11 @@ const UserAddEmployee = () => {
       );
       setEmployees(updatedEmployees);
 
-      setTimeout(() => setShowPopup(false), 3000);
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
         "Error toggling employee status. Please try again.";
-      setShowPopup(true);
-      setPopupConfig({
-        message: errorMessage,
-        type: "error",
-      });
-      setTimeout(() => setShowPopup(false), 3000);
+      showPopupMessage(errorMessage, "error");
     } finally {
       setModalVisible(false);
       setEmployeeToToggle(null);
@@ -737,13 +644,18 @@ const UserAddEmployee = () => {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const options = {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    };
-    return date.toLocaleString("en-GB", options).replace(",", "");
+    if (!dateString) return "--";
+    try {
+      const date = new Date(dateString);
+      const options = {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      };
+      return date.toLocaleString("en-GB", options).replace(",", "");
+    } catch (error) {
+      return "--";
+    }
   };
 
   const formatMobileNumber = (mobile) => {
@@ -890,7 +802,6 @@ const UserAddEmployee = () => {
                 <input
                   type="tel"
                   placeholder={getFallbackTranslation('Enter Mobile Number', currentLanguage) || 'Enter Mobile Number'}
-
                   name="mobile"
                   value={formData.mobile || ""}
                   onChange={handleInputChange}

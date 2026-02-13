@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { API_HOST , SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from '../API/apiConfig';
-import apiClient from "../API/apiClient";
-import axios from 'axios';
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from '../API/apiConfig';
+import {
+  getRequest,
+  postRequest,
+  getImageRequest
+} from "../API/apiService"
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -107,8 +110,6 @@ const Search = () => {
     return role.replace(" ", "_");
   };
 
-
-
   // Pagination state
   const [itemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -153,8 +154,6 @@ const Search = () => {
     }
   }, [branchId]);
 
-
-
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
       if (e.key === 'Enter') {
@@ -178,12 +177,7 @@ const Search = () => {
     setIsLoading(true);
     try {
       const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("tokenKey");
-
-      const res = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await getRequest(`${API_HOST}/employee/findById/${userId}`);
 
       const role = normalizeRole(res.data.role?.role);
       setUserRole(role);
@@ -212,17 +206,10 @@ const Search = () => {
     }
   };
 
-
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(
-        `${API_HOST}/CategoryMaster/findAll`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/CategoryMaster/findAll`);
       setCategoryOptions(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -234,10 +221,7 @@ const Search = () => {
   const fetchYears = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(`${YEAR_API}/findAll`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await getRequest(`${YEAR_API}/findAll`);
       setYearOptions(response.data); // Set fetched years
     } catch (error) {
       console.error('Error fetching years:', error);
@@ -249,13 +233,7 @@ const Search = () => {
   const fetchBranches = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(
-        `${API_HOST}/branchmaster/findAll`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/branchmaster/findAll`);
       setBranchOptions(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -267,13 +245,7 @@ const Search = () => {
   const fetchDepartments = async (branchId) => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentOptions(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -284,7 +256,6 @@ const Search = () => {
 
   const fetchPaths = async (doc) => {
     try {
-      const token = localStorage.getItem("tokenKey");
       if (!token) {
         throw new Error("No authentication token found.");
       }
@@ -295,15 +266,7 @@ const Search = () => {
       }
 
       console.log(`Attempting to fetch paths for document ID: ${doc.id}`);
-      const response = await axios.get(
-        `${DOCUMENTHEADER_API}/byDocumentHeader/${doc.id}/ALL`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        }
-      );
+      const response = await getRequest(`${DOCUMENTHEADER_API}/byDocumentHeader/${doc.id}/ALL`);
 
       setSelectedDoc((prevDoc) => ({
         ...prevDoc,
@@ -326,7 +289,6 @@ const Search = () => {
     setCurrentPage(1);
   };
 
-
   const addMetadataFilter = () => {
     setMetadataFilters(prev => [...prev, { key: '', value: '' }]);
   };
@@ -343,7 +305,6 @@ const Search = () => {
     );
   };
 
-
   const handleSearch = async () => {
     if (isSearching) return;
 
@@ -351,8 +312,6 @@ const Search = () => {
       setIsSearching(true);
       setSearchResults([]);
       setNoResultsFound(false);
-
-      const token = localStorage.getItem('tokenKey');
 
       const hasIncompleteMetadata = metadataFilters.some(
         m => (m.key && !m.value) || (!m.key && m.value)
@@ -402,15 +361,9 @@ const Search = () => {
         size: itemsPerPage,
       };
 
-      const response = await axios.post(
+      const response = await postRequest(
         `${API_HOST}/api/documents/search`,
-        searchPayload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
+        searchPayload
       );
 
       setSearchResults(response.data);
@@ -423,7 +376,6 @@ const Search = () => {
       setIsSearching(false); // ✅ always stop loading
     }
   };
-
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -465,16 +417,13 @@ const Search = () => {
 
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      const response = await getImageRequest(fileUrl, {}, "blob");
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const blob = new Blob([response], { type: response.headers?.["content-type"] || "application/octet-stream" });
       const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
-      setContentType(response.headers["content-type"]);
+      setContentType(response.headers?.["content-type"] || "");
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
@@ -523,13 +472,10 @@ const Search = () => {
 
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      const response = await getImageRequest(fileUrl, {}, "blob");
 
       // Create a blob from the response
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const blob = new Blob([response], { type: response.headers?.["content-type"] || "application/octet-stream" });
       const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
 
@@ -574,7 +520,6 @@ const Search = () => {
     }
   };
 
-
   const filteredDocFiles = useMemo(() => {
     if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
 
@@ -601,18 +546,7 @@ const Search = () => {
       // API URL to fetch the QR code
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
+      const qrCodeBlob = await getImageRequest(apiUrl, {}, "blob");
 
       console.log("Fetched QR code Blob:", qrCodeBlob);
 
@@ -642,19 +576,8 @@ const Search = () => {
       // API URL to download the QR code
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      // Fetch the QR code as a Blob (binary data) with the token in the Authorization header
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
+      // Fetch the QR code as a Blob (binary data)
+      const qrCodeBlob = await getImageRequest(apiUrl, {}, "blob");
       const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
 
       // Create an anchor link to trigger the download
@@ -700,18 +623,10 @@ const Search = () => {
     if (!id) return;
 
     try {
-      const response = await fetch(`http://localhost:8443/api/reports/document/${id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/pdf",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await getImageRequest(`http://localhost:8443/api/reports/document/${id}`, {}, "blob");
 
-      if (!response.ok) throw new Error("Failed to download PDF");
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+      const blob = new Blob([response], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
 
       // Create a temporary <a> element to download the PDF
       const link = document.createElement("a");
@@ -728,11 +643,7 @@ const Search = () => {
 
   const fetchFilesType = async () => {
     try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await getRequest(`${FILETYPE_API}/getAllActive`);
       setFilesType(response?.data?.response ?? []);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
@@ -744,12 +655,12 @@ const Search = () => {
     fetchFilesType();
     setViewFileTypeModel(true);
     setIsUploading(false);
-  }
+  };
 
   const handlecloseFileType = () => {
     setViewFileTypeModel(false);
     setIsUploading(false);
-  }
+  };
 
   const filteredFiles = (filesType ?? []).filter((file) =>
     file.filetype?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -765,140 +676,138 @@ const Search = () => {
   };
 
   const renderSearchFields = () => {
-  const isAdmin = userRole === "ADMIN";
-  const isBranchAdmin = userRole === "BRANCH_ADMIN";
-  const isDeptUser = userRole === "DEPARTMENT_ADMIN" || userRole === USER;
+    const isAdmin = userRole === "ADMIN";
+    const isBranchAdmin = userRole === "BRANCH_ADMIN";
+    const isDeptUser = userRole === "DEPARTMENT_ADMIN" || userRole === USER;
 
-  const fieldWrapper = "flex flex-col gap-1";
+    const fieldWrapper = "flex flex-col gap-1";
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-      {/* File No */}
-      <div className={fieldWrapper}>
-        <label className="text-sm font-medium"><AutoTranslate>File No</AutoTranslate></label>
-        <input
-          placeholder="Enter File No"
-          value={fileNo}
-          onChange={(e) => setFileNo(e.target.value)}
-          className="p-2 border rounded-md"
-        />
+        {/* File No */}
+        <div className={fieldWrapper}>
+          <label className="text-sm font-medium"><AutoTranslate>File No</AutoTranslate></label>
+          <input
+            placeholder="Enter File No"
+            value={fileNo}
+            onChange={(e) => setFileNo(e.target.value)}
+            className="p-2 border rounded-md"
+          />
+        </div>
+
+        {/* Title */}
+        <div className={fieldWrapper}>
+          <label className="text-sm font-medium"><AutoTranslate>Title</AutoTranslate></label>
+          <input
+            placeholder="Enter Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="p-2 border rounded-md"
+          />
+        </div>
+
+        {/* Subject */}
+        <div className={fieldWrapper}>
+          <label className="text-sm font-medium"><AutoTranslate>Subject</AutoTranslate></label>
+          <input
+            placeholder="Enter Subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="p-2 border rounded-md"
+          />
+        </div>
+
+        {/* Version */}
+        <div className={fieldWrapper}>
+          <label className="text-sm font-medium"><AutoTranslate>Version</AutoTranslate></label>
+          <input
+            placeholder="Enter Version"
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
+            className="p-2 border rounded-md"
+          />
+        </div>
+
+        {/* Category */}
+        <div className={fieldWrapper}>
+          <label className="text-sm font-medium"><AutoTranslate>Category</AutoTranslate></label>
+          <select
+            value={categoryId ?? ""}
+            onChange={(e) =>
+              setCategoryId(e.target.value ? Number(e.target.value) : null)
+            }
+            className="p-2 border rounded-md"
+          >
+            <option value="">All Categories</option>
+            {categoryOptions.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Branch */}
+        <div className={fieldWrapper}>
+          <label className="text-sm font-medium"><AutoTranslate>Branch</AutoTranslate></label>
+          <select
+            value={branchId ?? ""}
+            disabled={!isAdmin}
+            onChange={(e) => {
+              const value = e.target.value ? Number(e.target.value) : null;
+              setBranchId(value);
+              setDepartmentId(null);
+            }}
+            className={`p-2 border rounded-md ${
+              !isAdmin ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
+          >
+            <option value="">All Branches</option>
+            {branchOptions.map((b) => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Department */}
+        <div className={fieldWrapper}>
+          <label className="text-sm font-medium"><AutoTranslate>Department</AutoTranslate></label>
+          <select
+            value={departmentId ?? ""}
+            disabled={isDeptUser || !branchId}
+            onChange={(e) =>
+              setDepartmentId(e.target.value ? Number(e.target.value) : null)
+            }
+            className={`p-2 border rounded-md ${
+              isDeptUser || !branchId ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
+          >
+            <option value="">All Departments</option>
+            {departmentOptions.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Year */}
+        {/* <div className={fieldWrapper}>
+          <label className="text-sm font-medium"><AutoTranslate>Year</AutoTranslate></label>
+          <select
+            value={yearId ?? ""}
+            onChange={(e) =>
+              setYearId(e.target.value ? Number(e.target.value) : null)
+            }
+            className="p-2 border rounded-md"
+          >
+            <option value="">All Years</option>
+            {yearOptions.map((y) => (
+              <option key={y.id} value={y.id}>{y.name}</option>
+            ))}
+          </select>
+        </div> */}
+
       </div>
-
-      {/* Title */}
-      <div className={fieldWrapper}>
-        <label className="text-sm font-medium"><AutoTranslate>Title</AutoTranslate></label>
-        <input
-          placeholder="Enter Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="p-2 border rounded-md"
-        />
-      </div>
-
-      {/* Subject */}
-      <div className={fieldWrapper}>
-        <label className="text-sm font-medium"><AutoTranslate>Subject</AutoTranslate></label>
-        <input
-          placeholder="Enter Subject"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          className="p-2 border rounded-md"
-        />
-      </div>
-
-      {/* Version */}
-      <div className={fieldWrapper}>
-        <label className="text-sm font-medium"><AutoTranslate>Version</AutoTranslate></label>
-        <input
-          placeholder="Enter Version"
-          value={version}
-          onChange={(e) => setVersion(e.target.value)}
-          className="p-2 border rounded-md"
-        />
-      </div>
-
-      {/* Category */}
-      <div className={fieldWrapper}>
-        <label className="text-sm font-medium"><AutoTranslate>Category</AutoTranslate></label>
-        <select
-          value={categoryId ?? ""}
-          onChange={(e) =>
-            setCategoryId(e.target.value ? Number(e.target.value) : null)
-          }
-          className="p-2 border rounded-md"
-        >
-          <option value="">All Categories</option>
-          {categoryOptions.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Branch */}
-      <div className={fieldWrapper}>
-        <label className="text-sm font-medium"><AutoTranslate>Branch</AutoTranslate></label>
-        <select
-          value={branchId ?? ""}
-          disabled={!isAdmin}
-          onChange={(e) => {
-            const value = e.target.value ? Number(e.target.value) : null;
-            setBranchId(value);
-            setDepartmentId(null);
-          }}
-          className={`p-2 border rounded-md ${
-            !isAdmin ? "bg-gray-100 cursor-not-allowed" : ""
-          }`}
-        >
-          <option value="">All Branches</option>
-          {branchOptions.map((b) => (
-            <option key={b.id} value={b.id}>{b.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Department */}
-      <div className={fieldWrapper}>
-        <label className="text-sm font-medium"><AutoTranslate>Department</AutoTranslate></label>
-        <select
-          value={departmentId ?? ""}
-          disabled={isDeptUser || !branchId}
-          onChange={(e) =>
-            setDepartmentId(e.target.value ? Number(e.target.value) : null)
-          }
-          className={`p-2 border rounded-md ${
-            isDeptUser || !branchId ? "bg-gray-100 cursor-not-allowed" : ""
-          }`}
-        >
-          <option value="">All Departments</option>
-          {departmentOptions.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Year */}
-      {/* <div className={fieldWrapper}>
-        <label className="text-sm font-medium"><AutoTranslate>Year</AutoTranslate></label>
-        <select
-          value={yearId ?? ""}
-          onChange={(e) =>
-            setYearId(e.target.value ? Number(e.target.value) : null)
-          }
-          className="p-2 border rounded-md"
-        >
-          <option value="">All Years</option>
-          {yearOptions.map((y) => (
-            <option key={y.id} value={y.id}>{y.name}</option>
-          ))}
-        </select>
-      </div> */}
-
-    </div>
-  );
-};
-
-
+    );
+  };
 
   return (
     <div className="p-1">
@@ -970,7 +879,6 @@ const Search = () => {
           </button>
         </div>
 
-
         <button
           onClick={handleSearch}
           disabled={isSearching}
@@ -984,7 +892,6 @@ const Search = () => {
             {isSearching ? 'Searching...' : 'Search'}
           </AutoTranslate>
         </button>
-
 
         {/* Search Results Table */}
         {isSearching ? (

@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import apiClient from "../API/apiClient";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Popup from "../Components/Popup";
 import { useDropzone } from "react-dropzone";
@@ -7,6 +6,14 @@ import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from '../Components/LoadingComponent';
 import { Tooltip } from "react-tooltip";
 import WaitingRoom from '../Data/WaitingRoom';
+
+// Import API functions
+import {
+  getRequest,
+  postRequest,
+  putRequest,
+  getImageRequest
+} from "../API/apiService";
 
 // Import AutoTranslate components
 import AutoTranslate from '../i18n/AutoTranslate';
@@ -126,7 +133,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
   const [deletedMetaDataIds, setDeletedMetaDataIds] = useState([]);
 
-
   useEffect(() => {
     if (data) {
       handleEditDocument(data);
@@ -150,11 +156,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchFilesType = async () => {
     try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await getRequest(`${FILETYPE_API}/getAllActive`);
       setFilesType(response?.data?.response ?? []);
     } catch (error) {
       console.error(<AutoTranslate>Error fetching Files Types:</AutoTranslate>, error);
@@ -191,12 +193,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchCategory = async () => {
     try {
-      const response = await apiClient.get(
-        `${API_HOST}/CategoryMaster/findActiveCategory`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/CategoryMaster/findActiveCategory`);
       setCategoryOptions(response.data);
     } catch (error) {
       console.error(<AutoTranslate>Error fetching categories:</AutoTranslate>, error);
@@ -205,12 +202,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchYear = async () => {
     try {
-      const response = await apiClient.get(
-        `${API_HOST}/YearMaster/findActiveYear`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/YearMaster/findActiveYear`);
 
       const currentYear = new Date().getFullYear();
       const yearsData = Array.isArray(response.data)
@@ -380,12 +372,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const fetchUser = async () => {
     try {
       const userId = localStorage.getItem("userId");
-      const response = await apiClient.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/employee/findById/${userId}`);
       setUserBranch(response.data.branch.name);
       setUserDep(response.data.department.name);
     } catch (error) {
@@ -396,12 +383,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(
-        `${DOCUMENTHEADER_API}/pending/employee/${UserId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${DOCUMENTHEADER_API}/pending/employee/${UserId}`);
       setDocuments(response.data);
       setTotalItems(response.data.length);
     } catch (error) {
@@ -466,16 +448,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      const response = await getImageRequest(fileUrl, {}, "blob");
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const blob = new Blob([response], { type: response.headers?.["content-type"] || "application/octet-stream" });
       const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
-      setContentType(response.headers["content-type"]);
+      setContentType(response.headers?.["content-type"] || "");
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
@@ -487,15 +466,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   const extractBlobMessage = async (blob) => {
-  try {
-    const text = await blob.text();
-    const json = JSON.parse(text);
-    return json.message || "Access denied";
-  } catch {
-    return "Access denied";
-  }
-};
-
+    try {
+      const text = await blob.text();
+      const json = JSON.parse(text);
+      return json.message || "Access denied";
+    } catch {
+      return "Access denied";
+    }
+  };
 
   const handleDownload = async (file, action = "download") => {
     if (!selectedDoc) return;
@@ -521,13 +499,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     )}/${encodeURIComponent(fileName)}?action=${action}`;
 
     try {
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      const response = await getImageRequest(fileUrl, {}, "blob");
 
-      const downloadBlob = new Blob([response.data], {
-        type: response.headers["content-type"],
+      const downloadBlob = new Blob([response], {
+        type: response.headers?.["content-type"] || "application/octet-stream",
       });
 
       const link = document.createElement("a");
@@ -544,32 +519,26 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       URL.revokeObjectURL(link.href);
     } catch (error) {
-  if (error.response?.status === 403) {
-    const msg = await extractBlobMessage(error.response.data);
-    showPopup(msg, "error");
-    return;
-  }
-
-  showPopup("Failed to download file. Please try again.", "error");
-}
-
+      if (error.response?.status === 403) {
+        const msg = await extractBlobMessage(error.response.data);
+        showPopup(msg, "error");
+        return;
+      }
+      showPopup("Failed to download file. Please try again.", "error");
+    }
   };
-
 
   const openFileBeforeSubmit = async (file, index) => {
     setOpeningFiles(index);
     try {
       const fileUrl = `${API_HOST}/api/documents/download/${file}`;
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      const response = await getImageRequest(fileUrl, {}, "blob");
 
-      const blob = new Blob([response.data], { type: response.headers["content-type"] });
+      const blob = new Blob([response], { type: response.headers?.["content-type"] || "application/octet-stream" });
       const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
-      setContentType(response.headers["content-type"]);
+      setContentType(response.headers?.["content-type"] || "");
       setSearchFileTerm("");
       setIsModalOpen(true);
     } catch (error) {
@@ -590,13 +559,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       const fileUrl = `${API_HOST}/home/download/waitingroom/${encodeURIComponent(fileName)}`;
 
-      const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      });
+      const response = await getImageRequest(fileUrl, {}, "blob");
 
-      const contentType = response.headers["content-type"] || "";
-      const blob = new Blob([response.data], { type: contentType });
+      const contentType = response.headers?.["content-type"] || "";
+      const blob = new Blob([response], { type: contentType });
       const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
@@ -611,28 +577,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       setOpeningFiles(null);
     }
   };
-
-  // const handleDownload = async (file, action = "download") => {
-  //   const encodedPath = file.path.split("/").map(encodeURIComponent).join("/");
-  //   const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
-
-  //   const response = await apiClient.get(fileUrl, {
-  //     headers: { Authorization: `Bearer ${token}` },
-  //     responseType: "blob",
-  //   });
-
-  //   const downloadBlob = new Blob([response.data], {
-  //     type: response.headers["content-type"],
-  //   });
-
-  //   const link = document.createElement("a");
-  //   link.href = window.URL.createObjectURL(downloadBlob);
-  //   link.download = file.docName;
-  //   document.body.appendChild(link);
-  //   link.click();
-  //   document.body.removeChild(link);
-  //   URL.revokeObjectURL(link.href);
-  // };
 
   const filteredDocFiles = useMemo(() => {
     if (!selectedDoc || !Array.isArray(selectedDoc.paths)) return [];
@@ -904,9 +848,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   });
 
-
-
-
   console.log("metadataObject", metadataObject)
 
   const handleCancelUpload = () => {
@@ -960,7 +901,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     setDynamicMetadata(formattedMetadata);
 
-
     if (formSectionRef.current) {
       formSectionRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -1012,28 +952,18 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       deletedMetaDataIds
     };
 
-
     try {
       setBProcess(true);
 
-      const response = await fetch(`${API_HOST}/api/documents/update`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await putRequest(`${API_HOST}/api/documents/update`, payload);
 
-      const result = await response.json();
-
-      if (!response.ok || result?.status === 409 || result?.message?.toLowerCase() !== "success") {
-        const warningMessage = result?.response?.msg || result?.message || "Unknown error occurred";
+      if (!response.ok && response?.status === 409) {
+        const warningMessage = response?.response?.msg || response?.message || "Unknown error occurred";
         showPopup(`Document update failed: ${warningMessage}`, "warning");
         return;
       }
 
-      showPopup(result?.response?.msg || "Document updated successfully!", "success");
+      showPopup(response?.response?.msg || "Document updated successfully!", "success");
       resetEditForm();
       fetchDocuments();
     } catch (error) {
@@ -1132,25 +1062,16 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     try {
       setBProcess(true);
 
-      const response = await fetch(`${API_HOST}/api/documents/save`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await postRequest(`${API_HOST}/api/documents/save`, payload);
 
-      const result = await response.json();
-
-      if (!response.ok || result?.status === 409) {
+      if (response?.status === 409) {
         const errorMessage =
-          result?.response?.msg || result?.message || "Unknown error";
+          response?.response?.msg || response?.message || "Unknown error";
         showPopup(`Document save failed: ${errorMessage}`, "warning");
         return;
       }
 
-      showPopup(result?.response?.msg || "Document saved successfully", "success");
+      showPopup(response?.response?.msg || "Document saved successfully", "success");
 
       setFormData({
         fileNo: "",
@@ -1192,15 +1113,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         return null;
       }
 
-      const response = await apiClient.get(
-        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}/PENDING`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await getRequest(`${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}/PENDING`);
 
       const paths = Array.isArray(response.data)
         ? response.data
@@ -1308,18 +1221,10 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     if (!id) return;
 
     try {
-      const response = await fetch(`http://localhost:8443/api/reports/document/${id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/pdf",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await getImageRequest(`http://localhost:8443/api/reports/document/${id}`, {}, "blob");
 
-      if (!response.ok) throw new Error(<AutoTranslate>Failed to download PDF</AutoTranslate>);
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+      const blob = new Blob([response], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
       link.href = url;
@@ -1369,18 +1274,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(<AutoTranslate>Failed to fetch QR code</AutoTranslate>);
-      }
-
-      const qrCodeBlob = await response.blob();
+      const qrCodeBlob = await getImageRequest(apiUrl, {}, "blob");
 
       if (!qrCodeBlob.type.includes("image/png")) {
         throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
@@ -1407,18 +1301,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(<AutoTranslate>Failed to fetch QR code</AutoTranslate>);
-      }
-
-      const qrCodeBlob = await response.blob();
+      const qrCodeBlob = await getImageRequest(apiUrl, {}, "blob");
       const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
 
       const link = document.createElement("a");
@@ -1652,8 +1535,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 + Add Metadata
               </button>
             </div>
-
-
 
             <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
               <h2 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">

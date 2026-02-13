@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
 import { API_HOST } from "../API/apiConfig";
+import {
+  getRequest,
+  putRequest
+} from "../API/apiService"; 
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -51,8 +54,6 @@ const EmployeeRole = () => {
   const [departmentData, setDepartmentData] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
-
-  const token = localStorage.getItem("tokenKey");
 
   // Function to translate placeholder text
   const translatePlaceholder = useCallback(async (text) => {
@@ -115,10 +116,7 @@ const EmployeeRole = () => {
 
   const fetchBranches = async () => {
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await getRequest(`${API_HOST}/branchmaster/findActiveRole`);
       setBranchData(response.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
@@ -127,13 +125,7 @@ const EmployeeRole = () => {
 
   const fetchDepartments = async (branchId) => {
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await getRequest(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentData(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -148,9 +140,7 @@ const EmployeeRole = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.get(`${API_HOST}/employee/pending-by-branch`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await getRequest(`${API_HOST}/employee/pending-by-branch`);
       setUsers(response.data);
     } catch (error) {
       showPopup("Error fetching users. Please try again.", "error");
@@ -164,9 +154,7 @@ const EmployeeRole = () => {
 
     try {
       const userId = localStorage.getItem("userId");
-      const response = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await getRequest(`${API_HOST}/employee/findById/${userId}`);
       setCurrRoleCode(response.data.role.roleCode);
     } catch (error) {
       showPopup("Error fetching employee details.", "error");
@@ -184,9 +172,7 @@ const EmployeeRole = () => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get(`${API_HOST}/RoleMaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await getRequest(`${API_HOST}/RoleMaster/findActiveRole`);
       const filteredRoles = response.data.filter(role => role.roleCode < currRoleCode);
       setRoles(filteredRoles);
     } catch (error) {
@@ -204,15 +190,9 @@ const EmployeeRole = () => {
   const confirmRoleAssignment = async () => {
     setIsSubmitting(true);
     try {
-      await axios.put(
+      await putRequest(
         `${API_HOST}/employee/${selectedUser}/role`,
-        { roleName: selectedRole },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { roleName: selectedRole }
       );
       showPopup("Role assigned successfully!", "success");
       await fetchUsers();
