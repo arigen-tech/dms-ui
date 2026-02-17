@@ -2,6 +2,8 @@ import { TYPE_API } from '../API/apiConfig';
 import { ArrowLeftIcon, LockClosedIcon, LockOpenIcon, ArrowRightIcon, CheckCircleIcon, PencilIcon, PlusCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from "../API/apiClient";
+
 
 const tokenKey = 'tokenKey'; // Correct token key name
 
@@ -18,11 +20,7 @@ const Type = () => {
   useEffect(() => {
     const fetchTypes = async () => {
       try {
-        const response = await axios.get(`${TYPE_API}/findAll`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await apiClient.get(`${TYPE_API}/findAll`);
         setTypes(response.data);
       } catch (error) {
         console.error('Error fetching types:', error);
@@ -48,11 +46,7 @@ const Type = () => {
   const handleAddType = async () => {
     if (formData.name.trim()) {
       try {
-        const response = await axios.post(`${TYPE_API}/save`, formData, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await apiClient.post(`${TYPE_API}/save`, formData);
         setTypes([...types, response.data]);
         setFormData({ name: '' });
         alert('Type added successfully!');
@@ -76,11 +70,7 @@ const Type = () => {
           name: formData.name,
           updatedOn: new Date().toISOString(),
         };
-        const response = await axios.put(`${TYPE_API}/update/${updatedType.id}`, updatedType, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await apiClient.put(`${TYPE_API}/update/${updatedType.id}`, updatedType);
         const updatedTypes = types.map((type, index) =>
           index === editingIndex ? response.data : type
         );
@@ -110,13 +100,12 @@ const Type = () => {
         };
 
         const token = localStorage.getItem(tokenKey); // Retrieve token from local storage
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${TYPE_API}/updatestatus/${updatedType.id}`, // Update API endpoint
           updatedType,
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
           }
         );

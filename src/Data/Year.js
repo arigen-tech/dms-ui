@@ -9,6 +9,8 @@ import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 const tokenKey = 'tokenKey';
 
@@ -116,9 +118,7 @@ const Year = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem(tokenKey);
-      const response = await axios.get(`${YEAR_API}/findAll`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get(`${YEAR_API}/findAll`);
       setYears(response.data);
       console.log('✅ Years loaded');
     } catch (error) {
@@ -165,9 +165,7 @@ const Year = () => {
 
       try {
         const token = localStorage.getItem(tokenKey);
-        const response = await axios.post(`${YEAR_API}/save`, newYear, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await apiClient.post(`${YEAR_API}/save`, newYear,);
         setYears([...years, response.data]);
         setFormData({ year: '' });
         showPopup("Year added successfully!", "success");
@@ -206,9 +204,7 @@ const Year = () => {
           updatedOn: new Date().toISOString(),
         };
         const token = localStorage.getItem(tokenKey);
-        await axios.put(`${YEAR_API}/update/${updatedYear.id}`, updatedYear, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.put(`${YEAR_API}/update/${updatedYear.id}`, updatedYear);
         setYears(years.map((year, index) =>
           index === editingIndex ? updatedYear : year
         ));
@@ -242,13 +238,12 @@ const Year = () => {
         };
 
         const token = localStorage.getItem(tokenKey);
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${YEAR_API}/updatestatus/${updatedYear.id}`,
           updatedYear,
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
           }
         );

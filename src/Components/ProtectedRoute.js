@@ -58,6 +58,9 @@ const validRoutes = [
   "/duplicate-files",
   "/shared-documents",
   "/manage-allow-funcationality",
+  "/documents-archived-report",
+  "/documents-downloaded-report",
+  "/documents-upload-report"
 ];
 
 const NotAuthorized = () => {

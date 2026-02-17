@@ -35,8 +35,8 @@ const SearchByScan = () => {
   const [cameraActive, setCameraActive] = useState(false)
   const [error, setError] = useState(null)
   const token = localStorage.getItem("tokenKey")
-  const userId = localStorage.getItem("userId")
-  const role = localStorage.getItem("role")
+  const userId = localStorage.getItem("id")
+  const role = localStorage.getItem("roles")
   const [popupMessage, setPopupMessage] = useState(null)
   const location = useLocation()
   const [file, setFile] = useState(null)
@@ -289,9 +289,7 @@ const SearchByScan = () => {
     }
 
     try {
-      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`)
 
       if (response.status === 200) {
         const { branch, department } = response.data || {}
@@ -325,15 +323,13 @@ const SearchByScan = () => {
     if (!token) {
       const currentUrl = window.location.href
       localStorage.setItem("redirectUrl", currentUrl)
-      navigate("/login")
+      navigate("/")
       return
     }
 
     setLoading(true)
     try {
-      const response = await apiClient.get(`/api/documents/findBy/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await apiClient.get(`/api/documents/findBy/${id}`)
       setHeaderData(response.data)
       // Scroll to document section after load
       setTimeout(() => {
@@ -397,7 +393,7 @@ const SearchByScan = () => {
     formData.append("file", fileToSubmit)
 
     try {
-      const response = await apiClient.post("/api/documents/read", formData, {
+      const response = await apiClient.postForm("/api/documents/read", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
 
@@ -444,7 +440,6 @@ const SearchByScan = () => {
         const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
         const response = await apiClient.get(fileUrl, {
-          headers: { Authorization: `Bearer ${token}` },
           responseType: "blob",
         });
 
@@ -467,7 +462,6 @@ const SearchByScan = () => {
         const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch || '')}/${encodeURIComponent(department || '')}/${encodeURIComponent(year || '')}/${encodeURIComponent(category || '')}/${encodeURIComponent(version || '')}/${encodeURIComponent(fileName || '')}?action=view`;
 
         const response = await apiClient.get(fileUrl, {
-          headers: { Authorization: `Bearer ${token}` },
           responseType: "blob",
         });
 
@@ -557,7 +551,6 @@ const SearchByScan = () => {
 
       const response = await apiClient.get(fileUrl, {
         headers: {
-          Authorization: `Bearer ${token}`,
           Accept: '*/*'
         },
         responseType: 'blob',
@@ -610,7 +603,7 @@ const SearchByScan = () => {
       if (error.response) {
         if (error.response.status === 401) {
           errorMessage = "Unauthorized. Please login again.";
-          navigate("/login");
+          navigate("/");
         } else if (error.response.status === 403) {
           // 403 Forbidden - Common causes:
           // 1. User doesn't have permission for this branch/department

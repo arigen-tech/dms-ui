@@ -7,6 +7,8 @@ import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
+import apiClient from "../API/apiClient";
+
 
 const ArchiveUpload = () => {
   const {
@@ -64,16 +66,9 @@ const ArchiveUpload = () => {
     setIsLoading(true);
 
     try {
-      const userId = localStorage.getItem("userId");
+      const userId = localStorage.getItem("id");
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
 
       setUserRole(response.data.role);
       setUserBranch(response.data.branch);
@@ -101,9 +96,7 @@ const ArchiveUpload = () => {
 
     try {
       const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(`${API_HOST}/branchmaster/findAll`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findAll`);
       setBranchOptions(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -120,12 +113,7 @@ const ArchiveUpload = () => {
   const fetchDepartments = async (branchId) => {
     try {
       const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentOptions(response.data);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -181,9 +169,8 @@ const ArchiveUpload = () => {
 
     try {
       const token = localStorage.getItem('tokenKey');
-      await axios.post(`${API_HOST}${endpoint}`, formData, {
+      await apiClient.post(`${API_HOST}${endpoint}`, formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         },
         onUploadProgress: (progressEvent) => {

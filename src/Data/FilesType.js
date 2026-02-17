@@ -15,6 +15,8 @@ import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 const tokenKey = 'tokenKey';
 
@@ -124,11 +126,7 @@ const FilesType = () => {
   const fetchFilesType = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${FILETYPE_API}/getAll`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${FILETYPE_API}/getAll`);
       setFilesType(response?.data?.response || []);
       console.log('✅ File types loaded');
     } catch (error) {
@@ -204,10 +202,9 @@ const FilesType = () => {
         isActive: formData.isActive ? 1 : 0,
       };
 
-      const response = await axios.post(`${FILETYPE_API}/create`, newFileType, {
+      const response = await apiClient.post(`${FILETYPE_API}/create`, newFileType, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -283,11 +280,7 @@ const FilesType = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const response = await axios.put(`${FILETYPE_API}/updateById/${updatedFileType.id}`, updatedFileType, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await apiClient.put(`${FILETYPE_API}/updateById/${updatedFileType.id}`, updatedFileType);
 
         const updatedFileTypes = filesType?.map(branch =>
           branch.id === updatedFileType.id ? response.data : branch
@@ -323,13 +316,12 @@ const FilesType = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${FILETYPE_API}/update/status/${updatedFilesType.id}?status=${updatedFilesType.status}`,
           {},
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
           }
         );

@@ -111,7 +111,7 @@ const ApprovedDoc = () => {
   const [modalOpenedFromSelectedDoc, setModalOpenedFromSelectedDoc] = useState(false);
 
   const token = localStorage.getItem("tokenKey");
-  const UserId = localStorage.getItem("userId");
+  const UserId = localStorage.getItem("id");
   const role = localStorage.getItem("role");
 
   // Get current date-time in format for datetime-local input (YYYY-MM-DDTHH:mm)
@@ -374,12 +374,8 @@ const ApprovedDoc = () => {
   // Check if a document has shares
   const checkIfDocumentHasShares = useCallback(async (docId) => {
     try {
-      const response = await axios.get(
-        `${API_HOST}/document-share/document/${docId}/shares`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(
+        `${API_HOST}/document-share/document/${docId}/shares`);
 
       const shares = response.data || [];
       return shares.length > 0;
@@ -397,12 +393,8 @@ const ApprovedDoc = () => {
 
     for (const doc of documents) {
       try {
-        const response = await axios.get(
-          `${API_HOST}/document-share/document/${doc.id}/shares`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await apiClient.get(
+          `${API_HOST}/document-share/document/${doc.id}/shares`);
 
         const shares = response.data || [];
         if (shares.length > 0) {
@@ -487,20 +479,15 @@ const ApprovedDoc = () => {
       let response;
 
       if (role === USER) {
-        response = await axios.get(
-          `${API_HOST}/api/documents/approved/employee/${UserId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        response = await apiClient.get(
+          `${API_HOST}/api/documents/approved/employee/${UserId}`);
       } else if (
         role === SYSTEM_ADMIN ||
         role === BRANCH_ADMIN ||
         role === DEPARTMENT_ADMIN
       ) {
-        response = await axios.get(`${API_HOST}/api/documents/approvedByEmp`, {
+        response = await apiClient.get(`${API_HOST}/api/documents/approvedByEmp`, {
           headers: {
-            Authorization: `Bearer ${token}`,
             employeeId: UserId,
           },
         });
@@ -650,12 +637,11 @@ const ApprovedDoc = () => {
       };
 
       // Call bulk share endpoint
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/document-share/bulk-share`,
         bulkShareRequest,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -726,13 +712,12 @@ const ApprovedDoc = () => {
     if (fileToDelete) {
       try {
         // Call the API to move file to trash (set isDeleted = true)
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${DOCUMENTHEADER_API}/delete-status/${fileToDelete.id}`,
           null,
           {
             params: { isDeleted: true },
             headers: {
-              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }
@@ -969,7 +954,6 @@ const ApprovedDoc = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -1027,7 +1011,6 @@ const ApprovedDoc = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -1191,11 +1174,7 @@ const ApprovedDoc = () => {
 
   const fetchFilesType = async () => {
     try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`);
       setFilesType(response?.data?.response ?? []);
     } catch (error) {
       console.error('Error fetching Files Types:', error);
@@ -1242,14 +1221,7 @@ const ApprovedDoc = () => {
       setLoadingEmployees(true);
 
       // Call the API endpoint that returns employees in current user's branch and department
-      const response = await axios.get(
-        `${API_HOST}/employee/current/branch-department`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/employee/current/branch-department`);
 
       // Based on your response, the data is in response.data.response
       const employees = response?.data?.response || [];
@@ -1322,12 +1294,11 @@ const ApprovedDoc = () => {
         endTime: shareEndTime ? new Date(shareEndTime).toISOString() : null
       };
 
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/document-share/share`,
         shareRequest,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -1368,12 +1339,7 @@ const ApprovedDoc = () => {
 
   const fetchDocumentShares = async (documentHeaderId) => {
     try {
-      const response = await axios.get(
-        `${API_HOST}/document-share/document/${documentHeaderId}/shares`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/document-share/document/${documentHeaderId}/shares`);
 
       const shares = response.data || [];
 
@@ -1422,12 +1388,11 @@ const ApprovedDoc = () => {
         reason: revokeReason
       };
 
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/document-share/revoke`,
         revokeRequest,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }

@@ -130,13 +130,9 @@ const Approve = () => {
     setLoading(true);
     setError("");
     try {
-      const userId = localStorage.getItem("userId");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        }
-      );
+      const userId = localStorage.getItem("id");
+      const response = await apiClient.get(
+        `${API_HOST}/employee/findById/${userId}`);
       setUserBranch(response.data.branch);
     } catch (error) {
       console.error("Error fetching user branch:", error);
@@ -150,19 +146,15 @@ const Approve = () => {
     setLoading(true);
     setError("");
     try {
-      const userId = localStorage.getItem("userId");
+      const userId = localStorage.getItem("id");
 
       if (!tokenKey || !userId) {
         setError("Authentication details missing. Please log in again.");
         setLoading(false);
         return;
       }
-      const userResponse = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        }
-      );
+      const userResponse = await apiClient.get(
+        `${API_HOST}/employee/findById/${userId}`);
 
       const departmentId = userResponse.data?.department?.id;
       const branchId = userResponse.data?.branch?.id;
@@ -176,9 +168,7 @@ const Approve = () => {
         url = `${DOCUMENTHEADER_API}/pendingByBranch/${branchId}`;
       }
 
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      });
+      const response = await apiClient.get(url);
 
       setDocuments(response.data);
 
@@ -200,9 +190,7 @@ const Approve = () => {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      });
+      const response = await apiClient.get(`${BRANCH_API}/findActiveRole`);
       setBranches(response.data || []);
     } catch (error) {
       console.error('Error fetching branches:', error?.response?.data || error.message);
@@ -211,9 +199,7 @@ const Approve = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(`${DEPAETMENT_API}/findAll`, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      });
+      const response = await apiClient.get(`${DEPAETMENT_API}/findAll`);
       setDepartments(response.data || []);
     } catch (error) {
       console.error('Error fetching departments:', error?.response?.data || error.message);
@@ -226,12 +212,8 @@ const Approve = () => {
         throw new Error("No authentication tokenKey found.");
       }
 
-      const response = await axios.get(
-        `${API_HOST}/api/documents/byDocumentHeader/${doc.id}/PENDING`,
-        {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        }
-      );
+      const response = await apiClient.get(
+        `${API_HOST}/api/documents/byDocumentHeader/${doc.id}/PENDING`);
 
       console.log("paths", response.data);
 
@@ -256,7 +238,6 @@ const Approve = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
         responseType: "blob",
       });
 
@@ -317,7 +298,6 @@ const Approve = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
         responseType: "blob",
       });
 
@@ -391,14 +371,13 @@ const Approve = () => {
 
   const approveDocument = async () => {
     try {
-      const employeeId = localStorage.getItem("userId");
+      const employeeId = localStorage.getItem("id");
 
-      const response = await axios.patch(
+      const response = await axios.apiClient(
         `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`,
         null,
         {
           headers: {
-            Authorization: `Bearer ${tokenKey}`,
             employeeId: employeeId,
           },
           params: {
@@ -421,14 +400,13 @@ const Approve = () => {
 
   const handleRejectDocument = async () => {
     try {
-      const employeeId = localStorage.getItem("userId");
+      const employeeId = localStorage.getItem("id");
 
-      const response = await axios.patch(
+      const response = await apiClient.patch(
         `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`,
         null,
         {
           headers: {
-            Authorization: `Bearer ${tokenKey}`,
             employeeId: employeeId,
           },
           params: {

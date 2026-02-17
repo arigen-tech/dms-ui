@@ -141,9 +141,7 @@ const FileCompare = () => {
   const fetchAllDocumentHeaders = async () => {
     setIsLoading(true)
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/getAllDocument`, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      })
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/getAllDocument`)
       setDocumentHeaders(response.data || [])
     } catch (error) {
       console.error("Error fetching document headers:", error)
@@ -155,12 +153,7 @@ const FileCompare = () => {
 
   const fetchCategory = async () => {
     try {
-      const response = await axios.get(
-        `${API_HOST}/CategoryMaster/findActiveCategory`,
-        {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        }
-      )
+      const response = await apiClient.get(`${API_HOST}/CategoryMaster/findActiveCategory`)
       setCategoryOptions(response.data)
     } catch (error) {
       console.error("Error fetching categories:", error)
@@ -174,9 +167,7 @@ const FileCompare = () => {
     try {
       console.log(`📋 Fetching documents for file: ${fileNo}`);
 
-      const response = await axios.get(`${DOCUMENTHEADER_API}/getFile/${fileNo}`, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      });
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/getFile/${fileNo}`);
 
       const data = response.data || {};
       const fileList = data.fileList || [];
@@ -447,9 +438,6 @@ const FileCompare = () => {
 
       // Fetch the file
       const response = await apiClient.get(fileUrl, {
-        headers: {
-          Authorization: `Bearer ${tokenKey}`
-        },
         responseType: "blob"
       });
 
@@ -785,15 +773,14 @@ const FileCompare = () => {
       });
 
       // Make API call to compare files
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${DOCUMENTHEADER_API}/compare`,
         {
           firstFileId: firstFileId.toString(),
           secondFileId: secondFileId.toString()
         },
         {
-          headers: {
-            Authorization: `Bearer ${tokenKey}`,  // ✅ FIXED: Use correct tokenKey
+          headers: {  
             "Content-Type": "application/json"
           },
           timeout: 60000
@@ -891,8 +878,7 @@ const FileCompare = () => {
 
   const downloadFile = async (fileId, fileName) => {
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/download/${fileId}`, {
-        headers: { Authorization: `Bearer ${tokenKey}` },  // ✅ FIXED: Use correct tokenKey
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/download/${fileId}`, {
         responseType: "blob",
       })
 

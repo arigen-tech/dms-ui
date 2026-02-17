@@ -28,9 +28,7 @@ const WaitingRoom = ({ isOpen, onClose, onSelectDocuments, metadata, token }) =>
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get("/home/getallwaitingroom", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get("/home/getallwaitingroom");
       const docs = response?.data?.response || [];
       setDocuments(docs);
     } catch (error) {
@@ -49,7 +47,6 @@ const WaitingRoom = ({ isOpen, onClose, onSelectDocuments, metadata, token }) =>
       const fileUrl = `${API_HOST}/home/download/waitingroom/${encodeURIComponent(fileName)}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 

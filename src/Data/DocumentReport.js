@@ -9,6 +9,8 @@ import Popup from '../Components/Popup';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
+import apiClient from "../API/apiClient";
+
 
 
 const DocumentReport = () => {
@@ -46,8 +48,8 @@ const DocumentReport = () => {
   const [showModal, setShowModal] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
 
-  const role = localStorage.getItem("role");
-  const userId = localStorage.getItem("userId");
+  const role = localStorage.getItem("roles");
+  const userId = localStorage.getItem("id");
 
   // Debug log
   useEffect(() => {
@@ -122,9 +124,7 @@ const DocumentReport = () => {
   const fetchBranches = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/branchmaster/findAll`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findAll`);
       setBranchOptions(response.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
@@ -134,12 +134,7 @@ const DocumentReport = () => {
   const fetchDepartments = async (branchId) => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentOptions(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -149,9 +144,7 @@ const DocumentReport = () => {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/CategoryMaster/findAll`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_HOST}/CategoryMaster/findAll`);
       setCategoryOptions(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -160,16 +153,8 @@ const DocumentReport = () => {
 
   const fetchUserDetails = async () => {
     try {
-      const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const userId = localStorage.getItem("id");
+      const response = await apiClient.get( `${API_HOST}/employee/findById/${userId}`);
 
       setUserBranch(response.data.branch);
       setUserDepartment(response.data.department);
@@ -224,9 +209,8 @@ const DocumentReport = () => {
           ? `${DOCUMENTHEADER_API}/export/ById`
           : `${DOCUMENTHEADER_API}/export`;
 
-      const response = await axios.post(apiUrl, requestBody, {
+      const response = await apiClient.post(apiUrl, requestBody, {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         responseType: "blob", // Handle binary file

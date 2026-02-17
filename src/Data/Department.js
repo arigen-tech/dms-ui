@@ -15,6 +15,8 @@ import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 const tokenKey = 'tokenKey';
 
@@ -124,20 +126,12 @@ const Department = () => {
       setIsLoading(true);
       try {
         // Fetch branches
-        const branchesResponse = await axios.get(`${BRANCH_API}/findActiveRole`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const branchesResponse = await apiClient.get(`${BRANCH_API}/findActiveRole`);
         setBranches(branchesResponse.data);
         console.log('✅ Branches loaded');
 
         // Fetch departments
-        const departmentsResponse = await axios.get(`${DEPAETMENT_API}/findAll`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const departmentsResponse = await apiClient.get(`${DEPAETMENT_API}/findAll`);
         setDepartments(departmentsResponse.data);
         console.log('✅ Departments loaded');
       } catch (error) {
@@ -220,10 +214,9 @@ const Department = () => {
         isActive: formData.isActive ? 1 : 0,
       };
 
-      const response = await axios.post(`${DEPAETMENT_API}/save`, newDepartment, {
+      const response = await apiClient.post(`${DEPAETMENT_API}/save`, newDepartment, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -277,10 +270,9 @@ const Department = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.put(`${DEPAETMENT_API}/update/${updatedDepartment.id}`, updatedDepartment, {
+      const response = await apiClient.put(`${DEPAETMENT_API}/update/${updatedDepartment.id}`, updatedDepartment, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -311,13 +303,12 @@ const Department = () => {
       try {
         const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
 
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
           isActive,
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
             },
           }
         );

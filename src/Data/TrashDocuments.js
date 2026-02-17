@@ -75,8 +75,8 @@ const TrashDoc = () => {
   const [isBulkFileRestoring, setIsBulkFileRestoring] = useState(false);
 
   const token = localStorage.getItem("tokenKey");
-  const UserId = localStorage.getItem("userId");
-  const role = localStorage.getItem("role");
+  const UserId = localStorage.getItem("id");
+  const role = localStorage.getItem("roles");
 
   useEffect(() => {
     console.log('🔍 TrashDoc Component - Language Status:', {
@@ -228,20 +228,14 @@ const TrashDoc = () => {
       let response;
 
       if (role === USER) {
-        response = await axios.get(
-          `${API_HOST}/api/documents/approved/employee/${UserId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        response = await apiClient.get(`${API_HOST}/api/documents/approved/employee/${UserId}`);
       } else if (
         role === SYSTEM_ADMIN ||
         role === BRANCH_ADMIN ||
         role === DEPARTMENT_ADMIN
       ) {
-        response = await axios.get(`${API_HOST}/api/documents/approvedTrashByEmp`, {
+        response = await apiClient.get(`${API_HOST}/api/documents/approvedTrashByEmp`, {
           headers: {
-            Authorization: `Bearer ${token}`,
             employeeId: UserId,
           },
         });
@@ -365,13 +359,12 @@ const TrashDoc = () => {
     if (fileToRestore) {
       try {
         // Call the API to restore file (set isDeleted = false)
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${DOCUMENTHEADER_API}/delete-status/${fileToRestore.id}`,
           null,
           {
             params: { isDeleted: false },
             headers: {
-              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }
@@ -555,7 +548,6 @@ const TrashDoc = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -613,7 +605,6 @@ const TrashDoc = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 

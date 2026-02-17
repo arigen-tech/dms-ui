@@ -97,7 +97,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const token = localStorage.getItem("tokenKey");
-  const UserId = localStorage.getItem("userId");
+  const UserId = localStorage.getItem("id");
   const [error, setError] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [filesType, setFilesType] = useState([]);
@@ -150,11 +150,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchFilesType = async () => {
     try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`);
       setFilesType(response?.data?.response ?? []);
     } catch (error) {
       console.error(<AutoTranslate>Error fetching Files Types:</AutoTranslate>, error);
@@ -191,12 +187,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchCategory = async () => {
     try {
-      const response = await apiClient.get(
-        `${API_HOST}/CategoryMaster/findActiveCategory`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/CategoryMaster/findActiveCategory`);
       setCategoryOptions(response.data);
     } catch (error) {
       console.error(<AutoTranslate>Error fetching categories:</AutoTranslate>, error);
@@ -205,12 +196,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchYear = async () => {
     try {
-      const response = await apiClient.get(
-        `${API_HOST}/YearMaster/findActiveYear`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/YearMaster/findActiveYear`);
 
       const currentYear = new Date().getFullYear();
       const yearsData = Array.isArray(response.data)
@@ -379,13 +365,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
   const fetchUser = async () => {
     try {
-      const userId = localStorage.getItem("userId");
-      const response = await apiClient.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const userId = localStorage.getItem("id");
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
       setUserBranch(response.data.branch.name);
       setUserDep(response.data.department.name);
     } catch (error) {
@@ -396,12 +377,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(
-        `${DOCUMENTHEADER_API}/pending/employee/${UserId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/pending/employee/${UserId}`);
       setDocuments(response.data);
       setTotalItems(response.data.length);
     } catch (error) {
@@ -467,7 +443,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -522,7 +497,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
     try {
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -561,7 +535,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     try {
       const fileUrl = `${API_HOST}/api/documents/download/${file}`;
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -591,7 +564,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       const fileUrl = `${API_HOST}/home/download/waitingroom/${encodeURIComponent(fileName)}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -967,7 +939,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   const handleSaveEdit = async () => {
-    const userId = localStorage.getItem("userId");
+    const userId = localStorage.getItem("id");
     if (!userId || !token) {
       showPopup("User not logged in. Please log in again.", "error");
       return;
@@ -1196,7 +1168,6 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}/PENDING`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }

@@ -39,7 +39,8 @@ const LoginPage = () => {
     confirmPassword: "",
   });
 
-  
+
+
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -56,7 +57,7 @@ const LoginPage = () => {
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Use language context
-   const {
+  const {
     currentLanguage,
     defaultLanguage,
     translationStatus,
@@ -68,7 +69,7 @@ const LoginPage = () => {
     preloadTranslationsForTerms
   } = useLanguage();
 
-   useEffect(() => {
+  useEffect(() => {
     console.log('🔍 DocumentManagement Component - Language Status:', {
       currentLanguage,
       defaultLanguage,
@@ -80,21 +81,21 @@ const LoginPage = () => {
   }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
 
-  
+
   const [selectedLanguageId, setSelectedLanguageId] = useState(null);
-  
+
   const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const LENGTH = 5;
 
   // Load languages and set selected language
   useEffect(() => {
     setCaptcha(generateCaptcha());
-    
+
     // Set selected language based on current language in context
     if (availableLanguages.length > 0) {
       // First try to use saved language from localStorage
       const savedLang = localStorage.getItem('uilanguage');
-      
+
       if (savedLang) {
         const savedLangObj = availableLanguages.find(l => l.code === savedLang);
         if (savedLangObj) {
@@ -105,7 +106,7 @@ const LoginPage = () => {
           }
         }
       }
-      
+
       // If no saved language or not found, use English
       if (!selectedLanguageId) {
         const englishLang = availableLanguages.find(l => l.code === 'en');
@@ -547,6 +548,8 @@ const LoginPage = () => {
     }
   };
 
+
+
   // Request OTP function with languageId
   const requestOtp = async () => {
     if (!formData.username || !formData.password || !formData.captcha) {
@@ -571,10 +574,11 @@ const LoginPage = () => {
       });
 
       if (response.status === 200) {
-        if (response.data.role === null) {
+        if (!response.data.roles) {
           showAlert("Employee Type not assigned. Please contact Admin.");
           return;
         }
+
         setIsOtpRequested(true);
         setOtpTimer(300);
         setCanResendOtp(false);
@@ -615,11 +619,23 @@ const LoginPage = () => {
     }
   };
 
-  // Updated handleLogin function to save language code
+  // Generate or retrieve device ID
+  const getDeviceId = () => {
+    let deviceId = localStorage.getItem("deviceId");
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem("deviceId", deviceId);
+    }
+    return deviceId;
+  };
+
+  // Update handleLogin function
   const handleLogin = async (e) => {
     e.preventDefault();
 
     const otp = otpDigits.join("").trim();
+    const deviceId = getDeviceId(); // Get device ID
+
     if (otpTimer === 0) {
       showAlert("OTP has expired. Please request a new one by clicking resend.");
       return;
@@ -641,38 +657,33 @@ const LoginPage = () => {
       const response = await axios.post(LOGIN_API_verify, {
         email: formData.username,
         otp: otp,
+        deviceId: deviceId // Send device ID
       });
 
       if (response.status === 200) {
         setOtpDigits(Array(6).fill(""));
-        const { token, roles, currRoleId, name, id, languageCode } = response.data;
+        const {
+          token,
+          refreshToken, // Get refresh token
+          roles,
+          currRoleId,
+          name,
+          id,
+          languageCode
+        } = response.data;
 
-        // IMPORTANT: Save language preference BEFORE navigating
-        if (languageCode) {
-          console.log(`🔤 Login: Received languageCode: ${languageCode}`);
-          
-          // Update language in context - this will trigger translations
-          await changeLanguage(languageCode);
-          
-          // Also update dropdown selection
-          const selectedLang = availableLanguages.find(l => l.code === languageCode);
-          if (selectedLang) {
-            setSelectedLanguageId(selectedLang.id);
-          }
-        }
-
-        const decodedToken = jwtDecode(token);
-        const expirationTime = decodedToken.exp;
-
+        // Store tokens
         localStorage.setItem("tokenKey", token);
-        localStorage.setItem("token_expiration", expirationTime);
-        localStorage.setItem("email", formData.username);
-        localStorage.setItem("UserName", name);
-        localStorage.setItem("role", roles);
+        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("deviceId", deviceId);
+        localStorage.setItem("roles", roles);
         localStorage.setItem("currRoleId", currRoleId);
-        localStorage.setItem("userId", id);
-        localStorage.setItem("isTokenValid", "true");
+        localStorage.setItem("name", name);
+        localStorage.setItem("id", id);
+        localStorage.setItem("uiLanguage", languageCode);
 
+
+        // Navigate
         const redirectUrl = localStorage.getItem("redirectUrl");
         if (redirectUrl) {
           localStorage.removeItem("redirectUrl");
@@ -784,12 +795,12 @@ const LoginPage = () => {
                 {showTooltip && (
 
 
-                    //<AutoTranslate>This website is running on Release Version 1.20, which is currently under testing.</AutoTranslate>
-                 
+                  //<AutoTranslate>This website is running on Release Version 1.20, which is currently under testing.</AutoTranslate>
+
 
 
                   <div className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-1 shadow-lg z-10 whitespace-nowrap">
-                    <AutoTranslate>This website is running on Release Version 2.1, which is currently under testing.</AutoTranslate>
+                    <AutoTranslate>This website is running on Release Version 3.0, which is currently under testing.</AutoTranslate>
                   </div>
 
                 )}
@@ -861,10 +872,10 @@ const LoginPage = () => {
                     value={formData.username}
                     onChange={handleInputChange}
                     className="pl-9 w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                     placeholder={getFallbackTranslation(
+                    placeholder={getFallbackTranslation(
                       'Enter your username',
                       currentLanguage
-                    )|| 'Enter your username'}
+                    ) || 'Enter your username'}
                     required
                   />
                 </div>
@@ -887,7 +898,7 @@ const LoginPage = () => {
                     placeholder={getFallbackTranslation(
                       'Enter your password',
                       currentLanguage
-                    )|| 'Enter your password'}
+                    ) || 'Enter your password'}
                     required
                   />
                   <button
@@ -959,9 +970,9 @@ const LoginPage = () => {
                   onPaste={handleCaptchaPaste}
                   className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                   placeholder={getFallbackTranslation(
-                      'Enter captcha',
-                      currentLanguage
-                    )|| 'Enter captcha'}
+                    'Enter captcha',
+                    currentLanguage
+                  ) || 'Enter captcha'}
 
                   required
                 />

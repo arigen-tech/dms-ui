@@ -13,6 +13,8 @@ import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
+import apiClient from "../API/apiClient";
+
 
 const DpAdminOCR = () => {
   const {
@@ -67,18 +69,14 @@ const DpAdminOCR = () => {
     const fetchData = async () => {
       try {
         // Fetch years
-        const yearsResponse = await axios.get(`${YEAR_API}/findActiveYear`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const yearsResponse = await apiClient.get(`${YEAR_API}/findActiveYear`);
         const filteredYears = yearsResponse.data
           .filter((yearObj) => parseInt(yearObj.name) <= currentYear)
           .sort((a, b) => parseInt(b.name) - parseInt(a.name));
         setYears([...filteredYears]);
 
         // Fetch categories
-        const categoriesResponse = await axios.get(`${CATEGORI_API}/findActiveCategory`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const categoriesResponse = await apiClient.get(`${CATEGORI_API}/findActiveCategory`);
         setCategories(categoriesResponse.data);
       } catch (error) {
         console.error("Error fetching dropdown data:", error);
@@ -91,13 +89,9 @@ const DpAdminOCR = () => {
   const fetchUser = async () => {
     setIsLoading(true);
     try {
-      const userId = localStorage.getItem("userId");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const userId = localStorage.getItem("id");
+      const response = await apiClient.get(
+        `${API_HOST}/employee/findById/${userId}`);
 
       // Set fixed branch and department from user data
       const userBranch = response.data.branch;
@@ -141,11 +135,7 @@ const DpAdminOCR = () => {
     setSearchError("");
 
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/findByDepartmrntId/${dpId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/findByDepartmrntId/${dpId}`);
 
       const sortedDocuments = response.data.sort((a, b) => {
         const order = { PENDING: 1, REJECTED: 2, APPROVED: 3 };

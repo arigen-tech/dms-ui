@@ -1,9 +1,8 @@
-"use client"
-
 import React, { useState, useEffect } from "react"
 import axios from "axios"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
+import apiClient from "../API/apiClient";
 
 import {
   CalendarIcon, MagnifyingGlassIcon, ArrowLeftIcon,
@@ -169,11 +168,7 @@ const ArchiveDownload = () => {
   const fetchFileTypes = async () => {
     try {
       const token = localStorage.getItem("tokenKey")
-      const response = await axios.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`)
       setFileTypes(response.data.response)
     } catch (error) {
       console.error("Error fetching Files Types:", error)
@@ -184,11 +179,7 @@ const ArchiveDownload = () => {
   const fetchArchivedFileStatus = async () => {
     try {
       const token = localStorage.getItem("tokenKey")
-      const response = await axios.get(`${API_HOST}/archive-reference/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      const response = await apiClient.get(`${API_HOST}/archive-reference/all`)
 
       if (response.data && response.data.response) {
         setArchivedFileStatus(response.data.response)
@@ -208,12 +199,11 @@ const ArchiveDownload = () => {
     setRunCheckLoading(true);
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/retention-policy/run-check`,
         {},
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -297,8 +287,7 @@ const ArchiveDownload = () => {
     try {
       const token = localStorage.getItem("tokenKey");
       const encodedName = encodeURIComponent(archiveName);
-      const response = await axios.get(`${API_HOST}/archive/retrieve/${encodedName}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await apiClient.get(`${API_HOST}/archive/retrieve/${encodedName}`, {
         responseType: "blob",
       });
 
@@ -378,13 +367,9 @@ const ArchiveDownload = () => {
   const fetchUserDetails = async () => {
 
     try {
-      const userId = localStorage.getItem("userId")
+      const userId = localStorage.getItem("id")
       const token = localStorage.getItem("tokenKey")
-      const response = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`)
 
       setUserRole(response.data.role)
       setUserBranch(response.data.branch)
@@ -521,9 +506,7 @@ const ArchiveDownload = () => {
   const fetchBranches = async () => {
     try {
       const token = localStorage.getItem("tokenKey")
-      const response = await axios.get(`${API_HOST}/branchmaster/findAll`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findAll`)
       setBranchOptions(response.data)
     } catch (error) {
       console.error("Error fetching branches:", error)
@@ -534,9 +517,7 @@ const ArchiveDownload = () => {
   const fetchDepartments = async (branchId) => {
     try {
       const token = localStorage.getItem("tokenKey")
-      const response = await axios.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`)
       setDepartmentOptions(response.data)
     } catch (error) {
       console.error("Error fetching departments:", error)
@@ -603,11 +584,8 @@ const ArchiveDownload = () => {
         })
       }
 
-      const response = await axios.get(apiEndpoint, {
+      const response = await apiClient.get(apiEndpoint, {
         params: params,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         responseType: "blob",
         onDownloadProgress: (progressEvent) => {
           if (progressEvent.lengthComputable) {
@@ -708,9 +686,8 @@ const ArchiveDownload = () => {
 
       setProgressMessage("Storing archive to server...");
 
-      const response = await axios.post(`${API_HOST}/archive/store`, params, {
+      const response = await apiClient.post(`${API_HOST}/archive/store`, params, {
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
       });
@@ -912,7 +889,7 @@ const ArchiveDownload = () => {
   }
 
   const renderArchiveFields = () => {
-    userRole = localStorage.getItem("role")
+    userRole = localStorage.getItem("roles")
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
         {userRole === BRANCH_ADMIN ? (

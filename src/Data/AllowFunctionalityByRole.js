@@ -13,7 +13,7 @@ import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 import { MAS_ROLES } from '../API/apiConfig';
-import { getRequest, postRequest, putRequest } from '../API/apiService';
+import { getRequest, postRequest, putRequest } from '../API/apiHelper';
 import Select from 'react-select';
 
 const AllowFunctionalityByRole = () => {

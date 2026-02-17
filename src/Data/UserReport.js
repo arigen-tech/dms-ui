@@ -9,6 +9,7 @@ import Popup from '../Components/Popup';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
+import apiClient from "../API/apiClient";
 
 
 
@@ -72,7 +73,7 @@ const UserReport = () => {
     setFormData({ ...formData, docType: value });
   };
 
-  const role = localStorage.getItem("role");
+  const role = localStorage.getItem("roles");
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({
@@ -92,16 +93,9 @@ const UserReport = () => {
 
   const fetchUserDetails = async () => {
     try {
-      const userId = localStorage.getItem("userId");
+      const userId = localStorage.getItem("id");
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
 
       setUserBranch(response.data.branch);
       setUserDepartment(response.data.department);
@@ -161,9 +155,7 @@ const UserReport = () => {
   const fetchBranches = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/branchmaster/findAll`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findAll`);
       setBranchOptions(response.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
@@ -173,12 +165,7 @@ const UserReport = () => {
   const fetchDepartments = async (branchId) => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentOptions(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -216,13 +203,12 @@ const UserReport = () => {
 
       const token = localStorage.getItem("tokenKey");
 
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${EMPLOYEE_API}/report/filter`,
         requestPayload,
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           responseType: "json",
         }

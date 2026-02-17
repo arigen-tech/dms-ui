@@ -20,6 +20,8 @@ import {
   XCircleIcon,
 } from "@heroicons/react/24/solid"
 import axios from "axios"
+import apiClient from "../API/apiClient";
+
 
 import { DOCUMENTHEADER_API, API_HOST } from "../API/apiConfig"
 import LoadingComponent from '../Components/LoadingComponent'
@@ -60,9 +62,7 @@ const DuplicateFilesPage = () => {
   const fetchDuplicateDocuments = async () => {
     setIsLoading(true)
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/duplicates`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/duplicates`)
 
       if (response.data.status === 200) {
         const data = response.data.response || []
@@ -222,8 +222,7 @@ const DuplicateFilesPage = () => {
 
       const fileUrl = `${API_HOST}/api/documents/download/${branch}/${department}/${year}/${encodedCategory}/${version}/${encodedFileName}`
 
-      const response = await axios.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await apiClient.get(fileUrl, {
         responseType: "blob",
       })
 
@@ -251,10 +250,10 @@ const DuplicateFilesPage = () => {
     setActiveTab("preview")
 
     try {
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${DOCUMENTHEADER_API}/compare`,
         { firstFileId: group.originalDocumentId, secondFileId: duplicateFile.duplicateId },
-        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } },
+        { "Content-Type": "application/json" },
       )
 
       const result = response.data
@@ -463,8 +462,7 @@ const DuplicateFilesPage = () => {
 
       const fileUrl = `${API_HOST}/api/documents/download/${branch}/${department}/${year}/${encodedCategory}/${version}/${encodedFileName}`
 
-      const response = await axios.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await apiClient.get(fileUrl, {
         responseType: "blob",
       })
 

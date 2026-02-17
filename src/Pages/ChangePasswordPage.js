@@ -82,16 +82,9 @@ const ChangePasswordPage = () => {
 
   const fetchEmployeeData = async () => {
     setIsLoading(true);
-    const userId = localStorage.getItem("userId");
+    const userId = localStorage.getItem("id");
     try {
-      const response = await apiClient.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
 
       if (response.data) {
         setEmployee(response.data);
@@ -110,14 +103,11 @@ const ChangePasswordPage = () => {
 
   const fetchImageSrc = async () => {
     try {
-      const employeeId = localStorage.getItem("userId");
+      const employeeId = localStorage.getItem("id");
 
       const response = await apiClient.get(
         `${API_HOST}/employee/getImageSrc/${employeeId}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
           responseType: "arraybuffer",
         }
       );
@@ -182,7 +172,7 @@ const ChangePasswordPage = () => {
     const formData = new FormData(e.target);
 
     const updateData = {
-      id: localStorage.getItem("userId"),
+      id: localStorage.getItem("id"),
       name: formData.get("name"),
       mobile: formData.get("mobile"),
     };
@@ -193,7 +183,6 @@ const ChangePasswordPage = () => {
         updateData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -241,15 +230,14 @@ const ChangePasswordPage = () => {
     const formData = new FormData();
     formData.append("file", selectedFile);
 
-    const employeeId = localStorage.getItem("userId");
+    const employeeId = localStorage.getItem("id");
 
     try {
-      const response = await apiClient.post(
+      const response = await apiClient.postForm(
         `${API_HOST}/employee/upload/${employeeId}`,
         formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
         }

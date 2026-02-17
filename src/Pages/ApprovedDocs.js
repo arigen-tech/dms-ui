@@ -5,6 +5,8 @@ import ApprovedDoc from '../Data/ApprovedDoc';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_HOST } from '../API/apiConfig';
+import apiClient from "../API/apiClient";
+
 
 function ApprovedDocs() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -19,9 +21,7 @@ function ApprovedDocs() {
     const fetchSpecificDocument = async (id) => {
         setLoading(true);
         try {
-            const response = await axios.get(`${API_HOST}/documents/${id}`, {
-                headers: { Authorization: `Bearer ${tokenKey}` }
-            });
+            const response = await apiClient.get(`${API_HOST}/documents/${id}`);
             setDocument(response.data.response);
             setError(null);
         } catch (error) {

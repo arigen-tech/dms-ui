@@ -15,6 +15,8 @@ import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 const tokenKey = 'tokenKey';
 
@@ -125,11 +127,7 @@ const LanguageMaster = () => {
   const fetchLanguages = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${LANGUAGE_MASTER_API}/getAll/0`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${LANGUAGE_MASTER_API}/getAll/0`);
       setLanguages(response?.data || []);
      
     } catch (error) {
@@ -205,10 +203,9 @@ const LanguageMaster = () => {
 
       console.log('Sending new language:', newLanguage);
 
-      const response = await axios.post(`${LANGUAGE_MASTER_API}/create`, newLanguage, {
+      const response = await apiClient.post(`${LANGUAGE_MASTER_API}/create`, newLanguage, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -279,10 +276,9 @@ const LanguageMaster = () => {
 
         console.log('Updating language:', updatedLanguage);
 
-        const response = await axios.put(`${LANGUAGE_MASTER_API}/update/${editingLanguageId}`, updatedLanguage, {
+        const response = await apiClient.put(`${LANGUAGE_MASTER_API}/update/${editingLanguageId}`, updatedLanguage, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -318,13 +314,12 @@ const LanguageMaster = () => {
       try {
         const newStatus = !languageToToggle.isActive;
 
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${LANGUAGE_MASTER_API}/status/${languageToToggle.id}?isActive=${newStatus}`,
           {},
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
             },
           }
         );

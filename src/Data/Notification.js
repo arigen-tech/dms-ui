@@ -16,7 +16,7 @@ import axios from "axios"
 import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig"
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
-
+import apiClient from "../API/apiClient";
 const getNotificationIcon = (type) => {
   const commonClasses = "h-8 w-8 p-1.5 rounded-lg"
   switch (type) {
@@ -103,16 +103,15 @@ const getAllowedNotificationTypes = (role) => {
 export const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0)
   const navigate = useNavigate()
-  const tokenKey = localStorage.getItem("tokenKey")
-  const userId = localStorage.getItem("userId")
-  const role = localStorage.getItem("role")
+  const userId = localStorage.getItem("id")
+  const role = localStorage.getItem("roles")
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_HOST}/notifications`, {
+      const response = await apiClient.get(`${API_HOST}/notifications`, {
         params: { employeeId: userId },
-        headers: { Authorization: `Bearer ${tokenKey}` },
       })
+
 
       const allNotifications = response.data.response
       const allowedTypes = getAllowedNotificationTypes(role)
@@ -125,7 +124,7 @@ export const NotificationBell = () => {
     } catch (error) {
       console.error("Error fetching unread count:", error)
     }
-  }, [userId, tokenKey, role])
+  }, [userId, role])
 
   useEffect(() => {
     fetchUnreadCount()
@@ -189,9 +188,8 @@ export const Notification = () => {
 
   const navigate = useNavigate()
 
-  const tokenKey = localStorage.getItem("tokenKey")
-  const userId = localStorage.getItem("userId")
-  const role = localStorage.getItem("role")
+  const userId = localStorage.getItem("id")
+  const role = localStorage.getItem("roles")
 
   const NOTIFICATION_TYPES = [
     "all",
@@ -285,9 +283,8 @@ export const Notification = () => {
   const fetchNotifications = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`${API_HOST}/notifications`, {
+      const response = await apiClient.get(`${API_HOST}/notifications`, {
         params: { employeeId: userId },
-        headers: { Authorization: `Bearer ${tokenKey}` },
       })
       const allNotifications = response.data.response
 
@@ -310,7 +307,7 @@ export const Notification = () => {
     } finally {
       setLoading(false)
     }
-  }, [userId, tokenKey, role])
+  }, [userId, role])
 
   useEffect(() => {
     fetchNotifications()
@@ -332,9 +329,7 @@ export const Notification = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      await axios.put(`${API_HOST}/notifications/${notificationId}/read`, null, {
-        headers: { Authorization: `Bearer ${tokenKey}` },
-      })
+      await apiClient.put(`${API_HOST}/notifications/${notificationId}/read`)
 
       // Immediately remove the notification from the list
       setNotifications(prevNotifications =>
@@ -376,9 +371,7 @@ export const Notification = () => {
 
     try {
       const markAsReadPromises = notifications.map(notification =>
-        axios.put(`${API_HOST}/notifications/${notification.id}/read`, null, {
-          headers: { Authorization: `Bearer ${tokenKey}` },
-        })
+        axios.put(`${API_HOST}/notifications/${notification.id}/read`, null, )
       );
 
       await Promise.all(markAsReadPromises);

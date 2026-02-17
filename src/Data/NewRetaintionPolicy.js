@@ -10,6 +10,8 @@ import LoadingComponent from "../Components/LoadingComponent"
 import AutoTranslate from '../i18n/AutoTranslate'
 import { useLanguage } from '../i18n/LanguageContext'
 import { getFallbackTranslation } from '../i18n/autoTranslator'
+import apiClient from "../API/apiClient";
+
 
 const NewRetaintionPolicy = () => {
     const {
@@ -136,9 +138,7 @@ const NewRetaintionPolicy = () => {
     const fetchPolicies = async () => {
         try {
             const token = localStorage.getItem("tokenKey");
-            const response = await axios.get(`${API_HOST}/retention-policy/findAll`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await apiClient.get(`${API_HOST}/retention-policy/findAll`);
 
             const policiesData = Array.isArray(response.data?.response)
                 ? response.data.response
@@ -219,9 +219,7 @@ const NewRetaintionPolicy = () => {
     const fetchBranches = async () => {
         try {
             const token = localStorage.getItem("tokenKey")
-            const response = await axios.get(`${BRANCH_API}/findAll`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            const response = await apiClient.get(`${BRANCH_API}/findAll`)
 
             const branchesData = response.data?.response || response.data || []
             setBranches(Array.isArray(branchesData) ? branchesData : [branchesData])
@@ -234,9 +232,7 @@ const NewRetaintionPolicy = () => {
     const fetchDepartments = async (branchId) => {
         try {
             const token = localStorage.getItem("tokenKey")
-            const response = await axios.get(`${DEPAETMENT_API}/findByBranch/${branchId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            const response = await apiClient.get(`${DEPAETMENT_API}/findByBranch/${branchId}`)
 
             const departmentsData = response.data?.response || response.data || []
             setDepartments(Array.isArray(departmentsData) ? departmentsData : [departmentsData])
@@ -250,9 +246,7 @@ const NewRetaintionPolicy = () => {
     const fetchCategory = async () => {
         try {
             const token = localStorage.getItem("tokenKey")
-            const response = await axios.get(`${CATEGORI_API}/findAll`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            const response = await apiClient.get(`${CATEGORI_API}/findAll`)
 
             const categoriesData = response.data?.response || response.data || []
             setCategories(Array.isArray(categoriesData) ? categoriesData : [categoriesData])
@@ -307,9 +301,7 @@ const NewRetaintionPolicy = () => {
     const fetchAllDepartments = async () => {
         try {
             const token = localStorage.getItem("tokenKey")
-            const response = await axios.get(`${DEPAETMENT_API}/findAll`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            const response = await apiClient.get(`${DEPAETMENT_API}/findAll`)
 
             const departmentsData = response.data?.response || response.data || []
             setAllDepartments(Array.isArray(departmentsData) ? departmentsData : [departmentsData])
@@ -420,9 +412,8 @@ const NewRetaintionPolicy = () => {
             };
 
             const token = localStorage.getItem("tokenKey");
-            await axios.post(`${API_HOST}/retention-policy/createNew`, newPolicy, {
+            await apiClient.post(`${API_HOST}/retention-policy/createNew`, newPolicy, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             });
@@ -518,12 +509,11 @@ const NewRetaintionPolicy = () => {
                 updatedOn: new Date().toISOString().slice(0, 19),
             };
 
-            await axios.put(
+            await apiClient.put(
                 `${API_HOST}/retention-policy/updateNewPolicy/${updatedPolicy.id}`,
                 updatedPolicy,
                 {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
                         "Content-Type": "application/json",
                     },
                 }
@@ -563,13 +553,12 @@ const NewRetaintionPolicy = () => {
                 const statusUpdateData = { isActive: newActiveStatus };
 
                 const token = localStorage.getItem("tokenKey");
-                await axios.put(
+                await apiClient.put(
                     `${API_HOST}/retention-policy/updatestatus/${policyToToggle.id}`,
                     statusUpdateData,
                     {
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
                         },
                     },
                 );

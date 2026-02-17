@@ -12,7 +12,7 @@ const Scanner = () => {
     setScanResult(null);
     
     try {
-      const response = await axios.post('/api/scanner', {}, {
+      const response = await apiClient.post('/api/scanner', {}, {
         responseType: 'blob'
       });
       

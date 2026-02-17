@@ -17,6 +17,9 @@ import LoadingComponent from '../../Components/LoadingComponent';
 import AutoTranslate from '../../i18n/AutoTranslate';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { getFallbackTranslation } from '../../i18n/autoTranslator';
+import apiClient from "../../API/apiClient"
+
+
 
 const BranchEmployee = () => {
     const {
@@ -71,6 +74,7 @@ const BranchEmployee = () => {
     });
     const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
     const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+
 
     console.log("Error: ", error);
 
@@ -137,9 +141,7 @@ const BranchEmployee = () => {
     const fetchBranches = async () => {
         try {
             const token = localStorage.getItem("tokenKey");
-            const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await apiClient.get(`${API_HOST}/branchmaster/findActiveRole`);
             setBranchData(response.data);
         } catch (error) {
             console.error("Error fetching branches:", error);
@@ -149,12 +151,7 @@ const BranchEmployee = () => {
     const fetchFilterDepartments = async (branchId) => {
         try {
             const token = localStorage.getItem("tokenKey");
-            const response = await axios.get(
-                `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
             setDepartmentData(response.data);
         } catch (error) {
             console.error("Error fetching departments:", error);
@@ -182,16 +179,9 @@ const BranchEmployee = () => {
         setIsLoading(true);
         setError("");
         try {
-            const userId = localStorage.getItem("userId");
+            const userId = localStorage.getItem("id");
             const token = localStorage.getItem("tokenKey");
-            const response = await axios.get(
-                `${API_HOST}/employee/findById/${userId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
             setUserBranch(response.data.branch);
             setFormData(prevData => ({
                 ...prevData,
@@ -210,14 +200,8 @@ const BranchEmployee = () => {
         setError("");
         try {
             const token = localStorage.getItem("tokenKey");
-            const employeeResponse = await axios.get(
-                `${API_HOST}/employee/branch/${userBranch.id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const employeeResponse = await apiClient.get(
+                `${API_HOST}/employee/branch/${userBranch.id}`);
             setEmployees(employeeResponse.data);
         } catch (error) {
             setError("Error fetching employees.");
@@ -235,14 +219,7 @@ const BranchEmployee = () => {
         setError("");
         try {
             const token = localStorage.getItem("tokenKey");
-            const departmentsRes = await axios.get(
-                `${DEPAETMENT_API}/findByBranch/${userBranch.id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const departmentsRes = await apiClient.get(`${DEPAETMENT_API}/findByBranch/${userBranch.id}`);
             setDepartmentOptions(departmentsRes.data);
         } catch (error) {
             setError("Error fetching departments.");
@@ -318,7 +295,7 @@ const BranchEmployee = () => {
 
         try {
             const token = localStorage.getItem("tokenKey");
-            const userId = localStorage.getItem("userId");
+            const userId = localStorage.getItem("id");
 
             if (!userId) {
                 setError("User authentication error. Please log in again.");
@@ -347,12 +324,11 @@ const BranchEmployee = () => {
                 branch: userBranch,
             };
 
-            const response = await axios.post(
+            const response = await apiClient.post(
                 `${API_HOST}/register/create`,
                 employeeData,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
                 }
@@ -458,12 +434,11 @@ const BranchEmployee = () => {
                 enabled: formData.enabled,
             };
 
-            const response = await axios.put(
+            const response = await apiClient.put(
                 `${API_HOST}/employee/update/${formData.id}`,
                 updatedEmployeeData,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
                 }
@@ -522,12 +497,11 @@ const BranchEmployee = () => {
         try {
             const newStatus = !employeeToToggle.active;
 
-            const response = await axios.put(
+            const response = await apiClient.put(
                 `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`,
                 newStatus,
                 {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
                         "Content-Type": "application/json",
                     },
                 }
@@ -648,7 +622,7 @@ const BranchEmployee = () => {
         return pages;
     };
 
-    const role = localStorage.getItem("role");
+    const role = localStorage.getItem("roles");
 
     return (
         <div className="px-2">

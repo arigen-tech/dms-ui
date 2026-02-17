@@ -11,6 +11,8 @@ import Popup from "../Components/Popup";
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 
 const ManageUserRole = () => {
@@ -43,8 +45,8 @@ const ManageUserRole = () => {
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(false);
   const token = typeof window !== "undefined" ? localStorage.getItem("tokenKey") : null;
   const [loading, setLoading] = useState(false);
-  const employeId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
-  const loginEmpRole = typeof window !== "undefined" ? localStorage.getItem("role") : null;
+  const employeId = typeof window !== "undefined" ? localStorage.getItem("id") : null;
+  const loginEmpRole = typeof window !== "undefined" ? localStorage.getItem("roles") : null;
 
   const [showForm, setShowForm] = useState(false);
 
@@ -145,9 +147,7 @@ const ManageUserRole = () => {
   const fetchBranches = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findActiveRole`);
       setBranchData(response.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
@@ -157,12 +157,7 @@ const ManageUserRole = () => {
   const fetchDepartments = async (branchId) => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentData(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -194,10 +189,7 @@ const ManageUserRole = () => {
 
   const fetchLoginEmployees = async () => {
     try {
-      const userResponse = await axios.get(
-        `${API_HOST}/employee/findById/${employeId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const userResponse = await apiClient.get(`${API_HOST}/employee/findById/${employeId}`);
 
       if (userResponse.data && userResponse.data.role && userResponse.data.role.roleCode != null) {
         fetchAvailableRolesForUser(userResponse.data.role.roleCode);
@@ -215,14 +207,9 @@ const ManageUserRole = () => {
     try {
       let response;
       if (loginEmpRole === BRANCH_ADMIN && currBranchId) {
-        response = await axios.get(
-          `${API_HOST}/api/EmpRole/branch/${currBranchId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        response = await apiClient.get(`${API_HOST}/api/EmpRole/branch/${currBranchId}`);
       } else {
-        response = await axios.get(`${API_HOST}/api/EmpRole/employees`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        response = await apiClient.get(`${API_HOST}/api/EmpRole/employees`);
       }
 
       if (response && response.status === 200) {
@@ -250,9 +237,7 @@ const ManageUserRole = () => {
 
   const fetchAvailableRolesForUser = async (userRoleCode) => {
     try {
-      const rolesResponse = await axios.get(`${ROLE_API}/findAll`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const rolesResponse = await apiClient.get(`${ROLE_API}/findAll`);
 
       const filteredRoles = (rolesResponse.data || []).filter(
         (role) => role.roleCode < userRoleCode
@@ -327,16 +312,13 @@ const ManageUserRole = () => {
         showPopup("User is not authenticated. Please log in again.");
         return false;
       }
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/api/EmpRole/assign`,
         null, // no body, using query params
         {
           params: {
             empId: selectedUser.employeeId,
             roleId: roleId,
-          },
-          headers: {
-            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -361,13 +343,12 @@ const ManageUserRole = () => {
         roleId,
         empId,
       };
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${API_HOST}/api/EmpRole/changeRoleStatus`,
         updatedRoleRequest,
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
         }
       );

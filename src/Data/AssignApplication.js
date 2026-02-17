@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { postRequest, putRequest, getRequest } from "../API/apiService";
+import { postRequest, putRequest, getRequest } from "../API/apiHelper";
 import { MAS_TEMPLATE, ASSIGN_TEMPLATES, MAS_APPLICATION } from "../API/apiConfig";
 import LoadingComponent from '../Components/LoadingComponent';
 import {

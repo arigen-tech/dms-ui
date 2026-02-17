@@ -47,7 +47,7 @@ const IDCardGenerator = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const token = localStorage.getItem("tokenKey");
-    const role = localStorage.getItem("role");
+    const role = localStorage.getItem("roles");
 
     // Format date helper function
     const formatDate = useCallback((dateString) => {
@@ -72,10 +72,8 @@ const IDCardGenerator = () => {
             setIsLoading(true);
             try {
                 // 1. First fetch user details
-                const userId = localStorage.getItem("userId");
-                const userResponse = await axios.get(`${API_HOST}/employee/findById/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const userId = localStorage.getItem("id");
+                const userResponse = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
                 const userData = userResponse.data;
 
                 // 2. Set the IDs from user data
@@ -86,21 +84,15 @@ const IDCardGenerator = () => {
                 if (!role) return;
 
                 if (role === SYSTEM_ADMIN) {
-                    const employeesResponse = await axios.get(`${API_HOST}/employee/findAll`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
+                    const employeesResponse = await apiClient.get(`${API_HOST}/employee/findAll`);
                     setAllUsers(employeesResponse.data || []);
                 }
                 else if (role === BRANCH_ADMIN && userData?.branch?.id) {
-                    const branchResponse = await axios.get(`${API_HOST}/employee/branch/${userData.branch.id}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
+                    const branchResponse = await apiClient.get(`${API_HOST}/employee/branch/${userData.branch.id}`);
                     setAllUsers(branchResponse.data || []);
                 }
                 else if (role === DEPARTMENT_ADMIN && userData?.department?.id) {
-                    const deptResponse = await axios.get(`${API_HOST}/employee/department/${userData.department.id}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
+                    const deptResponse = await apiClient.get(`${API_HOST}/employee/department/${userData.department.id}`);
                     setAllUsers(deptResponse.data || []);
                 }
             } catch (error) {
@@ -174,12 +166,11 @@ const IDCardGenerator = () => {
         formData.append("file", selectedFile);
 
         try {
-            const response = await axios.post(
+            const response = await apiClient.post(
                 `${API_HOST}/employee/upload/${selectedEmployeeId}`,
                 formData,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         "Content-Type": "multipart/form-data",
                     },
                 }
@@ -212,13 +203,7 @@ const IDCardGenerator = () => {
         await Promise.all(
             selectedUsers.map(async (employee) => {
                 try {
-                    const response = await apiClient.get(
-                        `${API_HOST}/employee/getImageSrc/${employee.id}`,
-                        {
-                            headers: { Authorization: `Bearer ${token}` },
-                            responseType: "arraybuffer",
-                        }
-                    );
+                    const response = await apiClient.get(`${API_HOST}/employee/getImageSrc/${employee.id}`);
 
                     const imageBlob = new Blob([response.data], { type: "image/jpeg" });
                     const imageUrl = URL.createObjectURL(imageBlob);

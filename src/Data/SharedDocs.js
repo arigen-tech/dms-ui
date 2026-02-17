@@ -87,7 +87,7 @@ const SharedDocs = () => {
   const [popupMessage, setPopupMessage] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
-  const UserId = localStorage.getItem("userId");
+  const UserId = localStorage.getItem("id");
   const role = localStorage.getItem("role");
 
   // Get current date-time in format for datetime-local input (YYYY-MM-DDTHH:mm)
@@ -250,12 +250,7 @@ const SharedDocs = () => {
     try {
       setLoading(true);
 
-      const response = await axios.get(
-        `${API_HOST}/document-share/shared-with-me`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/document-share/shared-with-me`);
 
       // The response is already an array of share records
       const sharedRecords = Array.isArray(response.data) ? response.data : [];
@@ -341,12 +336,7 @@ const SharedDocs = () => {
 
   const fetchDocumentShares = async (documentHeaderId) => {
     try {
-      const response = await axios.get(
-        `${API_HOST}/document-share/document/${documentHeaderId}/shares`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/document-share/document/${documentHeaderId}/shares`);
 
       return response.data;
     } catch (error) {
@@ -360,14 +350,7 @@ const SharedDocs = () => {
       setLoadingEmployees(true);
 
       // Call the API endpoint that returns employees in current user's branch and department
-      const response = await axios.get(
-        `${API_HOST}/employee/current/branch-department`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/employee/current/branch-department`);
 
       const employees = response?.data?.response || [];
 
@@ -430,7 +413,6 @@ const SharedDocs = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -469,7 +451,6 @@ const SharedDocs = () => {
 
     try {
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -665,12 +646,11 @@ const SharedDocs = () => {
         reason: revokeReason
       };
 
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/document-share/revoke`,
         revokeRequest,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -742,12 +722,11 @@ const SharedDocs = () => {
         endTime: shareEndTime ? new Date(shareEndTime).toISOString() : null
       };
 
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/document-share/share`,
         shareRequest,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }

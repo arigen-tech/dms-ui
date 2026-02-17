@@ -1,5 +1,6 @@
 // frontend/i18n/autoTranslator.js - FIXED VERSION
 import { API_HOST } from '../API/apiConfig';
+import apiClient from "../API/apiClient";
 
 const translationCache = {};
 let supportedLanguages = null;
@@ -144,11 +145,7 @@ export const fetchSupportedLanguages = async () => {
   try {
     console.log('📡 Fetching supported languages from Language Master API...');
 
-    const response = await fetch(`${API_HOST}/languageMaster/getAll/1`, {
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
+    const response = await apiClient.get(`${API_HOST}/languageMaster/getAll/1`);
 
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);

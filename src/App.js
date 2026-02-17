@@ -63,6 +63,9 @@ const LanguageMasters = React.lazy(() => import("./Pages/LanguageMasters"));
 const TrashDocs = React.lazy(() => import("./Pages/TrashDocumentspage"));
 const DuplicateFilesPages = React.lazy(() => import("./Pages/DuplicateFilesPages"));
 const SharedDocuments = React.lazy(() => import("./Pages/SharedDocuments"));
+const DocumentsDownloadedReport = React.lazy(() => import("./Pages/ReportsP/DocumentsDownloadedReport"));
+const DocumentsArchivedReport = React.lazy(() => import("./Pages/ReportsP/DocumentsArchivedReport"));
+const DocumentsUploadReport = React.lazy(() => import("./Pages/ReportsP/DocumentsUploadReport"));
 
 
 function App() {
@@ -148,6 +151,12 @@ function App() {
                 <Route path="/duplicate-files" element={<DuplicateFilesPages />} />
 
                 <Route path="/shared-documents" element={<SharedDocuments />} />
+
+                {/* reports */}
+                <Route path="/documents-archived-report" element={<DocumentsArchivedReport />} />
+                <Route path="/documents-downloaded-report" element={<DocumentsDownloadedReport />} />
+                <Route path="/documents-upload-report" element={<DocumentsUploadReport />} />
+
 
               </Route>
 

@@ -37,14 +37,8 @@ const AdminOCRResponse = () => {
 
       for (const docName of responseData.matching_files) {
         try {
-          const response = await axios.get(
-            `${DOCUMENTHEADER_API}/findByDocName/${docName}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const response = await apiClient.get(
+            `${DOCUMENTHEADER_API}/findByDocName/${docName}`);
 
           const documentId = response.data.response.id;
           const documentData = response.data.response;
@@ -88,14 +82,7 @@ const AdminOCRResponse = () => {
       }
 
       const response = await apiClient.get(
-        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+        `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`);
 
       // Handle both response.data being an array or potentially being documentDetails
       const paths = Array.isArray(response.data)
@@ -120,7 +107,7 @@ const AdminOCRResponse = () => {
   };
 
   const handleback = () => {
-    const role = localStorage.getItem("role") || sessionStorage.getItem("role");
+    const role = localStorage.getItem("roles") || sessionStorage.getItem("role");
     if (role === SYSTEM_ADMIN) {
       navigate("/adminOcr");
     } else if (role === BRANCH_ADMIN) {
@@ -147,7 +134,6 @@ const AdminOCRResponse = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -318,7 +304,6 @@ const AdminOCRResponse = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 

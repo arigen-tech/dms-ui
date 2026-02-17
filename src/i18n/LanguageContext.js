@@ -1,11 +1,12 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { 
-  translateText, 
+import {
+  translateText,
   fetchSupportedLanguages,
   reloadSupportedLanguages,
   preloadTranslations
 } from '../i18n/autoTranslator';
 import { API_HOST } from '../API/apiConfig';
+import apiClient from "../API/apiClient";
 
 const LanguageContext = createContext();
 
@@ -24,7 +25,7 @@ export const LanguageProvider = ({ children }) => {
     console.log('📱 Loading saved language:', savedLang || 'en (default)');
     return savedLang || 'en';
   });
-  
+
   const [availableLanguages, setAvailableLanguages] = useState([]);
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [defaultLanguage, setDefaultLanguage] = useState('en');
@@ -40,14 +41,7 @@ export const LanguageProvider = ({ children }) => {
 
     try {
       console.log('📡 Loading languages from Language Master API...');
-      const response = await fetch(
-        `${API_HOST}/languageMaster/getAll/1`,
-        {
-          headers: {
-            "Accept": "application/json"
-          }
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/languageMaster/getAll/1`);
 
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
@@ -84,13 +78,13 @@ export const LanguageProvider = ({ children }) => {
   // Change language and save preference
   const changeLanguage = useCallback(async (languageCode) => {
     console.log(`🔤 Requested language change to: ${languageCode}`);
-    
+
     // Don't change if already on this language
     if (languageCode === currentLanguage) {
       console.log('✅ Already on this language');
       return;
     }
-    
+
     // Verify language is in available languages
     const isAvailable = availableLanguages.some(l => l.code === languageCode);
     if (!isAvailable && languageCode !== 'en') {
@@ -107,18 +101,18 @@ export const LanguageProvider = ({ children }) => {
 
     // Save preference
     localStorage.setItem('uilanguage', languageCode);
-    
+
     // Update state
     setCurrentLanguage(languageCode);
-    
+
     // Dispatch event for AutoTranslate components
     window.dispatchEvent(new CustomEvent('languageChanged', {
-      detail: { 
+      detail: {
         languageCode,
         timestamp: Date.now()
       }
     }));
-    
+
     // Mark translations as loaded after a short delay
     setTimeout(() => {
       setTranslationStatus({
@@ -127,7 +121,7 @@ export const LanguageProvider = ({ children }) => {
         language: languageCode
       });
     }, languageCode !== 'en' ? 300 : 0);
-    
+
     console.log(`✅ Language changed successfully to: ${languageCode}`);
   }, [currentLanguage, availableLanguages]);
 

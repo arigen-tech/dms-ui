@@ -12,6 +12,9 @@ import LoadingComponent from "../../Components/LoadingComponent";
 import AutoTranslate from '../../i18n/AutoTranslate';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { getFallbackTranslation } from '../../i18n/autoTranslator';
+import apiClient from "../../API/apiClient"
+
+
 
 const EmployeeRole = () => {
   // Get language context
@@ -118,9 +121,7 @@ const EmployeeRole = () => {
   const fetchBranches = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findActiveRole`);
       setBranchData(response.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
@@ -130,12 +131,7 @@ const EmployeeRole = () => {
   const fetchDepartments = async (branchId) => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentData(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -181,14 +177,7 @@ const EmployeeRole = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.get(
-        `${API_HOST}/employee/pending-by-department`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/employee/pending-by-department`);
       setUsers(response.data);
     } catch (error) {
       showPopup("Error fetching users. Please try again.", "error");
@@ -201,15 +190,8 @@ const EmployeeRole = () => {
     try {
       setIsLoading(true);
 
-      const userId = localStorage.getItem("userId");
-      const userResponse = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const userId = localStorage.getItem("id");
+      const userResponse = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
       setCurrRoleCode(userResponse.data.role.roleCode);
     } catch (error) {
       showPopup("Error fetching employee details.", "error");
@@ -227,14 +209,7 @@ const EmployeeRole = () => {
   const fetchRoles = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(
-        `${API_HOST}/RoleMaster/findActiveRole`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/RoleMaster/findActiveRole`);
       const filteredRoles = response.data.filter((role) => role.roleCode < currRoleCode);
       setRoles(filteredRoles);
     } catch (error) {
@@ -253,13 +228,12 @@ const EmployeeRole = () => {
   const confirmRoleAssignment = async () => {
     setIsSubmitting(true);
     try {
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${API_HOST}/employee/${selectedUser}/role`,
         { roleName: selectedRole },
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
         }
       );

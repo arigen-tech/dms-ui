@@ -113,15 +113,9 @@ function Dashboard() {
 
   const fetchEmployeesStatus = async () => {
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${EMPLOYEE_API}/status-count-by-year`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+
+      const response = await apiClient.get(`${EMPLOYEE_API}/status-count-by-year`);
+
       setEmployeesStatusData(response.data);
     } catch (error) {
       console.error("Error fetching employees status:", error);
@@ -130,15 +124,9 @@ function Dashboard() {
 
   const fetchTopTenFileType = async () => {
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${DOCUMENTHEADER_API}/top-file-types`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/top-file-types`);
+
       setTopTenFileType(response.data);
     } catch (error) {
       console.error("Error fetching TopTenFileType:", error);
@@ -147,21 +135,14 @@ function Dashboard() {
 
   const fetchUserDetails = async () => {
     try {
-      const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("tokenKey");
-
-      if (!userId || !token) {
-        throw new Error("User ID or token is missing in localStorage");
+      const userId = localStorage.getItem("id");
+      if (!userId) {
+        throw new Error("User ID is missing in localStorage");
       }
 
       const response = await apiClient.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        `${API_HOST}/employee/findById/${userId}`);
+
 
       const employeeData = response.data;
 
@@ -189,7 +170,7 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    const role = localStorage.getItem("role");
+    const role = localStorage.getItem("roles");
     if (role === SYSTEM_ADMIN) {
       fetchBranches();
     }
@@ -198,12 +179,9 @@ function Dashboard() {
   const fetchBranches = async () => {
     setIsBranchLoading(true);
     try {
-      const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+
+      const response = await apiClient.get(`${BRANCH_API}/findActiveRole`);
+
       setBranches(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -217,18 +195,15 @@ function Dashboard() {
       try {
         setLoading(true);
 
-        const employeeId = localStorage.getItem("userId");
-        const token = localStorage.getItem("tokenKey");
+        const employeeId = localStorage.getItem("id");
 
-        if (!token || !employeeId) {
-          throw new Error("Unauthorized: Token or Employee ID missing.");
+        if (!employeeId) {
+          throw new Error("Employee ID missing.");
         }
 
-        const authHeader = { headers: { Authorization: `Bearer ${token}` } };
         const dashboardUrl = `${API_HOST}/api/dashboard/getAllCount/${employeeId}`;
 
         const response = await apiClient.get(dashboardUrl, {
-          ...authHeader,
           params: { employeeId },
         });
 
@@ -239,7 +214,7 @@ function Dashboard() {
           error.response?.status === 401 ||
           error.message === "Unauthorized: Token or Employee ID missing.";
         if (isUnauthorized) {
-          navigate("/login");
+          navigate("/");
         }
       } finally {
         setLoading(false);
@@ -254,15 +229,13 @@ function Dashboard() {
       try {
         setIsGrLoading(true);
 
-        const employeeId = localStorage.getItem("userId");
-        const token = localStorage.getItem("tokenKey");
-        const role = localStorage.getItem("role");
+        const employeeId = localStorage.getItem("id");
+        const role = localStorage.getItem("roles");
 
-        if (!token || !employeeId) {
-          throw new Error("Unauthorized: Token or Employee ID missing.");
+        if (!employeeId) {
+          throw new Error("Employee ID missing.");
         }
 
-        const authHeader = { headers: { Authorization: `Bearer ${token}` } };
         const baseUrl = `${API_HOST}/api/documents`;
         const startDate = `${selectedYear}-01-01 00:00:00`;
         const endDate = `${selectedYear}-12-31 23:59:59`;
@@ -289,7 +262,6 @@ function Dashboard() {
         }
 
         const response = await apiClient.get(summaryUrl, {
-          ...authHeader,
           params: { startDate, endDate },
         });
 
@@ -314,7 +286,7 @@ function Dashboard() {
           error.response?.status === 401 ||
           error.message === "Unauthorized: Token or Employee ID missing.";
         if (isUnauthorized) {
-          navigate("/login");
+          navigate("/");
         }
       } finally {
         setIsGrLoading(false);
@@ -329,15 +301,13 @@ function Dashboard() {
       try {
         setIsBarChartLoading(true);
 
-        const employeeId = localStorage.getItem("userId");
-        const token = localStorage.getItem("tokenKey");
-        const role = localStorage.getItem("role");
+        const employeeId = localStorage.getItem("id");
+        const role = localStorage.getItem("roles");
 
-        if (!token || !employeeId) {
-          throw new Error("Unauthorized: Token or Employee ID missing.");
+        if (!employeeId) {
+          throw new Error("Employee ID missing.");
         }
 
-        const authHeader = { headers: { Authorization: `Bearer ${token}` } };
         const baseUrl = `${API_HOST}/api/documents`;
         const startDate = `${selectedYear}-01-01 00:00:00`;
         const endDate = `${selectedYear}-12-31 23:59:59`;
@@ -368,7 +338,6 @@ function Dashboard() {
         }
 
         const response = await apiClient.get(summaryUrl, {
-          ...authHeader,
           params: { startDate, endDate },
         });
 
@@ -393,7 +362,7 @@ function Dashboard() {
           error.response?.status === 401 ||
           error.message === "Unauthorized: Token or Employee ID missing.";
         if (isUnauthorized) {
-          navigate("/login");
+          navigate("/");
         }
       } finally {
         setIsBarChartLoading(false);
@@ -408,14 +377,12 @@ function Dashboard() {
       try {
         setIsGraphChartLoading(true);
 
-        const employeeId = localStorage.getItem("userId");
-        const token = localStorage.getItem("tokenKey");
+        const employeeId = localStorage.getItem("id");
 
-        if (!token || !employeeId) {
-          throw new Error("Unauthorized: Token or Employee ID missing.");
+        if (!employeeId) {
+          throw new Error("Employee ID missing.");
         }
 
-        const authHeader = { headers: { Authorization: `Bearer ${token}` } };
         const baseUrl = `${API_HOST}/api/documents`;
         const startDate = `${selectedYear}-01-01 00:00:00`;
         const endDate = `${selectedYear}-12-31 23:59:59`;
@@ -423,7 +390,6 @@ function Dashboard() {
         const response = await apiClient.get(
           `${baseUrl}/top-branches-summary`,
           {
-            ...authHeader,
             params: { startDate, endDate },
           }
         );
@@ -465,7 +431,7 @@ function Dashboard() {
           error.response?.status === 401 ||
           error.message === "Unauthorized: Token or Employee ID missing.";
         if (isUnauthorized) {
-          navigate("/login");
+          navigate("/");
         }
       } finally {
         setIsGraphChartLoading(false);
@@ -495,7 +461,7 @@ function Dashboard() {
     );
   }
 
-  const role = localStorage.getItem("role");
+  const role = localStorage.getItem("roles");
   const totalApprovedDocuments = chartData.reduce(
     (acc, curr) => acc + curr.ApprovedDocuments,
     0

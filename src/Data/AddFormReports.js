@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react"
 import Popup from "../Components/Popup"
 import { MAS_APPLICATION, ALL_USER_APPLICATION } from "../API/apiConfig";
 import LoadingComponent from '../Components/LoadingComponent';
-import { postRequest, putRequest, getRequest } from "../API/apiService";
+import { postRequest, putRequest, getRequest } from "../API/apiHelper";
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 

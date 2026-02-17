@@ -6,6 +6,7 @@ import FolderGroup from "../Assets/folderGroup.png"
 import { API_HOST, BRANCH_API, DEPAETMENT_API } from "../API/apiConfig"
 import AutoTranslate from '../i18n/AutoTranslate'
 import { useLanguage } from '../i18n/LanguageContext'
+import apiClient from "../API/apiClient";
 
 const ArchiveDashboard = () => {
   const [branches, setBranches] = useState([])
@@ -57,9 +58,7 @@ const ArchiveDashboard = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const res = await axios.get(`${BRANCH_API}/findActiveRole`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const res = await apiClient.get(`${BRANCH_API}/findActiveRole`)
         setBranches(res.data)
       } catch (err) {
         console.error("Error fetching branches:", err)
@@ -73,9 +72,7 @@ const ArchiveDashboard = () => {
     const fetchDepartments = async () => {
       try {
         if (selectedBranch !== "All") {
-          const res = await axios.get(`${DEPAETMENT_API}/findByBranch/${selectedBranch}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
+          const res = await apiClient.get(`${DEPAETMENT_API}/findByBranch/${selectedBranch}`)
           setDepartments(res.data)
         } else {
           setDepartments([])
@@ -92,13 +89,12 @@ const ArchiveDashboard = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await axios.get(`${API_HOST}/archiveJob/getALL/DhashboardData`, {
+        const res = await apiClient.get(`${API_HOST}/archiveJob/getALL/DhashboardData`, {
           params: {
             branchId: selectedBranch !== "All" ? selectedBranch : null,
             deptId: selectedDepartment !== "All" ? selectedDepartment : null,
             status: selectedStatus !== "All" ? selectedStatus : null,
           },
-          headers: { Authorization: `Bearer ${token}` },
         })
 
         const data = res.data || []
@@ -198,10 +194,7 @@ const ArchiveDashboard = () => {
         return;
       }
 
-      const response = await axios.get(`${API_HOST}/archiveJob/export/${job.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await apiClient.get(`${API_HOST}/archiveJob/export/${job.id}`, {
         responseType: "blob", // because it's a CSV file
       });
 
@@ -229,15 +222,8 @@ const ArchiveDashboard = () => {
         return;
       }
 
-      const response = await axios.post(
-        `${API_HOST}/archiveJob/retry/${job.id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.post(
+        `${API_HOST}/archiveJob/retry/${job.id}`);
 
       if (response.status === 200) {
       } else {
@@ -261,9 +247,7 @@ const ArchiveDashboard = () => {
 
   const fetchJobDocs = async (job) => {
     try {
-      const res = await axios.get(`${API_HOST}/archiveJob/grouped/${job?.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await apiClient.get(`${API_HOST}/archiveJob/grouped/${job?.id}`)
       setJobDocuments(res.data || [])
     } catch (err) {
       console.error("Error fetching job documents:", err)
@@ -304,9 +288,8 @@ const ArchiveDashboard = () => {
       const archiveJobId = selectedDocument.archiveJobId
       const versionName = version.version
 
-      const res = await axios.get(`${API_HOST}/archiveJob/archived/files`, {
+      const res = await apiClient.get(`${API_HOST}/archiveJob/archived/files`, {
         params: { documentHeaderId, archiveJobId, version: versionName },
-        headers: { Authorization: `Bearer ${token}` },
       })
 
       setSelectedVersion(version)

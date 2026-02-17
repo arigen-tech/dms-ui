@@ -15,6 +15,8 @@ import Popup from "../Components/Popup";
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 const tokenKey = "tokenKey";
 
@@ -117,9 +119,7 @@ const Role = () => {
       setIsLoading(true);
       try {
         const token = localStorage.getItem(tokenKey);
-        const response = await axios.get(`${ROLE_API}/findAll`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiClient.get(`${ROLE_API}/findAll`);
         setRoles(response.data);
         console.log('✅ Roles loaded');
       } catch (error) {
@@ -206,9 +206,7 @@ const Role = () => {
       };
 
       const token = localStorage.getItem(tokenKey);
-      const response = await axios.post(`${ROLE_API}/save`, newRole, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.post(`${ROLE_API}/save`, newRole);
 
       setRoles([...roles, response.data]);
       setFormData({ role: "", roleCode: "" });
@@ -258,15 +256,9 @@ const Role = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${ROLE_API}/update/${updatedRole.id}`,
-        updatedRole,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        }
-      );
+        updatedRole);
 
       const updatedRoles = roles.map(role =>
         role.id === updatedRole.id ? response.data : role
@@ -301,13 +293,12 @@ const Role = () => {
         };
 
         const token = localStorage.getItem(tokenKey);
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${ROLE_API}/updatestatus/${updatedRole.id}`,
           updatedRole,
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
             },
           }
         );

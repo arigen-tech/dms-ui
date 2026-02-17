@@ -12,6 +12,8 @@ import {
 } from "@heroicons/react/24/solid";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
+import apiClient from "../API/apiClient";
+
 import {
   REGISTER_API,
   EMPLOYEE_API,
@@ -151,9 +153,7 @@ const UserAddEmployee = () => {
   const fetchBranches = async () => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findActiveRole`);
       setBranchData(response.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
@@ -163,12 +163,7 @@ const UserAddEmployee = () => {
   const fetchFilterDepartments = async (branchId) => {
     try {
       const token = localStorage.getItem("tokenKey");
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentData(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -217,17 +212,10 @@ const UserAddEmployee = () => {
   const fetchEmployees = async () => {
     setIsLoading(true);
     try {
-      const userId = localStorage.getItem("userId");
+      const userId = localStorage.getItem("id");
       const token = localStorage.getItem("tokenKey");
 
-      const userResponse = await axios.get(
-        `${EMPLOYEE_API}/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const userResponse = await apiClient.get(`${EMPLOYEE_API}/findById/${userId}`);
 
       const userData = userResponse.data;
       setUserName(userResponse.data.name);
@@ -260,24 +248,10 @@ const UserAddEmployee = () => {
       }
 
       if (isAdmin) {
-        const allEmployeesResponse = await axios.get(
-          `${API_HOST}/employee/findAll`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const allEmployeesResponse = await apiClient.get(`${API_HOST}/employee/findAll`);
         setEmployees(allEmployeesResponse.data);
       } else {
-        const createdByResponse = await axios.get(
-          `${API_HOST}/employee/employeeCreateby/${userData.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const createdByResponse = await apiClient.get(`${API_HOST}/employee/employeeCreateby/${userData.id}`);
         setEmployees(createdByResponse.data.response);
       }
     } catch (error) {
@@ -297,11 +271,7 @@ const UserAddEmployee = () => {
     try {
       const token = localStorage.getItem("tokenKey");
 
-      const branchesRes = await axios.get(`${BRANCH_API}/findActiveRole`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const branchesRes = await apiClient.get(`${BRANCH_API}/findActiveRole`);
 
       setBranchOptions(branchesRes.data);
     } catch (error) {
@@ -318,14 +288,7 @@ const UserAddEmployee = () => {
     try {
       const token = localStorage.getItem("tokenKey");
 
-      const departmentsRes = await axios.get(
-        `${DEPAETMENT_API}/findByBranch/${branchId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const departmentsRes = await apiClient.get(`${DEPAETMENT_API}/findByBranch/${branchId}`);
 
       setDepartmentOptions(departmentsRes.data);
     } catch (error) {
@@ -475,7 +438,7 @@ const UserAddEmployee = () => {
 
     try {
       const token = localStorage.getItem("tokenKey");
-      const userId = parseInt(localStorage.getItem("userId"), 10);
+      const userId = parseInt(localStorage.getItem("id"), 10);
 
       const fullMobileNumber = `${formData.mobile}`;
 
@@ -493,12 +456,11 @@ const UserAddEmployee = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${REGISTER_API}/create`,
         employeeData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -617,12 +579,11 @@ const UserAddEmployee = () => {
         enabled: formData.enabled,
       };
 
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${API_HOST}/employee/update/${formData.id}`,
         updatedEmployeeData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -684,12 +645,11 @@ const UserAddEmployee = () => {
     try {
       const newStatus = !employeeToToggle.active;
 
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${API_HOST}/employee/updateStatus/${employeeToToggle.id}`,
         newStatus,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("tokenKey")}`,
             "Content-Type": "application/json",
           },
         }
@@ -827,7 +787,7 @@ const UserAddEmployee = () => {
     return pages;
   };
 
-  const role = localStorage.getItem("role");
+  const role = localStorage.getItem("roles");
 
   if (isLoading) {
     return <LoadingComponent />;

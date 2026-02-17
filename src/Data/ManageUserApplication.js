@@ -14,7 +14,7 @@ import {
 } from "@heroicons/react/24/solid"
 import { ALL_USER_APPLICATION, USER_APPLICATION } from "../API/apiConfig"
 import LoadingComponent from "../Components/LoadingComponent"
-import { postRequest, putRequest, getRequest } from "../API/apiService"
+import { postRequest, putRequest, getRequest } from "../API/apiHelper"
 import Popup from "../Components/Popup"
 import AutoTranslate from "../i18n/AutoTranslate"
 import { useLanguage } from "../i18n/LanguageContext"

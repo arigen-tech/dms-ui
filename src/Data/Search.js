@@ -177,13 +177,10 @@ const Search = () => {
   const fetchUserDetails = async () => {
     setIsLoading(true);
     try {
-      const userId = localStorage.getItem("userId");
+      const userId = localStorage.getItem("id");
       const token = localStorage.getItem("tokenKey");
 
-      const res = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
 
       const role = normalizeRole(res.data.role?.role);
       setUserRole(role);
@@ -217,12 +214,7 @@ const Search = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(
-        `${API_HOST}/CategoryMaster/findAll`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/CategoryMaster/findAll`);
       setCategoryOptions(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -235,9 +227,7 @@ const Search = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(`${YEAR_API}/findAll`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get(`${YEAR_API}/findAll`);
       setYearOptions(response.data); // Set fetched years
     } catch (error) {
       console.error('Error fetching years:', error);
@@ -250,12 +240,7 @@ const Search = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(
-        `${API_HOST}/branchmaster/findAll`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findAll`);
       setBranchOptions(response.data);
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -268,12 +253,7 @@ const Search = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('tokenKey');
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentOptions(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -295,11 +275,10 @@ const Search = () => {
       }
 
       console.log(`Attempting to fetch paths for document ID: ${doc.id}`);
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${DOCUMENTHEADER_API}/byDocumentHeader/${doc.id}/ALL`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
         }
@@ -402,12 +381,11 @@ const Search = () => {
         size: itemsPerPage,
       };
 
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${API_HOST}/api/documents/search`,
         searchPayload,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -466,7 +444,6 @@ const Search = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -524,7 +501,6 @@ const Search = () => {
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -728,11 +704,7 @@ const Search = () => {
 
   const fetchFilesType = async () => {
     try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`);
       setFilesType(response?.data?.response ?? []);
     } catch (error) {
       console.error('Error fetching Files Types:', error);

@@ -69,8 +69,8 @@ function RejectedDoc() {
   const [popupMessage, setPopupMessage] = useState(null);
 
   const token = localStorage.getItem("tokenKey");
-  const UserId = localStorage.getItem("userId");
-  const role = localStorage.getItem("role");
+  const UserId = localStorage.getItem("id");
+  const role = localStorage.getItem("roles");
 
   // Debug language status
   useEffect(() => {
@@ -138,22 +138,14 @@ function RejectedDoc() {
       let response;
 
       if (role === USER) {
-        response = await axios.get(
-          `${API_HOST}/api/documents/rejected/employee/${UserId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        response = await apiClient.get(`${API_HOST}/api/documents/rejected/employee/${UserId}`);
       } else if (
         role === SYSTEM_ADMIN ||
         role === BRANCH_ADMIN ||
         role === DEPARTMENT_ADMIN
       ) {
-        response = await axios.get(`${API_HOST}/api/documents/rejectedByEmp`, {
+        response = await apiClient.get(`${API_HOST}/api/documents/rejectedByEmp`, {
           headers: {
-            Authorization: `Bearer ${token}`,
             employeeId: UserId,
           },
         });
@@ -170,9 +162,7 @@ function RejectedDoc() {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${BRANCH_API}/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${BRANCH_API}/findActiveRole`);
       setBranches(response.data || []);
     } catch (error) {
       console.error('Error fetching branches:', error?.response?.data || error.message);
@@ -181,9 +171,7 @@ function RejectedDoc() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(`${DEPAETMENT_API}/findAll`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${DEPAETMENT_API}/findAll`);
       setDepartments(response.data || []);
     } catch (error) {
       console.error('Error fetching departments:', error?.response?.data || error.message);
@@ -217,11 +205,10 @@ function RejectedDoc() {
         `Full URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}`
       );
 
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${DOCUMENTHEADER_API}/byDocumentHeader/${documentId}/REJECTED`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -271,7 +258,6 @@ function RejectedDoc() {
       const fileUrl = `${API_HOST}/api/documents/download/${encodedPath}?action=view`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -329,7 +315,6 @@ function RejectedDoc() {
       const fileUrl = `${API_HOST}/api/documents/download/${encodeURIComponent(branch)}/${encodeURIComponent(department)}/${encodeURIComponent(year)}/${encodeURIComponent(category)}/${encodeURIComponent(version)}/${encodeURIComponent(fileName)}?action=${action}`;
 
       const response = await apiClient.get(fileUrl, {
-        headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
@@ -592,11 +577,7 @@ function RejectedDoc() {
 
   const fetchFilesType = async () => {
     try {
-      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${FILETYPE_API}/getAllActive`);
       setFilesType(response?.data?.response ?? []);
     } catch (error) {
       console.error('Error fetching Files Types:', error);

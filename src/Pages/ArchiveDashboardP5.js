@@ -7,6 +7,8 @@ import FolderGroup from "../Assets/folderGroup.png"
 import { API_HOST, BRANCH_API, DEPAETMENT_API, P5_APIS } from "../API/apiConfig"
 import AutoTranslate from '../i18n/AutoTranslate'
 import { useLanguage } from '../i18n/LanguageContext'
+import apiClient from "../API/apiClient";
+
 
 const ArchiveDashboardP5 = () => {
     const [branches, setBranches] = useState([])
@@ -59,9 +61,7 @@ const ArchiveDashboardP5 = () => {
     useEffect(() => {
         const fetchBranches = async () => {
             try {
-                const res = await axios.get(`${BRANCH_API}/findActiveRole`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
+                const res = await apiClient.get(`${BRANCH_API}/findActiveRole`)
                 setBranches(res.data)
             } catch (err) {
                 console.error("Error fetching branches:", err)
@@ -75,9 +75,7 @@ const ArchiveDashboardP5 = () => {
         const fetchDepartments = async () => {
             try {
                 if (selectedBranch !== "All") {
-                    const res = await axios.get(`${DEPAETMENT_API}/findByBranch/${selectedBranch}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    })
+                    const res = await apiClient.get(`${DEPAETMENT_API}/findByBranch/${selectedBranch}`)
                     setDepartments(res.data)
                 } else {
                     setDepartments([])
@@ -94,9 +92,7 @@ const ArchiveDashboardP5 = () => {
     useEffect(() => {
         const fetchMainCount = async () => {
             try {
-                const res = await axios.get(`${API_HOST}${P5_APIS}/counts`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
+                const res = await apiClient.get(`${API_HOST}${P5_APIS}/counts`)
 
                 const data = res.data
 
@@ -125,10 +121,10 @@ const ArchiveDashboardP5 = () => {
 useEffect(() => {
     const fetchJobs = async () => {
         try {
-            const res = await axios.get(
+            const res = await apiClient.get(
                 `${API_HOST}/retention-policy/findAllByFilter`,
                 {
-                    headers: { Authorization: `Bearer ${token}` },
+                   
                     params: {
                         branchId: selectedBranch !== "All" ? selectedBranch : null,
                         departmentId: selectedDepartment !== "All" ? selectedDepartment : null,
@@ -231,13 +227,12 @@ const handleRestore = async (e, job) => {
     try {
         setRestoringJobId(job.id);
 
-        const res = await axios.post(
+        const res = await apiClient.post(
             `${API_HOST}${P5_APIS}/restoreBulk/${job.id}`,
             null,
             {
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
                 },
                 validateStatus: (status) => status === 202,
             }
@@ -264,15 +259,8 @@ const handleRestore = async (e, job) => {
                 return;
             }
 
-            const response = await axios.post(
-                `${API_HOST}/archiveJob/retry/${job.id}`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await apiClient.post(
+                `${API_HOST}/archiveJob/retry/${job.id}`);
 
             if (response.status === 200) {
             } else {
@@ -296,9 +284,7 @@ const handleRestore = async (e, job) => {
 
     const fetchJobDocs = async (job) => {
         try {
-            const res = await axios.get(`${API_HOST}${P5_APIS}/dashboardByPolicy/${job?.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            const res = await apiClient.get(`${API_HOST}${P5_APIS}/dashboardByPolicy/${job?.id}`)
             setJobDocuments(res.data || [])
         } catch (err) {
             console.error("Error fetching job documents:", err)
@@ -326,10 +312,7 @@ const handleRestore = async (e, job) => {
                 return;
             }
 
-            const response = await axios.get(
-                `${API_HOST}${P5_APIS}/dashboardByPolicy/${policyId}/document/${headerId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const response = await apiClient.get(`${API_HOST}${P5_APIS}/dashboardByPolicy/${policyId}/document/${headerId}`);
 
             const data = response.data; // ✅ Axios already parses JSON
             console.log("Document versions from API:", data);
@@ -347,9 +330,8 @@ const handleRestore = async (e, job) => {
             // version.id is already a comma-separated string like "52,53"
             const idsCsv = version.id;
 
-            const res = await axios.get(`${API_HOST}${P5_APIS}/files`, {
+            const res = await apiClient.get(`${API_HOST}${P5_APIS}/files`, {
                 params: { ids: idsCsv },
-                headers: { Authorization: `Bearer ${token}` },
             });
 
             setSelectedVersion(version);

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
-import axios from "axios";
 import {
   InboxIcon,
   ChevronDownIcon,
@@ -45,7 +44,8 @@ import {
   USER,
 } from "../API/apiConfig";
 import { UserIcon } from "lucide-react";
-import { getRequest } from "../API/apiService";
+import { getRequest } from "../API/apiHelper";
+import apiClient from "../API/apiClient";
 import AutoTranslate from "../i18n/AutoTranslate";
 import { useLanguage } from "../i18n/LanguageContext";
 import { getFallbackTranslation, translateText, translationCache } from "../i18n/autoTranslator";
@@ -62,8 +62,8 @@ function Sidebar({ roleChanged }) {
 
   const sidebarRef = useRef(null);
 
-  const rolesId = localStorage.getItem("currRoleId") || sessionStorage.getItem("currRoleId");
-  const role = localStorage.getItem("role");
+  const rolesId = localStorage.getItem("currRoleId");
+  const role = localStorage.getItem("roles");
 
   const cacheKey = `menuCache-${rolesId}`;
 
@@ -95,6 +95,25 @@ function Sidebar({ roleChanged }) {
 
     loadTranslationDictionary();
   }, []);
+
+  useEffect(() => {
+  if (searchTerm.trim() !== "") {
+    const expandAllMatching = (items, state = {}) => {
+      items.forEach((item) => {
+        if (searchInAllLanguages(item, searchTerm)) {
+          state[item.appId] = true;
+        }
+        if (item.children?.length > 0) {
+          expandAllMatching(item.children, state);
+        }
+      });
+      return state;
+    };
+
+    setOpenMenus(expandAllMatching(menuData));
+  }
+}, [searchTerm]);
+
 
   // Function to search in all languages
   const searchInAllLanguages = useCallback((menuItem, term) => {
@@ -135,24 +154,58 @@ function Sidebar({ roleChanged }) {
     return false;
   }, [translationDictionary]);
 
+  // Recursive function to restore open state for ALL levels
+const buildOpenMenuState = (items) => {
+  const state = {};
+
+  const traverse = (menuItems) => {
+    menuItems.forEach((item) => {
+      if (item.children && item.children.length > 0) {
+        const storedState = localStorage.getItem(`menu-${item.appId}-open`);
+        state[item.appId] = storedState
+          ? JSON.parse(storedState)
+          : false;
+
+        traverse(item.children);
+      }
+    });
+  };
+
+  traverse(items);
+  return state;
+};
+
+
   // Fetch menu data
   const fetchMenuData = async () => {
     setLoading(true);
     try {
-      const data = await getRequest(`/dynamic-sidebar/getAllUrlByRoles/${rolesId}`);
+      // Call API using apiClient
+      const response = await apiClient.get(`/dynamic-sidebar/getAllUrlByRoles/${rolesId}`);
+      const data = response.data;
+
       if (data?.status === 200 && Array.isArray(data.response)) {
         setMenuData(data.response);
         sessionStorage.setItem(cacheKey, JSON.stringify(data.response));
 
         // Initialize open menus
-        const initialOpenMenus = {};
-        data.response.forEach((item) => {
-          if (item.children?.length > 0) {
-            const storedState = localStorage.getItem(`menu-${item.appId}-open`);
-            initialOpenMenus[item.appId] = storedState ? JSON.parse(storedState) : false;
-          }
-        });
-        setOpenMenus(initialOpenMenus);
+        const buildOpenMenuState = (items, state = {}) => {
+          items.forEach((item) => {
+            if (item.children?.length > 0) {
+              const storedState = localStorage.getItem(`menu-${item.appId}-open`);
+              state[item.appId] = storedState ? JSON.parse(storedState) : false;
+
+              // Recursive call for sub-children
+              buildOpenMenuState(item.children, state);
+            }
+          });
+          return state;
+        };
+
+const initialOpenMenus = buildOpenMenuState(data.response);
+setOpenMenus(initialOpenMenus);
+
+
 
         // Build allowed URLs
         const extractUrls = (items) => {
@@ -177,12 +230,11 @@ function Sidebar({ roleChanged }) {
         setMenuData([]);
       }
     } catch (error) {
-      console.error("Error fetching Menu data:", error);
+      console.error("Error fetching menu data:", error);
     } finally {
       setLoading(false);
     }
   };
-
   // Preload translations for menu items
   const preloadMenuTranslations = async (menuItems) => {
     try {
@@ -228,14 +280,9 @@ function Sidebar({ roleChanged }) {
       try {
         const parsed = JSON.parse(cached);
         setMenuData(parsed);
-        const initialOpenMenus = {};
-        parsed.forEach((item) => {
-          if (item.children?.length > 0) {
-            const storedState = localStorage.getItem(`menu-${item.appId}-open`);
-            initialOpenMenus[item.appId] = storedState ? JSON.parse(storedState) : false;
-          }
-        });
-        setOpenMenus(initialOpenMenus);
+        const initialOpenMenus = buildOpenMenuState(parsed);
+setOpenMenus(initialOpenMenus);
+
         setLoading(false);
 
         // Preload translations
@@ -340,19 +387,14 @@ function Sidebar({ roleChanged }) {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const employeeId = localStorage.getItem("userId");
-        const token = localStorage.getItem("tokenKey");
+        const employeeId = localStorage.getItem("id");
 
         if (!employeeId) {
           throw new Error("Employee ID not found in local storage.");
         }
 
-        const response = await axios.get(
-          `${API_HOST}/api/dashboard/getAllCount/${employeeId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+
+        const response = await apiClient.get(`${API_HOST}/api/dashboard/getAllCount/${employeeId}`);
 
         setCounts(response.data);
         sessionStorage.setItem("counts", JSON.stringify(response.data));
@@ -425,7 +467,7 @@ function Sidebar({ roleChanged }) {
 
   // Get count for menu item
   const getCountForMenuItem = (url) => {
-    const currentRole = localStorage.getItem("role");
+    const currentRole = localStorage.getItem("roles");
 
     const countMap = {
       "/users": counts.totalUser,

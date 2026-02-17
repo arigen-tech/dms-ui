@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import apiClient from "../API/apiClient";
 import {
   DOCUMENTHEADER_API,
   DEPAETMENT_API,
@@ -68,24 +68,18 @@ const AdminOCR = () => {
     const fetchData = async () => {
       try {
         // Fetch years
-        const yearsResponse = await axios.get(`${YEAR_API}/findActiveYear`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const yearsResponse = await apiClient.get(`${YEAR_API}/findActiveYear`);
         const filteredYears = yearsResponse.data
           .filter((yearObj) => parseInt(yearObj.name) <= currentYear)
           .sort((a, b) => parseInt(b.name) - parseInt(a.name));
         setYears([...filteredYears]);
 
         // Fetch branches
-        const branchesResponse = await axios.get(`${BRANCH_API}/findActiveRole`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const branchesResponse = await apiClient.get(`${BRANCH_API}/findActiveRole`);
         setBranches(branchesResponse.data);
 
         // Fetch categories
-        const categoriesResponse = await axios.get(`${CATEGORI_API}/findActiveCategory`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const categoriesResponse = await apiClient.get(`${CATEGORI_API}/findActiveCategory`);
         setCategories(categoriesResponse.data);
       } catch (error) {
         console.error("Error fetching dropdown data:", error);
@@ -107,11 +101,7 @@ const AdminOCR = () => {
     setSearchError("");
 
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/findByBranchId/${brId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/findByBranchId/${brId}`);
 
       const sortedDocuments = response.data.sort((a, b) => {
         const order = { PENDING: 1, REJECTED: 2, APPROVED: 3 };
@@ -133,10 +123,7 @@ const AdminOCR = () => {
     const fetchDepartments = async () => {
       if (filters.branch) {
         try {
-          const response = await axios.get(
-            `${DEPAETMENT_API}/findByBranch/${filters.branch}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+          const response = await apiClient.get(`${DEPAETMENT_API}/findByBranch/${filters.branch}`);
           setDepartments(response.data);
         } catch (error) {
           console.error("Error fetching departments:", error);

@@ -10,6 +10,8 @@ import Popup from "../Components/Popup";
 import LoadingComponent from "../Components/LoadingComponent";
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 const AuditForm = () => {
   // Get language context
@@ -122,9 +124,7 @@ const AuditForm = () => {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`${API_HOST}/branchmaster/findActiveRole`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_HOST}/branchmaster/findActiveRole`);
       setBranchData(response.data);
       console.log('✅ Branches loaded');
     } catch (error) {
@@ -134,10 +134,7 @@ const AuditForm = () => {
 
   const fetchDepartments = async (branchId) => {
     try {
-      const response = await axios.get(
-        `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
       setDepartmentData(response.data);
       console.log('✅ Departments loaded');
     } catch (error) {
@@ -148,9 +145,7 @@ const AuditForm = () => {
   const fetchForms = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${DOCUMENTHEADER_API}/getAllDocumentsAuditLog`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/getAllDocumentsAuditLog`);
       
       // Map the API response to match component expectations
       const mappedForms = response.data.map(log => ({
@@ -198,11 +193,8 @@ const AuditForm = () => {
 
   const confirmAction = async () => {
     try {
-      await axios.put(
-        `${DOCUMENTHEADER_API}/auditlog/${selectedForm.id}/${actionType}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiClient.put(
+        `${DOCUMENTHEADER_API}/auditlog/${selectedForm.id}/${actionType}`);
       showPopup(`Form ${actionType} successfully!`, "success");
       fetchForms();
     } catch (error) {

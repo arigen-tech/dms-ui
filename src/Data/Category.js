@@ -15,6 +15,8 @@ import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 const tokenKey = 'tokenKey';
 
@@ -107,11 +109,7 @@ const Category = () => {
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(`${CATEGORI_API}/findAll`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await apiClient.get(`${CATEGORI_API}/findAll`);
         setCategories(response.data);
         console.log('✅ Categories loaded');
       } catch (error) {
@@ -158,11 +156,7 @@ const Category = () => {
     }
     setIsSubmitting(true);
     try {
-      const response = await axios.post(`${CATEGORI_API}/save`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-        },
-      });
+      const response = await apiClient.post(`${CATEGORI_API}/save`, formData);
 
       setCategories([...categories, response.data]);
       setFormData({ name: '' });
@@ -218,11 +212,7 @@ const Category = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const response = await axios.put(`${CATEGORI_API}/update/${updatedCategory.id}`, updatedCategory, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await apiClient.put(`${CATEGORI_API}/update/${updatedCategory.id}`, updatedCategory);
 
         const updatedCategories = categories.map(category =>
           category.id === updatedCategory.id ? response.data : category
@@ -258,13 +248,12 @@ const Category = () => {
         };
 
         const token = localStorage.getItem(tokenKey);
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${CATEGORI_API}/updatestatus/${updatedCategory.id}`,
           updatedCategory,
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
           }
         );

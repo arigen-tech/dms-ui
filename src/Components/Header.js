@@ -10,7 +10,8 @@ import { PiUserSwitchFill } from "react-icons/pi";
 import { TbPasswordUser, TbUserCog } from "react-icons/tb";
 import { PiUserCircleGear } from "react-icons/pi";
 import { FiUser, FiGlobe } from "react-icons/fi";
-import axios from "axios";
+import apiClient from "../API/apiClient";
+import { getEmployeeImage } from "../API/apiClient";
 import { API_HOST ,SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "../API/apiConfig";
 import Popup from "../Components/Popup";
 import { NotificationBell } from "../Data/Notification";
@@ -111,33 +112,26 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
     }
   };
 
-  const fetchImageSrc = async () => {
-    try {
-      const employeeId = localStorage.getItem("userId");
-      const response = await axios.get(
-        `${API_HOST}/employee/getImageSrc/${employeeId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "arraybuffer",
-        }
-      );
-      const imageBlob = new Blob([response.data], { type: "image/jpeg" });
-      const imageUrl = URL.createObjectURL(imageBlob);
-      setImageSrc(imageUrl);
-    } catch (error) {
-      console.error(<AutoTranslate>Error fetching image source</AutoTranslate>, error);
-    }
-  };
+const fetchImageSrc = async () => {
+  try {
+    const employeeId = localStorage.getItem("id");
+
+    // Call standalone function
+    const imageArrayBuffer = await getEmployeeImage(employeeId);
+
+    const imageBlob = new Blob([imageArrayBuffer], { type: "image/jpeg" });
+    const imageUrl = URL.createObjectURL(imageBlob);
+    setImageSrc(imageUrl);
+  } catch (error) {
+    console.error("Error fetching image source", error);
+  }
+};
 
   const fetchUserRole = async () => {
     try {
-      const employeeId = localStorage.getItem("userId");
-      const response = await axios.get(
-        `${API_HOST}/api/EmpRole/${employeeId}/roles/active`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const employeeId = localStorage.getItem("id");
+
+      const response = await apiClient.get(`${API_HOST}/api/EmpRole/${employeeId}/roles/active`);
 
       const rolePriority = [SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER];
 
@@ -160,17 +154,16 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
   const confirmRoleSwitch = async () => {
     try {
       setIsConfSwitch(true);
-      const employeeId = localStorage.getItem("userId");
-      const response = await axios.put(
-        `${API_HOST}/employee/${employeeId}/role/switch`,
-        { targetRoleName },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const employeeId = localStorage.getItem("id");
+       const response = await apiClient.put(
+      `/employee/${employeeId}/role/switch`,
+      { targetRoleName } // request body
+    );
 
       const roleId = response.data?.response?.role?.id;
-      if (roleId) {
-        localStorage.setItem("currRoleId", roleId);
-      }
+    if (roleId) {
+      localStorage.setItem("currRoleId", roleId);
+    }
 
       localStorage.setItem("role", targetRoleName);
       setRole(targetRoleName);

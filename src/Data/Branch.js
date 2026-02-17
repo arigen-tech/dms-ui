@@ -15,6 +15,8 @@ import Popup from '../Components/Popup';
 import LoadingComponent from '../Components/LoadingComponent';
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from "../API/apiClient";
+
 
 const tokenKey = 'tokenKey';
 
@@ -116,11 +118,7 @@ const Branch = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const response = await axios.get(`${BRANCH_API}/findAll`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const response = await apiClient.get(`${BRANCH_API}/findAll`);
         setBranches(response.data);
         console.log('✅ Branches loaded');
       } catch (error) {
@@ -184,10 +182,9 @@ const Branch = () => {
         isActive: formData.isActive ? 1 : 0,
       };
 
-      const response = await axios.post(`${BRANCH_API}/save`, newBranch, {
+      const response = await apiClient.post(`${BRANCH_API}/save`, newBranch, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -249,11 +246,7 @@ const Branch = () => {
           updatedOn: new Date().toISOString(),
         };
 
-        const response = await axios.put(`${BRANCH_API}/update/${updatedBranch.id}`, updatedBranch, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(tokenKey)}`,
-          },
-        });
+        const response = await apiClient.put(`${BRANCH_API}/update/${updatedBranch.id}`, updatedBranch);
 
         const updatedBranches = branches.map(branch =>
           branch.id === updatedBranch.id ? response.data : branch
@@ -289,13 +282,12 @@ const Branch = () => {
         };
 
         const token = localStorage.getItem(tokenKey);
-        const response = await axios.put(
+        const response = await apiClient.put(
           `${BRANCH_API}/updatestatus/${updatedBranch.id}`,
           updatedBranch,
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
           }
         );

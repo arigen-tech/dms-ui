@@ -17,6 +17,8 @@ import LoadingComponent from '../../Components/LoadingComponent';
 import AutoTranslate from '../../i18n/AutoTranslate';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { getFallbackTranslation } from '../../i18n/autoTranslator';
+import apiClient from "../../API/apiClient"
+
 
 const BranchDepartments = () => {
   // Get language context
@@ -114,15 +116,8 @@ const BranchDepartments = () => {
   const fetchUserBranch = async () => {
     setIsLoading(true);
     try {
-      const userId = localStorage.getItem("userId");
-      const response = await axios.get(
-        `${API_HOST}/employee/findById/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const userId = localStorage.getItem("id");
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
       setUserBranch(response.data.branch);
       setFormData(prev => ({
         ...prev,
@@ -139,11 +134,7 @@ const BranchDepartments = () => {
   const fetchDepartments = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${DEPAETMENT_API}/findByBranch/${userBranch.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get(`${DEPAETMENT_API}/findByBranch/${userBranch.id}`);
       setDepartments(response.data);
     } catch (error) {
       showPopup('Error fetching departments', 'error');
@@ -214,10 +205,9 @@ const BranchDepartments = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.post(`${DEPAETMENT_API}/save`, newDepartment, {
+      const response = await apiClient.post(`${DEPAETMENT_API}/save`, newDepartment, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -261,13 +251,12 @@ const BranchDepartments = () => {
         updatedOn: new Date().toISOString(),
       };
 
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${DEPAETMENT_API}/update/${formData.id}`,
         updatedDepartment,
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
           },
         }
       );
@@ -299,13 +288,12 @@ const BranchDepartments = () => {
       try {
         const isActive = toggleDepartment.isActive === 1 ? 0 : 1;
 
-        await axios.put(
+        await apiClient.put(
           `${DEPAETMENT_API}/updateDeptStatus/${toggleDepartment.id}`,
           isActive,
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
             },
           }
         );

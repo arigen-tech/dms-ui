@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Popup from "../Components/Popup"
 import { MAS_TEMPLATE } from "../API/apiConfig";
 import LoadingComponent from '../Components/LoadingComponent';
-import { postRequest, putRequest, getRequest } from "../API/apiService";
+import { postRequest, putRequest, getRequest } from "../API/apiHelper";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,

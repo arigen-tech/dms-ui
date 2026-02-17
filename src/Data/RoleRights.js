@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Popup from "../Components/Popup";
 import LoadingComponent from '../Components/LoadingComponent';
-import { postRequest, putRequest, getRequest } from "../API/apiService";
+import { postRequest, putRequest, getRequest } from "../API/apiHelper";
 import { MAS_ROLES, ROLE_TEMPLATE, MAS_TEMPLATE } from "../API/apiConfig";
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
