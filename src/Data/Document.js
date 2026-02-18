@@ -7,6 +7,8 @@ import FilePreviewModal from "../Components/FilePreviewModal";
 import LoadingComponent from '../Components/LoadingComponent';
 import { Tooltip } from "react-tooltip";
 import WaitingRoom from '../Data/WaitingRoom';
+import { postRequest } from "../API/apiHelper"; // adjust path if needed
+
 
 // Import AutoTranslate components
 import AutoTranslate from '../i18n/AutoTranslate';
@@ -691,176 +693,148 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     }
   };
 
-  const handleUploadDocument = async () => {
-    if (selectedFiles.length === 0) {
-      showPopup("Please select at least one file to upload.", "warning");
-      return;
-    }
 
-    const versionToUpload = formData.version?.trim();
-    const yearToUpload = formData.year?.id || formData.year?.name;
+const handleUploadDocument = async () => {
+  if (selectedFiles.length === 0) {
+    showPopup("Please select at least one file to upload.", "warning");
+    return;
+  }
 
-    const isDuplicate = [
-      ...(uploadedFilePath || []),
-      ...(formData.uploadedFilePaths || []),
-    ].some((file) => {
-      const existingVersion = file.version?.trim();
-      const existingYear = file.yearMaster?.id || file.yearMaster?.name;
-      return (
-        existingVersion?.toLowerCase() === versionToUpload.toLowerCase() &&
-        existingYear === yearToUpload
-      );
-    });
+  const versionToUpload = formData.version?.trim();
+  const yearToUpload = formData.year?.id || formData.year?.name;
 
-    if (isDuplicate) {
-      showPopup(
-        `Version "${versionToUpload}" already exists for year "${formData.year?.name}". Please use a new version or select a different year.`,
-        "warning"
-      );
-      return;
-    }
+  const isDuplicate = [
+    ...(uploadedFilePath || []),
+    ...(formData.uploadedFilePaths || []),
+  ].some((file) => {
+    const existingVersion = file.version?.trim();
+    const existingYear = file.yearMaster?.id || file.yearMaster?.name;
+    return (
+      existingVersion?.toLowerCase() === versionToUpload.toLowerCase() &&
+      existingYear === yearToUpload
+    );
+  });
 
-    setIsUploading(true);
-    setUploadProgress(0);
+  if (isDuplicate) {
+    showPopup(
+      `Version "${versionToUpload}" already exists for year "${formData.year?.name}". Please use a new version or select a different year.`,
+      "warning"
+    );
+    return;
+  }
 
-    const uploadData = new FormData();
-    const { category, year, version, fileNo, status } = formData;
+  setIsUploading(true);
+  setUploadProgress(0);
 
-    uploadData.append("category", category?.name);
-    uploadData.append("year", year?.name);
-    uploadData.append("version", version || 1);
-    uploadData.append("branch", userBranch);
-    uploadData.append("department", userDep);
+  const uploadData = new FormData();
+  const { category, year, version, fileNo, status } = formData;
 
-    const renamedFiles = selectedFiles.map((file, index) => {
-      const now = new Date();
-      const formattedDate = `${now.getFullYear()}${String(
-        now.getMonth() + 1
-      ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
-        now.getHours()
-      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
-        now.getSeconds()
-      ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
+  uploadData.append("category", category?.name);
+  uploadData.append("year", year?.name);
+  uploadData.append("version", version || 1);
+  uploadData.append("branch", userBranch);
+  uploadData.append("department", userDep);
 
-      const baseName = fileNo.split(".")[0].substring(0, 3);
-      const extension = file.name.split(".").pop();
+  const renamedFiles = selectedFiles.map((file, index) => {
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}${String(
+      now.getMonth() + 1
+    ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
+      now.getHours()
+    ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+      now.getSeconds()
+    ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
 
-      return {
-        file,
-        renamed: `${baseName}_${category?.name}_${year?.name}_${version}_${formattedDate}_${index + 1}.${extension}`,
-      };
-    });
+    const baseName = fileNo.split(".")[0].substring(0, 3);
+    const extension = file.name.split(".").pop();
 
-    renamedFiles.forEach(({ file, renamed }) => {
-      uploadData.append("files", file, renamed);
-    });
+    return {
+      file,
+      renamed: `${baseName}_${category?.name}_${year?.name}_${version}_${formattedDate}_${index + 1}.${extension}`,
+    };
+  });
 
-    const controller = new AbortController();
-    setUploadController(controller);
+  renamedFiles.forEach(({ file, renamed }) => {
+    uploadData.append("files", file, renamed);
+  });
 
-    try {
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", `${API_HOST}/api/documents/upload`, true);
-      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          setUploadProgress(progress);
-        }
-      };
-
-      xhr.onload = () => {
-        setIsUploading(false);
-        setUploadController(null);
-
-        if (xhr.status >= 200 && xhr.status < 300) {
-          const result = JSON.parse(xhr.responseText);
-
-          if (result.uploadedFiles.length > 0) {
-            setUploadedFileNames((prevNames) => [
-              ...prevNames,
-              ...renamedFiles.map((f) => f.renamed),
-            ]);
-
-            setUploadedFilePath((prevPath) => [
-              ...prevPath,
-              ...result.uploadedFiles.map((fileObj, index) => ({
-                path: fileObj.path,
-                version: `${version}`,
-                yearMaster: year,
-                status: status,
-                fileSizeHuman: fileObj.fileSizeHuman,
-                fileSizeBytes: fileObj.fileSizeBytes,
-                fileType: fileObj.fileType || null,
-                mimeType: fileObj.contentType || null,
-                pageCounts: fileObj.pageCount || null,
-                displayName: renamedFiles[index]?.renamed,
-              })),
-            ]);
-
-            setFormData((prevData) => ({
-              ...prevData,
-              uploadedFilePaths: [
-                ...(prevData.uploadedFilePaths || []),
-                ...result.uploadedFiles.map((fileObj, index) => ({
-                  path: fileObj.path,
-                  version: `${version}`,
-                  yearMaster: year,
-                  status: status,
-                  fileSizeHuman: fileObj.fileSizeHuman,
-                  fileSizeBytes: fileObj.fileSizeBytes,
-                  fileType: fileObj.fileType || null,
-                  mimeType: fileObj.contentType || null,
-                  pageCounts: fileObj.pageCount || null,
-                  displayName: renamedFiles[index]?.renamed,
-                })),
-              ],
-              version: "",
-            }));
-
-            if (fileInputRef.current) {
-              fileInputRef.current.value = null;
-            }
-
-            showPopup("Files uploaded successfully!", "success");
-          }
-
-          if (result.errors.length > 0) {
-            showPopup(
-              "Some files failed to upload:" + "\n" + result.errors
-                .map((err) => `${err.file}: ${err.error}`)
-                .join("\n"),
-              "error"
+  try {
+    const result = await postRequest(
+      "/api/documents/upload",
+      uploadData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
             );
-            setUnsportFile(true);
+            setUploadProgress(percent);
           }
-        } else {
-          showPopup("File upload failed: " + xhr.statusText, "error");
-        }
-      };
+        },
+      }
+    );
 
-      xhr.onerror = () => {
-        setIsUploading(false);
-        showPopup("Upload failed due to a network error.", "error");
-      };
+    /* ================= SUCCESS ================= */
 
-      xhr.onabort = () => {
-        setIsUploading(false);
-        setUploadController(null);
-        showPopup("Upload has been canceled.", "warning");
-      };
+    if (result.uploadedFiles?.length > 0) {
+      setUploadedFileNames((prevNames) => [
+        ...prevNames,
+        ...renamedFiles.map((f) => f.renamed),
+      ]);
 
-      controller.signal.addEventListener("abort", () => {
-        xhr.abort();
-      });
+      const mappedFiles = result.uploadedFiles.map((fileObj, index) => ({
+        path: fileObj.path,
+        version: `${version}`,
+        yearMaster: year,
+        status: status,
+        fileSizeHuman: fileObj.fileSizeHuman,
+        fileSizeBytes: fileObj.fileSizeBytes,
+        fileType: fileObj.fileType || null,
+        mimeType: fileObj.contentType || null,
+        pageCounts: fileObj.pageCount || null,
+        displayName: renamedFiles[index]?.renamed,
+      }));
 
-      xhr.send(uploadData);
-    } catch (error) {
-      setIsUploading(false);
-      showPopup("File upload failed: " + error.message, "error");
+      setUploadedFilePath((prev) => [...prev, ...mappedFiles]);
+
+      setFormData((prevData) => ({
+        ...prevData,
+        uploadedFilePaths: [
+          ...(prevData.uploadedFilePaths || []),
+          ...mappedFiles,
+        ],
+        version: "",
+      }));
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = null;
+      }
+
+      showPopup("Files uploaded successfully!", "success");
     }
-  };
+
+    if (result.errors?.length > 0) {
+      showPopup(
+        "Some files failed:\n" +
+          result.errors.map((err) => `${err.file}: ${err.error}`).join("\n"),
+        "error"
+      );
+      setUnsportFile(true);
+    }
+  } catch (error) {
+    console.error("Upload error:", error);
+    showPopup(
+      error?.response?.data?.message || "File upload failed.",
+      "error"
+    );
+  } finally {
+    setIsUploading(false);
+  }
+};
+
 
   const metadataObject = [];
   const seenKeys = new Set();
