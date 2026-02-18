@@ -8,7 +8,7 @@ import { getFallbackTranslation } from "../../i18n/autoTranslator";
 import { useLanguage } from "../../i18n/LanguageContext";
 import PdfViewer from "../../Components/PdfViewer";
 
-const DocumentsDownloadedReports = () => {
+const DocumentsUploadReports = () => {
     const { currentLanguage } = useLanguage();
 
     const initialFormData = {
@@ -215,7 +215,7 @@ const DocumentsDownloadedReports = () => {
     return (
         <div className="p-4">
             <h1 className="text-xl mb-4 font-semibold">
-                <AutoTranslate>Document Downloaded Reports</AutoTranslate>
+                <AutoTranslate>Document Uploads Reports</AutoTranslate>
             </h1>
 
             <div className="bg-white p-4 rounded-lg shadow-md">
@@ -404,4 +404,4 @@ const DocumentsDownloadedReports = () => {
     );
 };
 
-export default DocumentsDownloadedReports;
+export default DocumentsUploadReports;

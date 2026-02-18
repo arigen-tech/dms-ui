@@ -3,7 +3,7 @@ import Header from '../../Components/Header';
 import Layout from '../../Components/Layout';
 import DocumentsUploadReports from '../../Data/ReportsD/DocumentsDownloadedReports';
 
-function DocumentsDownloadedReport() {
+function DocumentsUploadReport() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const toggleSidebar = () => {
@@ -16,4 +16,4 @@ function DocumentsDownloadedReport() {
     )
 }
 
-export default DocumentsDownloadedReport
+export default DocumentsUploadReport
