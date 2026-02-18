@@ -38,7 +38,7 @@ const AdminOCRResponse = () => {
       for (const docName of responseData.matching_files) {
         try {
           const response = await apiClient.get(
-            `${DOCUMENTHEADER_API}/findByDocName/${docName}`);
+            `${DOCUMENTHEADER_API}/findByDocName/${docName.file_name}`);
 
           const documentId = response.data.response.id;
           const documentData = response.data.response;
@@ -46,7 +46,7 @@ const AdminOCRResponse = () => {
           if (fetchedDocuments.has(documentId)) {
             // If the ID already exists, append the new docName to the existing one.
             const existingEntry = fetchedDocuments.get(documentId);
-            existingEntry.docName += `, ${docName}`;
+            existingEntry.docName += `, ${docName.file_name}`;
           } else {
             // Otherwise, add a new entry to the Map.
             fetchedDocuments.set(documentId, { docName, data: documentData });

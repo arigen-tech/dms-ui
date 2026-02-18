@@ -205,7 +205,7 @@ const AdminOCR = () => {
     }
 
     const docNames = filteredDocuments
-      .flatMap((doc) => doc.documentDetails.map((detail) => detail.docName))
+      .flatMap((doc) => doc.documentDetails.map((detail) => detail.id))
       .filter(Boolean);
 
     if (docNames.length === 0) {
@@ -219,7 +219,7 @@ const AdminOCR = () => {
     const apiEndpoint = `${API_OCR_HOST}/search/selected`;
     const payload = {
       query: query,
-      selected_files: docNames,
+      mysql_original_id: docNames,
     };
 
     fetch(apiEndpoint, {

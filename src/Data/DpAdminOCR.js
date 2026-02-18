@@ -234,7 +234,7 @@ const DpAdminOCR = () => {
     const apiEndpoint = `${API_OCR_HOST}/search/selected`;
     const payload = {
       query: query,
-      selected_files: docNames,
+      mysql_original_id: docNames,
     };
 
     fetch(apiEndpoint, {
