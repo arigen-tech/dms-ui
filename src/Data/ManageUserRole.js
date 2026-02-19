@@ -46,7 +46,7 @@ const ManageUserRole = () => {
   const token = typeof window !== "undefined" ? localStorage.getItem("tokenKey") : null;
   const [loading, setLoading] = useState(false);
   const employeId = typeof window !== "undefined" ? localStorage.getItem("id") : null;
-  const loginEmpRole = typeof window !== "undefined" ? localStorage.getItem("roles") : null;
+  const loginEmpRole = typeof window !== "undefined" ? localStorage.getItem("role") : null;
 
   const [showForm, setShowForm] = useState(false);
 

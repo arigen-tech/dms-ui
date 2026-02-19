@@ -622,7 +622,7 @@ const BranchEmployee = () => {
         return pages;
     };
 
-    const role = localStorage.getItem("roles");
+    const role = localStorage.getItem("role");
 
     return (
         <div className="px-2">

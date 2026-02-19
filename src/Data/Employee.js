@@ -787,7 +787,7 @@ const UserAddEmployee = () => {
     return pages;
   };
 
-  const role = localStorage.getItem("roles");
+  const role = localStorage.getItem("role");
 
   if (isLoading) {
     return <LoadingComponent />;

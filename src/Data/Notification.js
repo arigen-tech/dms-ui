@@ -104,7 +104,7 @@ export const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0)
   const navigate = useNavigate()
   const userId = localStorage.getItem("id")
-  const role = localStorage.getItem("roles")
+  const role = localStorage.getItem("role")
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -189,7 +189,7 @@ export const Notification = () => {
   const navigate = useNavigate()
 
   const userId = localStorage.getItem("id")
-  const role = localStorage.getItem("roles")
+  const role = localStorage.getItem("role")
 
   const NOTIFICATION_TYPES = [
     "all",

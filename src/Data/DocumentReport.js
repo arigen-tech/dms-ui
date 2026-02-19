@@ -48,7 +48,7 @@ const DocumentReport = () => {
   const [showModal, setShowModal] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
 
-  const role = localStorage.getItem("roles");
+  const role = localStorage.getItem("role");
   const userId = localStorage.getItem("id");
 
   // Debug log

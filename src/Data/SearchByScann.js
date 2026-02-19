@@ -36,7 +36,7 @@ const SearchByScan = () => {
   const [error, setError] = useState(null)
   const token = localStorage.getItem("tokenKey")
   const userId = localStorage.getItem("id")
-  const role = localStorage.getItem("roles")
+  const role = localStorage.getItem("role")
   const [popupMessage, setPopupMessage] = useState(null)
   const location = useLocation()
   const [file, setFile] = useState(null)

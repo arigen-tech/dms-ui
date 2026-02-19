@@ -63,7 +63,7 @@ function Sidebar({ roleChanged }) {
   const sidebarRef = useRef(null);
 
   const rolesId = localStorage.getItem("currRoleId");
-  const role = localStorage.getItem("roles");
+  const role = localStorage.getItem("role");
 
   const cacheKey = `menuCache-${rolesId}`;
 
@@ -467,7 +467,7 @@ setOpenMenus(initialOpenMenus);
 
   // Get count for menu item
   const getCountForMenuItem = (url) => {
-    const currentRole = localStorage.getItem("roles");
+    const currentRole = localStorage.getItem("role");
 
     const countMap = {
       "/users": counts.totalUser,

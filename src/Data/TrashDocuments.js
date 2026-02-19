@@ -76,7 +76,7 @@ const TrashDoc = () => {
 
   const token = localStorage.getItem("tokenKey");
   const UserId = localStorage.getItem("id");
-  const role = localStorage.getItem("roles");
+  const role = localStorage.getItem("role");
 
   useEffect(() => {
     console.log('🔍 TrashDoc Component - Language Status:', {

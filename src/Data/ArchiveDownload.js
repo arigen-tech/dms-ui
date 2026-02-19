@@ -889,7 +889,7 @@ const ArchiveDownload = () => {
   }
 
   const renderArchiveFields = () => {
-    userRole = localStorage.getItem("roles")
+    userRole = localStorage.getItem("role")
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 bg-slate-100 p-6 rounded-lg">
         {userRole === BRANCH_ADMIN ? (

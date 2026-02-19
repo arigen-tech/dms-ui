@@ -47,7 +47,7 @@ const IDCardGenerator = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const token = localStorage.getItem("tokenKey");
-    const role = localStorage.getItem("roles");
+    const role = localStorage.getItem("role");
 
     // Format date helper function
     const formatDate = useCallback((dateString) => {

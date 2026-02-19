@@ -170,7 +170,7 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    const role = localStorage.getItem("roles");
+    const role = localStorage.getItem("role");
     if (role === SYSTEM_ADMIN) {
       fetchBranches();
     }
@@ -230,7 +230,7 @@ function Dashboard() {
         setIsGrLoading(true);
 
         const employeeId = localStorage.getItem("id");
-        const role = localStorage.getItem("roles");
+        const role = localStorage.getItem("role");
 
         if (!employeeId) {
           throw new Error("Employee ID missing.");
@@ -302,7 +302,7 @@ function Dashboard() {
         setIsBarChartLoading(true);
 
         const employeeId = localStorage.getItem("id");
-        const role = localStorage.getItem("roles");
+        const role = localStorage.getItem("role");
 
         if (!employeeId) {
           throw new Error("Employee ID missing.");
@@ -461,7 +461,7 @@ function Dashboard() {
     );
   }
 
-  const role = localStorage.getItem("roles");
+  const role = localStorage.getItem("role");
   const totalApprovedDocuments = chartData.reduce(
     (acc, curr) => acc + curr.ApprovedDocuments,
     0

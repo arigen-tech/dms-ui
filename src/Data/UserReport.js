@@ -73,7 +73,7 @@ const UserReport = () => {
     setFormData({ ...formData, docType: value });
   };
 
-  const role = localStorage.getItem("roles");
+  const role = localStorage.getItem("role");
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({
