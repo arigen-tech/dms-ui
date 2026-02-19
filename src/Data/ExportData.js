@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Download, Database, Folder, Archive, AlertCircle, CheckCircle, Info, Calendar, Filter, X, Clock, Ban, HardDrive, FileText, Shield, CloudDownload, Server, FileArchive, CheckCircle2 } from 'lucide-react';
 import { EXPORT_API } from '../API/apiConfig';
 import Popup from '../Components/Popup';
-import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
-import { useLanguage } from '../i18n/LanguageContext'; // Import useLanguage hook
+import AutoTranslate from '../i18n/AutoTranslate'; 
+import { useLanguage } from '../i18n/LanguageContext'; 
+import apiClient from "../API/apiClient";
+
 
 const ExportData = () => {
   // Get language context
@@ -64,23 +66,27 @@ const ExportData = () => {
 
   // Load backend export history
   const loadBackendExportHistory = async () => {
-    try {
-      const response = await fetch(`${EXPORT_API}/history`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+  try {
+    const response = await apiClient.get(
+      `${EXPORT_API}/history`
+    );
 
-      if (response.ok) {
-        const history = await response.json();
-        setBackendExportHistory(history);
-      }
-    } catch (error) {
-      console.error('Failed to load backend export history:', error);
-    }
-  };
+    setBackendExportHistory(response.data);
+
+  } catch (error) {
+    console.error(
+      "Failed to load backend export history:",
+      error
+    );
+
+    showPopup(
+      error?.response?.data?.message ||
+        "Failed to load export history.",
+      "error"
+    );
+  }
+};
+
 
   // Save export history to localStorage whenever it changes
   useEffect(() => {
@@ -299,26 +305,24 @@ const ExportData = () => {
   };
 
   const performExport = async (type) => {
-    // BLOCK THE EXPORT if it's a duplicate range for this specific type
-    if (duplicateWarning && duplicateWarning[type] && activeTab === 'advanced') {
+    if (duplicateWarning && duplicateWarning[type] && activeTab === "advanced") {
       showDuplicateBlockPopup(type);
-      return; // IMPORTANT: Return early to prevent export
-    }
-
-    if (!token) {
-      showPopup('Authentication required. Please login again.', 'error');
       return;
     }
 
     if (isExportBlocked(type)) {
-      showPopup('Export operation already in progress. Please wait for completion.', 'warning');
+      showPopup(
+        "Export operation already in progress. Please wait for completion.",
+        "warning"
+      );
       return;
     }
 
-    // FIXED: Only validate date range for Advanced tab
-    const validationErrors = activeTab === 'advanced' ? validateDateRange(true) : [];
+    const validationErrors =
+      activeTab === "advanced" ? validateDateRange(true) : [];
+
     if (validationErrors.length > 0) {
-      showPopup(validationErrors.join(', '), 'error');
+      showPopup(validationErrors.join(", "), "error");
       return;
     }
 
@@ -329,100 +333,74 @@ const ExportData = () => {
 
     setExporting(type);
     setStatus({});
-
     const interval = simulateProgress();
 
     try {
-      let endpoint = '';
+      let endpoint = "";
 
       switch (type) {
-        case 'database':
-          endpoint = '/database';
+        case "database":
+          endpoint = "/database";
           break;
-        case 'files':
-          endpoint = '/files';
+        case "files":
+          endpoint = "/files";
           break;
-        case 'complete':
-          endpoint = '/complete';
+        case "complete":
+          endpoint = "/complete";
           break;
         default:
           return;
       }
 
-      const params = new URLSearchParams();
+      const response = await apiClient.get(
+        `${EXPORT_API}${endpoint}`,
+        {
+          params:
+            activeTab === "advanced" &&
+              dateRange.fromDate &&
+              dateRange.toDate
+              ? {
+                fromDate: dateRange.fromDate,
+                toDate: dateRange.toDate,
+              }
+              : {},
 
-      // FIXED: Only add date parameters for Advanced tab with actual date selection
-      if (activeTab === 'advanced' && dateRange.fromDate && dateRange.toDate) {
-        params.append('fromDate', dateRange.fromDate);
-        params.append('toDate', dateRange.toDate);
-      }
-      // For Quick Backup: DO NOT add any date parameters at all
-
-      const url = `${EXPORT_API}${endpoint}${params.toString() ? `?${params.toString()}` : ''}`;
-
-      console.log(`🔧 DEBUG - Export Details:`);
-      console.log(`🔧 Active Tab: ${activeTab}`);
-      console.log(`🔧 Date Range: from=${dateRange.fromDate}, to=${dateRange.toDate}`);
-      console.log(`🔧 Final URL: ${url}`);
-      console.log(`🔧 Query Params: ${params.toString()}`);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 429) {
-        const errorText = await response.text();
-        throw new Error(`Export operation blocked: ${errorText}`);
-      }
-
-      if (response.status === 400) {
-        const errorData = await response.text();
-        // Check if it's a duplicate error
-        if (errorData.includes('Duplicate backup detected') || errorData.includes('completely within existing backup')) {
-          throw new Error(`DUPLICATE_BACKUP: ${errorData}`);
+          responseType: "blob",
         }
-        throw new Error(`Export failed: ${errorData}`);
+      );
+
+      const blob = response.data;
+
+      if (!blob || blob.size === 0) {
+        throw new Error("Export operation returned empty file");
       }
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Export failed with status ${response.status}: ${errorData || response.statusText}`);
-      }
-
-      const blob = await response.blob();
-
-      if (blob.size === 0) {
-        throw new Error('Export operation returned empty file');
-      }
-
-      // Complete progress to 100%
       setProgress(100);
       clearInterval(interval);
 
-      const contentDisposition = response.headers.get('Content-Disposition');
-      const exportIdHeader = response.headers.get('X-Export-ID');
-      const dateRangeHeader = response.headers.get('X-Date-Range');
+      const contentDisposition =
+        response.headers["content-disposition"];
+      const exportIdHeader =
+        response.headers["x-export-id"];
+      const dateRangeHeader =
+        response.headers["x-date-range"];
 
-      console.log(`🔧 Response Headers:`);
-      console.log(`🔧 Content-Disposition: ${contentDisposition}`);
-      console.log(`🔧 X-Date-Range: ${dateRangeHeader}`);
-      console.log(`🔧 X-Export-ID: ${exportIdHeader}`);
+      let fileName = generateFileName(
+        type,
+        dateRange.fromDate,
+        dateRange.toDate
+      );
 
-      // FIXED: Generate filename based on actual export mode
-      let fileName = generateFileName(type, dateRange.fromDate, dateRange.toDate);
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        const filenameMatch =
+          contentDisposition.match(/filename="(.+)"/);
         if (filenameMatch) {
           fileName = filenameMatch[1];
         }
       }
 
       const urlObject = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = urlObject;
       link.download = fileName;
       document.body.appendChild(link);
@@ -430,10 +408,14 @@ const ExportData = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(urlObject);
 
-      // FIXED: Update success message based on actual export mode
-      const dateRangeText = activeTab === 'advanced' && dateRange.fromDate && dateRange.toDate
-        ? ` for period ${formatDateDisplay(dateRange.fromDate)} to ${formatDateDisplay(dateRange.toDate)}`
-        : ' (Complete Data - No Date Filter)';
+      const dateRangeText =
+        activeTab === "advanced" &&
+          dateRange.fromDate &&
+          dateRange.toDate
+          ? ` for period ${formatDateDisplay(
+            dateRange.fromDate
+          )} to ${formatDateDisplay(dateRange.toDate)}`
+          : " (Complete Data - No Date Filter)";
 
       const successData = {
         type: exportTypeName,
@@ -441,55 +423,98 @@ const ExportData = () => {
         fileSize: formatFileSize(blob.size),
         dateRange: dateRangeText,
         timestamp: new Date().toLocaleTimeString(),
-        exportMode: activeTab === 'quick' ? 'Complete System Export' : 'Date Range Export'
+        exportMode:
+          activeTab === "quick"
+            ? "Complete System Export"
+            : "Date Range Export",
       };
 
       setStatus({
-        type: 'success',
-        message: `${exportTypeName} backup completed successfully`
+        type: "success",
+        message: `${exportTypeName} backup completed successfully`,
       });
 
-      // Only add to history when completed
-      // FIXED: For Quick Backup, store null dates in history
-      const historyFromDate = activeTab === 'advanced' ? dateRange.fromDate : null;
-      const historyToDate = activeTab === 'advanced' ? dateRange.toDate : null;
+      const historyFromDate =
+        activeTab === "advanced"
+          ? dateRange.fromDate
+          : null;
 
-      addToExportHistory(type, historyFromDate, historyToDate, 'completed', fileName, exportIdHeader || exportId, blob.size);
+      const historyToDate =
+        activeTab === "advanced"
+          ? dateRange.toDate
+          : null;
 
-      // Reload backend history to include this new export
+      addToExportHistory(
+        type,
+        historyFromDate,
+        historyToDate,
+        "completed",
+        fileName,
+        exportIdHeader || exportId,
+        blob.size
+      );
+
       loadBackendExportHistory();
-
       showSuccessPopupMessage(successData);
 
     } catch (error) {
       setProgress(0);
       clearInterval(interval);
 
-      // Handle duplicate backup error from backend
-      if (error.message.includes('DUPLICATE_BACKUP')) {
-        const errorMessage = error.message.replace('DUPLICATE_BACKUP: ', '');
+      // Axios error handling
+      const status = error.response?.status;
+      const errorData =
+        error.response?.data instanceof Blob
+          ? await error.response.data.text()
+          : error.response?.data;
+
+      if (
+        status === 400 &&
+        errorData?.includes?.("Duplicate backup detected")
+      ) {
         showDuplicateBlockPopup(type);
       } else {
-        const errorMessage = `Backup operation failed: ${error.message}`;
+        const errorMessage =
+          errorData?.message ||
+          errorData ||
+          error.message;
 
         setStatus({
-          type: 'error',
-          message: errorMessage
+          type: "error",
+          message: `Backup operation failed: ${errorMessage}`,
         });
 
-        // Add failed export to history
-        const historyFromDate = activeTab === 'advanced' ? dateRange.fromDate : null;
-        const historyToDate = activeTab === 'advanced' ? dateRange.toDate : null;
-        addToExportHistory(type, historyFromDate, historyToDate, 'failed', null, exportId);
-        showPopup(errorMessage, 'error');
+        const historyFromDate =
+          activeTab === "advanced"
+            ? dateRange.fromDate
+            : null;
+
+        const historyToDate =
+          activeTab === "advanced"
+            ? dateRange.toDate
+            : null;
+
+        addToExportHistory(
+          type,
+          historyFromDate,
+          historyToDate,
+          "failed",
+          null,
+          exportId
+        );
+
+        showPopup(
+          `Backup operation failed: ${errorMessage}`,
+          "error"
+        );
       }
     } finally {
       setTimeout(() => {
-        setExporting('');
+        setExporting("");
         setProgress(0);
-        // Remove from blocked exports
+
         const key = `${type}_${dateRange.fromDate}_${dateRange.toDate}`;
-        setBlockedExports(prev => {
+        setBlockedExports((prev) => {
           const newSet = new Set(prev);
           newSet.delete(key);
           return newSet;
@@ -497,6 +522,7 @@ const ExportData = () => {
       }, 2000);
     }
   };
+
 
   const resetPage = () => {
     setShowSuccessPopup(false);

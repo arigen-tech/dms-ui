@@ -16,13 +16,14 @@ const Spinner = ({ size = "h-5 w-5", color = "text-white" }) => (
     </svg>
 );
 
-const DocumentsDownloadedReports = () => {
+const DocumentAuditReport = () => {
     const { currentLanguage } = useLanguage();
 
     const initialFormData = {
         branch: "",
         department: "",
         category: "",
+        actionType: "ALL", // Default to ALL for audit
     };
 
     const [searchCriteria, setSearchCriteria] = useState(initialFormData);
@@ -40,6 +41,20 @@ const DocumentsDownloadedReports = () => {
     // Loading states
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+    // Action type options for audit dropdown
+    const actionTypeOptions = [
+        { value: "ALL", label: "All Actions" },
+        { value: "UPLOAD", label: "Upload" },
+        { value: "DOWNLOAD", label: "Download" },
+        { value: "ARCHIVE", label: "Archive" },
+        { value: "RETRIEVE", label: "Retrieve" },
+        { value: "TRASH", label: "Trash" },
+        { value: "UNTRASH", label: "Untrash" },
+        { value: "APPROVE", label: "Approve" },
+        { value: "REJECT", label: "Reject" },
+        { value: "VIEW", label: "View" }
+    ];
 
     useEffect(() => {
         const role = localStorage.getItem("role");
@@ -139,6 +154,18 @@ const DocumentsDownloadedReports = () => {
     const handleSearch = async () => {
         setIsSearching(true); // Start loading
         try {
+            // Determine action types array based on selection
+            let actionTypes = [];
+            if (searchCriteria.actionType === "ALL") {
+                // For ALL, include all action types from the enum
+                actionTypes = [
+                    "UPLOAD", "DOWNLOAD", "ARCHIVE", "RETRIEVE", 
+                    "TRASH", "UNTRASH", "APPROVE", "REJECT", "VIEW"
+                ];
+            } else {
+                actionTypes = [searchCriteria.actionType];
+            }
+
             const requestBody = {
                 branchId:
                     currRole === SYSTEM_ADMIN
@@ -159,7 +186,7 @@ const DocumentsDownloadedReports = () => {
 
                 fromDate: fromDate ? fromDate.toISOString() : null,
                 toDate: toDate ? toDate.toISOString() : null,
-                actionTypes: ["DOWNLOAD"], // ✅ CHANGED
+                actionTypes: actionTypes,
             };
 
             const response = await apiClient.post(
@@ -176,10 +203,16 @@ const DocumentsDownloadedReports = () => {
     };
 
     const handleDownloadReport = async (flagType) => {
+        // For audit report, we need to handle ALL selection
+        if (searchCriteria.actionType === "ALL") {
+            alert("Please select a specific action type to generate the PDF report. For a complete audit, you can generate separate reports for each action type.");
+            return;
+        }
+
         setIsGeneratingReport(true); // Start loading
         try {
             const response = await apiClient.get(
-                `${API_HOST}/jasper-report/downloaded-files`, // ✅ CHANGED
+                `${API_HOST}/jasper-report/audit-files`,
                 {
                     params: {
                         branchId:
@@ -207,7 +240,7 @@ const DocumentsDownloadedReports = () => {
                             ? toDate.toISOString().split("T")[0]
                             : null,
 
-                        actionType: "DOWNLOAD", // ✅ CHANGED
+                        actionType: searchCriteria.actionType,
                         flag: flagType,
                     },
                     responseType: "blob",
@@ -230,14 +263,30 @@ const DocumentsDownloadedReports = () => {
         }
     };
 
+    // Helper function to get action type display name
+    const getActionTypeDisplay = (actionType) => {
+        const actionMap = {
+            'UPLOAD': 'Upload',
+            'DOWNLOAD': 'Download',
+            'ARCHIVE': 'Archive',
+            'RETRIEVE': 'Retrieve',
+            'TRASH': 'Trash',
+            'UNTRASH': 'Untrash',
+            'APPROVE': 'Approve',
+            'REJECT': 'Reject',
+            'VIEW': 'View'
+        };
+        return actionMap[actionType] || actionType;
+    };
+
     return (
         <div className="p-4">
             <h1 className="text-xl mb-4 font-semibold">
-                <AutoTranslate>Document Downloaded Reports</AutoTranslate>
+                <AutoTranslate>Document Audit Report</AutoTranslate>
             </h1>
 
             <div className="bg-white p-4 rounded-lg shadow-md">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-100 p-4 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-100 p-4 rounded-lg">
 
                     {/* Branch */}
                     <div className="flex flex-col">
@@ -311,6 +360,25 @@ const DocumentsDownloadedReports = () => {
                         </select>
                     </div>
 
+                    {/* Action Type Dropdown */}
+                    <div className="flex flex-col">
+                        <label className="mb-1">
+                            <AutoTranslate>Action Type</AutoTranslate>
+                        </label>
+                        <select
+                            name="actionType"
+                            value={searchCriteria.actionType}
+                            onChange={handleInputChange}
+                            className="p-2 border rounded-md"
+                        >
+                            {actionTypeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    <AutoTranslate>{option.label}</AutoTranslate>
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     {/* From Date */}
                     <div className="flex flex-col">
                         <label className="mb-1">
@@ -371,8 +439,9 @@ const DocumentsDownloadedReports = () => {
                 <div className="flex gap-4 mt-4">
                     <button
                         onClick={() => handleDownloadReport("D")}
-                        disabled={isGeneratingReport}
+                        disabled={searchCriteria.actionType === "ALL" || isGeneratingReport}
                         className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-green-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                        title={searchCriteria.actionType === "ALL" ? "Please select a specific action type to generate PDF" : ""}
                     >
                         {isGeneratingReport ? (
                             <>
@@ -386,8 +455,9 @@ const DocumentsDownloadedReports = () => {
 
                     <button
                         onClick={() => handleDownloadReport("P")}
-                        disabled={isGeneratingReport}
+                        disabled={searchCriteria.actionType === "ALL" || isGeneratingReport}
                         className="px-4 py-2 bg-orange-600 text-white rounded-md disabled:bg-orange-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                        title={searchCriteria.actionType === "ALL" ? "Please select a specific action type to generate PDF" : ""}
                     >
                         {isGeneratingReport ? (
                             <>
@@ -398,6 +468,12 @@ const DocumentsDownloadedReports = () => {
                             "Print"
                         )}
                     </button>
+                </div>
+            )}
+
+            {searchCriteria.actionType === "ALL" && searchResults.length > 0 && (
+                <div className="mt-2 text-amber-600 bg-amber-50 p-2 rounded">
+                    <AutoTranslate>PDF report generation is only available for individual action types. Please select a specific action type to view/print the report.</AutoTranslate>
                 </div>
             )}
 
@@ -415,6 +491,7 @@ const DocumentsDownloadedReports = () => {
                                 <th className="border px-2 py-1">Title</th>
                                 <th className="border px-2 py-1">Category</th>
                                 <th className="border px-2 py-1">Version</th>
+                                <th className="border px-2 py-1">Action Type</th>
                                 <th className="border px-2 py-1">Action Date</th>
                                 <th className="border px-2 py-1">Action By</th>
                             </tr>
@@ -426,6 +503,9 @@ const DocumentsDownloadedReports = () => {
                                     <td className="border px-2 py-1">{item.title}</td>
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
+                                    <td className="border px-2 py-1">
+                                        {getActionTypeDisplay(item.actionType)}
+                                    </td>
                                     <td className="border px-2 py-1">
                                         {new Date(item.actionDate).toLocaleString()}
                                     </td>
@@ -444,7 +524,7 @@ const DocumentsDownloadedReports = () => {
             {showPdf && (
                 <PdfViewer
                     pdfUrl={pdfUrl}
-                    name="Downloaded Files Report"
+                    name="Audit Report"
                     onClose={() => {
                         setShowPdf(false);
                         setPdfUrl(null);
@@ -455,4 +535,4 @@ const DocumentsDownloadedReports = () => {
     );
 };
 
-export default DocumentsDownloadedReports;
+export default DocumentAuditReport;

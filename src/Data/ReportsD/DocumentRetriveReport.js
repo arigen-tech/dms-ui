@@ -16,7 +16,7 @@ const Spinner = ({ size = "h-5 w-5", color = "text-white" }) => (
     </svg>
 );
 
-const DocumentsDownloadedReports = () => {
+const DocumentRetriveReport = () => {
     const { currentLanguage } = useLanguage();
 
     const initialFormData = {
@@ -159,7 +159,7 @@ const DocumentsDownloadedReports = () => {
 
                 fromDate: fromDate ? fromDate.toISOString() : null,
                 toDate: toDate ? toDate.toISOString() : null,
-                actionTypes: ["DOWNLOAD"], // ✅ CHANGED
+                actionTypes: ["RETRIEVE"], // ✅ Changed to RETRIEVE
             };
 
             const response = await apiClient.post(
@@ -179,7 +179,7 @@ const DocumentsDownloadedReports = () => {
         setIsGeneratingReport(true); // Start loading
         try {
             const response = await apiClient.get(
-                `${API_HOST}/jasper-report/downloaded-files`, // ✅ CHANGED
+                `${API_HOST}/jasper-report/retrieved-files`, // ✅ Changed to retrieved-files
                 {
                     params: {
                         branchId:
@@ -207,7 +207,7 @@ const DocumentsDownloadedReports = () => {
                             ? toDate.toISOString().split("T")[0]
                             : null,
 
-                        actionType: "DOWNLOAD", // ✅ CHANGED
+                        actionType: "RETRIEVE", // ✅ Changed to RETRIEVE
                         flag: flagType,
                     },
                     responseType: "blob",
@@ -233,7 +233,7 @@ const DocumentsDownloadedReports = () => {
     return (
         <div className="p-4">
             <h1 className="text-xl mb-4 font-semibold">
-                <AutoTranslate>Document Downloaded Reports</AutoTranslate>
+                <AutoTranslate>Document Retrieve Reports</AutoTranslate>
             </h1>
 
             <div className="bg-white p-4 rounded-lg shadow-md">
@@ -444,7 +444,7 @@ const DocumentsDownloadedReports = () => {
             {showPdf && (
                 <PdfViewer
                     pdfUrl={pdfUrl}
-                    name="Downloaded Files Report"
+                    name="Retrieved Files Report"
                     onClose={() => {
                         setShowPdf(false);
                         setPdfUrl(null);
@@ -455,4 +455,4 @@ const DocumentsDownloadedReports = () => {
     );
 };
 
-export default DocumentsDownloadedReports;
+export default DocumentRetriveReport;

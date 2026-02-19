@@ -60,7 +60,10 @@ const validRoutes = [
   "/manage-allow-funcationality",
   "/documents-archived-report",
   "/documents-downloaded-report",
-  "/documents-upload-report"
+  "/documents-upload-report",
+  "/documents-retrive-report",
+  "/documents-trash-report",
+  "/documents-audit-report"
 ];
 
 const NotAuthorized = () => {

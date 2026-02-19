@@ -66,6 +66,9 @@ const SharedDocuments = React.lazy(() => import("./Pages/SharedDocuments"));
 const DocumentsDownloadedReport = React.lazy(() => import("./Pages/ReportsP/DocumentsDownloadedReport"));
 const DocumentsArchivedReport = React.lazy(() => import("./Pages/ReportsP/DocumentsArchivedReport"));
 const DocumentsUploadReport = React.lazy(() => import("./Pages/ReportsP/DocumentsUploadReport"));
+const DocumentRetriveReports = React.lazy(() => import("./Pages/ReportsP/DocumentRetriveReports"));
+const DocumentsTrashedReports = React.lazy(() => import("./Pages/ReportsP/DocumentTrashedReports"));
+const DocumentsAuditReports = React.lazy(() => import("./Pages/ReportsP/DocumentsAuditReports"));
 
 
 function App() {
@@ -156,6 +159,11 @@ function App() {
                 <Route path="/documents-archived-report" element={<DocumentsArchivedReport />} />
                 <Route path="/documents-downloaded-report" element={<DocumentsDownloadedReport />} />
                 <Route path="/documents-upload-report" element={<DocumentsUploadReport />} />
+                <Route path="/documents-retrive-report" element={<DocumentRetriveReports />} />
+                <Route path="/documents-trash-report" element={<DocumentsTrashedReports />} />
+                <Route path="/documents-audit-report" element={<DocumentsAuditReports />} />
+
+
 
 
               </Route>

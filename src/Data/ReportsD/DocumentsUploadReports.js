@@ -8,6 +8,14 @@ import { getFallbackTranslation } from "../../i18n/autoTranslator";
 import { useLanguage } from "../../i18n/LanguageContext";
 import PdfViewer from "../../Components/PdfViewer";
 
+// Simple Spinner Component
+const Spinner = ({ size = "h-5 w-5", color = "text-white" }) => (
+    <svg className={`animate-spin ${size} ${color}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
 const DocumentsUploadReports = () => {
     const { currentLanguage } = useLanguage();
 
@@ -28,6 +36,10 @@ const DocumentsUploadReports = () => {
     const [showPdf, setShowPdf] = useState(false);
     const [currRole, setCurrRole] = useState(null);
     const [currentEmp, setCurrentEmp] = useState(null);
+    
+    // Loading states
+    const [isSearching, setIsSearching] = useState(false);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
     useEffect(() => {
         const role = localStorage.getItem("role");
@@ -125,6 +137,7 @@ const DocumentsUploadReports = () => {
     };
 
     const handleSearch = async () => {
+        setIsSearching(true); // Start loading
         try {
             const requestBody = {
                 branchId:
@@ -146,7 +159,7 @@ const DocumentsUploadReports = () => {
 
                 fromDate: fromDate ? fromDate.toISOString() : null,
                 toDate: toDate ? toDate.toISOString() : null,
-                actionTypes: ["DOWNLOAD"], // ✅ CHANGED
+                actionTypes: ["UPLOAD"], // ✅ FIXED: Changed from DOWNLOAD to UPLOAD
             };
 
             const response = await apiClient.post(
@@ -157,13 +170,16 @@ const DocumentsUploadReports = () => {
             setSearchResults(response.data || []);
         } catch (error) {
             console.error("Search failed:", error);
+        } finally {
+            setIsSearching(false); // Stop loading
         }
     };
 
     const handleDownloadReport = async (flagType) => {
+        setIsGeneratingReport(true); // Start loading
         try {
             const response = await apiClient.get(
-                `${API_HOST}/jasper-report/downloaded-files`, // ✅ CHANGED
+                `${API_HOST}/jasper-report/uploaded-files`, // ✅ FIXED: Changed from downloaded-files to uploaded-files
                 {
                     params: {
                         branchId:
@@ -191,7 +207,7 @@ const DocumentsUploadReports = () => {
                             ? toDate.toISOString().split("T")[0]
                             : null,
 
-                        actionType: "DOWNLOAD", // ✅ CHANGED
+                        actionType: "UPLOAD", // ✅ FIXED: Changed from DOWNLOAD to UPLOAD
                         flag: flagType,
                     },
                     responseType: "blob",
@@ -209,6 +225,8 @@ const DocumentsUploadReports = () => {
             }
         } catch (error) {
             console.error("Report generation failed:", error);
+        } finally {
+            setIsGeneratingReport(false); // Stop loading
         }
     };
 
@@ -335,9 +353,17 @@ const DocumentsUploadReports = () => {
 
                 <button
                     onClick={handleSearch}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md"
+                    disabled={isSearching}
+                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                 >
-                    Search
+                    {isSearching ? (
+                        <>
+                            <Spinner size="h-4 w-4" />
+                            <span className="ml-2">Searching...</span>
+                        </>
+                    ) : (
+                        <AutoTranslate>Search</AutoTranslate>
+                    )}
                 </button>
             </div>
 
@@ -345,21 +371,42 @@ const DocumentsUploadReports = () => {
                 <div className="flex gap-4 mt-4">
                     <button
                         onClick={() => handleDownloadReport("D")}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md"
+                        disabled={isGeneratingReport}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-green-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
-                        View
+                        {isGeneratingReport ? (
+                            <>
+                                <Spinner size="h-4 w-4" />
+                                <span className="ml-2">Loading...</span>
+                            </>
+                        ) : (
+                            "View"
+                        )}
                     </button>
 
                     <button
                         onClick={() => handleDownloadReport("P")}
-                        className="px-4 py-2 bg-orange-600 text-white rounded-md"
+                        disabled={isGeneratingReport}
+                        className="px-4 py-2 bg-orange-600 text-white rounded-md disabled:bg-orange-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
-                        Print
+                        {isGeneratingReport ? (
+                            <>
+                                <Spinner size="h-4 w-4" />
+                                <span className="ml-2">Loading...</span>
+                            </>
+                        ) : (
+                            "Print"
+                        )}
                     </button>
                 </div>
             )}
 
-            {searchResults.length > 0 && (
+            {isSearching ? (
+                <div className="mt-6 flex justify-center items-center p-8">
+                    <Spinner size="h-8 w-8" color="text-blue-500" />
+                    <span className="ml-2 text-gray-600">Loading results...</span>
+                </div>
+            ) : searchResults.length > 0 ? (
                 <div className="mt-6 overflow-auto">
                     <table className="min-w-full border border-gray-300">
                         <thead className="bg-gray-200">
@@ -388,12 +435,16 @@ const DocumentsUploadReports = () => {
                         </tbody>
                     </table>
                 </div>
+            ) : (
+                <div className="mt-6 text-center text-gray-500">
+                    <AutoTranslate>No results found</AutoTranslate>
+                </div>
             )}
 
             {showPdf && (
                 <PdfViewer
                     pdfUrl={pdfUrl}
-                    name="Downloaded Files Report"
+                    name="Uploaded Files Report" // ✅ FIXED: Changed from "Downloaded Files Report"
                     onClose={() => {
                         setShowPdf(false);
                         setPdfUrl(null);

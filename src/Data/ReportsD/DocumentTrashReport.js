@@ -16,13 +16,14 @@ const Spinner = ({ size = "h-5 w-5", color = "text-white" }) => (
     </svg>
 );
 
-const DocumentsDownloadedReports = () => {
+const DocumentTrashReport = () => {
     const { currentLanguage } = useLanguage();
 
     const initialFormData = {
         branch: "",
         department: "",
         category: "",
+        actionType: "TRASH", // Default action type
     };
 
     const [searchCriteria, setSearchCriteria] = useState(initialFormData);
@@ -40,6 +41,13 @@ const DocumentsDownloadedReports = () => {
     // Loading states
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+    // Action type options for dropdown
+    const actionTypeOptions = [
+        { value: "TRASH", label: "Trash" },
+        { value: "UNTRASH", label: "Untrash" },
+        { value: "ALL", label: "All" }
+    ];
 
     useEffect(() => {
         const role = localStorage.getItem("role");
@@ -139,6 +147,14 @@ const DocumentsDownloadedReports = () => {
     const handleSearch = async () => {
         setIsSearching(true); // Start loading
         try {
+            // Determine action types array based on selection
+            let actionTypes = [];
+            if (searchCriteria.actionType === "ALL") {
+                actionTypes = ["TRASH", "UNTRASH"];
+            } else {
+                actionTypes = [searchCriteria.actionType];
+            }
+
             const requestBody = {
                 branchId:
                     currRole === SYSTEM_ADMIN
@@ -159,7 +175,7 @@ const DocumentsDownloadedReports = () => {
 
                 fromDate: fromDate ? fromDate.toISOString() : null,
                 toDate: toDate ? toDate.toISOString() : null,
-                actionTypes: ["DOWNLOAD"], // ✅ CHANGED
+                actionTypes: actionTypes,
             };
 
             const response = await apiClient.post(
@@ -176,10 +192,16 @@ const DocumentsDownloadedReports = () => {
     };
 
     const handleDownloadReport = async (flagType) => {
+        // For report generation, if ALL is selected, use TRASH as default
+        // or you might want to create a separate report for combined view
+        const reportActionType = searchCriteria.actionType === "ALL" 
+            ? "TRASH" 
+            : searchCriteria.actionType;
+
         setIsGeneratingReport(true); // Start loading
         try {
             const response = await apiClient.get(
-                `${API_HOST}/jasper-report/downloaded-files`, // ✅ CHANGED
+                `${API_HOST}/jasper-report/trashed-files`, // Using trashed-files endpoint
                 {
                     params: {
                         branchId:
@@ -207,7 +229,7 @@ const DocumentsDownloadedReports = () => {
                             ? toDate.toISOString().split("T")[0]
                             : null,
 
-                        actionType: "DOWNLOAD", // ✅ CHANGED
+                        actionType: reportActionType,
                         flag: flagType,
                     },
                     responseType: "blob",
@@ -230,14 +252,26 @@ const DocumentsDownloadedReports = () => {
         }
     };
 
+    // Helper function to get action type display name
+    const getActionTypeDisplay = (actionType) => {
+        switch(actionType) {
+            case 'TRASH':
+                return 'Trash';
+            case 'UNTRASH':
+                return 'Untrash';
+            default:
+                return actionType;
+        }
+    };
+
     return (
         <div className="p-4">
             <h1 className="text-xl mb-4 font-semibold">
-                <AutoTranslate>Document Downloaded Reports</AutoTranslate>
+                <AutoTranslate>Trash Reports</AutoTranslate>
             </h1>
 
             <div className="bg-white p-4 rounded-lg shadow-md">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-100 p-4 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-100 p-4 rounded-lg">
 
                     {/* Branch */}
                     <div className="flex flex-col">
@@ -306,6 +340,25 @@ const DocumentsDownloadedReports = () => {
                             {categoryOptions.map((cat) => (
                                 <option key={cat.id} value={cat.id}>
                                     {cat.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Action Type Dropdown */}
+                    <div className="flex flex-col">
+                        <label className="mb-1">
+                            <AutoTranslate>Action Type</AutoTranslate>
+                        </label>
+                        <select
+                            name="actionType"
+                            value={searchCriteria.actionType}
+                            onChange={handleInputChange}
+                            className="p-2 border rounded-md"
+                        >
+                            {actionTypeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    <AutoTranslate>{option.label}</AutoTranslate>
                                 </option>
                             ))}
                         </select>
@@ -401,6 +454,13 @@ const DocumentsDownloadedReports = () => {
                 </div>
             )}
 
+            {/* Add warning message for PDF generation with ALL selected */}
+            {searchCriteria.actionType === "ALL" && searchResults.length > 0 && (
+                <div className="mt-2 text-amber-600 bg-amber-50 p-2 rounded">
+                    <AutoTranslate>PDF report generation will show TRASH actions only. For UNTRASH reports, please select UNTRASH from the Action Type dropdown.</AutoTranslate>
+                </div>
+            )}
+
             {isSearching ? (
                 <div className="mt-6 flex justify-center items-center p-8">
                     <Spinner size="h-8 w-8" color="text-blue-500" />
@@ -415,6 +475,7 @@ const DocumentsDownloadedReports = () => {
                                 <th className="border px-2 py-1">Title</th>
                                 <th className="border px-2 py-1">Category</th>
                                 <th className="border px-2 py-1">Version</th>
+                                <th className="border px-2 py-1">Action Type</th>
                                 <th className="border px-2 py-1">Action Date</th>
                                 <th className="border px-2 py-1">Action By</th>
                             </tr>
@@ -426,6 +487,9 @@ const DocumentsDownloadedReports = () => {
                                     <td className="border px-2 py-1">{item.title}</td>
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
+                                    <td className="border px-2 py-1">
+                                        {getActionTypeDisplay(item.actionType)}
+                                    </td>
                                     <td className="border px-2 py-1">
                                         {new Date(item.actionDate).toLocaleString()}
                                     </td>
@@ -444,7 +508,7 @@ const DocumentsDownloadedReports = () => {
             {showPdf && (
                 <PdfViewer
                     pdfUrl={pdfUrl}
-                    name="Downloaded Files Report"
+                    name="Trash Files Report"
                     onClose={() => {
                         setShowPdf(false);
                         setPdfUrl(null);
@@ -455,4 +519,4 @@ const DocumentsDownloadedReports = () => {
     );
 };
 
-export default DocumentsDownloadedReports;
+export default DocumentTrashReport;

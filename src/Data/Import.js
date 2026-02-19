@@ -1,4 +1,4 @@
-import React, { useState, useRef,useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Upload, Database, Folder, CheckCircle, AlertCircle,
   Settings, ChevronDown, ChevronUp, Server,
@@ -7,8 +7,9 @@ import {
 } from 'lucide-react';
 import Popup from '../Components/Popup';
 import { API_HOST } from '../API/apiConfig';
-import AutoTranslate from '../i18n/AutoTranslate'; // Import AutoTranslate
-import { useLanguage } from '../i18n/LanguageContext'; // Import useLanguage hook
+import AutoTranslate from '../i18n/AutoTranslate'; 
+import { useLanguage } from '../i18n/LanguageContext'; 
+import apiClient from "../API/apiClient";
 
 const Import = () => {
   // Get language context
@@ -52,7 +53,7 @@ const Import = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef(null);
-  
+
   const getAuthToken = () => {
     return localStorage.getItem('tokenKey') || localStorage.getItem('authToken');
   };
@@ -112,7 +113,7 @@ const Import = () => {
     console.log('Selected file:', selectedFile.name, 'Size:', formatFileSize(selectedFile.size));
 
     setFile(selectedFile);
-    
+
     await validateFile(selectedFile);
   };
 
@@ -150,109 +151,114 @@ const Import = () => {
 
   const validateFile = async (fileToValidate) => {
     try {
-      const token = getAuthToken();
       const formData = new FormData();
-      formData.append('file', fileToValidate);
+      formData.append("file", fileToValidate);
 
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      console.log(
+        "Sending validation request for file:",
+        fileToValidate.name
+      );
+
+      const response = await apiClient.post(
+        "/import/validate",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      const result = response.data;
+
+      console.log("Validation response:", result);
+
+      if (!result.success) {
+        throw new Error(
+          result.message || "File validation failed"
+        );
       }
 
-      console.log('Sending validation request for file:', fileToValidate.name);
+      /* ================= SUCCESS ================= */
 
-      const response = await fetch(`${API_HOST}/import/validate`, {
-        method: 'POST',
-        body: formData,
-        headers: headers
-      });
+      const details = result.details || {};
+      const tables = details.availableTables || [];
+      const files = details.availableFiles || [];
+      const hasDatabase = details.hasDatabase || false;
+      const hasFiles = details.hasFiles || false;
+      const fileStructure = details.fileStructure || {};
 
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('Authentication required. Please log in again.');
-        }
-        const errorText = await response.text();
-        throw new Error(`Validation failed: ${response.status} - ${errorText}`);
-      }
+      let contentType = "unknown";
+      if (hasDatabase && hasFiles) contentType = "both";
+      else if (hasDatabase) contentType = "database";
+      else if (hasFiles) contentType = "files";
 
-      const result = await response.json();
+      setFileContentType(contentType);
+      setFileStructure(fileStructure);
+      setValidationDetails(details);
 
-      console.log('Validation response:', result);
+      // Auto set import options
+      setImportOptions((prev) => ({
+        ...prev,
+        importDatabase: hasDatabase,
+        importFiles: hasFiles,
+      }));
 
-      if (result.success) {
-        const details = result.details || {};
-        const tables = details.availableTables || [];
-        const files = details.availableFiles || [];
-        const hasDatabase = details.hasDatabase || false;
-        const hasFiles = details.hasFiles || false;
-        const fileStructure = details.fileStructure || {};
+      /* ================= SUCCESS POPUP ================= */
 
-        console.log('Validation details:', details);
+      let popupMessage = "✅ File validated successfully! ";
+      if (hasDatabase)
+        popupMessage += `Found ${tables.length} tables. `;
+      if (hasFiles)
+        popupMessage += `Found file system content (${files.length} categories). `;
+      if (hasDatabase && hasFiles)
+        popupMessage += "Complete system backup detected.";
 
-        let contentType = 'unknown';
-        if (hasDatabase && hasFiles) {
-          contentType = 'both';
-        } else if (hasDatabase) {
-          contentType = 'database';
-        } else if (hasFiles) {
-          contentType = 'files';
-        }
+      showPopup(popupMessage, "success");
 
-        setFileContentType(contentType);
-        setFileStructure(fileStructure);
-        setValidationDetails(details);
+      /* ================= TABLE HANDLING ================= */
 
-        // Auto-set import options based on content type
-        setImportOptions(prev => ({
-          ...prev,
-          importDatabase: hasDatabase,
-          importFiles: hasFiles
-        }));
-
-        // Build the success message for popup
-        let popupMessage = `✅ File validated successfully! `;
-        if (hasDatabase) popupMessage += `Found ${tables.length} tables. `;
-        if (hasFiles) popupMessage += `Found file system content (${files.length} categories). `;
-        if (hasDatabase && hasFiles) popupMessage += `Complete system backup detected.`;
-
-        // Show success popup
-        showPopup(popupMessage, 'success');
-
-        if (tables.length > 0) {
-          setAvailableTables(tables);
-          setSelectedTables(new Set(tables));
-          console.log('Tables available:', tables);
-        } else {
-          setAvailableTables([]);
-          setSelectedTables(new Set());
-        }
-
-        if (files.length > 0) {
-          setAvailableFiles(files);
-          setSelectedFiles(new Set(files));
-          console.log('File categories available:', files);
-        } else {
-          setAvailableFiles([]);
-          setSelectedFiles(new Set());
-        }
-
+      if (tables.length > 0) {
+        setAvailableTables(tables);
+        setSelectedTables(new Set(tables));
       } else {
-        throw new Error(result.message || 'File validation failed');
+        setAvailableTables([]);
+        setSelectedTables(new Set());
       }
+
+      /* ================= FILE HANDLING ================= */
+
+      if (files.length > 0) {
+        setAvailableFiles(files);
+        setSelectedFiles(new Set(files));
+      } else {
+        setAvailableFiles([]);
+        setSelectedFiles(new Set());
+      }
+
     } catch (error) {
-      console.error('Validation error:', error);
-      const errorMessage = `❌ Validation failed: ${error.message}`;
+      console.error("Validation error:", error);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data ||
+        error.message;
+
+      const finalMessage = `❌ Validation failed: ${errorMessage}`;
+
       setStatus({
-        type: 'error',
-        message: errorMessage
+        type: "error",
+        message: finalMessage,
       });
-      // Show error in popup too
-      showPopup(errorMessage, 'error');
+
+      showPopup(finalMessage, "error");
+
       setFile(null);
-      setFileError(error.message);
+      setFileError(errorMessage);
       setFileContentType(null);
     }
   };
+
 
   const simulateProgress = () => {
     setProgress(0);
@@ -273,142 +279,170 @@ const Import = () => {
     setShowSuccessPopup(true);
   };
 
-  const handleImport = async (importType = 'full') => {
+  const handleImport = async (importType = "full") => {
     if (!file) {
-      showPopup('Please select a file to import.', 'warning');
+      showPopup("Please select a file to import.", "warning");
       return;
     }
 
-    // Determine what to import based on type and available content
     let importDatabase = false;
     let importFiles = false;
     let tablesToImport = [];
     let filesToImport = [];
 
     switch (importType) {
-      case 'database':
-        importDatabase = importOptions.importDatabase && selectedTables.size > 0;
+      case "database":
+        importDatabase =
+          importOptions.importDatabase &&
+          selectedTables.size > 0;
         tablesToImport = Array.from(selectedTables);
         break;
 
-      case 'files':
-        importFiles = importOptions.importFiles && selectedFiles.size > 0;
+      case "files":
+        importFiles =
+          importOptions.importFiles &&
+          selectedFiles.size > 0;
         filesToImport = Array.from(selectedFiles);
         break;
 
-      case 'full':
+      case "full":
         importDatabase = importOptions.importDatabase;
         importFiles = importOptions.importFiles;
-        tablesToImport = importDatabase ? Array.from(selectedTables) : [];
-        filesToImport = importFiles ? Array.from(selectedFiles) : [];
+        tablesToImport = importDatabase
+          ? Array.from(selectedTables)
+          : [];
+        filesToImport = importFiles
+          ? Array.from(selectedFiles)
+          : [];
         break;
     }
 
-    // Validation checks with popup messages
+    /* ================= VALIDATION ================= */
+
     if (importDatabase && tablesToImport.length === 0) {
-      showPopup('Please select at least one table to import for database import.', 'warning');
+      showPopup(
+        "Please select at least one table to import.",
+        "warning"
+      );
       return;
     }
 
     if (importFiles && filesToImport.length === 0) {
-      showPopup('Please select at least one file category to import for file import.', 'warning');
+      showPopup(
+        "Please select at least one file category to import.",
+        "warning"
+      );
       return;
     }
 
     if (!importDatabase && !importFiles) {
-      showPopup('Please enable and select at least one table or file category to import.', 'warning');
+      showPopup(
+        "Please enable and select at least one table or file category to import.",
+        "warning"
+      );
       return;
     }
 
     setIsSubmitting(true);
     setImporting(true);
     setImportResults(null);
+
     const progressInterval = simulateProgress();
 
     try {
-      const token = getAuthToken();
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const params = new URLSearchParams();
-      params.append('importDatabase', importDatabase.toString());
-      params.append('importFiles', importFiles.toString());
-      params.append('overwriteExisting', importOptions.overwriteExisting.toString());
-
-      // Only add selected tables if we're importing database
-      if (importDatabase && tablesToImport.length > 0) {
-        params.append('selectedTables', tablesToImport.join(','));
-      }
-
-      // Only add selected files if we're importing files
-      if (importFiles && filesToImport.length > 0) {
-        params.append('selectedFiles', filesToImport.join(','));
-      }
-
-      console.log('Starting import with params:', {
+      console.log("Starting import with params:", {
         importDatabase,
         importFiles,
         tablesToImport,
         filesToImport,
-        overwrite: importOptions.overwriteExisting
+        overwrite: importOptions.overwriteExisting,
       });
 
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${API_HOST}/import/restore?${params.toString()}`, {
-        method: 'POST',
-        body: formData,
-        headers: headers
-      });
-
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('Authentication required. Please log in again.');
+      const response = await apiClient.post(
+        "/import/restore",
+        formData,
+        {
+          params: {
+            importDatabase,
+            importFiles,
+            overwriteExisting:
+              importOptions.overwriteExisting,
+            selectedTables:
+              importDatabase && tablesToImport.length > 0
+                ? tablesToImport.join(",")
+                : undefined,
+            selectedFiles:
+              importFiles && filesToImport.length > 0
+                ? filesToImport.join(",")
+                : undefined,
+          },
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
-        const errorText = await response.text();
-        throw new Error(`Import failed: ${response.status} - ${errorText}`);
-      }
+      );
 
-      const result = await response.json();
+      const result = response.data;
+
       setProgress(100);
 
-      if (result.success) {
-        setImportResults(result);
-
-        const successData = {
-          type: getImportTypeDisplayName(importType),
-          databaseTables: result.databaseTables || 0,
-          databaseRecords: result.databaseRecords || 0,
-          filesImported: result.filesImportedCount || 0,
-          filesReplaced: result.filesReplaced || 0,
-          filesSkipped: result.filesSkipped || 0,
-          selectedTables: result.selectedTables || tablesToImport,
-          selectedFiles: result.selectedFiles || filesToImport,
-          source: result.metadata?.databaseName || 'DMS System',
-          period: result.metadata?.dateRange || 'Unknown period',
-          timestamp: new Date().toLocaleString(),
-          importId: result.importId,
-          overwrite: importOptions.overwriteExisting,
-          recordsAdded: result.details?.recordsAdded || 0,
-          recordsUpdated: result.details?.recordsUpdated || 0
-        };
-
-        showSuccessPopupMessage(successData);
-        console.log('Import Results:', result);
-
-      } else {
-        throw new Error(result.message || 'Import failed');
+      if (!result.success) {
+        throw new Error(result.message || "Import failed");
       }
 
+      /* ================= SUCCESS ================= */
+
+      setImportResults(result);
+
+      const successData = {
+        type: getImportTypeDisplayName(importType),
+        databaseTables: result.databaseTables || 0,
+        databaseRecords: result.databaseRecords || 0,
+        filesImported: result.filesImportedCount || 0,
+        filesReplaced: result.filesReplaced || 0,
+        filesSkipped: result.filesSkipped || 0,
+        selectedTables:
+          result.selectedTables || tablesToImport,
+        selectedFiles:
+          result.selectedFiles || filesToImport,
+        source:
+          result.metadata?.databaseName ||
+          "DMS System",
+        period:
+          result.metadata?.dateRange ||
+          "Unknown period",
+        timestamp: new Date().toLocaleString(),
+        importId: result.importId,
+        overwrite: importOptions.overwriteExisting,
+        recordsAdded:
+          result.details?.recordsAdded || 0,
+        recordsUpdated:
+          result.details?.recordsUpdated || 0,
+      };
+
+      showSuccessPopupMessage(successData);
+      console.log("Import Results:", result);
+
     } catch (error) {
-      console.error('Import error:', error);
+      console.error("Import error:", error);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data ||
+        error.message;
+
       setProgress(0);
-      showPopup(`Import failed: ${error.message}`, 'error');
+
+      showPopup(
+        `Import failed: ${errorMessage}`,
+        "error"
+      );
     } finally {
       clearInterval(progressInterval);
+
       setTimeout(() => {
         setImporting(false);
         setIsSubmitting(false);
