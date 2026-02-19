@@ -36,7 +36,7 @@ const DocumentRetriveReport = () => {
     const [showPdf, setShowPdf] = useState(false);
     const [currRole, setCurrRole] = useState(null);
     const [currentEmp, setCurrentEmp] = useState(null);
-    
+
     // Loading states
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -60,6 +60,12 @@ const DocumentRetriveReport = () => {
             setDepartmentOptions([]);
         }
     }, [searchCriteria.branch]);
+
+    const formatDate = (dateArray) => {
+        const [year, month, day] = dateArray;
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-GB');
+    };
 
     const fetchUserDetails = async (role) => {
         try {
@@ -427,7 +433,7 @@ const DocumentRetriveReport = () => {
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
                                     <td className="border px-2 py-1">
-                                        {new Date(item.actionDate).toLocaleString()}
+                                        {formatDate(item.actionDate)}
                                     </td>
                                     <td className="border px-2 py-1">{item.actionBy}</td>
                                 </tr>

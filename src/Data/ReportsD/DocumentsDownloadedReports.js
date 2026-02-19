@@ -53,6 +53,13 @@ const DocumentsDownloadedReports = () => {
         }
     }, []);
 
+
+ const formatDate = (dateArray) => {
+        const [year, month, day] = dateArray;
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-GB');
+    };
+
     useEffect(() => {
         if (searchCriteria.branch) {
             fetchDepartments(searchCriteria.branch);
@@ -426,8 +433,8 @@ const DocumentsDownloadedReports = () => {
                                     <td className="border px-2 py-1">{item.title}</td>
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
-                                    <td className="border px-2 py-1">
-                                        {new Date(item.actionDate).toLocaleString()}
+                                   <td className="border px-2 py-1">
+                                        {formatDate(item.actionDate)}
                                     </td>
                                     <td className="border px-2 py-1">{item.actionBy}</td>
                                 </tr>

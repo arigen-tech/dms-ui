@@ -61,6 +61,13 @@ const DocumentTrashReport = () => {
         }
     }, []);
 
+    const formatDate = (dateArray) => {
+        if (!dateArray) return '';
+        const [year, month, day] = dateArray;
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-GB');
+    };
+
     useEffect(() => {
         if (searchCriteria.branch) {
             fetchDepartments(searchCriteria.branch);
@@ -192,12 +199,6 @@ const DocumentTrashReport = () => {
     };
 
     const handleDownloadReport = async (flagType) => {
-        // For report generation, if ALL is selected, use TRASH as default
-        // or you might want to create a separate report for combined view
-        const reportActionType = searchCriteria.actionType === "ALL" 
-            ? "TRASH" 
-            : searchCriteria.actionType;
-
         setIsGeneratingReport(true); // Start loading
         try {
             const response = await apiClient.get(
@@ -229,7 +230,7 @@ const DocumentTrashReport = () => {
                             ? toDate.toISOString().split("T")[0]
                             : null,
 
-                        actionType: reportActionType,
+                        actionType: searchCriteria.actionType, // Pass "ALL" directly to API
                         flag: flagType,
                     },
                     responseType: "blob",
@@ -454,13 +455,6 @@ const DocumentTrashReport = () => {
                 </div>
             )}
 
-            {/* Add warning message for PDF generation with ALL selected */}
-            {searchCriteria.actionType === "ALL" && searchResults.length > 0 && (
-                <div className="mt-2 text-amber-600 bg-amber-50 p-2 rounded">
-                    <AutoTranslate>PDF report generation will show TRASH actions only. For UNTRASH reports, please select UNTRASH from the Action Type dropdown.</AutoTranslate>
-                </div>
-            )}
-
             {isSearching ? (
                 <div className="mt-6 flex justify-center items-center p-8">
                     <Spinner size="h-8 w-8" color="text-blue-500" />
@@ -491,7 +485,7 @@ const DocumentTrashReport = () => {
                                         {getActionTypeDisplay(item.actionType)}
                                     </td>
                                     <td className="border px-2 py-1">
-                                        {new Date(item.actionDate).toLocaleString()}
+                                        {formatDate(item.actionDate)}
                                     </td>
                                     <td className="border px-2 py-1">{item.actionBy}</td>
                                 </tr>

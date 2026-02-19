@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   DOCUMENTHEADER_API,
   YEAR_API,
@@ -15,7 +14,6 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
 import apiClient from "../API/apiClient";
 
-
 const DpAdminOCR = () => {
   const {
     currentLanguage,
@@ -23,9 +21,6 @@ const DpAdminOCR = () => {
     translationStatus,
     isTranslationNeeded,
     availableLanguages,
-    changeLanguage,
-    translate,
-    preloadTranslationsForTerms
   } = useLanguage();
 
   const navigate = useNavigate();
@@ -37,8 +32,6 @@ const DpAdminOCR = () => {
   const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState({
-    branch: "",
-    department: "",
     year: "",
     approvalStatus: "",
     category: "",
@@ -49,6 +42,7 @@ const DpAdminOCR = () => {
   const token = localStorage.getItem("tokenKey");
   const [fixedBranchName, setFixedBranchName] = useState("");
   const [fixedDepartmentName, setFixedDepartmentName] = useState("");
+  const [fixedDepartmentId, setFixedDepartmentId] = useState("");
 
   // Debug log
   useEffect(() => {
@@ -98,15 +92,11 @@ const DpAdminOCR = () => {
       const userDepartment = response.data.department;
 
       if (userBranch && userDepartment) {
+        // Store department ID for fetching documents
+        setFixedDepartmentId(userDepartment.id);
+        
         // Fetch documents for this department
         fetchDocuments(userDepartment.id);
-
-        // Update filters with fixed values
-        setFilters(prev => ({
-          ...prev,
-          branch: userBranch.id,
-          department: userDepartment.id,
-        }));
 
         // Store names for display
         setFixedBranchName(userBranch.name);
@@ -123,9 +113,9 @@ const DpAdminOCR = () => {
     fetchUser();
   }, []);
 
-  // Fetch documents when branch is selected
-  const fetchDocuments = async (dpId) => {
-    if (!dpId) {
+  // Fetch documents by department ID
+  const fetchDocuments = async (deptId) => {
+    if (!deptId) {
       setDocuments([]);
       setFilteredDocuments([]);
       return;
@@ -135,7 +125,7 @@ const DpAdminOCR = () => {
     setSearchError("");
 
     try {
-      const response = await apiClient.get(`${DOCUMENTHEADER_API}/findByDepartmrntId/${dpId}`);
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/findByDepartmrntId/${deptId}`);
 
       const sortedDocuments = response.data.sort((a, b) => {
         const order = { PENDING: 1, REJECTED: 2, APPROVED: 3 };
@@ -157,34 +147,29 @@ const DpAdminOCR = () => {
     const applyFilters = () => {
       let filtered = [...documents];
 
-      // Always filter by the fixed department (no need for branch filter)
-      filtered = filtered.filter(
-        doc => doc.employee?.department?.id === filters.department
-      );
-
-      // Apply other filters
+      // Apply filters
       if (filters.year) {
         filtered = filtered.filter(
-          doc => doc.yearMaster?.name === filters.year
+          (doc) => doc.yearMaster?.name === filters.year
         );
       }
 
       if (filters.approvalStatus) {
         filtered = filtered.filter(
-          doc => doc.approvalStatus === filters.approvalStatus
+          (doc) => doc.approvalStatus === filters.approvalStatus
         );
       }
 
       if (filters.category) {
         filtered = filtered.filter(
-          doc => doc.categoryMaster?.name === filters.category
+          (doc) => doc.categoryMaster?.name === filters.category
         );
       }
 
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
         filtered = filtered.filter(
-          doc =>
+          (doc) =>
             doc.title.toLowerCase().includes(searchTerm) ||
             doc.fileNo.toLowerCase().includes(searchTerm) ||
             doc.subject.toLowerCase().includes(searchTerm)
@@ -200,10 +185,6 @@ const DpAdminOCR = () => {
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
-
-    if (field === "branch") {
-      fetchDocuments(value);
-    }
   };
 
   const handleSearch = (e) => {
@@ -215,16 +196,17 @@ const DpAdminOCR = () => {
     }
 
     if (filteredDocuments.length === 0) {
-      setSearchError(<AutoTranslate>No documents available to search. Please select a branch first.</AutoTranslate>);
+      setSearchError(<AutoTranslate>No documents available to search.</AutoTranslate>);
       return;
     }
 
-    const docNames = filteredDocuments
-      .flatMap((doc) => doc.documentDetails.map((detail) => detail.docName))
+    // Using IDs like AdminOCR - this works
+    const docIds = filteredDocuments
+      .flatMap((doc) => doc.documentDetails?.map((detail) => detail.id) || [])
       .filter(Boolean);
 
-    if (docNames.length === 0) {
-      setSearchError(<AutoTranslate>No valid document names found for searching</AutoTranslate>);
+    if (docIds.length === 0) {
+      setSearchError(<AutoTranslate>No valid document IDs found for searching</AutoTranslate>);
       return;
     }
 
@@ -234,7 +216,7 @@ const DpAdminOCR = () => {
     const apiEndpoint = `${API_OCR_HOST}/search/selected`;
     const payload = {
       query: query,
-      mysql_original_id: docNames,
+      mysql_original_id: docIds, // Using IDs like AdminOCR
     };
 
     fetch(apiEndpoint, {
@@ -296,7 +278,7 @@ const DpAdminOCR = () => {
   return (
     <div className="px-4 py-6">
       <h1 className="text-2xl font-semibold text-gray-800 mb-6">
-        <AutoTranslate>Department wise (OCR)Search</AutoTranslate>
+        <AutoTranslate>Department wise (OCR) Search</AutoTranslate>
       </h1>
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -402,11 +384,12 @@ const DpAdminOCR = () => {
               <div className="flex items-end">
                 <button
                   type="submit"
-                  disabled={!query || !filters.branch || filteredDocuments.length === 0}
-                  className={`px-4 py-2 rounded-md text-white font-medium ${!query || !filters.branch || filteredDocuments.length === 0
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                    }`}
+                  disabled={!query || !fixedDepartmentId || filteredDocuments.length === 0}
+                  className={`px-4 py-2 rounded-md text-white font-medium ${
+                    !query || !fixedDepartmentId || filteredDocuments.length === 0
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
                 >
                   <AutoTranslate>Search in Documents</AutoTranslate>
                 </button>
@@ -415,7 +398,7 @@ const DpAdminOCR = () => {
             {searchError && (
               <div className="mt-2 text-sm text-red-600">{searchError}</div>
             )}
-            {filters.branch && filteredDocuments.length > 0 && (
+            {fixedDepartmentId && filteredDocuments.length > 0 && (
               <div className="mt-2 text-sm text-gray-500">
                 <AutoTranslate>Searching in</AutoTranslate> {filteredDocuments.length} <AutoTranslate>documents</AutoTranslate>
               </div>
@@ -495,12 +478,13 @@ const DpAdminOCR = () => {
                         {formatDate(doc.createdOn)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${doc.approvalStatus === "APPROVED"
-                          ? "bg-green-100 text-green-800"
-                          : doc.approvalStatus === "PENDING"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                          }`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          doc.approvalStatus === "APPROVED"
+                            ? "bg-green-100 text-green-800"
+                            : doc.approvalStatus === "PENDING"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                        }`}>
                           {doc.approvalStatus}
                         </span>
                       </td>
@@ -517,8 +501,9 @@ const DpAdminOCR = () => {
                   <p className="text-sm text-gray-700">
                     <span className="text-sm text-gray-700">
                       <AutoTranslate>
-                        {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                          } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+                        {`Here are items ${
+                          totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                        } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
                       </AutoTranslate>
                     </span>
                   </p>
@@ -528,8 +513,9 @@ const DpAdminOCR = () => {
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       <span className="sr-only">
                         <AutoTranslate>Previous</AutoTranslate>
@@ -541,10 +527,11 @@ const DpAdminOCR = () => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
-                          ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                          }`}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === page
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        }`}
                       >
                         {page}
                       </button>
@@ -553,8 +540,9 @@ const DpAdminOCR = () => {
                     <button
                       onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       <span className="sr-only">
                         <AutoTranslate>Next</AutoTranslate>

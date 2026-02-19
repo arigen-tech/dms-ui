@@ -107,7 +107,7 @@ const AdminOCRResponse = () => {
   };
 
   const handleback = () => {
-    const role = localStorage.getItem("roles") || sessionStorage.getItem("role");
+    const role = localStorage.getItem("role");
     if (role === SYSTEM_ADMIN) {
       navigate("/adminOcr");
     } else if (role === BRANCH_ADMIN) {

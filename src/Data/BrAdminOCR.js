@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import apiClient from "../API/apiClient";
 import {
   DOCUMENTHEADER_API,
@@ -24,9 +23,6 @@ const BrAdminOCR = () => {
     translationStatus,
     isTranslationNeeded,
     availableLanguages,
-    changeLanguage,
-    translate,
-    preloadTranslationsForTerms
   } = useLanguage();
 
   const navigate = useNavigate();
@@ -50,6 +46,7 @@ const BrAdminOCR = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const token = localStorage.getItem("tokenKey");
+  const [userBranchId, setUserBranchId] = useState("");
 
   // Debug log
   useEffect(() => {
@@ -97,13 +94,14 @@ const BrAdminOCR = () => {
       const userId = localStorage.getItem("id");
       const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
       if (response.data.branch) {
-        fetchDocuments(response?.data?.branch?.id);
+        const branchId = response.data.branch.id;
+        setUserBranchId(branchId);
+        fetchDocuments(branchId);
         setFilters((prevFilters) => ({
           ...prevFilters,
-          branch: response?.data?.branch?.id,
+          branch: branchId,
         }));
       }
-
     } catch (error) {
       console.error("Error fetching user branch:", error);
     } finally {
@@ -203,7 +201,7 @@ const BrAdminOCR = () => {
       }
 
       setFilteredDocuments(filtered);
-      setCurrentPage(1); // Reset to first page when filters change
+      setCurrentPage(1);
     };
 
     applyFilters();
@@ -226,16 +224,17 @@ const BrAdminOCR = () => {
     }
 
     if (filteredDocuments.length === 0) {
-      setSearchError(<AutoTranslate>No documents available to search. Please select a branch first.</AutoTranslate>);
+      setSearchError(<AutoTranslate>No documents available to search.</AutoTranslate>);
       return;
     }
 
-    const docNames = filteredDocuments
-      .flatMap((doc) => doc.documentDetails.map((detail) => detail.docName))
+    // Using IDs like AdminOCR - this works
+    const docIds = filteredDocuments
+      .flatMap((doc) => doc.documentDetails?.map((detail) => detail.id) || [])
       .filter(Boolean);
 
-    if (docNames.length === 0) {
-      setSearchError(<AutoTranslate>No valid document names found for searching</AutoTranslate>);
+    if (docIds.length === 0) {
+      setSearchError(<AutoTranslate>No valid document IDs found for searching</AutoTranslate>);
       return;
     }
 
@@ -245,7 +244,7 @@ const BrAdminOCR = () => {
     const apiEndpoint = `${API_OCR_HOST}/search/selected`;
     const payload = {
       query: query,
-      selected_files: docNames,
+      mysql_original_id: docIds, // Using IDs like AdminOCR
     };
 
     fetch(apiEndpoint, {
@@ -434,11 +433,12 @@ const BrAdminOCR = () => {
               <div className="flex items-end">
                 <button
                   type="submit"
-                  disabled={!query || !filters.branch || filteredDocuments.length === 0}
-                  className={`px-4 py-2 rounded-md text-white font-medium ${!query || !filters.branch || filteredDocuments.length === 0
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                    }`}
+                  disabled={!query || !userBranchId || filteredDocuments.length === 0}
+                  className={`px-4 py-2 rounded-md text-white font-medium ${
+                    !query || !userBranchId || filteredDocuments.length === 0
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
                 >
                   <AutoTranslate>Search in Documents</AutoTranslate>
                 </button>
@@ -447,7 +447,7 @@ const BrAdminOCR = () => {
             {searchError && (
               <div className="mt-2 text-sm text-red-600">{searchError}</div>
             )}
-            {filters.branch && filteredDocuments.length > 0 && (
+            {userBranchId && filteredDocuments.length > 0 && (
               <div className="mt-2 text-sm text-gray-500">
                 <AutoTranslate>Searching in</AutoTranslate> {filteredDocuments.length} <AutoTranslate>documents</AutoTranslate>
               </div>
@@ -527,12 +527,13 @@ const BrAdminOCR = () => {
                         {formatDate(doc.createdOn)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${doc.approvalStatus === "APPROVED"
-                          ? "bg-green-100 text-green-800"
-                          : doc.approvalStatus === "PENDING"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                          }`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          doc.approvalStatus === "APPROVED"
+                            ? "bg-green-100 text-green-800"
+                            : doc.approvalStatus === "PENDING"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                        }`}>
                           {doc.approvalStatus}
                         </span>
                       </td>
@@ -549,8 +550,9 @@ const BrAdminOCR = () => {
                   <p className="text-sm text-gray-700">
                     <span className="text-sm text-gray-700">
                       <AutoTranslate>
-                        {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                          } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
+                        {`Here are items ${
+                          totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                        } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
                       </AutoTranslate>
                     </span>
                   </p>
@@ -560,8 +562,9 @@ const BrAdminOCR = () => {
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       <span className="sr-only">
                         <AutoTranslate>Previous</AutoTranslate>
@@ -573,10 +576,11 @@ const BrAdminOCR = () => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
-                          ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                          }`}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === page
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        }`}
                       >
                         {page}
                       </button>
@@ -585,8 +589,9 @@ const BrAdminOCR = () => {
                     <button
                       onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       <span className="sr-only">
                         <AutoTranslate>Next</AutoTranslate>

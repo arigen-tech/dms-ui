@@ -37,7 +37,7 @@ const DocumentAuditReport = () => {
     const [showPdf, setShowPdf] = useState(false);
     const [currRole, setCurrRole] = useState(null);
     const [currentEmp, setCurrentEmp] = useState(null);
-    
+
     // Loading states
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -67,6 +67,12 @@ const DocumentAuditReport = () => {
             fetchUserDetails(role);
         }
     }, []);
+
+    const formatDate = (dateArray) => {
+        const [year, month, day] = dateArray;
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-GB');
+    };
 
     useEffect(() => {
         if (searchCriteria.branch) {
@@ -159,7 +165,7 @@ const DocumentAuditReport = () => {
             if (searchCriteria.actionType === "ALL") {
                 // For ALL, include all action types from the enum
                 actionTypes = [
-                    "UPLOAD", "DOWNLOAD", "ARCHIVE", "RETRIEVE", 
+                    "UPLOAD", "DOWNLOAD", "ARCHIVE", "RETRIEVE",
                     "TRASH", "UNTRASH", "APPROVE", "REJECT", "VIEW"
                 ];
             } else {
@@ -203,12 +209,7 @@ const DocumentAuditReport = () => {
     };
 
     const handleDownloadReport = async (flagType) => {
-        // For audit report, we need to handle ALL selection
-        if (searchCriteria.actionType === "ALL") {
-            alert("Please select a specific action type to generate the PDF report. For a complete audit, you can generate separate reports for each action type.");
-            return;
-        }
-
+        // For audit report, ALL is now allowed - pass "ALL" directly to the API
         setIsGeneratingReport(true); // Start loading
         try {
             const response = await apiClient.get(
@@ -240,7 +241,7 @@ const DocumentAuditReport = () => {
                             ? toDate.toISOString().split("T")[0]
                             : null,
 
-                        actionType: searchCriteria.actionType,
+                        actionType: searchCriteria.actionType, // Now passes "ALL" directly
                         flag: flagType,
                     },
                     responseType: "blob",
@@ -439,9 +440,8 @@ const DocumentAuditReport = () => {
                 <div className="flex gap-4 mt-4">
                     <button
                         onClick={() => handleDownloadReport("D")}
-                        disabled={searchCriteria.actionType === "ALL" || isGeneratingReport}
+                        disabled={isGeneratingReport}
                         className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-green-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
-                        title={searchCriteria.actionType === "ALL" ? "Please select a specific action type to generate PDF" : ""}
                     >
                         {isGeneratingReport ? (
                             <>
@@ -455,9 +455,8 @@ const DocumentAuditReport = () => {
 
                     <button
                         onClick={() => handleDownloadReport("P")}
-                        disabled={searchCriteria.actionType === "ALL" || isGeneratingReport}
+                        disabled={isGeneratingReport}
                         className="px-4 py-2 bg-orange-600 text-white rounded-md disabled:bg-orange-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
-                        title={searchCriteria.actionType === "ALL" ? "Please select a specific action type to generate PDF" : ""}
                     >
                         {isGeneratingReport ? (
                             <>
@@ -471,9 +470,9 @@ const DocumentAuditReport = () => {
                 </div>
             )}
 
-            {searchCriteria.actionType === "ALL" && searchResults.length > 0 && (
-                <div className="mt-2 text-amber-600 bg-amber-50 p-2 rounded">
-                    <AutoTranslate>PDF report generation is only available for individual action types. Please select a specific action type to view/print the report.</AutoTranslate>
+            {searchResults.length === 0 && !isSearching && (
+                <div className="mt-6 text-center text-gray-500">
+                    <AutoTranslate>No results found</AutoTranslate>
                 </div>
             )}
 
@@ -507,7 +506,7 @@ const DocumentAuditReport = () => {
                                         {getActionTypeDisplay(item.actionType)}
                                     </td>
                                     <td className="border px-2 py-1">
-                                        {new Date(item.actionDate).toLocaleString()}
+                                        {formatDate(item.actionDate)}
                                     </td>
                                     <td className="border px-2 py-1">{item.actionBy}</td>
                                 </tr>
@@ -515,11 +514,7 @@ const DocumentAuditReport = () => {
                         </tbody>
                     </table>
                 </div>
-            ) : (
-                <div className="mt-6 text-center text-gray-500">
-                    <AutoTranslate>No results found</AutoTranslate>
-                </div>
-            )}
+            ) : null}
 
             {showPdf && (
                 <PdfViewer

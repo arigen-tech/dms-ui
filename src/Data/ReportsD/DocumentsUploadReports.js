@@ -61,6 +61,13 @@ const DocumentsUploadReports = () => {
         }
     }, [searchCriteria.branch]);
 
+
+     const formatDate = (dateArray) => {
+        const [year, month, day] = dateArray;
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-GB');
+    };
+
     const fetchUserDetails = async (role) => {
         try {
             const userId = localStorage.getItem("id");
@@ -427,7 +434,7 @@ const DocumentsUploadReports = () => {
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
                                     <td className="border px-2 py-1">
-                                        {new Date(item.actionDate).toLocaleString()}
+                                        {formatDate(item.actionDate)}
                                     </td>
                                     <td className="border px-2 py-1">{item.actionBy}</td>
                                 </tr>
