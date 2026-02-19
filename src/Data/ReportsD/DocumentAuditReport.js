@@ -241,7 +241,7 @@ const DocumentAuditReport = () => {
                             ? toDate.toISOString().split("T")[0]
                             : null,
 
-                        actionType: searchCriteria.actionType, // Now passes "ALL" directly
+                        actionType: "AUDIT", // Now passes "ALL" directly
                         flag: flagType,
                     },
                     responseType: "blob",
@@ -356,25 +356,6 @@ const DocumentAuditReport = () => {
                             {categoryOptions.map((cat) => (
                                 <option key={cat.id} value={cat.id}>
                                     {cat.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Action Type Dropdown */}
-                    <div className="flex flex-col">
-                        <label className="mb-1">
-                            <AutoTranslate>Action Type</AutoTranslate>
-                        </label>
-                        <select
-                            name="actionType"
-                            value={searchCriteria.actionType}
-                            onChange={handleInputChange}
-                            className="p-2 border rounded-md"
-                        >
-                            {actionTypeOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    <AutoTranslate>{option.label}</AutoTranslate>
                                 </option>
                             ))}
                         </select>

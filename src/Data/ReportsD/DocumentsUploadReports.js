@@ -16,13 +16,14 @@ const Spinner = ({ size = "h-5 w-5", color = "text-white" }) => (
     </svg>
 );
 
-const DocumentsUploadReports = () => {
+const DocumentUploadReport = () => {
     const { currentLanguage } = useLanguage();
 
     const initialFormData = {
         branch: "",
         department: "",
         category: "",
+        actionType: "UPLOAD", // Default action type
     };
 
     const [searchCriteria, setSearchCriteria] = useState(initialFormData);
@@ -41,6 +42,14 @@ const DocumentsUploadReports = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
+    // Action type options for dropdown
+    const actionTypeOptions = [
+        { value: "UPLOAD", label: "Upload" },
+        { value: "APPROVE", label: "Approve" },
+        { value: "REJECT", label: "Reject" },
+        { value: "ALL", label: "All" }
+    ];
+
     useEffect(() => {
         const role = localStorage.getItem("role");
         setCurrRole(role);
@@ -53,6 +62,13 @@ const DocumentsUploadReports = () => {
         }
     }, []);
 
+    const formatDate = (dateArray) => {
+        if (!dateArray) return '';
+        const [year, month, day] = dateArray;
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-GB');
+    };
+
     useEffect(() => {
         if (searchCriteria.branch) {
             fetchDepartments(searchCriteria.branch);
@@ -60,13 +76,6 @@ const DocumentsUploadReports = () => {
             setDepartmentOptions([]);
         }
     }, [searchCriteria.branch]);
-
-
-     const formatDate = (dateArray) => {
-        const [year, month, day] = dateArray;
-        const date = new Date(year, month - 1, day);
-        return date.toLocaleDateString('en-GB');
-    };
 
     const fetchUserDetails = async (role) => {
         try {
@@ -146,6 +155,14 @@ const DocumentsUploadReports = () => {
     const handleSearch = async () => {
         setIsSearching(true); // Start loading
         try {
+            // Determine action types array based on selection
+            let actionTypes = [];
+            if (searchCriteria.actionType === "ALL") {
+                actionTypes = ["UPLOAD", "APPROVE", "REJECT"];
+            } else {
+                actionTypes = [searchCriteria.actionType];
+            }
+
             const requestBody = {
                 branchId:
                     currRole === SYSTEM_ADMIN
@@ -166,7 +183,7 @@ const DocumentsUploadReports = () => {
 
                 fromDate: fromDate ? fromDate.toISOString() : null,
                 toDate: toDate ? toDate.toISOString() : null,
-                actionTypes: ["UPLOAD"], // ✅ FIXED: Changed from DOWNLOAD to UPLOAD
+                actionTypes: actionTypes,
             };
 
             const response = await apiClient.post(
@@ -186,7 +203,7 @@ const DocumentsUploadReports = () => {
         setIsGeneratingReport(true); // Start loading
         try {
             const response = await apiClient.get(
-                `${API_HOST}/jasper-report/uploaded-files`, // ✅ FIXED: Changed from downloaded-files to uploaded-files
+                `${API_HOST}/jasper-report/uploaded-files`, // Using uploaded-files endpoint
                 {
                     params: {
                         branchId:
@@ -214,7 +231,7 @@ const DocumentsUploadReports = () => {
                             ? toDate.toISOString().split("T")[0]
                             : null,
 
-                        actionType: "UPLOAD", // ✅ FIXED: Changed from DOWNLOAD to UPLOAD
+                        actionType: searchCriteria.actionType, // Pass "ALL" directly to API
                         flag: flagType,
                     },
                     responseType: "blob",
@@ -237,14 +254,28 @@ const DocumentsUploadReports = () => {
         }
     };
 
+    // Helper function to get action type display name
+    const getActionTypeDisplay = (actionType) => {
+        switch(actionType) {
+            case 'UPLOAD':
+                return 'Upload';
+            case 'APPROVE':
+                return 'Approve';
+            case 'REJECT':
+                return 'Reject';
+            default:
+                return actionType;
+        }
+    };
+
     return (
         <div className="p-4">
             <h1 className="text-xl mb-4 font-semibold">
-                <AutoTranslate>Document Uploads Reports</AutoTranslate>
+                <AutoTranslate>Document Upload Reports</AutoTranslate>
             </h1>
 
             <div className="bg-white p-4 rounded-lg shadow-md">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-100 p-4 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-slate-100 p-4 rounded-lg">
 
                     {/* Branch */}
                     <div className="flex flex-col">
@@ -313,6 +344,25 @@ const DocumentsUploadReports = () => {
                             {categoryOptions.map((cat) => (
                                 <option key={cat.id} value={cat.id}>
                                     {cat.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Action Type Dropdown */}
+                    <div className="flex flex-col">
+                        <label className="mb-1">
+                            <AutoTranslate>Status</AutoTranslate>
+                        </label>
+                        <select
+                            name="actionType"
+                            value={searchCriteria.actionType}
+                            onChange={handleInputChange}
+                            className="p-2 border rounded-md"
+                        >
+                            {actionTypeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    <AutoTranslate>{option.label}</AutoTranslate>
                                 </option>
                             ))}
                         </select>
@@ -422,6 +472,7 @@ const DocumentsUploadReports = () => {
                                 <th className="border px-2 py-1">Title</th>
                                 <th className="border px-2 py-1">Category</th>
                                 <th className="border px-2 py-1">Version</th>
+                                <th className="border px-2 py-1">Status</th>
                                 <th className="border px-2 py-1">Action Date</th>
                                 <th className="border px-2 py-1">Action By</th>
                             </tr>
@@ -433,6 +484,15 @@ const DocumentsUploadReports = () => {
                                     <td className="border px-2 py-1">{item.title}</td>
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
+                                    <td className="border px-2 py-1">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                            item.actionType === 'APPROVE' ? 'bg-green-100 text-green-800' :
+                                            item.actionType === 'REJECT' ? 'bg-red-100 text-red-800' :
+                                            'bg-blue-100 text-blue-800'
+                                        }`}>
+                                            {getActionTypeDisplay(item.actionType)}
+                                        </span>
+                                    </td>
                                     <td className="border px-2 py-1">
                                         {formatDate(item.actionDate)}
                                     </td>
@@ -451,7 +511,7 @@ const DocumentsUploadReports = () => {
             {showPdf && (
                 <PdfViewer
                     pdfUrl={pdfUrl}
-                    name="Uploaded Files Report" // ✅ FIXED: Changed from "Downloaded Files Report"
+                    name="Upload Files Report"
                     onClose={() => {
                         setShowPdf(false);
                         setPdfUrl(null);
@@ -462,4 +522,4 @@ const DocumentsUploadReports = () => {
     );
 };
 
-export default DocumentsUploadReports;
+export default DocumentUploadReport;
