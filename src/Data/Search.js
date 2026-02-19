@@ -568,83 +568,52 @@ const Search = () => {
     }
   }, [selectedDoc]);
 
-  const fetchQRCode = async (documentId) => {
-    try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
+const fetchQRCode = async (documentId) => {
+  try {
+    
+    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
-      // API URL to fetch the QR code
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const qrCodeBlob = response.data;
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
-
-      console.log("Fetched QR code Blob:", qrCodeBlob);
-
-      if (!qrCodeBlob.type.includes("image/png")) {
-        throw new Error("Received data is not a valid image");
-      }
-
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-
-      setQrCodeUrl(qrCodeUrl);
-    } catch (error) {
-      setError("Error displaying QR Code: " + error.message);
-    }
-  };
-
-  const downloadQRCode = async () => {
-    if (!selectedDoc.id) {
-      alert("Please enter a document ID");
-      return;
+    if (!qrCodeBlob.type.includes("image/png")) {
+      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
     }
 
-    try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    setQrCodeUrl(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+  }
+};
 
-      // API URL to download the QR code
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      // Fetch the QR code as a Blob (binary data) with the token in the Authorization header
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+const downloadQRCode = async () => {
+  if (!selectedDoc.id) {
+    alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
+    return;
+  }
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
+  try {
 
-      const qrCodeBlob = await response.blob();
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
 
-      // Create an anchor link to trigger the download
-      const link = document.createElement("a");
-      link.href = qrCodeUrl;
-      link.download = `QR_Code_${selectedDoc.id}.png`;
-      link.click();
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      // Clean up URL object
-      window.URL.revokeObjectURL(qrCodeUrl);
-    } catch (error) {
-      setError("Error downloading QR Code: " + error.message);
-    }
-  };
+    const qrCodeBlob = response.data;
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+    const link = document.createElement("a");
+    link.href = qrCodeUrl;
+    link.download = `QR_Code_${selectedDoc.id}.png`;
+    link.click();
+
+    window.URL.revokeObjectURL(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
+  }
+};
 
   const showPopup = (message, type = 'info') => {
     setPopupMessage({

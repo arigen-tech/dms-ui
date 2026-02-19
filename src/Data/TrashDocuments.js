@@ -293,59 +293,56 @@ const TrashDoc = () => {
     setBulkDocRestoreModalVisible(true);
   };
 
-  const confirmBulkDocumentRestore = async () => {
-    setIsBulkDocRestoring(true);
-    
-    try {
-      // Get all deleted files from selected documents
-      const allFilesToRestore = [];
-      selectedDocuments.forEach(doc => {
-        if (doc.documentDetails) {
-          const deletedFiles = doc.documentDetails.filter(file => file.isDeleted === true);
-          allFilesToRestore.push(...deletedFiles);
-        }
-      });
+const confirmBulkDocumentRestore = async () => {
+  setIsBulkDocRestoring(true);
 
-      if (allFilesToRestore.length === 0) {
-        showPopup('No deleted files found in selected documents.', 'warning');
-        setIsBulkDocRestoring(false);
-        setBulkDocRestoreModalVisible(false);
-        return;
+  try {
+    // Get all deleted files from selected documents
+    const allFilesToRestore = [];
+    selectedDocuments.forEach((doc) => {
+      if (doc.documentDetails) {
+        const deletedFiles = doc.documentDetails.filter((file) => file.isDeleted === true);
+        allFilesToRestore.push(...deletedFiles);
       }
+    });
 
-      // Restore all files
-      const restorePromises = allFilesToRestore.map(file =>
-        axios.put(
-          `${DOCUMENTHEADER_API}/delete-status/${file.id}`,
-          null,
-          {
-            params: { isDeleted: false },
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-      );
-
-      await Promise.all(restorePromises);
-
-      // Refresh the documents list
-      fetchTrashDocuments();
-
-      // Clear selections
-      setSelectedDocuments([]);
-      setSelectAllDocsChecked(false);
-      setBulkDocRestoreModalVisible(false);
-      
-      showPopup(`${allFilesToRestore.length} file(s) from ${selectedDocuments.length} document(s) restored successfully!`, 'success');
-    } catch (error) {
-      console.error('Error in bulk document restore:', error);
-      showPopup('Failed to restore some files. Please try again!', 'error');
-    } finally {
+    if (allFilesToRestore.length === 0) {
+      showPopup('No deleted files found in selected documents.', 'warning');
       setIsBulkDocRestoring(false);
+      setBulkDocRestoreModalVisible(false);
+      return;
     }
-  };
+
+    // Create a list of promises for each restore request
+    const restorePromises = allFilesToRestore.map((file) =>
+      apiClient.put(
+        `/delete-status/${file.id}`, // relative endpoint path
+        null, // no body payload, just query params
+        {
+          params: { isDeleted: false },
+        }
+      )
+    );
+
+    // Wait for all restore requests to complete
+    await Promise.all(restorePromises);
+
+    // Refresh the documents list
+    fetchTrashDocuments();
+
+    // Clear selections
+    setSelectedDocuments([]);
+    setSelectAllDocsChecked(false);
+    setBulkDocRestoreModalVisible(false);
+
+    showPopup(`${allFilesToRestore.length} file(s) from ${selectedDocuments.length} document(s) restored successfully!`, 'success');
+  } catch (error) {
+    console.error('Error in bulk document restore:', error);
+    showPopup('Failed to restore some files. Please try again!', 'error');
+  } finally {
+    setIsBulkDocRestoring(false);
+  }
+};
 
   // Function to handle file restoration (single file inside modal)
   const handleRestoreFile = (file) => {
@@ -437,56 +434,54 @@ const TrashDoc = () => {
     setBulkFileRestoreModalVisible(true);
   };
 
-  const confirmBulkFileRestore = async () => {
-    setIsBulkFileRestoring(true);
-    
-    try {
-      const restorePromises = selectedFiles.map(file =>
-        axios.put(
-          `${DOCUMENTHEADER_API}/delete-status/${file.id}`,
-          null,
-          {
-            params: { isDeleted: false },
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
+const confirmBulkFileRestore = async () => {
+  setIsBulkFileRestoring(true);
+
+  try {
+    // Create a list of promises for each restore request
+    const restorePromises = selectedFiles.map((file) =>
+      apiClient.put(
+        `/delete-status/${file.id}`, // relative endpoint path
+        null, // no body payload, just query params
+        {
+          params: { isDeleted: false },
+        }
+      )
+    );
+
+    // Wait for all restore requests to complete
+    await Promise.all(restorePromises);
+
+    // Refresh the documents list
+    fetchTrashDocuments();
+
+    // Update selectedDoc if modal is open
+    if (selectedDoc) {
+      const updatedDocumentDetails = selectedDoc.documentDetails.map((file) =>
+        selectedFiles.some((selected) => selected.id === file.id)
+          ? { ...file, isDeleted: false }
+          : file
       );
 
-      await Promise.all(restorePromises);
-
-      // Refresh the documents list
-      fetchTrashDocuments();
-
-      // Update selectedDoc if modal is open
-      if (selectedDoc) {
-        const updatedDocumentDetails = selectedDoc.documentDetails.map(file =>
-          selectedFiles.some(selected => selected.id === file.id) 
-            ? { ...file, isDeleted: false } 
-            : file
-        );
-        
-        setSelectedDoc({
-          ...selectedDoc,
-          documentDetails: updatedDocumentDetails
-        });
-      }
-
-      // Clear selections
-      setSelectedFiles([]);
-      setSelectAllFilesChecked(false);
-      setBulkFileRestoreModalVisible(false);
-      
-      showPopup(`${selectedFiles.length} file(s) restored successfully!`, 'success');
-    } catch (error) {
-      console.error('Error in bulk file restore:', error);
-      showPopup('Failed to restore some files. Please try again!', 'error');
-    } finally {
-      setIsBulkFileRestoring(false);
+      setSelectedDoc({
+        ...selectedDoc,
+        documentDetails: updatedDocumentDetails,
+      });
     }
-  };
+
+    // Clear selections
+    setSelectedFiles([]);
+    setSelectAllFilesChecked(false);
+    setBulkFileRestoreModalVisible(false);
+
+    showPopup(`${selectedFiles.length} file(s) restored successfully!`, 'success');
+  } catch (error) {
+    console.error('Error in bulk file restore:', error);
+    showPopup('Failed to restore some files. Please try again!', 'error');
+  } finally {
+    setIsBulkFileRestoring(false);
+  }
+};
 
   const getCurrentFilteredFiles = () => {
     if (!selectedDoc || !Array.isArray(selectedDoc.documentDetails)) return [];
@@ -658,78 +653,53 @@ const TrashDoc = () => {
     return getCurrentFilteredFiles();
   }, [selectedDoc, searchFileTerm]);
 
-  const fetchQRCode = async (documentId) => {
-    try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
+const fetchQRCode = async (documentId) => {
+  try {
+    
+    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const qrCodeBlob = response.data;
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
-
-      if (!qrCodeBlob.type.includes("image/png")) {
-        throw new Error("Received data is not a valid image");
-      }
-
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-      setQrCodeUrl(qrCodeUrl);
-      setError("");
-    } catch (error) {
-      console.error("Error fetching QR code:", error);
-      setQrCodeUrl(null);
-    }
-  };
-
-  const downloadQRCode = async () => {
-    if (!selectedDoc?.id) {
-      alert("Please select a document first");
-      return;
+    if (!qrCodeBlob.type.includes("image/png")) {
+      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
     }
 
-    try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    setQrCodeUrl(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+  }
+};
 
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+const downloadQRCode = async () => {
+  if (!selectedDoc.id) {
+    alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
+    return;
+  }
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
+  try {
 
-      const qrCodeBlob = await response.blob();
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
 
-      const link = document.createElement("a");
-      link.href = qrCodeUrl;
-      link.download = `QR_Code_${selectedDoc.id}.png`;
-      link.click();
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      window.URL.revokeObjectURL(qrCodeUrl);
-    } catch (error) {
-      console.error("Error downloading QR Code:", error);
-      showPopup('Error downloading QR Code: ' + error.message, 'error');
-    }
-  };
+    const qrCodeBlob = response.data;
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+    const link = document.createElement("a");
+    link.href = qrCodeUrl;
+    link.download = `QR_Code_${selectedDoc.id}.png`;
+    link.click();
+
+    window.URL.revokeObjectURL(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
+  }
+};
+
 
   const handlePrintReport = async (id) => {
     if (!id) return;

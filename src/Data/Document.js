@@ -1278,8 +1278,7 @@ const handlePrintReport = async (id) => {
 
 const fetchQRCode = async (documentId) => {
   try {
-   
-
+    
     const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
     const response = await apiClient.get(apiUrl, { responseType: "blob" });
@@ -1305,7 +1304,7 @@ const downloadQRCode = async () => {
   }
 
   try {
-   
+
     const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
 
     const response = await apiClient.get(apiUrl, { responseType: "blob" });

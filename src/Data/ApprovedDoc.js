@@ -540,61 +540,58 @@ const ApprovedDoc = () => {
     setBulkDocDeleteModalVisible(true);
   };
 
-  const confirmBulkDocumentDelete = async () => {
-    setIsBulkDocDeleting(true);
+const confirmBulkDocumentDelete = async () => {
+  setIsBulkDocDeleting(true);
 
-    try {
-      // Get all approved files from selected documents
-      const allFilesToDelete = [];
-      selectedDocuments.forEach(doc => {
-        if (doc.documentDetails) {
-          const approvedFiles = doc.documentDetails.filter(file =>
-            file.status === "APPROVED" && !file.isDeleted
-          );
-          allFilesToDelete.push(...approvedFiles);
-        }
-      });
-
-      if (allFilesToDelete.length === 0) {
-        showPopup('No approved files found in selected documents.', 'warning');
-        setIsBulkDocDeleting(false);
-        setBulkDocDeleteModalVisible(false);
-        return;
+  try {
+    // Get all approved files from selected documents
+    const allFilesToDelete = [];
+    selectedDocuments.forEach((doc) => {
+      if (doc.documentDetails) {
+        const approvedFiles = doc.documentDetails.filter(
+          (file) => file.status === "APPROVED" && !file.isDeleted
+        );
+        allFilesToDelete.push(...approvedFiles);
       }
+    });
 
-      // Move all approved files to trash
-      const deletePromises = allFilesToDelete.map(file =>
-        axios.put(
-          `${DOCUMENTHEADER_API}/delete-status/${file.id}`,
-          null,
-          {
-            params: { isDeleted: true },
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-      );
-
-      await Promise.all(deletePromises);
-
-      // Refresh the documents list
-      fetchDocuments();
-
-      // Clear selections
-      setSelectedDocuments([]);
-      setSelectAllDocsChecked(false);
-      setBulkDocDeleteModalVisible(false);
-
-      showPopup(`${allFilesToDelete.length} approved file(s) from ${selectedDocuments.length} document(s) moved to trash successfully!`, 'success');
-    } catch (error) {
-      console.error('Error in bulk document delete:', error);
-      showPopup('Failed to move some files to trash. Please try again!', 'error');
-    } finally {
+    if (allFilesToDelete.length === 0) {
+      showPopup('No approved files found in selected documents.', 'warning');
       setIsBulkDocDeleting(false);
+      setBulkDocDeleteModalVisible(false);
+      return;
     }
-  };
+
+    // Move all approved files to trash
+    const deletePromises = allFilesToDelete.map((file) =>
+      apiClient.put(
+        `/delete-status/${file.id}`, // relative path
+        null, // no body data
+        {
+          params: { isDeleted: true },
+        }
+      )
+    );
+
+    // Wait for all delete requests to complete
+    await Promise.all(deletePromises);
+
+    // Refresh the documents list
+    fetchDocuments();
+
+    // Clear selections
+    setSelectedDocuments([]);
+    setSelectAllDocsChecked(false);
+    setBulkDocDeleteModalVisible(false);
+
+    showPopup(`${allFilesToDelete.length} approved file(s) from ${selectedDocuments.length} document(s) moved to trash successfully!`, 'success');
+  } catch (error) {
+    console.error('Error in bulk document delete:', error);
+    showPopup('Failed to move some files to trash. Please try again!', 'error');
+  } finally {
+    setIsBulkDocDeleting(false);
+  }
+};
 
   // Function to handle bulk document sharing - SHARES ALL APPROVED FILES
   const handleBulkDocumentShare = () => {
@@ -822,57 +819,55 @@ const ApprovedDoc = () => {
     setBulkFileDeleteModalVisible(true);
   };
 
-  const confirmBulkFileDelete = async () => {
-    setIsBulkFileDeleting(true);
+const confirmBulkFileDelete = async () => {
+  setIsBulkFileDeleting(true);
 
-    try {
-      const deletePromises = selectedFiles.map(file =>
-        axios.put(
-          `${DOCUMENTHEADER_API}/delete-status/${file.id}`,
-          null,
-          {
-            params: { isDeleted: true },
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
+  try {
+    // Move selected files to trash
+    const deletePromises = selectedFiles.map((file) =>
+      apiClient.put(
+        `/delete-status/${file.id}`, // relative path
+        null, // no body data
+        {
+          params: { isDeleted: true },
+        }
+      )
+    );
+
+    // Wait for all delete requests to complete
+    await Promise.all(deletePromises);
+
+    // Refresh the documents list
+    fetchDocuments();
+
+    // Update selectedDoc if modal is open
+    if (selectedDoc) {
+      const updatedDocumentDetails = selectedDoc.documentDetails.map((file) =>
+        selectedFiles.some((selected) => selected.id === file.id)
+          ? { ...file, isDeleted: true }
+          : file
       );
 
-      await Promise.all(deletePromises);
-
-      // Refresh the documents list
-      fetchDocuments();
-
-      // Update selectedDoc if modal is open
-      if (selectedDoc) {
-        const updatedDocumentDetails = selectedDoc.documentDetails.map(file =>
-          selectedFiles.some(selected => selected.id === file.id)
-            ? { ...file, isDeleted: true }
-            : file
-        );
-
-        setSelectedDoc({
-          ...selectedDoc,
-          documentDetails: updatedDocumentDetails
-        });
-      }
-
-      // Clear selections
-      setSelectedFiles([]);
-      setSelectedFileIds([]);
-      setSelectAllFilesChecked(false);
-      setBulkFileDeleteModalVisible(false);
-
-      showPopup(`${selectedFiles.length} file(s) moved to trash successfully!`, 'success');
-    } catch (error) {
-      console.error('Error in bulk file delete:', error);
-      showPopup('Failed to move some files to trash. Please try again!', 'error');
-    } finally {
-      setIsBulkFileDeleting(false);
+      setSelectedDoc({
+        ...selectedDoc,
+        documentDetails: updatedDocumentDetails,
+      });
     }
-  };
+
+    // Clear selections
+    setSelectedFiles([]);
+    setSelectedFileIds([]);
+    setSelectAllFilesChecked(false);
+    setBulkFileDeleteModalVisible(false);
+
+    showPopup(`${selectedFiles.length} file(s) moved to trash successfully!`, 'success');
+  } catch (error) {
+    console.error('Error in bulk file delete:', error);
+    showPopup('Failed to move some files to trash. Please try again!', 'error');
+  } finally {
+    setIsBulkFileDeleting(false);
+  }
+};
 
   const getCurrentFilteredFiles = () => {
     if (!selectedDoc || !Array.isArray(selectedDoc.documentDetails)) return [];
@@ -1064,83 +1059,58 @@ const ApprovedDoc = () => {
     return getCurrentFilteredFiles();
   }, [selectedDoc, searchFileTerm]);
 
-  const fetchQRCode = async (documentId) => {
-    try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
-
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
-
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
-
-      if (!qrCodeBlob.type.includes("image/png")) {
-        throw new Error("Received data is not a valid image");
-      }
-
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-      setQrCodeUrl(qrCodeUrl);
-      setError("");
-    } catch (error) {
-      console.error("Error fetching QR code:", error);
-      setQrCodeUrl(null);
-    }
-  };
 
   const handleEdit = (docId) => {
     const data = documents.find((item) => item.id === docId);
     navigate("/all-documents", { state: data });
   };
 
-  const downloadQRCode = async () => {
-    if (!selectedDoc?.id) {
-      alert("Please select a document first");
-      return;
+const fetchQRCode = async (documentId) => {
+  try {
+    
+    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
+
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
+
+    const qrCodeBlob = response.data;
+
+    if (!qrCodeBlob.type.includes("image/png")) {
+      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
     }
 
-    try {
-      if (!token) {
-        throw new Error("Authentication token is missing");
-      }
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    setQrCodeUrl(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+  }
+};
 
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+const downloadQRCode = async () => {
+  if (!selectedDoc.id) {
+    alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
+    return;
+  }
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
+  try {
 
-      const qrCodeBlob = await response.blob();
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
 
-      const link = document.createElement("a");
-      link.href = qrCodeUrl;
-      link.download = `QR_Code_${selectedDoc.id}.png`;
-      link.click();
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      window.URL.revokeObjectURL(qrCodeUrl);
-    } catch (error) {
-      console.error("Error downloading QR Code:", error);
-      showPopup('Error downloading QR Code: ' + error.message, 'error');
-    }
-  };
+    const qrCodeBlob = response.data;
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+    const link = document.createElement("a");
+    link.href = qrCodeUrl;
+    link.download = `QR_Code_${selectedDoc.id}.png`;
+    link.click();
+
+    window.URL.revokeObjectURL(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
+  }
+};
 
   const handlePrintReport = async (id) => {
     if (!id) return;
