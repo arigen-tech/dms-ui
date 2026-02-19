@@ -36,7 +36,7 @@ const DocumentsArchivedReports = () => {
     const [showPdf, setShowPdf] = useState(false);
     const [currRole, setCurrRole] = useState(null);
     const [currentEmp, setCurrentEmp] = useState(null);
-    
+
     // Loading states
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -137,6 +137,14 @@ const DocumentsArchivedReports = () => {
             ...(name === "branch" && { department: "" }),
         }));
     };
+
+const formatDate = (dateArray) => {
+    const [year, month, day] = dateArray;
+    const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-GB');  
+};
+
+
 
     const handleSearch = async () => {
         setIsSearching(true); // Start loading
@@ -422,7 +430,7 @@ const DocumentsArchivedReports = () => {
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
                                     <td className="border px-2 py-1">
-                                        {new Date(item.actionDate).toLocaleString()}
+                                        {formatDate(item.actionDate)}
                                     </td>
                                     <td className="border px-2 py-1">{item.actionBy}</td>
                                 </tr>

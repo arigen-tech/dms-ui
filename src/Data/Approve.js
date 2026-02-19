@@ -369,103 +369,70 @@ const Approve = () => {
     }
   };
 
-  const approveDocument = async () => {
-    try {
-      const employeeId = localStorage.getItem("id");
+const approveDocument = async () => {
+  try {
+    const employeeId = localStorage.getItem("id");
 
-      const response = await axios.apiClient(
-        `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`,
-        null,
-        {
-          headers: {
-            employeeId: employeeId,
-          },
-          params: {
-            status: "APPROVED",
-          },
-        }
-      );
-      console.log("Approval response:", response.data);
-
-      setSuccessMessage("Document Approved Successfully");
-      setIsConfirmModalOpen(false);
-      fetchDocuments();
-
-      setIsConfirmModalOpen(false);
-      setIsSuccessModalOpen(true);
-    } catch (error) {
-      console.error("Error approving document:", error);
-    }
-  };
-
-  const handleRejectDocument = async () => {
-    try {
-      const employeeId = localStorage.getItem("id");
-
-      const response = await apiClient.patch(
-        `${API_HOST}/api/documents/${documentToApprove.id}/approval-status`,
-        null,
-        {
-          headers: {
-            employeeId: employeeId,
-          },
-          params: {
-            status: "REJECTED",
-            rejectionReason: rejectReason,
-          },
-        }
-      );
-      setSuccessMessage("Document Rejected Successfully");
-      console.log("Rejection response:", response.data);
-      setIsRejectReasonModalOpen(false);
-      setRejectReason("");
-      fetchDocuments();
-
-      setIsConfirmModalOpen(false);
-      setIsSuccessModalOpen(true);
-    } catch (error) {
-      console.error("Error rejecting document:", error);
-    }
-  };
-
-  const downloadQRCode = async () => {
-    if (!selectedDoc.id) {
-      alert("Please enter a document ID");
-      return;
-    }
-
-    try {
-      if (!tokenKey) {
-        throw new Error("Authentication tokenKey is missing");
-      }
-
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
-
-      const response = await fetch(apiUrl, {
-        method: "GET",
+    const response = await apiClient.patch(
+      `/api/documents/${documentToApprove.id}/approval-status`,
+      null, 
+      {
         headers: {
-          Authorization: `Bearer ${tokenKey}`,
+          employeeId: employeeId,
         },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
+        params: {
+          status: "APPROVED",
+        },
       }
+    );
 
-      const qrCodeBlob = await response.blob();
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    console.log("Approval response:", response.data);
 
-      const link = document.createElement("a");
-      link.href = qrCodeUrl;
-      link.download = `QR_Code_${selectedDoc.id}.png`;
-      link.click();
+    setSuccessMessage("Document Approved Successfully");
+    setIsConfirmModalOpen(false);
+    fetchDocuments();
 
-      window.URL.revokeObjectURL(qrCodeUrl);
-    } catch (error) {
-      setError("Error downloading QR Code: " + error.message);
-    } finally {
-    }
-  };
+    setIsSuccessModalOpen(true);
+  } catch (error) {
+    console.error("Error approving document:", error);
+  }
+};
+
+
+
+
+const handleRejectDocument = async () => {
+  try {
+    const employeeId = localStorage.getItem("id");
+
+    const response = await apiClient.patch(
+      `/api/documents/${documentToApprove.id}/approval-status`,
+      null, 
+      {
+        headers: {
+          employeeId: employeeId,
+        },
+        params: {
+          status: "REJECTED",
+          rejectionReason: rejectReason,
+        },
+      }
+    );
+
+    console.log("Rejection response:", response.data);
+
+    setSuccessMessage("Document Rejected Successfully");
+    setIsRejectReasonModalOpen(false);
+    setRejectReason("");
+    fetchDocuments();
+
+    setIsConfirmModalOpen(false);
+    setIsSuccessModalOpen(true);
+  } catch (error) {
+    console.error("Error rejecting document:", error);
+  }
+};
+
 
   const openModal = (doc) => {
     setSelectedDoc(doc);
@@ -480,39 +447,53 @@ const Approve = () => {
     setSelectedDoc(null);
   };
 
-  const fetchQRCode = async (documentId) => {
-    try {
-      if (!tokenKey) {
-        throw new Error("Authentication tokenKey is missing");
-      }
+const fetchQRCode = async (documentId) => {
+  try {
+    
+    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${tokenKey}`,
-        },
-      });
+    const qrCodeBlob = response.data;
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
-
-      const qrCodeBlob = await response.blob();
-
-      if (!qrCodeBlob.type.includes("image/png")) {
-        throw new Error("Received data is not a valid image");
-      }
-
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-
-      setQrCodeUrl(qrCodeUrl);
-      setError("");
-    } catch (error) {
-      setQrCodeUrl(null);
+    if (!qrCodeBlob.type.includes("image/png")) {
+      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
     }
-  };
+
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    setQrCodeUrl(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+  }
+};
+
+
+const downloadQRCode = async () => {
+  if (!selectedDoc.id) {
+    alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
+    return;
+  }
+
+  try {
+
+    const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
+
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
+
+    const qrCodeBlob = response.data;
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+
+    const link = document.createElement("a");
+    link.href = qrCodeUrl;
+    link.download = `QR_Code_${selectedDoc.id}.png`;
+    link.click();
+
+    window.URL.revokeObjectURL(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
+  }
+};
+
 
   const printPage = () => {
     setPrintTrue(true);

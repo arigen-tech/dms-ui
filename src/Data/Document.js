@@ -912,83 +912,74 @@ const handleUploadDocument = async () => {
     }
   };
 
-  const handleSaveEdit = async () => {
-    const userId = localStorage.getItem("id");
-    if (!userId || !token) {
-      showPopup("User not logged in. Please log in again.", "error");
-      return;
-    }
+const handleSaveEdit = async () => {
+  const userId = localStorage.getItem("id");
+  if (!userId ) {
+    showPopup("User not logged in. Please log in again.", "error");
+    return;
+  }
 
-    const { fileNo, title, subject, category } = formData;
-    if (!fileNo || !title || !subject || !category || uploadedFilePath.length === 0) {
-      showPopup("Please fill in all required fields and upload files.", "error");
-      return;
-    }
+  const { fileNo, title, subject, category } = formData;
+  if (!fileNo || !title || !subject || !category || uploadedFilePath.length === 0) {
+    showPopup("Please fill in all required fields and upload files.", "error");
+    return;
+  }
 
-    const versionedFilePaths = uploadedFilePath.map((file, index) => {
-      const { version = formData.version || "1.0", yearMaster, displayName, originalExtension } = file;
-      const filePath = file.isWaitingRoomFile ? displayName : file.path;
+  const versionedFilePaths = uploadedFilePath.map((file) => {
+    const { version = formData.version || "1.0", yearMaster, displayName, originalExtension } = file;
+    const filePath = file.isWaitingRoomFile ? displayName : file.path;
 
-      return {
-        path: filePath,
-        version: `${version}`,
-        yearId: yearMaster?.id || formData.year?.id || null,
-        fileType: file.fileType || null,
-        mimeType: file.mimeType || null,
-        pageCounts: file.pageCounts || null,
-        fileSizeBytes: file.fileSizeBytes || null,
-        fileSizeHuman: file.fileSizeHuman || null,
-        waitingRoomId: file.waitingRoomId || null,
-        isWaitingRoomFile: file.isWaitingRoomFile || false,
-        displayName: displayName || filePath.split("/").pop(),
-      };
-    });
-
-    const payload = {
-      documentHeader: {
-        id: editingDoc.id,
-        fileNo,
-        title,
-        subject,
-        categoryMaster: { id: category.id },
-        employee: { id: parseInt(userId, 10) },
-      },
-      filePaths: versionedFilePaths,
-      metadata: metadataObject,
-      deletedMetaDataIds
+    return {
+      path: filePath,
+      version: `${version}`,
+      yearId: yearMaster?.id || formData.year?.id || null,
+      fileType: file.fileType || null,
+      mimeType: file.mimeType || null,
+      pageCounts: file.pageCounts || null,
+      fileSizeBytes: file.fileSizeBytes || null,
+      fileSizeHuman: file.fileSizeHuman || null,
+      waitingRoomId: file.waitingRoomId || null,
+      isWaitingRoomFile: file.isWaitingRoomFile || false,
+      displayName: displayName || filePath.split("/").pop(),
     };
+  });
 
-
-    try {
-      setBProcess(true);
-
-      const response = await fetch(`${API_HOST}/api/documents/update`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || result?.status === 409 || result?.message?.toLowerCase() !== "success") {
-        const warningMessage = result?.response?.msg || result?.message || "Unknown error occurred";
-        showPopup(`Document update failed: ${warningMessage}`, "warning");
-        return;
-      }
-
-      showPopup(result?.response?.msg || "Document updated successfully!", "success");
-      resetEditForm();
-      fetchDocuments();
-    } catch (error) {
-      console.error("Error updating document:", error);
-      showPopup("Document update failed: " + error.message, "error");
-    } finally {
-      setBProcess(false);
-    }
+  const payload = {
+    documentHeader: {
+      id: editingDoc.id,
+      fileNo,
+      title,
+      subject,
+      categoryMaster: { id: category.id },
+      employee: { id: parseInt(userId, 10) },
+    },
+    filePaths: versionedFilePaths,
+    metadata: metadataObject,
+    deletedMetaDataIds,
   };
+
+  try {
+    setBProcess(true);
+
+    const response = await apiClient.put(`/api/documents/update`, payload);
+
+    if (response?.status !== 200 || response?.data?.status === 409) {
+      const warningMessage = response?.data?.response?.msg || response?.data?.message || "Unknown error occurred";
+      showPopup(`Document update failed: ${warningMessage}`, "warning");
+      return;
+    }
+
+    showPopup(response?.data?.response?.msg || "Document updated successfully!", "success");
+    resetEditForm();
+    fetchDocuments();
+  } catch (error) {
+    console.error("Error updating document:", error);
+    showPopup("Document update failed: " + error.message, "error");
+  } finally {
+    setBProcess(false);
+  }
+};
+
 
   const resetEditForm = () => {
     setFormData({
@@ -1026,107 +1017,91 @@ const handleUploadDocument = async () => {
     );
   };
 
-  const handleAddDocument = async () => {
-    if (
-      !formData.fileNo ||
-      !formData.title ||
-      !formData.subject ||
-      !formData.category ||
-      formData.uploadedFilePaths.length === 0
-    ) {
-      showPopup(
-        "Please fill in all the required fields and upload a file.",
-        "error"
-      );
+const handleAddDocument = async () => {
+  if (
+    !formData.fileNo ||
+    !formData.title ||
+    !formData.subject ||
+    !formData.category ||
+    formData.uploadedFilePaths.length === 0
+  ) {
+    showPopup("Please fill in all the required fields and upload a file.", "error");
+    return;
+  }
+
+  const versionedFilePaths = formData.uploadedFilePaths.map((file) => {
+    const { version = formData.version || "1.0", yearMaster, displayName } = file;
+    const filePath = file.isWaitingRoomFile ? file.displayName : file.path;
+
+    return {
+      path: filePath,
+      version: `${version}`,
+      yearId: yearMaster?.id || formData.year?.id || null,
+      fileType: file.fileType || null,
+      mimeType: file.mimeType || null,
+      pageCounts: file.pageCounts || null,
+      fileSizeBytes: file.fileSizeBytes || null,
+      fileSizeHuman: file.fileSizeHuman || null,
+      waitingRoomId: file.waitingRoomId || null,
+      isWaitingRoomFile: file.isWaitingRoomFile || false,
+      displayName: displayName || filePath.split("/").pop(),
+    };
+  });
+
+  const payload = {
+    documentHeader: {
+      id: formData.id || null,
+      fileNo: formData.fileNo,
+      title: formData.title,
+      subject: formData.subject,
+      categoryMaster: { id: formData.category.id },
+      employee: { id: parseInt(UserId, 10) },
+      qrPath: formData.qrPath || null,
+      archive: false,
+    },
+    filePaths: versionedFilePaths,
+    metadata: metadataObject,
+  };
+
+  try {
+    setBProcess(true);
+
+    const response = await apiClient.post("/api/documents/save", payload);
+
+    if (response?.status !== 200 || response?.data?.status === 409) {
+      const errorMessage = response?.data?.response?.msg || response?.data?.message || "Unknown error";
+      showPopup(`Document save failed: ${errorMessage}`, "warning");
       return;
     }
 
-    const versionedFilePaths = formData.uploadedFilePaths.map((file, index) => {
-      const { version = formData.version || "1.0", yearMaster, displayName } = file;
-      const filePath = file.isWaitingRoomFile ? file.displayName : file.path;
+    showPopup(response?.data?.response?.msg || "Document saved successfully", "success");
 
-      return {
-        path: filePath,
-        version: `${version}`,
-        yearId: yearMaster?.id || formData.year?.id || null,
-        fileType: file.fileType || null,
-        mimeType: file.mimeType || null,
-        pageCounts: file.pageCounts || null,
-        fileSizeBytes: file.fileSizeBytes || null,
-        fileSizeHuman: file.fileSizeHuman || null,
-        waitingRoomId: file.waitingRoomId || null,
-        isWaitingRoomFile: file.isWaitingRoomFile || false,
-        displayName: displayName || filePath.split("/").pop(),
-      };
+    setFormData({
+      fileNo: "",
+      title: "",
+      subject: "",
+      version: "",
+      category: null,
+      year: null,
+      uploadedFilePaths: [],
     });
+    setUploadedFilePath([]);
+    setUploadedFileNames([]);
+    setSelectedFiles([]);
+    setDynamicMetadata([{ key: "", value: "" }]);
+    fetchDocuments();
+  } catch (error) {
+    console.error("Error saving document:", error);
+    showPopup("Document save failed: " + error.message, "warning");
+  } finally {
+    setBProcess(false);
+  }
+};
 
-    const payload = {
-      documentHeader: {
-        id: formData.id || null,
-        fileNo: formData.fileNo,
-        title: formData.title,
-        subject: formData.subject,
-        categoryMaster: { id: formData.category.id },
-        employee: { id: parseInt(UserId, 10) },
-        qrPath: formData.qrPath || null,
-        archive: false,
-      },
-      filePaths: versionedFilePaths,
-      metadata: metadataObject
-    };
-
-    try {
-      setBProcess(true);
-
-      const response = await fetch(`${API_HOST}/api/documents/save`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || result?.status === 409) {
-        const errorMessage =
-          result?.response?.msg || result?.message || "Unknown error";
-        showPopup(`Document save failed: ${errorMessage}`, "warning");
-        return;
-      }
-
-      showPopup(result?.response?.msg || "Document saved successfully", "success");
-
-      setFormData({
-        fileNo: "",
-        title: "",
-        subject: "",
-        version: "",
-        category: null,
-        year: null,
-        uploadedFilePaths: [],
-      });
-      setUploadedFilePath([]);
-      setUploadedFileNames([]);
-      setSelectedFiles([]);
-      setDynamicMetadata([{ key: "", value: "" }]);
-      fetchDocuments();
-
-    } catch (error) {
-      console.error("Error saving document:", error);
-      showPopup("Document save failed: " + error.message, "warning");
-    } finally {
-      setBProcess(false);
-    }
-  };
 
   const fetchPaths = async (doc) => {
     try {
-      if (!token) {
-        throw new Error(<AutoTranslate>No authentication token found.</AutoTranslate>);
-      }
-
+      
       if (!doc || !doc.id) {
         console.error(<AutoTranslate>Invalid document or missing ID</AutoTranslate>);
         return null;
@@ -1249,34 +1224,29 @@ const handleUploadDocument = async () => {
     }, 1000);
   };
 
-  const handlePrintReport = async (id) => {
-    if (!id) return;
+const handlePrintReport = async (id) => {
+  if (!id) return;
 
-    try {
-      const response = await fetch(`http://localhost:8443/api/reports/document/${id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/pdf",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  try {
+    const response = await apiClient.get(`/api/reports/document/${id}`, {
+      responseType: "arraybuffer", // Important for handling PDF data
+    });
 
-      if (!response.ok) throw new Error(<AutoTranslate>Failed to download PDF</AutoTranslate>);
+    const blob = response.data;
+    const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `document_${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error(<AutoTranslate>Error downloading PDF:</AutoTranslate>, error);
+  }
+};
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `document_${id}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(<AutoTranslate>Error downloading PDF:</AutoTranslate>, error);
-    }
-  };
 
   const handleYearChangeForFile = (index, yearId) => {
     if (!Array.isArray(yearOptions)) return;
@@ -1306,76 +1276,54 @@ const handleUploadDocument = async () => {
     }
   }, [selectedDoc]);
 
-  const fetchQRCode = async (documentId) => {
-    try {
-      if (!token) {
-        throw new Error(<AutoTranslate>Authentication token is missing</AutoTranslate>);
-      }
+const fetchQRCode = async (documentId) => {
+  try {
+   
 
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
+    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      if (!response.ok) {
-        throw new Error(<AutoTranslate>Failed to fetch QR code</AutoTranslate>);
-      }
+    const qrCodeBlob = response.data;
 
-      const qrCodeBlob = await response.blob();
-
-      if (!qrCodeBlob.type.includes("image/png")) {
-        throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
-      }
-
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-
-      setQrCodeUrl(qrCodeUrl);
-    } catch (error) {
-      setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
-    }
-  };
-
-  const downloadQRCode = async () => {
-    if (!selectedDoc.id) {
-      alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
-      return;
+    if (!qrCodeBlob.type.includes("image/png")) {
+      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
     }
 
-    try {
-      if (!token) {
-        throw new Error(<AutoTranslate>Authentication token is missing</AutoTranslate>);
-      }
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    setQrCodeUrl(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+  }
+};
 
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${selectedDoc.id}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+const downloadQRCode = async () => {
+  if (!selectedDoc.id) {
+    alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
+    return;
+  }
 
-      if (!response.ok) {
-        throw new Error(<AutoTranslate>Failed to fetch QR code</AutoTranslate>);
-      }
+  try {
+   
+    const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
 
-      const qrCodeBlob = await response.blob();
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      const link = document.createElement("a");
-      link.href = qrCodeUrl;
-      link.download = `QR_Code_${selectedDoc.id}.png`;
-      link.click();
+    const qrCodeBlob = response.data;
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
 
-      window.URL.revokeObjectURL(qrCodeUrl);
-    } catch (error) {
-      setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
-    }
-  };
+    const link = document.createElement("a");
+    link.href = qrCodeUrl;
+    link.download = `QR_Code_${selectedDoc.id}.png`;
+    link.click();
+
+    window.URL.revokeObjectURL(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
+  }
+};
+
 
   const getPageNumbers = () => {
     const maxPageNumbers = 5;
