@@ -316,7 +316,7 @@ const confirmBulkDocumentRestore = async () => {
     // Create a list of promises for each restore request
     const restorePromises = allFilesToRestore.map((file) =>
       apiClient.put(
-        `/delete-status/${file.id}`, // relative endpoint path
+        `/api/documents/delete-status/${file.id}`, // relative endpoint path
         null, // no body payload, just query params
         {
           params: { isDeleted: false },
@@ -357,7 +357,7 @@ const confirmBulkDocumentRestore = async () => {
       try {
         // Call the API to restore file (set isDeleted = false)
         const response = await apiClient.put(
-          `${DOCUMENTHEADER_API}/delete-status/${fileToRestore.id}`,
+          `/api/documents/delete-status/${fileToRestore.id}`,
           null,
           {
             params: { isDeleted: false },
@@ -441,7 +441,7 @@ const confirmBulkFileRestore = async () => {
     // Create a list of promises for each restore request
     const restorePromises = selectedFiles.map((file) =>
       apiClient.put(
-        `/delete-status/${file.id}`, // relative endpoint path
+        `/api/documents/delete-status/${file.id}`, // relative endpoint path
         null, // no body payload, just query params
         {
           params: { isDeleted: false },

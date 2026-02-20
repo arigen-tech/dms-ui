@@ -4,14 +4,28 @@ import * as XLSX from "xlsx";
 import Papa from "papaparse";
 import { marked } from "marked";
 import { decode } from "tiff";
+import Popup from "../Components/Popup";
 
-const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fileUrl, fileName, fileData,  onError }) => {
+const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fileUrl, fileName, fileData, onError }) => {
   const [previewContent, setPreviewContent] = useState(null);
   const [typeToPreview, setTypeToPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isDownloading, setIsDownloading] = useState(false); 
+  const [isDownloading, setIsDownloading] = useState(false);
   const ogFileName = fileName ? fileName.substring(fileName.indexOf('_') + 1) : 'Unknown File';
+
+  const [popupMessage, setPopupMessage] = useState(null);
+
+  const showPopup = (message, type = "info") => {
+    setPopupMessage({
+      message,
+      type,
+      onClose: () => {
+        setPopupMessage(null);
+      },
+    });
+  };
+
 
   useEffect(() => {
     if (!isOpen || !fileType || !fileUrl) return;
@@ -21,6 +35,14 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
       setError(null);
 
       try {
+        const testRes = await fetch(fileUrl);
+        const testText = await testRes.clone().text();
+
+        if (testText.includes("File Available On:")) {
+          showPopup(testText, "success");
+          setIsLoading(false);
+          return;
+        }
         // Categorize file type
         const isImage = fileType.startsWith("image/");
         const isPdf = fileType === "application/pdf";
@@ -262,31 +284,50 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
       const res = await fetch(fileUrl);
       const text = await res.text();
 
-      // Format JSON and XML nicely
+      // 🔴 IMPORTANT: Cartridge message detect karo
+      if (text.includes("File Available On:")) {
+        showPopup(text, "error");
+
+        // Preview completely stop kar do
+        setPreviewContent(null);
+        setTypeToPreview(null);
+        setError(null);
+        return;
+      }
+
+      // JSON formatting
       if (fileType === "application/json") {
         try {
           const obj = JSON.parse(text);
           const formatted = JSON.stringify(obj, null, 2);
-          setPreviewContent(`<pre class="whitespace-pre-wrap font-mono text-sm">${formatted}</pre>`);
+          setPreviewContent(
+            `<pre class="whitespace-pre-wrap font-mono text-sm">${formatted}</pre>`
+          );
           setTypeToPreview("json/html");
           return;
         } catch (e) {
-          // If JSON parsing fails, fall back to plain text
           console.warn("Failed to parse JSON:", e);
         }
-      } else if (fileType === "text/xml" || fileType === "application/xml") {
-        // Simple formatting - a more sophisticated XML formatter could be used
+      }
+
+      // XML formatting
+      if (fileType === "text/xml" || fileType === "application/xml") {
         const formatted = text
           .replace(/></g, ">\n<")
           .replace(/(<[^>]+>)/g, "$1\n")
           .replace(/\n\n/g, "\n");
-        setPreviewContent(`<pre class="whitespace-pre-wrap font-mono text-sm">${formatted}</pre>`);
+
+        setPreviewContent(
+          `<pre class="whitespace-pre-wrap font-mono text-sm">${formatted}</pre>`
+        );
         setTypeToPreview("xml/html");
         return;
       }
 
-      // Default text handling
-      setPreviewContent(`<pre class="whitespace-pre-wrap font-mono text-sm">${text}</pre>`);
+      // Default text
+      setPreviewContent(
+        `<pre class="whitespace-pre-wrap font-mono text-sm">${text}</pre>`
+      );
       setTypeToPreview("text/html");
     } catch (err) {
       throw new Error(`Text preview error: ${err.message}`);
@@ -296,28 +337,44 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
   // Removed pagination functions since we removed Previous/Next buttons
 
   // Removed useEffect for page changes since we removed pagination
-const handleDownloadClick = async () => {
+  const handleDownloadClick = async () => {
     if (isDownloading) return;
-    
+
     setIsDownloading(true);
+
     try {
       if (fileData) {
-        await onDownload(fileData);
+        const response = await onDownload(fileData);
+
+        // Agar API text return kare
+        if (typeof response === "string" && response.includes("File Available On:")) {
+          showPopup(response, "error");
+          return;
+        }
       } else {
+        const res = await fetch(fileUrl);
+        const contentType = res.headers.get("content-type");
+
+        if (contentType && contentType.includes("text")) {
+          const message = await res.text();
+
+          if (message.includes("File Available On:")) {
+            showPopup(message, "error");
+            return;
+          }
+        }
+
+        const blob = await res.blob();
         const link = document.createElement("a");
-        link.href = fileUrl;
+        link.href = window.URL.createObjectURL(blob);
         link.download = fileName || "download";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
       }
     } catch (error) {
       console.error("Download failed:", error);
-      // Call onError if provided
-      if (onError) {
-        onError(error.message || "Download failed");
-      }
+      showPopup(error.message || "Download failed", "error");
     } finally {
       setIsDownloading(false);
     }
@@ -345,8 +402,8 @@ const handleDownloadClick = async () => {
                 onClick={handleDownloadClick}
                 disabled={isDownloading}
                 className={`mt-4 px-4 py-2 rounded transition-all duration-300 flex items-center
-                  ${isDownloading 
-                    ? 'bg-blue-400 cursor-not-allowed' 
+                  ${isDownloading
+                    ? 'bg-blue-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
                   }`}
               >
@@ -456,8 +513,8 @@ const handleDownloadClick = async () => {
             onClick={handleDownloadClick}
             disabled={isDownloading}
             className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center
-              ${isDownloading 
-                ? 'bg-blue-400 cursor-not-allowed' 
+              ${isDownloading
+                ? 'bg-blue-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700'
               }`}
           >
@@ -488,6 +545,13 @@ const handleDownloadClick = async () => {
           </button>
         </div>
       </div>
+      {popupMessage && (
+        <Popup
+          message={popupMessage.message}
+          type={popupMessage.type}
+          onClose={popupMessage.onClose}
+        />
+      )}
     </div>
   );
 };

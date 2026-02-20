@@ -10,8 +10,8 @@
 //  export const API_OCR_HOST = 'http://103.133.215.182:8950';
 //  export const API_Chatbot_HOST = 'http://103.133.215.182:8950';
 
- export const API_OCR_HOST = 'http://192.168.1.16:8950';
- export const API_Chatbot_HOST = 'http://192.168.1.16:8950';
+ export const API_OCR_HOST = 'http://localhost:8950';
+ export const API_Chatbot_HOST = 'http://localhost:8950';
 
 export const MAIN_DASHBOARD_URL = 'http://103.133.215.182:8010/dashboard/';
 export const API_URL = API_HOST; 

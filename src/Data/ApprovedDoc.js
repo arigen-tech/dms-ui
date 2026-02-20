@@ -565,7 +565,7 @@ const confirmBulkDocumentDelete = async () => {
     // Move all approved files to trash
     const deletePromises = allFilesToDelete.map((file) =>
       apiClient.put(
-        `/delete-status/${file.id}`, // relative path
+        `/api/documents/delete-status/${file.id}`, // relative path
         null, // no body data
         {
           params: { isDeleted: true },
@@ -710,7 +710,7 @@ const confirmBulkDocumentDelete = async () => {
       try {
         // Call the API to move file to trash (set isDeleted = true)
         const response = await apiClient.put(
-          `${DOCUMENTHEADER_API}/delete-status/${fileToDelete.id}`,
+          `/api/documents/delete-status/${fileToDelete.id}`,
           null,
           {
             params: { isDeleted: true },
@@ -826,7 +826,7 @@ const confirmBulkFileDelete = async () => {
     // Move selected files to trash
     const deletePromises = selectedFiles.map((file) =>
       apiClient.put(
-        `/delete-status/${file.id}`, // relative path
+        `/api/documents/delete-status/${file.id}`, // relative path
         null, // no body data
         {
           params: { isDeleted: true },
