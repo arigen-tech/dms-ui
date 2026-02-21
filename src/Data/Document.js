@@ -57,7 +57,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     category: null,
     uploadedFilePaths: [],
   });
-
+  const [scaleValue, setScaleValue] = useState("2");
   useEffect(() => {
     const { fileNo, title, subject, version, category, year } = formData;
     setIsMetadataComplete(!!(fileNo && title && subject && version && category && year));
@@ -148,6 +148,11 @@ const DocumentManagement = ({ fieldsDisabled }) => {
         setPopupMessage(null);
       }
     });
+  };
+
+  const handleChangeScale = (e) => {
+    setScaleValue(e.target.value);
+    console.log("Selected Scale Value:", e.target.value);
   };
 
   const fetchFilesType = async () => {
@@ -464,14 +469,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
   const extractBlobMessage = async (blob) => {
-  try {
-    const text = await blob.text();
-    const json = JSON.parse(text);
-    return json.message || "Access denied";
-  } catch {
-    return "Access denied";
-  }
-};
+    try {
+      const text = await blob.text();
+      const json = JSON.parse(text);
+      return json.message || "Access denied";
+    } catch {
+      return "Access denied";
+    }
+  };
 
 
   const handleDownload = async (file, action = "download") => {
@@ -520,14 +525,14 @@ const DocumentManagement = ({ fieldsDisabled }) => {
 
       URL.revokeObjectURL(link.href);
     } catch (error) {
-  if (error.response?.status === 403) {
-    const msg = await extractBlobMessage(error.response.data);
-    showPopup(msg, "error");
-    return;
-  }
+      if (error.response?.status === 403) {
+        const msg = await extractBlobMessage(error.response.data);
+        showPopup(msg, "error");
+        return;
+      }
 
-  showPopup("Failed to download file. Please try again.", "error");
-}
+      showPopup("Failed to download file. Please try again.", "error");
+    }
 
   };
 
@@ -694,146 +699,175 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
 
-const handleUploadDocument = async () => {
-  if (selectedFiles.length === 0) {
-    showPopup("Please select at least one file to upload.", "warning");
-    return;
-  }
-
-  const versionToUpload = formData.version?.trim();
-  const yearToUpload = formData.year?.id || formData.year?.name;
-
-  const isDuplicate = [
-    ...(uploadedFilePath || []),
-    ...(formData.uploadedFilePaths || []),
-  ].some((file) => {
-    const existingVersion = file.version?.trim();
-    const existingYear = file.yearMaster?.id || file.yearMaster?.name;
-    return (
-      existingVersion?.toLowerCase() === versionToUpload.toLowerCase() &&
-      existingYear === yearToUpload
-    );
-  });
-
-  if (isDuplicate) {
-    showPopup(
-      `Version "${versionToUpload}" already exists for year "${formData.year?.name}". Please use a new version or select a different year.`,
-      "warning"
-    );
-    return;
-  }
-
-  setIsUploading(true);
-  setUploadProgress(0);
-
-  const uploadData = new FormData();
-  const { category, year, version, fileNo, status } = formData;
-
-  uploadData.append("category", category?.name);
-  uploadData.append("year", year?.name);
-  uploadData.append("version", version || 1);
-  uploadData.append("branch", userBranch);
-  uploadData.append("department", userDep);
-
-  const renamedFiles = selectedFiles.map((file, index) => {
-    const now = new Date();
-    const formattedDate = `${now.getFullYear()}${String(
-      now.getMonth() + 1
-    ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
-      now.getHours()
-    ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
-      now.getSeconds()
-    ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
-
-    const baseName = fileNo.split(".")[0].substring(0, 3);
-    const extension = file.name.split(".").pop();
-
-    return {
-      file,
-      renamed: `${baseName}_${category?.name}_${year?.name}_${version}_${formattedDate}_${index + 1}.${extension}`,
-    };
-  });
-
-  renamedFiles.forEach(({ file, renamed }) => {
-    uploadData.append("files", file, renamed);
-  });
-
-  try {
-    const result = await postRequest(
-      "/api/documents/upload",
-      uploadData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const percent = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            setUploadProgress(percent);
-          }
-        },
-      }
-    );
-
-    /* ================= SUCCESS ================= */
-
-    if (result.uploadedFiles?.length > 0) {
-      setUploadedFileNames((prevNames) => [
-        ...prevNames,
-        ...renamedFiles.map((f) => f.renamed),
-      ]);
-
-      const mappedFiles = result.uploadedFiles.map((fileObj, index) => ({
-        path: fileObj.path,
-        version: `${version}`,
-        yearMaster: year,
-        status: status,
-        fileSizeHuman: fileObj.fileSizeHuman,
-        fileSizeBytes: fileObj.fileSizeBytes,
-        fileType: fileObj.fileType || null,
-        mimeType: fileObj.contentType || null,
-        pageCounts: fileObj.pageCount || null,
-        displayName: renamedFiles[index]?.renamed,
-      }));
-
-      setUploadedFilePath((prev) => [...prev, ...mappedFiles]);
-
-      setFormData((prevData) => ({
-        ...prevData,
-        uploadedFilePaths: [
-          ...(prevData.uploadedFilePaths || []),
-          ...mappedFiles,
-        ],
-        version: "",
-      }));
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = null;
-      }
-
-      showPopup("Files uploaded successfully!", "success");
+  const handleUploadDocument = async () => {
+    if (selectedFiles.length === 0) {
+      showPopup("Please select at least one file to upload.", "warning");
+      return;
     }
 
-    if (result.errors?.length > 0) {
+    const versionToUpload = formData.version?.trim();
+    const yearToUpload = formData.year?.id || formData.year?.name;
+
+    const isDuplicate = [
+      ...(uploadedFilePath || []),
+      ...(formData.uploadedFilePaths || []),
+    ].some((file) => {
+      const existingVersion = file.version?.trim();
+      const existingYear = file.yearMaster?.id || file.yearMaster?.name;
+      return (
+        existingVersion?.toLowerCase() === versionToUpload.toLowerCase() &&
+        existingYear === yearToUpload
+      );
+    });
+
+    if (isDuplicate) {
       showPopup(
-        "Some files failed:\n" +
+        `Version "${versionToUpload}" already exists for year "${formData.year?.name}". Please use a new version or select a different year.`,
+        "warning"
+      );
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const uploadData = new FormData();
+    const { category, year, version, fileNo, status } = formData;
+
+    uploadData.append("category", category?.name);
+    uploadData.append("year", year?.name);
+    uploadData.append("version", version || 1);
+    uploadData.append("branch", userBranch);
+    uploadData.append("department", userDep);
+
+    const renamedFiles = selectedFiles.map((file, index) => {
+      const now = new Date();
+      const formattedDate = `${now.getFullYear()}${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(
+        now.getHours()
+      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+        now.getSeconds()
+      ).padStart(2, "0")}${String(now.getMilliseconds()).padStart(3, "0")}`;
+
+      const baseName = fileNo.split(".")[0].substring(0, 3);
+      const extension = file.name.split(".").pop();
+
+      return {
+        file,
+        renamed: `${baseName}_${category?.name}_${year?.name}_${version}_${formattedDate}_${index + 1}.${extension}`,
+      };
+    });
+
+    renamedFiles.forEach(({ file, renamed }) => {
+      uploadData.append("files", file, renamed);
+    });
+
+    try {
+      // ================= STEP 1: NORMAL UPLOAD =================
+      const result = await postRequest(
+        "/api/documents/upload",
+        uploadData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percent = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setUploadProgress(percent);
+            }
+          },
+        }
+      );
+
+      if (!result.uploadedFiles?.length) return;
+
+      // ================= STEP 2: SCALING IF REQUIRED =================
+      if (scaleValue === "0" || scaleValue === "1") {
+        for (let i = 0; i < result.uploadedFiles.length; i++) {
+          const serverFile = result.uploadedFiles[i];
+          const originalFile = selectedFiles[i];
+
+          const scaleFormData = new FormData();
+          scaleFormData.append("file", originalFile);
+          scaleFormData.append("scale_type", scaleValue);
+
+          const destinationPath =
+            "E:\\FTP\\DMS_Document\\" + serverFile.path;
+
+          scaleFormData.append("destination_path", destinationPath);
+
+          await postRequest(
+            "http://103.133.215.182:8950/scale/document",
+            scaleFormData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+        }
+      }
+
+      /* ================= SUCCESS ================= */
+
+      if (result.uploadedFiles?.length > 0) {
+        setUploadedFileNames((prevNames) => [
+          ...prevNames,
+          ...renamedFiles.map((f) => f.renamed),
+        ]);
+
+        const mappedFiles = result.uploadedFiles.map((fileObj, index) => ({
+          path: fileObj.path,
+          version: `${version}`,
+          yearMaster: year,
+          status: status,
+          fileSizeHuman: fileObj.fileSizeHuman,
+          fileSizeBytes: fileObj.fileSizeBytes,
+          fileType: fileObj.fileType || null,
+          mimeType: fileObj.contentType || null,
+          pageCounts: fileObj.pageCount || null,
+          displayName: renamedFiles[index]?.renamed,
+        }));
+
+        setUploadedFilePath((prev) => [...prev, ...mappedFiles]);
+
+        setFormData((prevData) => ({
+          ...prevData,
+          uploadedFilePaths: [
+            ...(prevData.uploadedFilePaths || []),
+            ...mappedFiles,
+          ],
+          version: "",
+        }));
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = null;
+        }
+
+        showPopup("Files uploaded successfully!", "success");
+      }
+
+      if (result.errors?.length > 0) {
+        showPopup(
+          "Some files failed:\n" +
           result.errors.map((err) => `${err.file}: ${err.error}`).join("\n"),
+          "error"
+        );
+        setUnsportFile(true);
+      }
+
+    } catch (error) {
+      console.error("Upload error:", error);
+      showPopup(
+        error?.response?.data?.message || "File upload failed.",
         "error"
       );
-      setUnsportFile(true);
+    } finally {
+      setIsUploading(false);
     }
-  } catch (error) {
-    console.error("Upload error:", error);
-    showPopup(
-      error?.response?.data?.message || "File upload failed.",
-      "error"
-    );
-  } finally {
-    setIsUploading(false);
-  }
-};
+  };
 
 
   const metadataObject = [];
@@ -912,73 +946,73 @@ const handleUploadDocument = async () => {
     }
   };
 
-const handleSaveEdit = async () => {
-  const userId = localStorage.getItem("id");
-  if (!userId ) {
-    showPopup("User not logged in. Please log in again.", "error");
-    return;
-  }
-
-  const { fileNo, title, subject, category } = formData;
-  if (!fileNo || !title || !subject || !category || uploadedFilePath.length === 0) {
-    showPopup("Please fill in all required fields and upload files.", "error");
-    return;
-  }
-
-  const versionedFilePaths = uploadedFilePath.map((file) => {
-    const { version = formData.version || "1.0", yearMaster, displayName, originalExtension } = file;
-    const filePath = file.isWaitingRoomFile ? displayName : file.path;
-
-    return {
-      path: filePath,
-      version: `${version}`,
-      yearId: yearMaster?.id || formData.year?.id || null,
-      fileType: file.fileType || null,
-      mimeType: file.mimeType || null,
-      pageCounts: file.pageCounts || null,
-      fileSizeBytes: file.fileSizeBytes || null,
-      fileSizeHuman: file.fileSizeHuman || null,
-      waitingRoomId: file.waitingRoomId || null,
-      isWaitingRoomFile: file.isWaitingRoomFile || false,
-      displayName: displayName || filePath.split("/").pop(),
-    };
-  });
-
-  const payload = {
-    documentHeader: {
-      id: editingDoc.id,
-      fileNo,
-      title,
-      subject,
-      categoryMaster: { id: category.id },
-      employee: { id: parseInt(userId, 10) },
-    },
-    filePaths: versionedFilePaths,
-    metadata: metadataObject,
-    deletedMetaDataIds,
-  };
-
-  try {
-    setBProcess(true);
-
-    const response = await apiClient.put(`/api/documents/update`, payload);
-
-    if (response?.status !== 200 || response?.data?.status === 409) {
-      const warningMessage = response?.data?.response?.msg || response?.data?.message || "Unknown error occurred";
-      showPopup(`Document update failed: ${warningMessage}`, "warning");
+  const handleSaveEdit = async () => {
+    const userId = localStorage.getItem("id");
+    if (!userId) {
+      showPopup("User not logged in. Please log in again.", "error");
       return;
     }
 
-    showPopup(response?.data?.response?.msg || "Document updated successfully!", "success");
-    resetEditForm();
-    fetchDocuments();
-  } catch (error) {
-    console.error("Error updating document:", error);
-    showPopup("Document update failed: " + error.message, "error");
-  } finally {
-    setBProcess(false);
-  }
-};
+    const { fileNo, title, subject, category } = formData;
+    if (!fileNo || !title || !subject || !category || uploadedFilePath.length === 0) {
+      showPopup("Please fill in all required fields and upload files.", "error");
+      return;
+    }
+
+    const versionedFilePaths = uploadedFilePath.map((file) => {
+      const { version = formData.version || "1.0", yearMaster, displayName, originalExtension } = file;
+      const filePath = file.isWaitingRoomFile ? displayName : file.path;
+
+      return {
+        path: filePath,
+        version: `${version}`,
+        yearId: yearMaster?.id || formData.year?.id || null,
+        fileType: file.fileType || null,
+        mimeType: file.mimeType || null,
+        pageCounts: file.pageCounts || null,
+        fileSizeBytes: file.fileSizeBytes || null,
+        fileSizeHuman: file.fileSizeHuman || null,
+        waitingRoomId: file.waitingRoomId || null,
+        isWaitingRoomFile: file.isWaitingRoomFile || false,
+        displayName: displayName || filePath.split("/").pop(),
+      };
+    });
+
+    const payload = {
+      documentHeader: {
+        id: editingDoc.id,
+        fileNo,
+        title,
+        subject,
+        categoryMaster: { id: category.id },
+        employee: { id: parseInt(userId, 10) },
+      },
+      filePaths: versionedFilePaths,
+      metadata: metadataObject,
+      deletedMetaDataIds,
+    };
+
+    try {
+      setBProcess(true);
+
+      const response = await apiClient.put(`/api/documents/update`, payload);
+
+      if (response?.status !== 200 || response?.data?.status === 409) {
+        const warningMessage = response?.data?.response?.msg || response?.data?.message || "Unknown error occurred";
+        showPopup(`Document update failed: ${warningMessage}`, "warning");
+        return;
+      }
+
+      showPopup(response?.data?.response?.msg || "Document updated successfully!", "success");
+      resetEditForm();
+      fetchDocuments();
+    } catch (error) {
+      console.error("Error updating document:", error);
+      showPopup("Document update failed: " + error.message, "error");
+    } finally {
+      setBProcess(false);
+    }
+  };
 
 
   const resetEditForm = () => {
@@ -1017,91 +1051,91 @@ const handleSaveEdit = async () => {
     );
   };
 
-const handleAddDocument = async () => {
-  if (
-    !formData.fileNo ||
-    !formData.title ||
-    !formData.subject ||
-    !formData.category ||
-    formData.uploadedFilePaths.length === 0
-  ) {
-    showPopup("Please fill in all the required fields and upload a file.", "error");
-    return;
-  }
-
-  const versionedFilePaths = formData.uploadedFilePaths.map((file) => {
-    const { version = formData.version || "1.0", yearMaster, displayName } = file;
-    const filePath = file.isWaitingRoomFile ? file.displayName : file.path;
-
-    return {
-      path: filePath,
-      version: `${version}`,
-      yearId: yearMaster?.id || formData.year?.id || null,
-      fileType: file.fileType || null,
-      mimeType: file.mimeType || null,
-      pageCounts: file.pageCounts || null,
-      fileSizeBytes: file.fileSizeBytes || null,
-      fileSizeHuman: file.fileSizeHuman || null,
-      waitingRoomId: file.waitingRoomId || null,
-      isWaitingRoomFile: file.isWaitingRoomFile || false,
-      displayName: displayName || filePath.split("/").pop(),
-    };
-  });
-
-  const payload = {
-    documentHeader: {
-      id: formData.id || null,
-      fileNo: formData.fileNo,
-      title: formData.title,
-      subject: formData.subject,
-      categoryMaster: { id: formData.category.id },
-      employee: { id: parseInt(UserId, 10) },
-      qrPath: formData.qrPath || null,
-      archive: false,
-    },
-    filePaths: versionedFilePaths,
-    metadata: metadataObject,
-  };
-
-  try {
-    setBProcess(true);
-
-    const response = await apiClient.post("/api/documents/save", payload);
-
-    if (response?.status !== 200 || response?.data?.status === 409) {
-      const errorMessage = response?.data?.response?.msg || response?.data?.message || "Unknown error";
-      showPopup(`Document save failed: ${errorMessage}`, "warning");
+  const handleAddDocument = async () => {
+    if (
+      !formData.fileNo ||
+      !formData.title ||
+      !formData.subject ||
+      !formData.category ||
+      formData.uploadedFilePaths.length === 0
+    ) {
+      showPopup("Please fill in all the required fields and upload a file.", "error");
       return;
     }
 
-    showPopup(response?.data?.response?.msg || "Document saved successfully", "success");
+    const versionedFilePaths = formData.uploadedFilePaths.map((file) => {
+      const { version = formData.version || "1.0", yearMaster, displayName } = file;
+      const filePath = file.isWaitingRoomFile ? file.displayName : file.path;
 
-    setFormData({
-      fileNo: "",
-      title: "",
-      subject: "",
-      version: "",
-      category: null,
-      year: null,
-      uploadedFilePaths: [],
+      return {
+        path: filePath,
+        version: `${version}`,
+        yearId: yearMaster?.id || formData.year?.id || null,
+        fileType: file.fileType || null,
+        mimeType: file.mimeType || null,
+        pageCounts: file.pageCounts || null,
+        fileSizeBytes: file.fileSizeBytes || null,
+        fileSizeHuman: file.fileSizeHuman || null,
+        waitingRoomId: file.waitingRoomId || null,
+        isWaitingRoomFile: file.isWaitingRoomFile || false,
+        displayName: displayName || filePath.split("/").pop(),
+      };
     });
-    setUploadedFilePath([]);
-    setUploadedFileNames([]);
-    setSelectedFiles([]);
-    setDynamicMetadata([{ key: "", value: "" }]);
-    fetchDocuments();
-  } catch (error) {
-    console.error("Error saving document:", error);
-    showPopup("Document save failed: " + error.message, "warning");
-  } finally {
-    setBProcess(false);
-  }
-};
+
+    const payload = {
+      documentHeader: {
+        id: formData.id || null,
+        fileNo: formData.fileNo,
+        title: formData.title,
+        subject: formData.subject,
+        categoryMaster: { id: formData.category.id },
+        employee: { id: parseInt(UserId, 10) },
+        qrPath: formData.qrPath || null,
+        archive: false,
+      },
+      filePaths: versionedFilePaths,
+      metadata: metadataObject,
+    };
+
+    try {
+      setBProcess(true);
+
+      const response = await apiClient.post("/api/documents/save", payload);
+
+      if (response?.status !== 200 || response?.data?.status === 409) {
+        const errorMessage = response?.data?.response?.msg || response?.data?.message || "Unknown error";
+        showPopup(`Document save failed: ${errorMessage}`, "warning");
+        return;
+      }
+
+      showPopup(response?.data?.response?.msg || "Document saved successfully", "success");
+
+      setFormData({
+        fileNo: "",
+        title: "",
+        subject: "",
+        version: "",
+        category: null,
+        year: null,
+        uploadedFilePaths: [],
+      });
+      setUploadedFilePath([]);
+      setUploadedFileNames([]);
+      setSelectedFiles([]);
+      setDynamicMetadata([{ key: "", value: "" }]);
+      fetchDocuments();
+    } catch (error) {
+      console.error("Error saving document:", error);
+      showPopup("Document save failed: " + error.message, "warning");
+    } finally {
+      setBProcess(false);
+    }
+  };
 
 
   const fetchPaths = async (doc) => {
     try {
-      
+
       if (!doc || !doc.id) {
         console.error(<AutoTranslate>Invalid document or missing ID</AutoTranslate>);
         return null;
@@ -1224,28 +1258,28 @@ const handleAddDocument = async () => {
     }, 1000);
   };
 
-const handlePrintReport = async (id) => {
-  if (!id) return;
+  const handlePrintReport = async (id) => {
+    if (!id) return;
 
-  try {
-    const response = await apiClient.get(`/api/reports/document/${id}`, {
-      responseType: "arraybuffer", // Important for handling PDF data
-    });
+    try {
+      const response = await apiClient.get(`/api/reports/document/${id}`, {
+        responseType: "arraybuffer", // Important for handling PDF data
+      });
 
-    const blob = response.data;
-    const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+      const blob = response.data;
+      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `document_${id}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error(<AutoTranslate>Error downloading PDF:</AutoTranslate>, error);
-  }
-};
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `document_${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(<AutoTranslate>Error downloading PDF:</AutoTranslate>, error);
+    }
+  };
 
 
   const handleYearChangeForFile = (index, yearId) => {
@@ -1276,52 +1310,52 @@ const handlePrintReport = async (id) => {
     }
   }, [selectedDoc]);
 
-const fetchQRCode = async (documentId) => {
-  try {
-    
-    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
+  const fetchQRCode = async (documentId) => {
+    try {
 
-    const response = await apiClient.get(apiUrl, { responseType: "blob" });
+      const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
-    const qrCodeBlob = response.data;
+      const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-    if (!qrCodeBlob.type.includes("image/png")) {
-      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
+      const qrCodeBlob = response.data;
+
+      if (!qrCodeBlob.type.includes("image/png")) {
+        throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
+      }
+
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+      setQrCodeUrl(qrCodeUrl);
+    } catch (error) {
+      setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+    }
+  };
+
+
+  const downloadQRCode = async () => {
+    if (!selectedDoc.id) {
+      alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
+      return;
     }
 
-    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-    setQrCodeUrl(qrCodeUrl);
-  } catch (error) {
-    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
-  }
-};
+    try {
 
+      const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
 
-const downloadQRCode = async () => {
-  if (!selectedDoc.id) {
-    alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
-    return;
-  }
+      const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-  try {
+      const qrCodeBlob = response.data;
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
 
-    const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
+      const link = document.createElement("a");
+      link.href = qrCodeUrl;
+      link.download = `QR_Code_${selectedDoc.id}.png`;
+      link.click();
 
-    const response = await apiClient.get(apiUrl, { responseType: "blob" });
-
-    const qrCodeBlob = response.data;
-    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-
-    const link = document.createElement("a");
-    link.href = qrCodeUrl;
-    link.download = `QR_Code_${selectedDoc.id}.png`;
-    link.click();
-
-    window.URL.revokeObjectURL(qrCodeUrl);
-  } catch (error) {
-    setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
-  }
-};
+      window.URL.revokeObjectURL(qrCodeUrl);
+    } catch (error) {
+      setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
+    }
+  };
 
 
   const getPageNumbers = () => {
@@ -1660,12 +1694,14 @@ const downloadQRCode = async () => {
 
               {/* Buttons Section */}
               <div className="col-span-full mt-6">
-                <div className="flex gap-4">
+                <div className="flex flex-wrap items-end gap-4">
+
+                  {/* Waiting Room Button */}
                   <button
                     type="button"
                     onClick={() => setIsWaitingRoomModalOpen(true)}
                     disabled={!isMetadataComplete || selectedFiles.length > 0}
-                    className={`ml-4 p-3 rounded-md ${(!isMetadataComplete || selectedFiles.length > 0)
+                    className={`px-6 h-14 rounded-xl transition-all ${(!isMetadataComplete || selectedFiles.length > 0)
                       ? "bg-gray-400 text-gray-200 cursor-not-allowed"
                       : "bg-blue-500 text-white"
                       }`}
@@ -1673,10 +1709,31 @@ const downloadQRCode = async () => {
                     <AutoTranslate>Choose From Waiting Room</AutoTranslate>
                   </button>
 
+                  {/* Scaling Dropdown */}
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor="scaleSelect"
+                      className="text-sm font-medium mb-1"
+                    >
+                      Scaling
+                    </label>
+                    <select
+                      id="scaleSelect"
+                      value={scaleValue}
+                      onChange={handleChangeScale}
+                      className="h-14 px-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="1">Scale Up</option>
+                      <option value="0">Scale Down</option>
+                      <option value="2">None</option>
+                    </select>
+                  </div>
+
+                  {/* Upload Button */}
                   <button
                     onClick={handleUploadDocument}
                     disabled={isUploading || selectedFiles.length === 0 || !formData.version}
-                    className={`flex-1 text-white rounded-xl p-3 h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
+                    className={`flex-1 min-w-[200px] text-white rounded-xl h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
                       ? "bg-blue-600 cursor-not-allowed"
                       : "bg-blue-900"
                       }`}
@@ -1694,36 +1751,39 @@ const downloadQRCode = async () => {
                             r="10"
                             stroke="currentColor"
                             strokeWidth="4"
-                          ></circle>
+                          />
                           <path
                             className="opacity-75"
                             fill="currentColor"
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                          ></path>
+                          />
                         </svg>
                         <AutoTranslate>Uploading... {uploadProgress}%</AutoTranslate>
                       </>
                     ) : (
                       <AutoTranslate>Add File</AutoTranslate>
                     )}
+
                     {isUploading && (
                       <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
                         <div
                           className="h-full bg-green-500 transition-all"
                           style={{ width: `${uploadProgress}%` }}
-                        ></div>
+                        />
                       </div>
                     )}
                   </button>
 
+                  {/* Cancel Button */}
                   {isUploading && (
                     <button
                       onClick={handleCancelUpload}
-                      className="bg-red-500 text-white h-14 px-4 py-2 rounded"
+                      className="bg-red-500 text-white h-14 px-6 rounded-xl"
                     >
                       <AutoTranslate>Cancel Add Files</AutoTranslate>
                     </button>
                   )}
+
                 </div>
               </div>
             </div>

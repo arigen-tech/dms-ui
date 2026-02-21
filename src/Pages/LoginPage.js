@@ -20,6 +20,7 @@ import { jwtDecode } from "jwt-decode";
 import AutoTranslate from "../i18n/AutoTranslate";
 import { useLanguage } from "../i18n/LanguageContext";
 import { getFallbackTranslation } from '../i18n/autoTranslator';
+import apiClient from "../API/apiClient";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,7 +44,7 @@ const LoginPage = () => {
 
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [optBlockIsEnabled, setOptBlockIsEnabled] = useState(false);
   const [captcha, setCaptcha] = useState([]);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("error");
@@ -55,6 +56,7 @@ const LoginPage = () => {
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [otpIsEnabled, setOtpIsEnabled] = useState(false);
 
   // Use language context
   const {
@@ -80,7 +82,24 @@ const LoginPage = () => {
     });
   }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
+useEffect(() => {
+  const fetchOtpFlag = async () => {
+    try {
+      console.log("Calling OTP API...");
+      const response = await apiClient.get(`/auth/is-otp-enabled`);
 
+      console.log("OTP Flag:", response.data);
+
+      setOtpIsEnabled(response.data);
+      localStorage.setItem("otpIsEnabled", String(response.data));
+    } catch (error) {
+      console.error("Error fetching OTP flag:", error);
+      setOtpIsEnabled(false); 
+    }
+  };
+
+  fetchOtpFlag();
+}, []);
 
   const [selectedLanguageId, setSelectedLanguageId] = useState(null);
 
@@ -548,6 +567,27 @@ const LoginPage = () => {
     }
   };
 
+  // Generate or retrieve device ID
+  const getDeviceId = () => {
+    let deviceId = localStorage.getItem("deviceId");
+
+    if (!deviceId) {
+      if (window.crypto && window.crypto.randomUUID) {
+        deviceId = window.crypto.randomUUID();
+      } else {
+        // Fallback UUID generator
+        deviceId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
+      }
+
+      localStorage.setItem("deviceId", deviceId);
+    }
+
+    return deviceId;
+  };
 
 
   // Request OTP function with languageId
@@ -565,25 +605,63 @@ const LoginPage = () => {
     }
 
     setIsButtonDisabled(true);
+    const deviceId = getDeviceId();
 
     try {
       const response = await axios.post(LOGIN_API, {
         email: formData.username,
         password: formData.password,
-        languageId: selectedLanguageId  // Send selected language ID
+        languageId: selectedLanguageId,
+        deviceId: deviceId
       });
 
       if (response.status === 200) {
-        if (!response.data.roles) {
+        const {
+          token,
+          refreshToken,
+          roles,
+          currRoleId,
+          name,
+          id,
+          languageCode,
+          message
+        } = response.data;
+
+        if (!roles) {
           showAlert("Employee Type not assigned. Please contact Admin.");
           return;
         }
 
-        setIsOtpRequested(true);
-        setOtpTimer(300);
-        setCanResendOtp(false);
-        setResendTimer(30);
-        showAlert("OTP has been sent to your mobile no.", "success");
+        if (!token && !refreshToken) {
+          setOptBlockIsEnabled(true);
+          setIsOtpRequested(true);
+          setOtpTimer(300);
+          setCanResendOtp(false);
+          setResendTimer(30);
+          showAlert(message || "OTP has been sent to your mobile no.", "success");
+          return;
+        }
+
+        if (token && refreshToken) {
+          localStorage.setItem("tokenKey", token);
+          localStorage.setItem("refreshToken", refreshToken);
+          localStorage.setItem("deviceId", deviceId);
+          localStorage.setItem("roles", roles);
+          localStorage.setItem("currRoleId", currRoleId);
+          localStorage.setItem("name", name);
+          localStorage.setItem("id", id);
+          localStorage.setItem("uiLanguage", languageCode);
+
+          const redirectUrl = localStorage.getItem("redirectUrl");
+          if (redirectUrl) {
+            localStorage.removeItem("redirectUrl");
+            navigate(redirectUrl);
+          } else {
+            navigate("/newDash");
+          }
+
+          showAlert("Login successful.", "success");
+        }
       }
     } catch (error) {
       showAlert(
@@ -619,15 +697,6 @@ const LoginPage = () => {
     }
   };
 
-  // Generate or retrieve device ID
-  const getDeviceId = () => {
-    let deviceId = localStorage.getItem("deviceId");
-    if (!deviceId) {
-      deviceId = crypto.randomUUID();
-      localStorage.setItem("deviceId", deviceId);
-    }
-    return deviceId;
-  };
 
   // Update handleLogin function
   const handleLogin = async (e) => {
@@ -713,20 +782,23 @@ const LoginPage = () => {
     }
   };
 
-  const getViewSubtitle = () => {
-    switch (currentView) {
-      case "forgot-password":
-        return "Enter your email or mobile number to reset password";
-      case "forgot-otp":
-        return "Please enter the OTP sent to your mobile number";
-      case "reset-password":
-        return "Create a new password for your account";
-      default:
-        return isOtpRequested
-          ? "Please enter the OTP sent to your mobile no."
-          : "Please sign in to your account";
-    }
-  };
+const getViewSubtitle = () => {
+  switch (currentView) {
+    case "forgot-password":
+      return `Enter your ${otpIsEnabled ? "mobile number" : "email"} to reset password`;
+
+    case "forgot-otp":
+      return `Please enter the OTP sent to your ${otpIsEnabled ? "mobile number" : "email"}`;
+
+    case "reset-password":
+      return "Create a new password for your account";
+
+    default:
+      return isOtpRequested
+        ? "Please enter the OTP sent to your mobile no."
+        : "Please sign in to your account";
+  }
+};
 
   return (
     <div className="flex min-h-screen">
@@ -985,7 +1057,7 @@ const LoginPage = () => {
                 className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
                 <AutoTranslate>
-                  {isButtonDisabled ? "Requesting OTP..." : "Request OTP"}
+                  {isButtonDisabled ? "Login..." : "Login"}
                 </AutoTranslate>
               </button>
 
@@ -1069,6 +1141,7 @@ const LoginPage = () => {
                     <EnvelopeIcon className="w-4 h-4 mr-1 text-blue-600" />
                     <span className="text-sm"><AutoTranslate>Email</AutoTranslate></span>
                   </label>
+                  {otpIsEnabled && (
                   <label className="flex items-center">
                     <input
                       type="radio"
@@ -1081,6 +1154,7 @@ const LoginPage = () => {
                     <DevicePhoneMobileIcon className="w-4 h-4 mr-1 text-blue-600" />
                     <span className="text-sm"><AutoTranslate>Mobile</AutoTranslate></span>
                   </label>
+)}
                 </div>
               </div>
 
