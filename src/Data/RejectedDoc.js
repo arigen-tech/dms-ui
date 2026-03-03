@@ -500,10 +500,24 @@ const downloadQRCode = async () => {
     return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   };
 
-  const handleEdit = (docId) => {
-    const data = documents.find((item) => item.id === docId);
-    navigate("/all-documents", { state: data });
+  // const handleEdit = (docId) => {
+  //   const data = documents.find((item) => item.id === docId);
+  //   navigate("/all-documents", { state: data });
+  // };
+
+    const handleEdit = async (docId) => {
+    try {
+      const response = await apiClient.get(`${API_HOST}/api/documents/findBy/${docId}`);
+      const latestData = response.data;
+  
+      console.log("Fetched latest document:", latestData);
+  
+      navigate("/all-documents", { state: latestData });
+    } catch (error) {
+      console.error("Failed to fetch document:", error);
+    }
   };
+  
 
   const printPage = () => {
     setPrintTrue(true);

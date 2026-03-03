@@ -1060,10 +1060,24 @@ const confirmBulkFileDelete = async () => {
   }, [selectedDoc, searchFileTerm]);
 
 
-  const handleEdit = (docId) => {
-    const data = documents.find((item) => item.id === docId);
-    navigate("/all-documents", { state: data });
-  };
+  // const handleEdit = (docId) => {
+  //   const data = documents.find((item) => item.id === docId);
+  //   console.log("Editing document:", data);
+  //   navigate("/all-documents", { state: data });
+  // };
+
+  const handleEdit = async (docId) => {
+  try {
+    const response = await apiClient.get(`${API_HOST}/api/documents/findBy/${docId}`);
+    const latestData = response.data;
+
+    console.log("Fetched latest document:", latestData);
+
+    navigate("/all-documents", { state: latestData });
+  } catch (error) {
+    console.error("Failed to fetch document:", error);
+  }
+};
 
 const fetchQRCode = async (documentId) => {
   try {
@@ -1538,6 +1552,10 @@ const downloadQRCode = async () => {
                 </th>
 
                 <th className="border p-2 text-left">
+                  <AutoTranslate>Edit</AutoTranslate>
+                </th>
+
+                <th className="border p-2 text-left">
                   <AutoTranslate>View</AutoTranslate>
                 </th>
                 <th className="border p-2 text-left">
@@ -1593,6 +1611,14 @@ const downloadQRCode = async () => {
                       <td className="border p-2">
                         {doc.documentDetails?.length || 0}
                       </td>
+
+                      {role === USER && (
+                      <td className="border p-2">
+                        <button onClick={() => handleEdit(doc.id)}>
+                          <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
+                        </button>
+                      </td>
+                    )}
 
                       {/* View Button Column */}
                       <td className="border p-2">

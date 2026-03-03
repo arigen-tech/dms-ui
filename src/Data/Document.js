@@ -44,7 +44,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     translate,
     preloadTranslationsForTerms
   } = useLanguage();
-
+  
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
@@ -200,6 +200,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       console.error(<AutoTranslate>Error fetching categories:</AutoTranslate>, error);
     }
   };
+
+  const hasApprovedFile =
+    uploadedFilePath?.some(file => file?.status === "APPROVED");
 
   const fetchYear = async () => {
     try {
@@ -1398,6 +1401,9 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     return <LoadingComponent />;
   }
 
+  console.log("Uploaded Files:", uploadedFilePath);
+console.log("Has Approved File:", hasApprovedFile);
+
   return (
     <div className="p-2">
       <div className="p-0">
@@ -1413,7 +1419,8 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             />
           )}
           <div ref={formSectionRef} className="mb-2 bg-slate-100 p-4 rounded-lg">
-            <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
+            <div className={`bg-slate-50 p-3 rounded-lg border shadow-sm mb-2 
+  ${hasApprovedFile ? "opacity-60 pointer-events-none" : ""}`}>
               <h2 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
                 📁 <AutoTranslate>Document Metadata</AutoTranslate> <span className="text-red-500">*</span>
               </h2>
@@ -1498,7 +1505,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 </label>
               </div>
             </div>
-            <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
+            <div className={`bg-slate-50 p-3 rounded-lg border shadow-sm mb-2`}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
                   🧩 <AutoTranslate>Document Additional Metadata</AutoTranslate>{" "}
@@ -1527,56 +1534,62 @@ const DocumentManagement = ({ fieldsDisabled }) => {
               {dynamicMetadata.map((item, index) => (
                 <div key={index} className="grid grid-cols-10 gap-3 mb-2 items-center">
                   <input
-                    type="text"
-                    placeholder="Key"
-                    value={item.key}
-                    onChange={(e) => {
-                      const updated = [...dynamicMetadata];
-                      updated[index].key = e.target.value;
-                      setDynamicMetadata(updated);
-                    }}
-                    className="col-span-4 p-2 border rounded-md"
-                  />
+  type="text"
+  placeholder="Key"
+  value={item.key}
+  disabled={hasApprovedFile && !!item.id}   
+  onChange={(e) => {
+    const updated = [...dynamicMetadata];
+    updated[index].key = e.target.value;
+    setDynamicMetadata(updated);
+  }}
+  className="col-span-4 p-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
+/>
 
                   <input
-                    type="text"
-                    placeholder="Value"
-                    value={item.value}
-                    onChange={(e) => {
-                      const updated = [...dynamicMetadata];
-                      updated[index].value = e.target.value;
-                      setDynamicMetadata(updated);
-                    }}
-                    className="col-span-4 p-2 border rounded-md"
-                  />
+  type="text"
+  placeholder="Value"
+  value={item.value}
+  disabled={hasApprovedFile && !!item.id}
+  onChange={(e) => {
+    const updated = [...dynamicMetadata];
+    updated[index].value = e.target.value;
+    setDynamicMetadata(updated);
+  }}
+  className="col-span-4 p-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
+/>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const itemToDelete = dynamicMetadata[index];
+                 <button
+  type="button"
+  disabled={hasApprovedFile && !!item.id}
+  onClick={() => {
+    const itemToDelete = dynamicMetadata[index];
 
-                      if (itemToDelete.id) {
-                        setDeletedMetaDataIds(prev => [...prev, itemToDelete.id]);
-                      }
-                      setDynamicMetadata(dynamicMetadata.filter((_, i) => i !== index));
-                    }}
-                    className="col-span-1 bg-red-500 text-white px-1 py-2.5 rounded text-sm"
-                  >
-                    ✕
-                  </button>
+    if (itemToDelete.id) {
+      setDeletedMetaDataIds(prev => [...prev, itemToDelete.id]);
+    }
+    setDynamicMetadata(dynamicMetadata.filter((_, i) => i !== index));
+  }}
+  className={`col-span-1 px-1 py-2.5 rounded text-sm 
+    ${hasApprovedFile && !!item.id
+      ? "bg-gray-400 text-white cursor-not-allowed"
+      : "bg-red-500 text-white"}`}
+>
+  ✕
+</button>
 
                 </div>
               ))}
 
               <button
-                type="button"
-                onClick={() =>
-                  setDynamicMetadata([...dynamicMetadata, { id: "", key: "", value: "" }])
-                }
-                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                + Add Metadata
-              </button>
+  type="button"
+  onClick={() =>
+    setDynamicMetadata([...dynamicMetadata, { id: "", key: "", value: "" }])
+  }
+  className="mt-2 bg-blue-600 text-white px-4 py-2 rounded"
+>
+  + Add Metadata
+</button>
             </div>
 
 
