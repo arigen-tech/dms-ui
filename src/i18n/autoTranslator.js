@@ -1,4 +1,4 @@
-// frontend/i18n/autoTranslator.js - FIXED VERSION
+// frontend/i18n/autoTranslator.js - COMPLETE FIXED VERSION WITH DATABASE FIRST
 import { API_HOST } from '../API/apiConfig';
 import apiClient from "../API/apiClient";
 
@@ -48,24 +48,58 @@ const fallbackTranslations = {
     'Select Department': 'विभाग चुनें',
     'CreatedBy': 'निर्माता',
     'Mobile Number': 'मोबाइल नंबर',
+    'Mobile No.': 'मोबाइल नंबर',
+    'Name': 'नाम',
     'UpdatedBy': 'अपडेटकर्ता',
     'Updated Date': 'अपडेट तारीख',
     'Assign Role': 'भूमिका सौंपें',
     'Start Date': 'प्रारंभ तिथि',
     'End Date': 'समाप्ति तिथि',
     'Search Query': 'खोज शब्द',
-    'Import Data & File':' डेटा और फ़ाइल इम्पोर्ट करें',
-    'Export Data & File':'डेटा और फ़ाइल एक्सपोर्ट करें',
-    'Mange Users Roles':'यूज़र रोल प्रबंधन',
-    'User Report':'यूज़र रिपोर्ट',
-    'Rejected Documents':'अस्वीकृत दस्तावेज़',
-    'Branch wise (OCR) Search':'शाखा के अनुसार(OCR)खोजे',
-    'Department wise (OCR)Search':'विभाग के अनुसार(OCR)खोजे',
-    'Enable':'सक्षम करें',
-    'Disable':'अक्षम करें',
-    'Document Management System':'दस्तावेज़ प्रबंधन प्रणाली',
-    
-    
+    'Import Data & File': 'डेटा और फ़ाइल इम्पोर्ट करें',
+    'Export Data & File': 'डेटा और फ़ाइल एक्सपोर्ट करें',
+    'Mange Users Roles': 'यूज़र रोल प्रबंधन',
+    'User Report': 'यूज़र रिपोर्ट',
+    'Rejected Documents': 'अस्वीकृत दस्तावेज़',
+    'Branch wise (OCR) Search': 'शाखा के अनुसार (OCR) खोजें',
+    'Department wise (OCR)Search': 'विभाग के अनुसार (OCR) खोजें',
+    'Enable': 'सक्षम करें',
+    'Disable': 'अक्षम करें',
+    'Document Management System': 'दस्तावेज़ प्रबंधन प्रणाली',
+    'Captcha': 'कैप्चा',
+    'Department Name': 'विभाग का नाम',
+
+    'Access': 'पहुँच',
+    'Audit & Reports': 'ऑडिट और रिपोर्ट',
+    'OCR & Search': 'OCR और खोज',
+    'Add Forms and Reports': 'फॉर्म और रिपोर्ट जोड़ें',
+    'Form ': 'फॉर्म ',
+    'APP': 'एपीपी',
+    'Parent ID': 'मूल आईडी',
+    'Menu ID': 'मेनू आईडी',
+    'Subject': 'विषय',
+    'Title': 'शीर्षक',
+    'File No': 'फ़ाइल संख्या',
+    "Generate I'D Card": 'आईडी कार्ड बनाएं',
+    "User's Role": "यूज़र की भूमिका",
+    'User Details': 'यूज़र विवरण',
+    'Trash/Untrash': 'ट्रैश/अनट्रैश',
+    "User's Details": "यूज़र के विवरण",
+    "Branch:": "शाखा:",
+    "Department:": "विभाग:",
+    "Role:": "भूमिका:",
+    "(Unique)": "(अद्वितीय)",
+    "Status = Access Denied ": "स्थिति = पहुंच अस्वीकृत",
+    '&': 'और',
+    "Status = Access Allowed": "स्थिति = पहुँच अनुमत",
+    "Access Allowed": "पहुँच अनुमत",
+    "Access Denied": "पहुँच अस्वीकृत",
+    'Manage Role & Functionality Access': "भूमिका और कार्यक्षमता पहुंच प्रबंधन",
+    'Archive Date & Time': 'आर्काइव तिथि और समय',
+    'Enter Department Name': 'विभाग का नाम दर्ज करें',
+    '(optional)': '(वैकल्पिक)',
+    'Drag & drop ,files, here, or choose from your device.': 'फाइलें यहाँ ड्रैग और ड्रॉप करें, या अपने डिवाइस से चुनें।',
+    'Upload ,Files': 'फाइलें अपलोड करें',
 
 
 
@@ -84,25 +118,63 @@ const fallbackTranslations = {
     'Enter your password': 'अपना पासवर्ड दर्ज करें',
     'Please sign in to your account': 'कृपया अपने खाते में साइन इन करें',
     'Enter captcha': 'कैप्चा दर्ज करें',
-    
+    'Select Year:': 'वर्ष चुनें:',
+    "Data Management & Backup": "डेटा प्रबंधन और बैकअप",
+    "Documents Backup": "दस्तावेज़ बैकअप",
+    "Start ,Database, Backup": "शुरू ,डेटाबेस, बैकअप",
+    "Start ,Documents, Backup": "शुरू ,दस्तावेज़, बैकअप",
+    "Start ,Full System, Backup": "शुरू ,पूर्ण सिस्टम, बैकअप",
+
 
 
 
   },
   'or': {
-
     'Captcha': 'କ୍ୟାପ୍ଚା',
     'SN': 'କ୍ରମିକ ସଂଖ୍ୟା',
-
-
-
+    'Address': 'ଠିକଣା',
+    'Action': 'କାର୍ଯ୍ୟ',
+    'Department': 'ବିଭାଗ',
+    'Branch': 'ଶାଖା',
+    'Email': 'ଇମେଲ',
+    'Mobile Number': 'ମୋବାଇଲ ନମ୍ବର',
+    'Mobile No.': 'ମୋବାଇଲ ନମ୍ବର',
+    'Name': 'ନାମ',
+    'Category': 'ବର୍ଗ',
+    'Select Branch': 'ଶାଖା ଚୟନ କରନ୍ତୁ',
+    'Select Department': 'ବିଭାଗ ଚୟନ କରନ୍ତୁ',
+    'CreatedBy': 'ସୃଷ୍ଟିକର୍ତ୍ତା',
+    'UpdatedBy': 'ଅପଡେଟ୍‌କର୍ତ୍ତା',
+    'Updated Date': 'ଅପଡେଟ୍ ତାରିଖ',
+    'Start Date': 'ଆରମ୍ଭ ତାରିଖ',
+    'End Date': 'ଶେଷ ତାରିଖ',
+    'Enable': 'ସକ୍ଷମ କରନ୍ତୁ',
+    'Disable': 'ଅକ୍ଷମ କରନ୍ତୁ',
+    'Document Management System': 'ଦସ୍ତାବେଜ ପରିଚାଳନା ପ୍ରଣାଳୀ',
   },
   'mr': {
-
+    'Captcha': 'कॅप्चा',
+    'Address': 'पत्ता',
+    'Action': 'क्रिया',
+    'Department': 'विभाग',
+    'Branch': 'शाखा',
+    'Email': 'ईमेल',
+    'Mobile Number': 'मोबाइल क्रमांक',
+    'Mobile No.': 'मोबाइल क्रमांक',
+    'Name': 'नाव',
+    'Category': 'वर्ग',
+    'Select Branch': 'शाखा निवडा',
+    'Select Department': 'विभाग निवडा',
+    'CreatedBy': 'निर्माता',
+    'UpdatedBy': 'अद्यतनकर्ता',
+    'Updated Date': 'अद्यतन तारीख',
+    'Start Date': 'प्रारंभ तारीख',
+    'End Date': 'शेवटची तारीख',
+    'Enable': 'सक्षम करा',
+    'Disable': 'अक्षम करा',
+    'Document Management System': 'दस्तऐवज व्यवस्थापन प्रणाली',
   }
 };
-
-const MYMEMORY_API = 'https://api.mymemory.translated.net/get';
 
 /**
  * Get fallback translation IMMEDIATELY (synchronous)
@@ -147,22 +219,28 @@ export const fetchSupportedLanguages = async () => {
 
     const response = await apiClient.get(`${API_HOST}/languageMaster/getAll/1`);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
+    // Handle different response structures
+    let languages = [];
+    if (Array.isArray(response)) {
+      languages = response;
+    } else if (response?.data && Array.isArray(response.data)) {
+      languages = response.data;
+    } else if (response?.data?.data && Array.isArray(response.data.data)) {
+      languages = response.data.data;
     }
 
-    const data = await response.json();
-
-    if (Array.isArray(data) && data.length > 0) {
+    if (languages.length > 0) {
       supportedLanguages = {};
 
-      data.forEach(lang => {
-        supportedLanguages[lang.code] = {
-          name: lang.name,
-          code: lang.code,
-          isActive: lang.isActive,
-          nativeName: lang.nativeName || lang.name
-        };
+      languages.forEach(lang => {
+        if (lang.code) { // Ensure code exists
+          supportedLanguages[lang.code] = {
+            name: lang.name || lang.code,
+            code: lang.code,
+            isActive: lang.isActive === true,
+            nativeName: lang.nativeName || lang.name || lang.code
+          };
+        }
       });
 
       console.log('✓ Languages loaded:', Object.keys(supportedLanguages));
@@ -179,8 +257,40 @@ export const fetchSupportedLanguages = async () => {
 };
 
 /**
- * Try fallback translation first (immediate), then MyMemory for UI elements only
- * Messages are NOT translated
+ * Get translation from database via backend API
+ */
+const getDatabaseTranslation = async (text, targetLanguageCode) => {
+  try {
+    // Call your backend translate endpoint which checks database first
+    const response = await apiClient.post(`${API_HOST}/translate`, {
+      text: text,
+      target: targetLanguageCode
+    });
+
+    // Handle different response structures
+    let translatedText = null;
+    if (response?.data?.translatedText) {
+      translatedText = response.data.translatedText;
+    } else if (response?.translatedText) {
+      translatedText = response.translatedText;
+    }
+
+    return translatedText;
+  } catch (error) {
+    console.log('Database translation error (may be offline):', error.message);
+    return null;
+  }
+};
+
+/**
+ * Check if we're online
+ */
+const isOnline = () => {
+  return navigator.onLine;
+};
+
+/**
+ * Translate text using database first, then fallback, then API
  */
 export const translateText = async (text, targetLanguageCode = 'en') => {
   // Skip translation if not needed
@@ -200,61 +310,78 @@ export const translateText = async (text, targetLanguageCode = 'en') => {
     return translationCache[cacheKey];
   }
 
-  // Try fallback translation FIRST (immediate, no API call)
+  // STEP 1: Try database FIRST (your backend checks the translations table)
+  // This works even without internet because your backend is local
+  console.log(`🔍 Checking database for: "${text}" (${targetLanguageCode})`);
+  const dbTranslation = await getDatabaseTranslation(text, targetLanguageCode);
+
+  if (dbTranslation && dbTranslation !== text) {
+    // Save to cache
+    translationCache[cacheKey] = dbTranslation;
+    saveCacheToStorage();
+    console.log(`✓ [Database] "${text}" -> "${dbTranslation}"`);
+    return dbTranslation;
+  }
+
+  // STEP 2: Try fallback translation (UI hardcoded)
   const fallbackResult = getFallbackTranslation(text, targetLanguageCode);
   if (fallbackResult) {
+    // Save to cache
     translationCache[cacheKey] = fallbackResult;
     saveCacheToStorage();
-    console.log(`✓ [Fallback] Translated: "${text}" -> "${fallbackResult}"`);
+
+    // Try to save fallback in database for future use (if online)
+    if (isOnline()) {
+      try {
+        apiClient.post("/translate/saveFallback", {
+          sourceText: text,
+          translatedText: fallbackResult,
+          languageCode: targetLanguageCode
+        }).catch(e => console.log("Fallback save failed (non-critical)"));
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+
+    console.log(`✓ [Fallback] "${text}" -> "${fallbackResult}"`);
     return fallbackResult;
   }
 
-  // Only call MyMemory API if no fallback found
-  try {
-    console.log(`🔄 [MyMemory] Translating: "${text}" to ${targetLanguageCode}`);
+  // STEP 3: If online, try MyMemory API via your backend
+  if (isOnline()) {
+    try {
+      console.log(`🔄 Translating via API: "${text}" to ${targetLanguageCode}`);
 
-    const langPair = `en|${targetLanguageCode}`;
+      const response = await apiClient.post(`${API_HOST}/translate`, {
+        text: text,
+        target: targetLanguageCode
+      });
 
-    const response = await fetch(
-      `${MYMEMORY_API}?q=${encodeURIComponent(text)}&langpair=${langPair}`,
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
+      // Handle different response structures
+      let translatedText = null;
+      if (response?.data?.translatedText) {
+        translatedText = response.data.translatedText;
+      } else if (response?.translatedText) {
+        translatedText = response.translatedText;
       }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.responseData && data.responseData.translatedText) {
-      const translatedText = data.responseData.translatedText;
 
       if (translatedText && translatedText.trim() !== '' && translatedText !== text) {
         translationCache[cacheKey] = translatedText;
         saveCacheToStorage();
-        console.log(`✓ [MyMemory] Translated: "${text}" -> "${translatedText}"`);
+        console.log(`✓ [API] Translated: "${text}" -> "${translatedText}"`);
         return translatedText;
       }
+    } catch (error) {
+      console.error('Translation API error:', error);
     }
-
-    // If translation failed, cache the original text to prevent retries
-    translationCache[cacheKey] = text;
-    saveCacheToStorage();
-    return text;
-
-  } catch (error) {
-    console.error('MyMemory Translation error:', error.message);
-
-    // Cache the original text on error
-    translationCache[cacheKey] = text;
-    saveCacheToStorage();
-    return text;
+  } else {
+    console.log('📴 Offline: No translation found in database or fallback');
   }
+
+  // If all else fails, return original text
+  translationCache[cacheKey] = text;
+  saveCacheToStorage();
+  return text;
 };
 
 /**
@@ -288,18 +415,15 @@ export const getSupportedLanguages = async () => {
   if (!supportedLanguages) {
     await fetchSupportedLanguages();
   }
-  return supportedLanguages;
+  return supportedLanguages || {};
 };
 
 /**
  * Get language name by code
  */
 export const getLanguageName = async (languageCode) => {
-  if (!supportedLanguages) {
-    await fetchSupportedLanguages();
-  }
-
-  const lang = supportedLanguages[languageCode];
+  const langs = await getSupportedLanguages();
+  const lang = langs[languageCode];
   return lang ? lang.name : languageCode;
 };
 
@@ -307,11 +431,8 @@ export const getLanguageName = async (languageCode) => {
  * Check if a language is active
  */
 export const isLanguageActive = async (languageCode) => {
-  if (!supportedLanguages) {
-    await fetchSupportedLanguages();
-  }
-
-  const lang = supportedLanguages[languageCode];
+  const langs = await getSupportedLanguages();
+  const lang = langs[languageCode];
   return lang ? lang.isActive : false;
 };
 
@@ -319,11 +440,6 @@ export const isLanguageActive = async (languageCode) => {
  * Add custom fallback translations (UI only)
  */
 export const addFallbackTranslations = (languageCode, translations) => {
-  if (!['hi', 'or', 'mr'].includes(languageCode)) {
-    console.warn(`⚠️ Only hi, or, mr languages are supported for fallback`);
-    return;
-  }
-
   if (!fallbackTranslations[languageCode]) {
     fallbackTranslations[languageCode] = {};
   }
@@ -380,7 +496,7 @@ export const getCacheInfo = () => {
 
 /**
  * Instant translation for placeholders, titles, aria-labels
- * (NO async, NO JSX)
+ * (NO async, NO API call)
  */
 export const translateInstant = (text, targetLanguageCode = 'en') => {
   if (!text || targetLanguageCode === 'en') {
@@ -399,10 +515,9 @@ export const translateInstant = (text, targetLanguageCode = 'en') => {
     return translationCache[cacheKey];
   }
 
-  // Otherwise return original text (NO API call here)
+  // Otherwise return original text
   return text;
 };
-
 
 /**
  * Translate all strings in an object recursively
@@ -456,4 +571,22 @@ export const preloadTranslations = async (terms, languageCode) => {
   }
 
   console.log(`✅ Preloaded ${termsToTranslate.length} terms for ${languageCode}`);
+};
+
+/**
+ * Save a translation to database manually
+ */
+export const saveTranslationToDatabase = async (sourceText, translatedText, languageCode) => {
+  if (!sourceText || !translatedText || !languageCode) return;
+
+  try {
+    await apiClient.post("/translate/saveFallback", {
+      sourceText: sourceText,
+      translatedText: translatedText,
+      languageCode: languageCode
+    });
+    console.log(`✓ Saved to database: "${sourceText}" -> "${translatedText}" (${languageCode})`);
+  } catch (error) {
+    console.error('Error saving to database:', error);
+  }
 };

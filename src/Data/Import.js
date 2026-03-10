@@ -752,11 +752,11 @@ const Import = () => {
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
-                    <span className="text-purple-700 font-medium text-sm"><AutoTranslate>Type:</AutoTranslate></span>
+                    <span className="text-purple-700 font-medium text-sm"><AutoTranslate>Type</AutoTranslate>:</span>
                     <span className="font-bold text-purple-900">{successData.type}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-purple-100">
-                    <span className="text-purple-700 font-medium text-sm"><AutoTranslate>Source:</AutoTranslate></span>
+                    <span className="text-purple-700 font-medium text-sm"><AutoTranslate>Source</AutoTranslate>:</span>
                     <span className="font-bold text-purple-900 truncate ml-2" title={formatSource(successData.source)}>
                       {formatSource(successData.source)}
                     </span>
@@ -767,7 +767,7 @@ const Import = () => {
                   {/* Period Box */}
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg border border-purple-100">
                     <span className="text-purple-700 font-medium text-sm whitespace-nowrap">
-                      <AutoTranslate>Period:</AutoTranslate>
+                      <AutoTranslate>Period</AutoTranslate>:
                     </span>
                     <span
                       className="font-bold text-purple-900 text-sm text-right truncate max-w-[60%]"
@@ -780,7 +780,7 @@ const Import = () => {
                   {/* Completed Box */}
                   <div className="flex justify-between items-center p-3 bg-white/50 rounded-lg border border-purple-100">
                     <span className="text-purple-700 font-medium text-sm whitespace-nowrap">
-                      <AutoTranslate>Completed:</AutoTranslate>
+                      <AutoTranslate>Completed</AutoTranslate>:
                     </span>
                     <span
                       className="font-bold text-purple-900 text-sm text-right truncate max-w-[60%]"
@@ -919,7 +919,7 @@ const Import = () => {
               </span>
             </div>
             <div>
-              <span className="text-gray-600"><AutoTranslate>Tables Found:</AutoTranslate></span>
+              <span className="text-gray-600"><AutoTranslate>Tables Found</AutoTranslate>:</span>
               <span className="ml-2 font-medium text-blue-600">
                 {status.details.availableTables?.length || 0}
               </span>
@@ -930,7 +930,7 @@ const Import = () => {
         {status.details.availableTables && status.details.availableTables.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-600"><AutoTranslate>Available Tables:</AutoTranslate></span>
+              <span className="text-gray-600"><AutoTranslate>Available Tables</AutoTranslate>:</span>
               <span className="font-medium text-blue-600">
                 {status.details.availableTables.length} <AutoTranslate>tables</AutoTranslate> • {selectedTables.size} <AutoTranslate>selected</AutoTranslate>
               </span>
@@ -948,7 +948,7 @@ const Import = () => {
         {status.details.availableFiles && status.details.availableFiles.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-600"><AutoTranslate>Available File Categories:</AutoTranslate></span>
+              <span className="text-gray-600"><AutoTranslate>Available File Categories</AutoTranslate>:</span>
               <span className="font-medium text-green-600">
                 {status.details.availableFiles.length} <AutoTranslate>categories</AutoTranslate> • {selectedFiles.size} <AutoTranslate>selected</AutoTranslate>
               </span>
@@ -1115,7 +1115,7 @@ const Import = () => {
 
         <div className="mt-3 pt-3 border-t border-gray-200">
           <div className="text-sm text-gray-600">
-            <AutoTranslate>Selected:</AutoTranslate> <span className="font-medium">{selectedFiles.size}</span> <AutoTranslate>of</AutoTranslate> {availableFiles.length} <AutoTranslate>file categories</AutoTranslate>
+            <AutoTranslate>Selected</AutoTranslate>: <span className="font-medium">{selectedFiles.size}</span> <AutoTranslate>of</AutoTranslate> {availableFiles.length} <AutoTranslate>file categories</AutoTranslate>
           </div>
         </div>
       </div>
@@ -1216,7 +1216,7 @@ const Import = () => {
                   <AutoTranslate>Select DMS Export File</AutoTranslate>
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  <AutoTranslate>Choose a ZIP file that was exported from your DMS system. The system will automatically detect available content (database, files, or both).</AutoTranslate>
+                  <AutoTranslate>Choose a ZIP file that was exported from your DMS system. The system will automatically detect available content</AutoTranslate> <AutoTranslate>database</AutoTranslate>, <AutoTranslate>files</AutoTranslate>, <AutoTranslate>or both</AutoTranslate>.
                 </p>
 
                 <input
@@ -1304,7 +1304,7 @@ const Import = () => {
                   )}
 
                   <div className="mt-4 text-xs text-gray-400">
-                    <AutoTranslate>Maximum file size: 100GB • DMS Export ZIP format only</AutoTranslate>
+                    <AutoTranslate>Maximum file size</AutoTranslate>: 100GB • <AutoTranslate>DMS Export ZIP format only</AutoTranslate>
                   </div>
                 </div>
               </div>

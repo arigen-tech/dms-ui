@@ -1,10 +1,11 @@
-// frontend/i18n/LanguageContext.js
+// frontend/i18n/LanguageContext.js - COMPLETE FIXED VERSION
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import {
   translateText,
   fetchSupportedLanguages,
   reloadSupportedLanguages,
-  preloadTranslations
+  preloadTranslations,
+  getSupportedLanguages
 } from './autoTranslator';
 import { API_HOST } from '../API/apiConfig';
 import apiClient from "../API/apiClient";
@@ -42,10 +43,9 @@ export const LanguageProvider = ({ children }) => {
     try {
       console.log('📡 Loading languages from Language Master API...');
       
-      // FIX: apiClient returns data directly, not a Response object
+      // FIX: apiClient returns data directly
       const response = await apiClient.get(`${API_HOST}/languageMaster/getAll/1`);
       
-      // Log the response to debug
       console.log('API Response:', response);
 
       // Handle different response structures
@@ -60,10 +60,21 @@ export const LanguageProvider = ({ children }) => {
       }
 
       if (languages.length > 0) {
-        setAvailableLanguages(languages);
+        // Filter active languages and format them
+        const formattedLanguages = languages
+          .filter(lang => lang && lang.code) // Ensure language has code
+          .map(lang => ({
+            id: lang.id || lang.code,
+            code: lang.code,
+            name: lang.name || lang.code,
+            nativeName: lang.nativeName || lang.name || lang.code,
+            isActive: lang.isActive === true
+          }));
+
+        setAvailableLanguages(formattedLanguages);
         
-        // Find active language or default to first one
-        const activeLang = languages.find(l => l.isActive === true) || languages[0];
+        // Find first active language as default
+        const activeLang = formattedLanguages.find(l => l.isActive) || formattedLanguages[0];
         if (activeLang) {
           setDefaultLanguage(activeLang.code);
         }
@@ -72,12 +83,26 @@ export const LanguageProvider = ({ children }) => {
         await fetchSupportedLanguages();
       } else {
         console.warn('No languages returned from API');
-        setAvailableLanguages([]);
+        // Add default English as fallback
+        setAvailableLanguages([{
+          id: 'en',
+          code: 'en',
+          name: 'English',
+          nativeName: 'English',
+          isActive: true
+        }]);
       }
 
     } catch (error) {
       console.error("Error loading languages:", error);
-      setAvailableLanguages([]);
+      // Add default English as fallback on error
+      setAvailableLanguages([{
+        id: 'en',
+        code: 'en',
+        name: 'English',
+        nativeName: 'English',
+        isActive: true
+      }]);
     } finally {
       setIsLoadingLanguages(false);
     }
@@ -100,13 +125,16 @@ export const LanguageProvider = ({ children }) => {
       language: languageCode
     });
 
+    // Save to localStorage
     localStorage.setItem('uilanguage', languageCode);
     setCurrentLanguage(languageCode);
 
+    // Dispatch event for components to react
     window.dispatchEvent(new CustomEvent('languageChanged', {
       detail: { languageCode, timestamp: Date.now() }
     }));
 
+    // Update status after a delay
     setTimeout(() => {
       setTranslationStatus({
         isTranslating: false,
@@ -124,7 +152,8 @@ export const LanguageProvider = ({ children }) => {
     if (currentLanguage === 'en' || !text) return text;
     try {
       return await translateText(text, currentLanguage);
-    } catch {
+    } catch (error) {
+      console.error('Translation error:', error);
       return text;
     }
   }, [currentLanguage]);
@@ -153,17 +182,26 @@ export const LanguageProvider = ({ children }) => {
     }
   }, [currentLanguage]);
 
+  // Load languages on mount
   useEffect(() => {
     loadLanguages();
   }, []);
 
+  // Check saved language after languages are loaded
   useEffect(() => {
-    const savedLang = localStorage.getItem('uilanguage');
-    if (savedLang && savedLang !== currentLanguage) {
-      setTimeout(() => changeLanguage(savedLang), 100);
+    if (!isLoadingLanguages && availableLanguages.length > 0) {
+      const savedLang = localStorage.getItem('uilanguage');
+      if (savedLang && savedLang !== currentLanguage) {
+        // Check if saved language exists in available languages
+        const langExists = availableLanguages.some(l => l.code === savedLang);
+        if (langExists) {
+          changeLanguage(savedLang);
+        }
+      }
     }
-  }, [changeLanguage, currentLanguage]);
+  }, [isLoadingLanguages, availableLanguages, currentLanguage, changeLanguage]);
 
+  // Update translation status when language changes to English
   useEffect(() => {
     if (currentLanguage === 'en') {
       setTranslationStatus({
@@ -174,23 +212,25 @@ export const LanguageProvider = ({ children }) => {
     }
   }, [currentLanguage]);
 
+  const value = {
+    currentLanguage,
+    availableLanguages,
+    isLoadingLanguages,
+    defaultLanguage,
+    translationStatus,
+    changeLanguage,
+    translate,
+    loadLanguages,
+    reloadLanguages: reloadSupportedLanguages,
+    isTranslationNeeded,
+    getLanguageName,
+    getLanguageNativeName,
+    isLanguageActive,
+    preloadTranslationsForTerms
+  };
+
   return (
-    <LanguageContext.Provider value={{
-      currentLanguage,
-      availableLanguages,
-      isLoadingLanguages,
-      defaultLanguage,
-      translationStatus,
-      changeLanguage,
-      translate,
-      loadLanguages,
-      reloadLanguages: reloadSupportedLanguages,
-      isTranslationNeeded,
-      getLanguageName,
-      getLanguageNativeName,
-      isLanguageActive,
-      preloadTranslationsForTerms
-    }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

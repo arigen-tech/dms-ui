@@ -167,7 +167,7 @@ const fetchImageSrc = async () => {
 
       localStorage.setItem("role", targetRoleName);
       setRole(targetRoleName);
-      showPopup("Role switched successfully!", "success");
+      showPopup("Role switched successfully", "success");
       setShowConfirmationPopup(false);
 
       // ✅ Trigger Sidebar to refresh menu
@@ -175,7 +175,7 @@ const fetchImageSrc = async () => {
 
       fetchUserRole();
     } catch (error) {
-      showPopup(<AutoTranslate>Error switching role!</AutoTranslate>, "error");
+      showPopup("Error switching role", "error");
       setShowConfirmationPopup(false);
     } finally {
       setIsConfSwitch(false);
@@ -243,7 +243,7 @@ const fetchImageSrc = async () => {
       
     } catch (error) {
       console.error('Error changing language:', error);
-      showPopup(<AutoTranslate>Error changing language!</AutoTranslate>, "error");
+      showPopup("Error changing language!", "error");
     }
   };
 

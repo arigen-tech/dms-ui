@@ -446,7 +446,7 @@ const Addformreports = () => {
     return (
         <div className="px-2">
             <h3 className="text-2xl font-semibold text-gray-800 mb-2">
-                <AutoTranslate>{isEditMode ? "Edit" : "Add"} Forms/Reports</AutoTranslate>
+                <AutoTranslate>{isEditMode ? "Edit" : "Add"}</AutoTranslate> <AutoTranslate>Forms</AutoTranslate>/<AutoTranslate>Reports</AutoTranslate>
             </h3>
             <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="mb-4 bg-slate-100 p-4 rounded-lg">

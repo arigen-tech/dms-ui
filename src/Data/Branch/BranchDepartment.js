@@ -89,7 +89,7 @@ const BranchDepartments = () => {
 
       const searchPlaceholder = await translatePlaceholder('Search...');
       const showPlaceholder = await translatePlaceholder('Show:');
-      const departmentPlaceholder = await translatePlaceholder('Enter Department Name (max 30 chars)');
+      const departmentPlaceholder = await translatePlaceholder('Enter Department Name');
       const branchPlaceholder = await translatePlaceholder('Branch');
 
       setTranslatedPlaceholders({
