@@ -340,29 +340,29 @@ const ChangePasswordPage = () => {
 
                   <div className="space-y-2">
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24"><AutoTranslate>Name:</AutoTranslate></strong>
+                      <strong className="w-24"><AutoTranslate>Name</AutoTranslate>:</strong>
                       <strong className="ml-2">{employee?.name}</strong>
                     </p>
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24"><AutoTranslate>Branch:</AutoTranslate></strong>
+                      <strong className="w-24"><AutoTranslate>Branch</AutoTranslate>:</strong>
                       <strong className="ml-2">{employee?.branch?.name || <AutoTranslate>All</AutoTranslate>}</strong>
                     </p>
 
                     {department && (
                       <p className="text-md text-gray-900 ml-20 flex items-center">
-                        <strong className="w-24"><AutoTranslate>Department:</AutoTranslate></strong>
+                        <strong className="w-24"><AutoTranslate>Department</AutoTranslate>:</strong>
                         <strong className="ml-2">{employee?.department?.name || <AutoTranslate>All</AutoTranslate>}</strong>
                       </p>
                     )}
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24"><AutoTranslate>Role:</AutoTranslate></strong>
+                      <strong className="w-24"><AutoTranslate>Role</AutoTranslate>:</strong>
                       <strong className="ml-2">{employee?.role.role}</strong>
                     </p>
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24"><AutoTranslate>Mobile:</AutoTranslate></strong>
+                      <strong className="w-24"><AutoTranslate>Mobile No.</AutoTranslate>:</strong>
                       <strong className="ml-2">{employee?.mobile}</strong>
                     </p>
 
@@ -372,7 +372,7 @@ const ChangePasswordPage = () => {
                     </p>
 
                     <p className="text-md text-gray-900 ml-20 flex items-center">
-                      <strong className="w-24"><AutoTranslate>Email:</AutoTranslate></strong>
+                      <strong className="w-24"><AutoTranslate>Email</AutoTranslate>:</strong>
                       <strong className="ml-2">{employee?.email}</strong>
                     </p>
                   </div>
@@ -384,13 +384,13 @@ const ChangePasswordPage = () => {
                   onClick={() => setActiveForm("editProfile")}
                   className="bg-blue-900 text-white font-semibold py-1 px-2 rounded-lg hover:bg-blue-950 transition duration-300"
                 >
-                  <AutoTranslate>Edit Profile</AutoTranslate>
+                  <AutoTranslate>Edit</AutoTranslate><AutoTranslate> Profile</AutoTranslate>
                 </button>
                 <button
                   onClick={() => setActiveForm("changePassword")}
                   className="bg-blue-900 text-white font-semibold py-1 px-2 rounded-lg hover:bg-blue-950 transition duration-300"
                 >
-                  <AutoTranslate>Change Password</AutoTranslate>
+                  <AutoTranslate>Change</AutoTranslate><AutoTranslate> Password</AutoTranslate>
                 </button>
                 <button
                   onClick={handleBackClick}
@@ -407,7 +407,7 @@ const ChangePasswordPage = () => {
         {activeForm === "changePassword" && (
           <div className="">
             <h2 className="text-3xl font-semibold text-gray-800 mb-4">
-              <AutoTranslate>Change Password</AutoTranslate>
+              <AutoTranslate>Change</AutoTranslate><AutoTranslate> Password</AutoTranslate>
             </h2>
             <form onSubmit={handleChangePassword} className="mb-6 w-full">
               {error && <p className="text-red-500 text-sm mb-4">{error}</p>}

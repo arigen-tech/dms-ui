@@ -72,6 +72,10 @@ const fallbackTranslations = {
     'Enter Department Name': 'विभाग का नाम दर्ज करें',
     '(optional)': '(वैकल्पिक)',
     'DASHBOARD': 'डैशबोर्ड',
+    // 'Confirm Password': 'पासवर्ड पुष्टि करें',
+    // 'New Password': 'नया पासवर्ड',
+    // 'Current Password': 'वर्तमान पासवर्ड',
+    // 'Employee Profile': 'कर्मचारी प्रोफ़ाइल',
 
 
 
@@ -87,6 +91,12 @@ const fallbackTranslations = {
 
 
 
+
+
+
+
+
+    
     'Drag & drop ,files, here, or choose from your device.': 'फाइलें यहाँ ड्रैग और ड्रॉप करें, या अपने डिवाइस से चुनें।',
     'Upload ,Files': 'फाइलें अपलोड करें',
     'Enter Mobile Number': 'मोबाइल नंबर दर्ज करें',
@@ -109,41 +119,6 @@ const fallbackTranslations = {
     "Start ,Database, Backup": "शुरू ,डेटाबेस, बैकअप",
     "Start ,Documents, Backup": "शुरू ,दस्तावेज़, बैकअप",
     "Start ,Full System, Backup": "शुरू ,पूर्ण सिस्टम, बैकअप",
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   },
   'or': {
     'Captcha': 'କ୍ୟାପ୍ଚା',
@@ -222,6 +197,51 @@ export const loadAllTranslations = async (languageCode) => {
 };
 
 // ─────────────────────────────────────────────
+// NEW: Auto-translate missing words and save to DB (when online)
+// ─────────────────────────────────────────────
+const autoSaveTranslation = async (text, languageCode) => {
+  if (!text || !languageCode || languageCode === 'en') return;
+  if (!navigator.onLine) return;
+
+  // Don't call API if already in DB
+  const langData = dbTranslations[languageCode] || {};
+  if (langData[text]) return;
+
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${languageCode}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const translated = json?.responseData?.translatedText;
+
+    if (!translated
+      || translated.trim() === ''
+      || translated.toLowerCase() === text.toLowerCase()) {
+      return;
+    }
+
+    // Decode any URL encoding
+    let cleanTranslated = translated;
+    try { cleanTranslated = decodeURIComponent(translated); } catch (e) {}
+
+    // Save to backend DB
+    await apiClient.post(`${API_HOST}/translate/saveFallback`, {
+      sourceText: text,
+      translatedText: cleanTranslated,
+      languageCode: languageCode
+    });
+
+    // Also update in-memory so it shows on next render
+    if (!dbTranslations[languageCode]) dbTranslations[languageCode] = {};
+    dbTranslations[languageCode][text] = cleanTranslated;
+
+    console.log(`💾 [AUTO-SAVED] "${text}" → "${cleanTranslated}" (${languageCode})`);
+
+  } catch (error) {
+    // Silent fail — don't break the UI
+  }
+};
+
+// ─────────────────────────────────────────────
 // Get fallback translation IMMEDIATELY (synchronous) — UNCHANGED
 // ─────────────────────────────────────────────
 export const getFallbackTranslation = (text, targetLanguageCode) => {
@@ -296,7 +316,7 @@ export const fetchSupportedLanguages = async () => {
 };
 
 // ─────────────────────────────────────────────
-// CHANGED: translateText now uses in-memory DB data
+// CHANGED: translateText now uses in-memory DB data + autoSaveTranslation
 // ─────────────────────────────────────────────
 export const translateText = async (text, targetLanguageCode = 'en') => {
   if (!text || typeof text !== 'string' || text.trim() === '' || targetLanguageCode === 'en') {
@@ -317,10 +337,17 @@ export const translateText = async (text, targetLanguageCode = 'en') => {
   // STEP 2: Fallback
   const fallbackResult = getFallbackTranslation(text, targetLanguageCode);
   if (fallbackResult) {
+    // Save fallback to DB in background if online (so DB grows over time)
+    autoSaveTranslation(text, targetLanguageCode);
     return fallbackResult;
   }
 
-  // STEP 3: Return original
+  // STEP 3: Auto-translate via API and save to DB (when online)
+  if (navigator.onLine) {
+    autoSaveTranslation(text, targetLanguageCode);
+  }
+
+  // Return original while auto-save happens in background
   return text;
 };
 
