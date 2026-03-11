@@ -1,41 +1,15 @@
-// frontend/i18n/autoTranslator.js - COMPLETE FIXED VERSION WITH DATABASE FIRST
+// frontend/i18n/autoTranslator.js - BULK LOAD VERSION
 import { API_HOST } from '../API/apiConfig';
 import apiClient from "../API/apiClient";
 
-const translationCache = {};
+// In-memory DB translations store
+const dbTranslations = {};
+const loadedLanguages = new Set();
 let supportedLanguages = null;
-let cacheLoaded = false;
-
-// Load cached translations from localStorage on module load
-const loadCacheFromStorage = () => {
-  if (!cacheLoaded) {
-    try {
-      const cached = localStorage.getItem('translationCache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        Object.assign(translationCache, parsed);
-        console.log('📦 Loaded cached translations from localStorage');
-      }
-      cacheLoaded = true;
-    } catch (error) {
-      console.error('Error loading translation cache:', error);
-    }
-  }
-};
-
-// Save cache to localStorage
-const saveCacheToStorage = () => {
-  try {
-    localStorage.setItem('translationCache', JSON.stringify(translationCache));
-  } catch (error) {
-    console.error('Error saving translation cache:', error);
-  }
-};
 
 // COMPLETE Fallback translations for Hindi, Odia, and Marathi (UI ONLY)
 const fallbackTranslations = {
   'hi': {
-    // Table Headers & Common UI
     'Address': 'पता',
     'SN': 'क्र.सं.',
     'Action': 'कार्रवाई',
@@ -68,7 +42,6 @@ const fallbackTranslations = {
     'Document Management System': 'दस्तावेज़ प्रबंधन प्रणाली',
     'Captcha': 'कैप्चा',
     'Department Name': 'विभाग का नाम',
-
     'Access': 'पहुँच',
     'Audit & Reports': 'ऑडिट और रिपोर्ट',
     'OCR & Search': 'OCR और खोज',
@@ -98,12 +71,24 @@ const fallbackTranslations = {
     'Archive Date & Time': 'आर्काइव तिथि और समय',
     'Enter Department Name': 'विभाग का नाम दर्ज करें',
     '(optional)': '(वैकल्पिक)',
+    'DASHBOARD': 'डैशबोर्ड',
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     'Drag & drop ,files, here, or choose from your device.': 'फाइलें यहाँ ड्रैग और ड्रॉप करें, या अपने डिवाइस से चुनें।',
     'Upload ,Files': 'फाइलें अपलोड करें',
-
-
-
-    // Placeholders
     'Enter Mobile Number': 'मोबाइल नंबर दर्ज करें',
     'Enter Email': 'ईमेल दर्ज करें',
     'Select Start Date': 'प्रारंभ तिथि चुनें',
@@ -124,6 +109,37 @@ const fallbackTranslations = {
     "Start ,Database, Backup": "शुरू ,डेटाबेस, बैकअप",
     "Start ,Documents, Backup": "शुरू ,दस्तावेज़, बैकअप",
     "Start ,Full System, Backup": "शुरू ,पूर्ण सिस्टम, बैकअप",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -176,9 +192,38 @@ const fallbackTranslations = {
   }
 };
 
-/**
- * Get fallback translation IMMEDIATELY (synchronous)
- */
+// ─────────────────────────────────────────────
+// NEW: Load ALL translations in one API call
+// ─────────────────────────────────────────────
+export const loadAllTranslations = async (languageCode) => {
+  if (!languageCode || languageCode === 'en') return;
+  if (loadedLanguages.has(languageCode)) {
+    console.log(`✅ Translations already loaded for: ${languageCode}`);
+    return;
+  }
+
+  try {
+    console.log(`📡 Loading ALL translations for: ${languageCode}`);
+    const response = await apiClient.get(`${API_HOST}/translate/all/${languageCode}`);
+    const data = response?.data || response;
+
+    if (data && typeof data === 'object') {
+      dbTranslations[languageCode] = data;
+      loadedLanguages.add(languageCode);
+      // Also clear old localStorage cache so stale data is gone
+      localStorage.removeItem('translationCache');
+      console.log(`✅ Loaded ${Object.keys(data).length} translations for ${languageCode}`);
+    }
+  } catch (error) {
+    console.error(`❌ Failed to load translations for ${languageCode}:`, error.message);
+    dbTranslations[languageCode] = {};
+    loadedLanguages.add(languageCode);
+  }
+};
+
+// ─────────────────────────────────────────────
+// Get fallback translation IMMEDIATELY (synchronous) — UNCHANGED
+// ─────────────────────────────────────────────
 export const getFallbackTranslation = (text, targetLanguageCode) => {
   if (!text || !targetLanguageCode || targetLanguageCode === 'en') {
     return null;
@@ -190,12 +235,10 @@ export const getFallbackTranslation = (text, targetLanguageCode) => {
 
   const fallbacks = fallbackTranslations[targetLanguageCode];
 
-  // Exact match (case-sensitive first)
   if (fallbacks[text]) {
     return fallbacks[text];
   }
 
-  // Case-insensitive match
   const lowerText = text.toLowerCase();
   for (const [key, value] of Object.entries(fallbacks)) {
     if (key.toLowerCase() === lowerText) {
@@ -206,9 +249,9 @@ export const getFallbackTranslation = (text, targetLanguageCode) => {
   return null;
 };
 
-/**
- * Fetch supported languages from your Language Master API
- */
+// ─────────────────────────────────────────────
+// Fetch supported languages — UNCHANGED
+// ─────────────────────────────────────────────
 export const fetchSupportedLanguages = async () => {
   if (supportedLanguages) {
     return supportedLanguages;
@@ -216,10 +259,8 @@ export const fetchSupportedLanguages = async () => {
 
   try {
     console.log('📡 Fetching supported languages from Language Master API...');
-
     const response = await apiClient.get(`${API_HOST}/languageMaster/getAll/1`);
 
-    // Handle different response structures
     let languages = [];
     if (Array.isArray(response)) {
       languages = response;
@@ -231,9 +272,8 @@ export const fetchSupportedLanguages = async () => {
 
     if (languages.length > 0) {
       supportedLanguages = {};
-
       languages.forEach(lang => {
-        if (lang.code) { // Ensure code exists
+        if (lang.code) {
           supportedLanguages[lang.code] = {
             name: lang.name || lang.code,
             code: lang.code,
@@ -242,7 +282,6 @@ export const fetchSupportedLanguages = async () => {
           };
         }
       });
-
       console.log('✓ Languages loaded:', Object.keys(supportedLanguages));
       return supportedLanguages;
     }
@@ -256,161 +295,57 @@ export const fetchSupportedLanguages = async () => {
   }
 };
 
-/**
- * Get translation from database via backend API
- */
-const getDatabaseTranslation = async (text, targetLanguageCode) => {
-  try {
-    // Call your backend translate endpoint which checks database first
-    const response = await apiClient.post(`${API_HOST}/translate`, {
-      text: text,
-      target: targetLanguageCode
-    });
-
-    // Handle different response structures
-    let translatedText = null;
-    if (response?.data?.translatedText) {
-      translatedText = response.data.translatedText;
-    } else if (response?.translatedText) {
-      translatedText = response.translatedText;
-    }
-
-    return translatedText;
-  } catch (error) {
-    console.log('Database translation error (may be offline):', error.message);
-    return null;
-  }
-};
-
-/**
- * Check if we're online
- */
-const isOnline = () => {
-  return navigator.onLine;
-};
-
-/**
- * Translate text using database first, then fallback, then API
- */
+// ─────────────────────────────────────────────
+// CHANGED: translateText now uses in-memory DB data
+// ─────────────────────────────────────────────
 export const translateText = async (text, targetLanguageCode = 'en') => {
-  // Skip translation if not needed
   if (!text || typeof text !== 'string' || text.trim() === '' || targetLanguageCode === 'en') {
     return text;
   }
 
-  // Load cache if not loaded
-  if (!cacheLoaded) {
-    loadCacheFromStorage();
+  // Load all translations for this language if not loaded yet
+  if (!loadedLanguages.has(targetLanguageCode)) {
+    await loadAllTranslations(targetLanguageCode);
   }
 
-  const cacheKey = `${text}_${targetLanguageCode}`;
-
-  // Check cache first (includes localStorage cache)
-  if (translationCache[cacheKey]) {
-    return translationCache[cacheKey];
+  // STEP 1: Check in-memory DB translations
+  const langData = dbTranslations[targetLanguageCode] || {};
+  if (langData[text] && langData[text] !== text) {
+    return langData[text];
   }
 
-  // STEP 1: Try database FIRST (your backend checks the translations table)
-  // This works even without internet because your backend is local
-  console.log(`🔍 Checking database for: "${text}" (${targetLanguageCode})`);
-  const dbTranslation = await getDatabaseTranslation(text, targetLanguageCode);
-
-  if (dbTranslation && dbTranslation !== text) {
-    // Save to cache
-    translationCache[cacheKey] = dbTranslation;
-    saveCacheToStorage();
-    console.log(`✓ [Database] "${text}" -> "${dbTranslation}"`);
-    return dbTranslation;
-  }
-
-  // STEP 2: Try fallback translation (UI hardcoded)
+  // STEP 2: Fallback
   const fallbackResult = getFallbackTranslation(text, targetLanguageCode);
   if (fallbackResult) {
-    // Save to cache
-    translationCache[cacheKey] = fallbackResult;
-    saveCacheToStorage();
-
-    // Try to save fallback in database for future use (if online)
-    if (isOnline()) {
-      try {
-        apiClient.post("/translate/saveFallback", {
-          sourceText: text,
-          translatedText: fallbackResult,
-          languageCode: targetLanguageCode
-        }).catch(e => console.log("Fallback save failed (non-critical)"));
-      } catch (e) {
-        // Ignore errors
-      }
-    }
-
-    console.log(`✓ [Fallback] "${text}" -> "${fallbackResult}"`);
     return fallbackResult;
   }
 
-  // STEP 3: If online, try MyMemory API via your backend
-  if (isOnline()) {
-    try {
-      console.log(`🔄 Translating via API: "${text}" to ${targetLanguageCode}`);
-
-      const response = await apiClient.post(`${API_HOST}/translate`, {
-        text: text,
-        target: targetLanguageCode
-      });
-
-      // Handle different response structures
-      let translatedText = null;
-      if (response?.data?.translatedText) {
-        translatedText = response.data.translatedText;
-      } else if (response?.translatedText) {
-        translatedText = response.translatedText;
-      }
-
-      if (translatedText && translatedText.trim() !== '' && translatedText !== text) {
-        translationCache[cacheKey] = translatedText;
-        saveCacheToStorage();
-        console.log(`✓ [API] Translated: "${text}" -> "${translatedText}"`);
-        return translatedText;
-      }
-    } catch (error) {
-      console.error('Translation API error:', error);
-    }
-  } else {
-    console.log('📴 Offline: No translation found in database or fallback');
-  }
-
-  // If all else fails, return original text
-  translationCache[cacheKey] = text;
-  saveCacheToStorage();
+  // STEP 3: Return original
   return text;
 };
 
-/**
- * Translate multiple texts at once (batch)
- */
+// ─────────────────────────────────────────────
+// CHANGED: translateBatch uses in-memory data (no per-word API calls)
+// ─────────────────────────────────────────────
 export const translateBatch = async (texts, targetLanguageCode = 'en') => {
   if (!Array.isArray(texts) || texts.length === 0 || targetLanguageCode === 'en') {
     return texts;
   }
 
-  try {
-    console.log(`🔄 Batch translating ${texts.length} items to ${targetLanguageCode}`);
-
-    const translations = await Promise.all(
-      texts.map(text => translateText(text, targetLanguageCode))
-    );
-
-    console.log(`✓ Batch translated ${translations.length} items`);
-    return translations;
-
-  } catch (error) {
-    console.error('Batch translation error:', error);
-    return texts;
+  if (!loadedLanguages.has(targetLanguageCode)) {
+    await loadAllTranslations(targetLanguageCode);
   }
+
+  return texts.map(text => {
+    const langData = dbTranslations[targetLanguageCode] || {};
+    if (langData[text] && langData[text] !== text) return langData[text];
+    return getFallbackTranslation(text, targetLanguageCode) || text;
+  });
 };
 
-/**
- * Get all supported languages from your API
- */
+// ─────────────────────────────────────────────
+// All below functions UNCHANGED
+// ─────────────────────────────────────────────
 export const getSupportedLanguages = async () => {
   if (!supportedLanguages) {
     await fetchSupportedLanguages();
@@ -418,117 +353,82 @@ export const getSupportedLanguages = async () => {
   return supportedLanguages || {};
 };
 
-/**
- * Get language name by code
- */
 export const getLanguageName = async (languageCode) => {
   const langs = await getSupportedLanguages();
   const lang = langs[languageCode];
   return lang ? lang.name : languageCode;
 };
 
-/**
- * Check if a language is active
- */
 export const isLanguageActive = async (languageCode) => {
   const langs = await getSupportedLanguages();
   const lang = langs[languageCode];
   return lang ? lang.isActive : false;
 };
 
-/**
- * Add custom fallback translations (UI only)
- */
 export const addFallbackTranslations = (languageCode, translations) => {
   if (!fallbackTranslations[languageCode]) {
     fallbackTranslations[languageCode] = {};
   }
-
   Object.assign(fallbackTranslations[languageCode], translations);
   console.log(`✓ Added fallback translations for ${languageCode}`);
 };
 
-/**
- * Clear translation cache for specific language
- */
+// CHANGED: clearLanguageCache now clears in-memory store
 export const clearLanguageCache = (languageCode) => {
-  let cleared = 0;
-  Object.keys(translationCache).forEach(key => {
-    if (key.endsWith(`_${languageCode}`)) {
-      delete translationCache[key];
-      cleared++;
-    }
-  });
-  saveCacheToStorage();
-  console.log(`🗑️ Cleared ${cleared} cached translations for language: ${languageCode}`);
+  delete dbTranslations[languageCode];
+  loadedLanguages.delete(languageCode);
+  console.log(`🗑️ Cleared translations for language: ${languageCode}`);
 };
 
-/**
- * Clear all translation cache
- */
+// CHANGED: clearTranslationCache now clears in-memory store
 export const clearTranslationCache = () => {
-  const size = Object.keys(translationCache).length;
-  Object.keys(translationCache).forEach(key => {
-    delete translationCache[key];
-  });
-  saveCacheToStorage();
-  console.log(`🗑️ Cleared ${size} cached translations`);
+  Object.keys(dbTranslations).forEach(k => delete dbTranslations[k]);
+  loadedLanguages.clear();
+  localStorage.removeItem('translationCache');
+  console.log('🗑️ Cleared all translations');
 };
 
-/**
- * Reload supported languages
- */
 export const reloadSupportedLanguages = async () => {
   supportedLanguages = null;
   return await fetchSupportedLanguages();
 };
 
-/**
- * Get cache info
- */
 export const getCacheInfo = () => {
   return {
-    size: Object.keys(translationCache).length,
-    keys: Object.keys(translationCache),
-    languages: supportedLanguages
+    loadedLanguages: [...loadedLanguages],
+    translationCounts: Object.fromEntries(
+      Object.entries(dbTranslations).map(([k, v]) => [k, Object.keys(v).length])
+    )
   };
 };
 
-/**
- * Instant translation for placeholders, titles, aria-labels
- * (NO async, NO API call)
- */
+// CHANGED: translateInstant also checks in-memory DB data
 export const translateInstant = (text, targetLanguageCode = 'en') => {
   if (!text || targetLanguageCode === 'en') {
     return text;
   }
 
-  // Try fallback first
+  // Check in-memory DB translations first
+  const langData = dbTranslations[targetLanguageCode] || {};
+  if (langData[text] && langData[text] !== text) {
+    return langData[text];
+  }
+
+  // Then fallback
   const fallback = getFallbackTranslation(text, targetLanguageCode);
   if (fallback) {
     return fallback;
   }
 
-  // Try cache (if already translated earlier)
-  const cacheKey = `${text}_${targetLanguageCode}`;
-  if (translationCache[cacheKey]) {
-    return translationCache[cacheKey];
-  }
-
-  // Otherwise return original text
   return text;
 };
 
-/**
- * Translate all strings in an object recursively
- */
 export const translateObject = async (obj, targetLanguageCode = 'en') => {
   if (targetLanguageCode === 'en' || !obj) {
     return obj;
   }
 
   const translatedObj = { ...obj };
-
   for (const key in translatedObj) {
     if (typeof translatedObj[key] === 'string') {
       translatedObj[key] = await translateText(translatedObj[key], targetLanguageCode);
@@ -536,49 +436,17 @@ export const translateObject = async (obj, targetLanguageCode = 'en') => {
       translatedObj[key] = await translateObject(translatedObj[key], targetLanguageCode);
     }
   }
-
   return translatedObj;
 };
 
-/**
- * Preload translations for specific terms
- */
+// CHANGED: preloadTranslations now just calls loadAllTranslations
 export const preloadTranslations = async (terms, languageCode) => {
-  if (languageCode === 'en' || !terms || !Array.isArray(terms) || terms.length === 0) {
-    return;
-  }
-
-  console.log(`🔄 Preloading ${terms.length} terms for ${languageCode}`);
-
-  // Filter out already cached terms
-  const termsToTranslate = terms.filter(term => {
-    const cacheKey = `${term}_${languageCode}`;
-    return !translationCache[cacheKey];
-  });
-
-  if (termsToTranslate.length === 0) {
-    console.log(`✅ All ${terms.length} terms already cached for ${languageCode}`);
-    return;
-  }
-
-  // Translate in batches of 5 to avoid rate limiting
-  const batchSize = 5;
-  for (let i = 0; i < termsToTranslate.length; i += batchSize) {
-    const batch = termsToTranslate.slice(i, i + batchSize);
-    await Promise.all(
-      batch.map(term => translateText(term, languageCode))
-    );
-  }
-
-  console.log(`✅ Preloaded ${termsToTranslate.length} terms for ${languageCode}`);
+  if (languageCode === 'en' || !languageCode) return;
+  await loadAllTranslations(languageCode);
 };
 
-/**
- * Save a translation to database manually
- */
 export const saveTranslationToDatabase = async (sourceText, translatedText, languageCode) => {
   if (!sourceText || !translatedText || !languageCode) return;
-
   try {
     await apiClient.post("/translate/saveFallback", {
       sourceText: sourceText,

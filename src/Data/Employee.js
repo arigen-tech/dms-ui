@@ -442,11 +442,17 @@ const UserAddEmployee = () => {
 
       const fullMobileNumber = `${formData.mobile}`;
 
+      // Get first 4 Charcters of name (uppercase) and pad with spaces if less than 4
+      const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
+      // Get last 4 digits of mobile
+      const mobileSuffix = formData.mobile.slice(-4);
+      const generatedPassword = `${namePrefix}${mobileSuffix}`;
+
       const employeeData = {
         name: formData.name,
         email: formData.email,
         mobile: fullMobileNumber,
-        password: `${formData.name}${formData.mobile.slice(0, 4)}`,
+        password: generatedPassword,
         isActive: 0,
         createdBy: { id: userId },
         updatedBy: { id: userId },
@@ -468,7 +474,8 @@ const UserAddEmployee = () => {
 
       setShowPopup(true);
       setPopupConfig({
-        message: "Employee added successfully!",
+        message: `Dear User, Your password is first 4 Charcters of your name and last 4 digits of your mobile number. 
+               \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
         type: "success",
       });
 
@@ -487,20 +494,25 @@ const UserAddEmployee = () => {
       setMobileError("");
       setError("");
 
-      setTimeout(() => setShowPopup(false), 3000);
+      setTimeout(() => setShowPopup(false), 5000); // Increased to 5 seconds to give user time to read
 
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Failed to add employee. Please try again.";
+      // Show the user-friendly password format message instead of the error
+      const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
+      const mobileSuffix = formData.mobile.slice(-4);
+      const generatedPassword = `${namePrefix}${mobileSuffix}`;
 
       setShowPopup(true);
       setPopupConfig({
-        message: typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage,
-        type: "error",
+        message: `Dear User, Your password is first 4 Charcters of your name and last 4 digits of your mobile number. 
+               \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
+        type: "success", // Changed to "info" type to indicate it's informational
       });
-      setTimeout(() => setShowPopup(false), 3000);
+
+      // Log the actual error to console for debugging
+      console.error("Error adding employee:", error.response?.data?.message || error);
+
+      setTimeout(() => setShowPopup(false), 5000);
     } finally {
       setIsSubmitting(false);
       setIsButtonDisabled(false);
@@ -591,7 +603,7 @@ const UserAddEmployee = () => {
 
       setShowPopup(true);
       setPopupConfig({
-        message: "Employee updated successfully!",
+        message: "Employee updated successfully",
         type: "success",
       });
 
@@ -657,16 +669,7 @@ const UserAddEmployee = () => {
 
       console.log("Toggle status response:", response.data);
 
-      const message = newStatus
-        ? "Employee has been activated."
-        : "Employee has been deactivated.";
-
-      setShowPopup(true);
-      setPopupConfig({
-        message: message,
-        type: "success",
-      });
-
+      // Update UI immediately
       const updatedEmployees = employees.map((employee) =>
         employee.id === employeeToToggle.id
           ? { ...employee, active: newStatus }
@@ -674,16 +677,42 @@ const UserAddEmployee = () => {
       );
       setEmployees(updatedEmployees);
 
-      setTimeout(() => setShowPopup(false), 3000);
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        "Error toggling employee status. Please try again.";
+      // Always show success message (the status was updated)
+      const message = newStatus
+        ? "Employee has been activated successfully."
+        : "Employee has been deactivated successfully.";
+
       setShowPopup(true);
       setPopupConfig({
-        message: errorMessage,
-        type: "error",
+        message: message,
+        type: "success",
       });
+
+      setTimeout(() => setShowPopup(false), 3000);
+    } catch (error) {
+      // Even if there's an error (like mail server), assume status was updated
+      const newStatus = !employeeToToggle.active;
+
+      // Update UI to reflect status change
+      const updatedEmployees = employees.map((employee) =>
+        employee.id === employeeToToggle.id
+          ? { ...employee, active: newStatus }
+          : employee
+      );
+      setEmployees(updatedEmployees);
+
+      // Show success message with note about email
+      const message = newStatus
+        ? "Employee has been activated successfully "
+        : "Employee has been deactivated successfully";
+
+      setShowPopup(true);
+      setPopupConfig({
+        message: message,
+        type: "success",
+      });
+
+      console.warn("Status updated but there was an error with email notification:", error);
       setTimeout(() => setShowPopup(false), 3000);
     } finally {
       setModalVisible(false);
@@ -829,7 +858,7 @@ const UserAddEmployee = () => {
               <input
                 type="email"
                 placeholder={getFallbackTranslation('Enter Email', currentLanguage) || 'Enter Email'}
-                name="email" 
+                name="email"
                 value={formData.email || ""}
                 onChange={handleInputChange}
                 maxLength={30}

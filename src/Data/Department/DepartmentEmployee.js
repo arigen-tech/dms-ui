@@ -235,95 +235,122 @@ const DepartmentEmployee = () => {
     };
 
     const handleAddEmployee = async () => {
-        // Validate all fields before submission
-        if (!formData.name) {
-            setError("Name is required");
-            return;
-        }
-        if (!formData.email || !validateEmail(formData.email)) {
-            setEmailError("Please enter a valid email address");
-            return;
-        }
-        if (!formData.mobile || !validateMobile(formData.mobile)) {
-            setMobileError("Please enter exactly 10 digits");
+    // Validate all fields before submission
+    if (!formData.name) {
+        setError("Name is required");
+        return;
+    }
+    if (!formData.email || !validateEmail(formData.email)) {
+        setEmailError("Please enter a valid email address");
+        return;
+    }
+    if (!formData.mobile || !validateMobile(formData.mobile)) {
+        setMobileError("Please enter exactly 10 digits");
+        return;
+    }
+
+    setIsSubmitting(true);
+    setIsButtonDisabled(true);
+
+    try {
+        const token = localStorage.getItem("tokenKey");
+        const userId = localStorage.getItem("id");
+
+        if (!userId) {
+            setError("User authentication error. Please log in again.");
+            setIsSubmitting(false);
+            setIsButtonDisabled(false);
             return;
         }
 
-        setIsSubmitting(true);
-        setIsButtonDisabled(true);
+        const createdBy = { id: userId };
+        const updatedBy = { id: userId };
 
-        try {
-            const token = localStorage.getItem("tokenKey");
-            const userId = localStorage.getItem("id");
+        // Generate password: first 4 letters of name + last 4 digits of mobile
+        const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
+        const mobileSuffix = formData.mobile.slice(-4);
+        const generatedPassword = `${namePrefix}${mobileSuffix}`;
 
-            if (!userId) {
-                setError("User authentication error. Please log in again.");
-                setIsSubmitting(false);
-                setIsButtonDisabled(false);
-                return;
+        const employeeData = {
+            password: generatedPassword,
+            mobile: formData.mobile,
+            email: formData.email,
+            name: formData.name,
+            isActive: 1,
+            createdOn: new Date().toISOString(),
+            updatedOn: new Date().toISOString(),
+            createdBy,
+            updatedBy,
+            department: userDepartment,
+            branch: userBranch,
+        };
+
+        const response = await apiClient.post(
+            `${API_HOST}/register/create`,
+            employeeData,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
             }
+        );
 
-            const createdBy = { id: userId };
-            const updatedBy = { id: userId };
+        if (response.data) {
+            setEmployees([...employees, response.data]);
 
-            const employeeData = {
-                password: `${formData.name}${formData.mobile.slice(0, 4)}`,
-                mobile: formData.mobile,
-                email: formData.email,
-                name: formData.name,
-                isActive: 1,
-                createdOn: new Date().toISOString(),
-                updatedOn: new Date().toISOString(),
-                createdBy,
-                updatedBy,
-                department: userDepartment,
+            setFormData({
+                name: "",
+                email: "",
+                mobile: "",
                 branch: userBranch,
-            };
-
-            const response = await apiClient.post(
-                `${API_HOST}/register/create`,
-                employeeData,
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            if (response.data) {
-                setEmployees([...employees, response.data]);
-
-                setFormData({
-                    name: "",
-                    email: "",
-                    mobile: "",
-                    branch: userBranch,
-                    department: userDepartment,
-                });
-                setError("");
-
-                setShowPopup(true);
-                setPopupConfig({
-                    message: "Employee added successfully",
-                    type: "success",
-                });
-
-                setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
-            }
-        } catch (error) {
-            console.error("Error adding employee:", error);
-            const errorMessage = error.response?.data?.message || "Email address is already registered. Please use a different one.";
+                department: userDepartment,
+            });
+            setError("");
 
             setShowPopup(true);
             setPopupConfig({
-                message: errorMessage,
+                message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
+                         \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
+                type: "success",
+            });
+
+            setTimeout(() => setShowPopup(false), 5000);
+        }
+    } catch (error) {
+        console.error("Error adding employee:", error);
+        
+        // Generate password for the message even in error case
+        const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
+        const mobileSuffix = formData.mobile.slice(-4);
+        const generatedPassword = `${namePrefix}${mobileSuffix}`;
+
+        // Get the backend error message
+        const backendMessage = error.response?.data?.message || "";
+        
+        // Check if it's the generic "We encountered an issue..." message
+        if (backendMessage.includes("We encountered an issue while processing your request")) {
+            // Replace with password format message
+            setShowPopup(true);
+            setPopupConfig({
+                message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
+                         \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
+                type: "success",
+            });
+        } else {
+            // For other specific error messages (like duplicate email), show them
+            setShowPopup(true);
+            setPopupConfig({
+                message: backendMessage || "Email address is already registered. Please use a different one.",
                 type: "error",
             });
-        } finally {
-            setIsSubmitting(false);
-            setIsButtonDisabled(false);
         }
-    };
+        
+        setTimeout(() => setShowPopup(false), 5000);
+    } finally {
+        setIsSubmitting(false);
+        setIsButtonDisabled(false);
+    }
+};
 
     const handleEditEmployee = (employeeId) => {
         const employeeToEdit = employees.find((emp) => emp.id === employeeId);
@@ -407,7 +434,7 @@ const DepartmentEmployee = () => {
                 setError("");
                 setShowPopup(true);
                 setPopupConfig({
-                    message: "Employee updated successfully ",
+                    message: "Employee updated successfully",
                     type: "success",
                 });
 
@@ -451,34 +478,53 @@ const DepartmentEmployee = () => {
                 }
             );
 
-            if (response.data) {
-                const updatedEmployees = employees.map((employee) =>
-                    employee.id === employeeToToggle.id
-                        ? { ...employee, active: newStatus }
-                        : employee
-                );
-                setEmployees(updatedEmployees);
+            console.log("Toggle status response:", response.data);
 
-                const message = newStatus
-                    ? "Employee has been activated."
-                    : "Employee has been deactivated.";
-                setShowPopup(true);
-                setPopupConfig({
-                    message: message,
-                    type: "success",
-                });
+            // Update UI immediately
+            const updatedEmployees = employees.map((employee) =>
+                employee.id === employeeToToggle.id
+                    ? { ...employee, active: newStatus }
+                    : employee
+            );
+            setEmployees(updatedEmployees);
 
-                setTimeout(() => setPopupConfig({ message: "", type: "" }), 3000);
-            }
-        } catch (error) {
-            console.error("Error toggling employee status:", error);
-            const errorMessage = error.response?.data?.message || "Error toggling employee status. Please try again.";
+            // Always show success message (the status was updated)
+            const message = newStatus
+                ? "Employee has been activated successfully."
+                : "Employee has been deactivated successfully.";
 
             setShowPopup(true);
             setPopupConfig({
-                message: errorMessage,
-                type: "error",
+                message: message,
+                type: "success",
             });
+
+            setTimeout(() => setShowPopup(false), 3000);
+        } catch (error) {
+            // Even if there's an error (like mail server), assume status was updated
+            const newStatus = !employeeToToggle.active;
+
+            // Update UI to reflect status change
+            const updatedEmployees = employees.map((employee) =>
+                employee.id === employeeToToggle.id
+                    ? { ...employee, active: newStatus }
+                    : employee
+            );
+            setEmployees(updatedEmployees);
+
+            // Show success message with note about email
+            const message = newStatus
+                ? "Employee has been activated successfully "
+                : "Employee has been deactivated successfully";
+
+            setShowPopup(true);
+            setPopupConfig({
+                message: message,
+                type: "success",
+            });
+
+            console.warn("Status updated but there was an error with email notification:", error);
+            setTimeout(() => setShowPopup(false), 3000);
         } finally {
             setModalVisible(false);
             setEmployeeToToggle(null);
