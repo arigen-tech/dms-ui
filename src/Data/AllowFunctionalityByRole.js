@@ -194,7 +194,7 @@ const handleAddAccess = async () => {
 
         setRoleApiAccessList([...roleApiAccessList, res]);
         setFormData({ roleId: '', endpointTypeId: '', apiId: '' });
-        showPopup('Access added successfully!', 'success');
+        showPopup('Access added successfully', 'success');
 
     } catch (err) {
     console.error(err);
@@ -243,7 +243,7 @@ const handleAddAccess = async () => {
             setRoleApiAccessList(roleApiAccessList.map(a => a.id === editingId ? res : a));
             setEditingId(null);
             setFormData({ roleId: '', endpointTypeId: '', apiId: '' });
-            showPopup('Access updated successfully!', 'success');
+            showPopup('Access updated successfully', 'success');
         } catch (err) {
             console.error(err);
             showPopup('Failed to update access', 'error');
@@ -268,7 +268,7 @@ const handleAddAccess = async () => {
             setRoleApiAccessList(prev => prev.map(a => a.id === accessToToggle.id ? res : a));
             setModalVisible(false);
             setAccessToToggle(null);
-            showPopup('Status changed successfully!', 'success');
+            showPopup('Status changed successfully', 'success');
         } catch (err) {
             console.error(err);
             showPopup('Failed to change status', 'error');

@@ -596,7 +596,7 @@ const ApprovedDoc = () => {
   // Function to handle bulk document sharing - SHARES ALL APPROVED FILES
   const handleBulkDocumentShare = () => {
     if (selectedDocuments.length === 0) {
-      showPopup('Please select at least one document to share.', 'warning');
+      showPopup('Please select at least one document to share', 'warning');
       return;
     }
 
@@ -649,7 +649,7 @@ const ApprovedDoc = () => {
 
         // Show success message
         if (shareResponse.totalFilesShared > 0) {
-          showPopup(`Successfully shared ${shareResponse.totalFilesShared} file(s) across ${shareResponse.totalDocuments} document(s)!`, 'success');
+          showPopup(`Successfully shared ${shareResponse.totalFilesShared} file across ${shareResponse.totalDocuments} document`, 'success');
 
           // Update share status for all shared documents
           selectedDocuments.forEach(doc => {
@@ -659,7 +659,7 @@ const ApprovedDoc = () => {
             fetchDocumentShares(doc.id);
           });
         } else {
-          showPopup('No new files were shared. All files may have already been shared.', 'info');
+          showPopup('No new files were shared. All files may have already been shared', 'info');
         }
       } else {
         showPopup(response.data.message || 'Failed to share documents', 'error');
@@ -761,10 +761,10 @@ const ApprovedDoc = () => {
         setFileToDelete(null);
         setIsDeleteConfirmDisabled(false);
 
-        showPopup('File moved to trash successfully!', 'success');
+        showPopup('File moved to trash successfully', 'success');
       } catch (error) {
         console.error('Error deleting file:', error.response ? error.response.data : error.message);
-        showPopup('Failed to move file to trash. Please try again!', 'error');
+        showPopup('Failed to move file to trash. Please try again', 'error');
         setIsDeleteConfirmDisabled(false);
       }
     }
@@ -793,7 +793,7 @@ const ApprovedDoc = () => {
   const handleSelectFile = (file) => {
     // Only allow selection of APPROVED files
     if (file.status !== "APPROVED") {
-      showPopup('Only APPROVED files can be moved to trash.', 'warning');
+      showPopup('Only APPROVED files can be moved to trash', 'warning');
       return;
     }
 
@@ -813,7 +813,7 @@ const ApprovedDoc = () => {
 
   const handleBulkFileDelete = () => {
     if (selectedFiles.length === 0) {
-      showPopup('Please select at least one file to move to trash.', 'warning');
+      showPopup('Please select at least one file to move to trash', 'warning');
       return;
     }
     setBulkFileDeleteModalVisible(true);
@@ -860,10 +860,10 @@ const ApprovedDoc = () => {
       setSelectAllFilesChecked(false);
       setBulkFileDeleteModalVisible(false);
 
-      showPopup(`${selectedFiles.length} file(s) moved to trash successfully!`, 'success');
+      showPopup(`${selectedFiles.length} file moved to trash successfully`, 'success');
     } catch (error) {
       console.error('Error in bulk file delete:', error);
-      showPopup('Failed to move some files to trash. Please try again!', 'error');
+      showPopup('Failed to move some files to trash. Please try again', 'error');
     } finally {
       setIsBulkFileDeleting(false);
     }

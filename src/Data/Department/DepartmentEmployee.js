@@ -304,7 +304,7 @@ const DepartmentEmployee = () => {
 
                 setShowPopup(true);
                 setPopupConfig({
-                    message: "Employee added successfully!",
+                    message: "Employee added successfully",
                     type: "success",
                 });
 
@@ -407,7 +407,7 @@ const DepartmentEmployee = () => {
                 setError("");
                 setShowPopup(true);
                 setPopupConfig({
-                    message: "Employee updated successfully!",
+                    message: "Employee updated successfully ",
                     type: "success",
                 });
 

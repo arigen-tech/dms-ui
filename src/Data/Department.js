@@ -222,7 +222,7 @@ const Department = () => {
 
       setDepartments([...departments, response.data]);
       setFormData({ name: '', branch: null, isActive: true });
-      showPopup('Department added successfully!', "success");
+      showPopup('Department added successfully', "success");
     } catch (error) {
       console.error('Error adding department:', error.response ? error.response.data : error.message);
       showPopup('Failed to add the Department. Please try again.', "error");
@@ -258,7 +258,7 @@ const Department = () => {
       const departmentIndex = departments.findIndex(department => department.id === formData.id);
 
       if (departmentIndex === -1) {
-        showPopup('Department not found!', 'error');
+        showPopup('Department not found', 'error');
         return;
       }
 
@@ -283,7 +283,7 @@ const Department = () => {
       setDepartments(updatedDepartments);
       setFormData({ name: '', branch: null, isActive: true });
       setEditingIndex(null);
-      showPopup('Department updated successfully!', "success");
+      showPopup('Department updated successfully', "success");
     } catch (error) {
       console.error('Error updating department:', error.response ? error.response.data : error.message);
       showPopup('Failed to update the department. Please try again.', "error");
@@ -320,7 +320,7 @@ const Department = () => {
         setDepartments(updatedDepartments);
         setModalVisible(false);
         setToggleDepartment(null);
-        showPopup('Status changed successfully!', "success");
+        showPopup('Status changed successfully', "success");
         console.log('Status change response:', response.data);
       } catch (error) {
         console.error('Error toggling department status:', error.response ? error.response.data : error.message);

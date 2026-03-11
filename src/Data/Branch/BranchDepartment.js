@@ -213,7 +213,7 @@ const BranchDepartments = () => {
 
       setDepartments([...departments, response.data]);
       setFormData({ name: '', isActive: true });
-      showPopup('Department added successfully!', "success");
+      showPopup('Department added successfully', "success");
     } catch (error) {
       console.error('Error adding department:', error);
       showPopup('Failed to add the Department. Please try again.', "error");
@@ -268,7 +268,7 @@ const BranchDepartments = () => {
       setDepartments(updatedDepartments);
       setFormData({ name: '', isActive: true });
       setEditingIndex(null);
-      showPopup('Department updated successfully!', "success");
+      showPopup('Department updated successfully', "success");
     } catch (error) {
       console.error('Error updating department:', error);
       showPopup('Failed to update the Department. Please try again.', "error");
@@ -305,7 +305,7 @@ const BranchDepartments = () => {
         setDepartments(updatedDepartments);
         setModalVisible(false);
         setToggleDepartment(null);
-        showPopup('Status changed successfully!', "success");
+        showPopup('Status changed successfully', "success");
       } catch (error) {
         console.error('Error toggling department status:', error);
         showPopup('Failed to change the status. Please try again.', "error");

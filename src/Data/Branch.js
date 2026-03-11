@@ -190,7 +190,7 @@ const Branch = () => {
 
       setBranches([...branches, response.data]);
       setFormData({ name: '', address: '', isActive: true });
-      showPopup('Branch added successfully!', "success");
+      showPopup('Branch added successfully', "success");
     } catch (error) {
       console.error('Error adding branch:', error.response ? error.response.data : error.message);
       showPopup('Failed to add the Branch. Please try again!', "error");
@@ -224,7 +224,7 @@ const Branch = () => {
     }
 
     if (isDuplicateBranch(formData.name)) {
-      showPopup('Branch with this name already exists!', 'error');
+      showPopup('Branch with this name already exists', 'error');
       return;
     }
 
@@ -234,7 +234,7 @@ const Branch = () => {
         const branchIndex = branches.findIndex(branch => branch.id === editingBranchId);
 
         if (branchIndex === -1) {
-          showPopup('Branch not found!', 'error');
+          showPopup('Branch not found', 'error');
           return;
         }
 
@@ -255,10 +255,10 @@ const Branch = () => {
         setBranches(updatedBranches);
         setFormData({ name: '', address: '', isActive: true });
         setEditingBranchId(null);
-        showPopup('Branch updated successfully!', "success");
+        showPopup('Branch updated successfully', "success");
       } catch (error) {
         console.error('Error updating branch:', error.response ? error.response.data : error.message);
-        showPopup('Failed to update the branch. Please try again!', "error");
+        showPopup('Failed to update the branch. Please try again', "error");
       } finally {
         setIsSubmitting(false);
       }
@@ -300,14 +300,14 @@ const Branch = () => {
         setModalVisible(false);
         setBranchToToggle(null);
         setIsConfirmDisabled(false);
-        showPopup('Status changed successfully!', "success");
+        showPopup('Status changed successfully', "success");
       } catch (error) {
         console.error('Error toggling branch status:', error.response ? error.response.data : error.message);
-        showPopup('Failed to change the status. Please try again!', "error");
+        showPopup('Failed to change the status. Please try again', "error");
       }
     } else {
       console.error('No Branch selected for status toggle');
-      showPopup('No branch selected for status toggle!', "error");
+      showPopup('No branch selected for status toggle', "error");
     }
   };
 

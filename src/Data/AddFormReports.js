@@ -212,7 +212,7 @@ const Addformreports = () => {
                     }
                 } catch (err) {
                     console.error("Error fetching application names:", err)
-                    showPopup("Error fetching application names. Please try again later.", "error")
+                    showPopup("Error fetching application names Please try again later", "error")
                 } finally {
                     setIsLoading(false)
                 }
@@ -356,7 +356,7 @@ const Addformreports = () => {
                 )
 
                 if (isDuplicate) {
-                    showPopup("An application with the same name and parent already exists!", "error")
+                    showPopup("An application with the same name and parent already exists", "error")
                     setIsLoading(false)
                     return
                 }

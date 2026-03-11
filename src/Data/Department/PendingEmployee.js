@@ -237,7 +237,7 @@ const EmployeeRole = () => {
           },
         }
       );
-      showPopup("Role assigned successfully!", "success");
+      showPopup("Role assigned successfully ", "success");
       console.log('Role assignment response:', response.data);
       fetchUsers();
       setModalVisible(false);
