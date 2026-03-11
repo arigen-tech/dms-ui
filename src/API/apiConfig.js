@@ -1,19 +1,31 @@
- export const API_HOST = 'http://103.133.215.182:8081/Dms';
+//  export const API_HOST = 'http://103.133.215.182:8081/Dms';
+const getRuntimeConfig = () => {
+  if (window.RUNTIME_CONFIG) {
+    return window.RUNTIME_CONFIG;
+  }
 
-//  export const API_HOST = 'http://192.168.1.16:8080/Dms';
+  return {
+    API_BASE_URL: "",
+    PY_HOST: "",
+    ROLES: {}
+  };
+};
+
+const config = getRuntimeConfig();
+
+export const API_HOST = config.API_BASE_URL;
+export const API_OCR_HOST = config.PY_HOST;
+export const API_Chatbot_HOST = config.PY_HOST;
 
 //  export const API_HOST = 'http://localhost:8443'; 
 //  export const API_HOST = 'http://52.66.126.151:8080/dms';
 
 //  export const API_HOST = 'http://192.168.1.12:8080';
 
- export const API_OCR_HOST = 'http://103.133.215.182:8950';
- export const API_Chatbot_HOST = 'http://103.133.215.182:8950';
+//  export const API_OCR_HOST = 'http://103.133.215.182:8950';
+//  export const API_Chatbot_HOST = 'http://103.133.215.182:8950';
 
-//  export const API_OCR_HOST = 'http://localhost:8950';
-//  export const API_Chatbot_HOST = 'http://localhost:8950';
 
-export const MAIN_DASHBOARD_URL = 'http://103.133.215.182:8010/dashboard/';
 export const API_URL = API_HOST; 
 export const BRANCH_API = `${API_HOST}/branchmaster`;
 export const LANGUAGE_MASTER_API = `${API_HOST}/languageMaster`;
@@ -58,7 +70,7 @@ export const P5_APIS = "/p5/apis";
 
 // for roles
 
-export const SYSTEM_ADMIN = "ADMIN";
-export const BRANCH_ADMIN = "BRANCH ADMIN";
-export const DEPARTMENT_ADMIN = "DEPARTMENT ADMIN";
-export const USER = "USER";
+export const SYSTEM_ADMIN = config.ROLES?.SYSTEM_ADMIN;
+export const BRANCH_ADMIN = config.ROLES?.BRANCH_ADMIN;
+export const DEPARTMENT_ADMIN = config.ROLES?.DEPARTMENT_ADMIN;
+export const USER = config.ROLES?.USER;

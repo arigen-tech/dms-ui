@@ -44,7 +44,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
     translate,
     preloadTranslationsForTerms
   } = useLanguage();
-  
+
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
@@ -465,7 +465,34 @@ const DocumentManagement = ({ fieldsDisabled }) => {
       setIsModalOpen(true);
     } catch (error) {
       console.error("❌ Error fetching file:", error);
-      alert("Failed to fetch or preview the file.");
+      // alert("Failed to fetch or preview the file.");
+      let errorMessage = "Failed to fetch or preview the file.";
+
+      if (error.response) {
+        const data = error.response.data;
+
+        // If it's a Blob (common with responseType: 'blob'), read it as text
+        if (data instanceof Blob) {
+          try {
+            const text = await data.text();           // read blob as text
+            const json = JSON.parse(text);            // parse JSON
+            errorMessage = json.message || `Error: ${error.response.status}`;
+          } catch (e) {
+            errorMessage = `Error: ${error.response.status}`;
+          }
+        } else if (typeof data === "object") {
+          errorMessage = data.message || `Error: ${error.response.status}`;
+        } else {
+          errorMessage = `Error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        errorMessage = "No response from server";
+      } else {
+        errorMessage = error.message;
+      }
+
+      showPopup(errorMessage, "error");
+      console.error("Error fetching file:", errorMessage);
     } finally {
       setOpeningFiles(false);
     }
@@ -797,12 +824,12 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           scaleFormData.append("scale_type", scaleValue);
 
           const destinationPath =
-            "E:\\FTP\\DMS_Document\\" + serverFile.path;
+            "C:\\FTP\\DMS_Document\\" + serverFile.path;
 
           scaleFormData.append("destination_path", destinationPath);
 
           await postRequest(
-            "http://103.133.215.182:8950/scale/document",
+            "http://localhost:8950/scale/document",
             scaleFormData,
             {
               headers: {
@@ -1402,7 +1429,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   }
 
   console.log("Uploaded Files:", uploadedFilePath);
-console.log("Has Approved File:", hasApprovedFile);
+  console.log("Has Approved File:", hasApprovedFile);
 
   return (
     <div className="p-2">
@@ -1534,62 +1561,62 @@ console.log("Has Approved File:", hasApprovedFile);
               {dynamicMetadata.map((item, index) => (
                 <div key={index} className="grid grid-cols-10 gap-3 mb-2 items-center">
                   <input
-  type="text"
-  placeholder="Key"
-  value={item.key}
-  disabled={hasApprovedFile && !!item.id}   
-  onChange={(e) => {
-    const updated = [...dynamicMetadata];
-    updated[index].key = e.target.value;
-    setDynamicMetadata(updated);
-  }}
-  className="col-span-4 p-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-/>
+                    type="text"
+                    placeholder="Key"
+                    value={item.key}
+                    disabled={hasApprovedFile && !!item.id}
+                    onChange={(e) => {
+                      const updated = [...dynamicMetadata];
+                      updated[index].key = e.target.value;
+                      setDynamicMetadata(updated);
+                    }}
+                    className="col-span-4 p-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
 
                   <input
-  type="text"
-  placeholder="Value"
-  value={item.value}
-  disabled={hasApprovedFile && !!item.id}
-  onChange={(e) => {
-    const updated = [...dynamicMetadata];
-    updated[index].value = e.target.value;
-    setDynamicMetadata(updated);
-  }}
-  className="col-span-4 p-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-/>
+                    type="text"
+                    placeholder="Value"
+                    value={item.value}
+                    disabled={hasApprovedFile && !!item.id}
+                    onChange={(e) => {
+                      const updated = [...dynamicMetadata];
+                      updated[index].value = e.target.value;
+                      setDynamicMetadata(updated);
+                    }}
+                    className="col-span-4 p-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
 
-                 <button
-  type="button"
-  disabled={hasApprovedFile && !!item.id}
-  onClick={() => {
-    const itemToDelete = dynamicMetadata[index];
+                  <button
+                    type="button"
+                    disabled={hasApprovedFile && !!item.id}
+                    onClick={() => {
+                      const itemToDelete = dynamicMetadata[index];
 
-    if (itemToDelete.id) {
-      setDeletedMetaDataIds(prev => [...prev, itemToDelete.id]);
-    }
-    setDynamicMetadata(dynamicMetadata.filter((_, i) => i !== index));
-  }}
-  className={`col-span-1 px-1 py-2.5 rounded text-sm 
+                      if (itemToDelete.id) {
+                        setDeletedMetaDataIds(prev => [...prev, itemToDelete.id]);
+                      }
+                      setDynamicMetadata(dynamicMetadata.filter((_, i) => i !== index));
+                    }}
+                    className={`col-span-1 px-1 py-2.5 rounded text-sm 
     ${hasApprovedFile && !!item.id
-      ? "bg-gray-400 text-white cursor-not-allowed"
-      : "bg-red-500 text-white"}`}
->
-  ✕
-</button>
+                        ? "bg-gray-400 text-white cursor-not-allowed"
+                        : "bg-red-500 text-white"}`}
+                  >
+                    ✕
+                  </button>
 
                 </div>
               ))}
 
               <button
-  type="button"
-  onClick={() =>
-    setDynamicMetadata([...dynamicMetadata, { id: "", key: "", value: "" }])
-  }
-  className="mt-2 bg-blue-600 text-white px-4 py-2 rounded"
->
-  + Add Metadata
-</button>
+                type="button"
+                onClick={() =>
+                  setDynamicMetadata([...dynamicMetadata, { id: "", key: "", value: "" }])
+                }
+                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                + Add Metadata
+              </button>
             </div>
 
 
