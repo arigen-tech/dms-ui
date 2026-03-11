@@ -47,7 +47,6 @@ const AdminOCR = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const token = localStorage.getItem("tokenKey");
 
   // Debug log
   useEffect(() => {
@@ -65,6 +64,7 @@ const AdminOCR = () => {
   useEffect(() => {
     const currentYear = new Date().getFullYear();
 
+    
     const fetchData = async () => {
       try {
         // Fetch years
@@ -87,7 +87,7 @@ const AdminOCR = () => {
     };
 
     fetchData();
-  }, [token]);
+  }, []);
 
   // Fetch documents when branch is selected
   const fetchDocuments = async (brId) => {
@@ -135,7 +135,7 @@ const AdminOCR = () => {
     };
 
     fetchDepartments();
-  }, [filters.branch, token]);
+  }, [filters.branch]);
 
   // Apply filters whenever filters or documents change
   useEffect(() => {

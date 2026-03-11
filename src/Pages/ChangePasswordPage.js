@@ -142,7 +142,7 @@ const ChangePasswordPage = () => {
     };
 
     try {
-      await apiClient.post(`${API_HOST}/api/profile`, changePasswordData);
+      await apiClient.post(`${API_HOST}/api/change-password`, changePasswordData);
       showPopup(<AutoTranslate>Password Changed successfully!</AutoTranslate>, "success");
       setActiveForm(null);
     } catch (error) {

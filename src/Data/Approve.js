@@ -60,7 +60,6 @@ const Approve = () => {
   const [contentType, setContentType] = useState("");
   const [selectedDocFile, setSelectedDocFiles] = useState(null);
   const [searchFileTerm, setSearchFileTerm] = useState("");
-  const tokenKey = localStorage.getItem("tokenKey");
   const [, setIsOpeningFile] = useState(false);
   const [, setUserBranch] = useState(null);
   const [openingFileIndex, setOpeningFileIndex] = useState(null);
@@ -148,7 +147,7 @@ const Approve = () => {
     try {
       const userId = localStorage.getItem("id");
 
-      if (!tokenKey || !userId) {
+      if ( !userId) {
         setError("Authentication details missing. Please log in again.");
         setLoading(false);
         return;
@@ -208,9 +207,7 @@ const Approve = () => {
 
   const fetchPaths = async (doc) => {
     try {
-      if (!tokenKey) {
-        throw new Error("No authentication tokenKey found.");
-      }
+
 
       const response = await apiClient.get(
         `${API_HOST}/api/documents/byDocumentHeader/${doc.id}/PENDING`);

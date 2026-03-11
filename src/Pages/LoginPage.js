@@ -1061,7 +1061,7 @@ const getViewSubtitle = () => {
                 </AutoTranslate>
               </button>
 
-              <div className="text-center">
+              {/* <div className="text-center">
                 <button
                   type="button"
                   onClick={() => setCurrentView("forgot-password")}
@@ -1069,7 +1069,7 @@ const getViewSubtitle = () => {
                 >
                   <AutoTranslate>Forgot Password?</AutoTranslate>
                 </button>
-              </div>
+              </div> */}
             </form>
           )}
 

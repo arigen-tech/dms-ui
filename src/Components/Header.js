@@ -65,7 +65,6 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
   const [imageSrc, setImageSrc] = useState(null);
   const dropdownRef = useRef(null);
   const UserName = localStorage.getItem("UserName") || userName;
-  const token = localStorage.getItem("tokenKey");
   const role = localStorage.getItem("role");
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [targetRoleName, setTargetRoleName] = useState("");

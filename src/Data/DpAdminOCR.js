@@ -14,6 +14,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
 import apiClient from "../API/apiClient";
 
+
 const DpAdminOCR = () => {
   const {
     currentLanguage,
