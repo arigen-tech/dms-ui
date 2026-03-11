@@ -5,7 +5,8 @@ import {
   YEAR_API,
   CATEGORI_API,
   API_OCR_HOST,
-  API_HOST
+  API_HOST,
+  DEPARTMENT_ADMIN
 } from "../API/apiConfig";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
 import LoadingComponent from '../Components/LoadingComponent';
@@ -41,6 +42,7 @@ const DpAdminOCR = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const token = localStorage.getItem("tokenKey");
+  const currentUserRole = localStorage.getItem("role");
   const [fixedBranchName, setFixedBranchName] = useState("");
   const [fixedDepartmentName, setFixedDepartmentName] = useState("");
   const [fixedDepartmentId, setFixedDepartmentId] = useState("");
@@ -278,10 +280,13 @@ const DpAdminOCR = () => {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
-        <AutoTranslate>Department wise (OCR) Search</AutoTranslate>
-      </h1>
-
+     <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+  <AutoTranslate>
+    {currentUserRole === DEPARTMENT_ADMIN
+      ? "Department wise (OCR) Search"
+      : "User (OCR) Search"}
+  </AutoTranslate>
+</h1>
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-lg font-medium text-gray-700 mb-4">
           <AutoTranslate>Search Documents</AutoTranslate>
@@ -455,9 +460,9 @@ const DpAdminOCR = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <AutoTranslate>Upload Date</AutoTranslate>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <AutoTranslate>Status</AutoTranslate>
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -478,7 +483,7 @@ const DpAdminOCR = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(doc.createdOn)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/* <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           doc.approvalStatus === "APPROVED"
                             ? "bg-green-100 text-green-800"
@@ -488,7 +493,7 @@ const DpAdminOCR = () => {
                         }`}>
                           {doc.approvalStatus}
                         </span>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>

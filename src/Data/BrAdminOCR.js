@@ -504,9 +504,9 @@ const BrAdminOCR = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <AutoTranslate>Upload Date</AutoTranslate>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <AutoTranslate>Status</AutoTranslate>
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -527,7 +527,7 @@ const BrAdminOCR = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(doc.createdOn)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/* <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           doc.approvalStatus === "APPROVED"
                             ? "bg-green-100 text-green-800"
@@ -537,7 +537,7 @@ const BrAdminOCR = () => {
                         }`}>
                           {doc.approvalStatus}
                         </span>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>

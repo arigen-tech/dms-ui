@@ -9,6 +9,7 @@ import FilePreviewModal from "../Components/FilePreviewModal";
 const AdminOCRResponse = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [error, setError] = useState("");
   const responseData = location.state?.responseData;
   const [documents, setDocuments] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -137,7 +138,7 @@ const AdminOCRResponse = () => {
       console.log(`API URL: ${DOCUMENTHEADER_API}/byDocumentHeader/${headerId}`);
       
       const response = await apiClient.get(
-        `${DOCUMENTHEADER_API}/byDocumentHeader/${headerId}`);
+        `${DOCUMENTHEADER_API}/byDocumentHeader/${headerId}/ALL`);
 
       console.log("✅ Paths response:", response.data);
       
@@ -217,30 +218,36 @@ const AdminOCRResponse = () => {
     }
   };
 
-  const openModal = async (doc) => {
-    console.log("🔓 openModal called with doc:", doc);
+  // const openModal = async (doc) => {
+  //   console.log("🔓 openModal called with doc:", doc);
     
-    if (!doc.data || !doc.data.id) {
-      console.error("❌ Invalid document or missing header ID:", doc);
-      alert("The selected document is invalid or missing required information.");
-      return;
-    }
+  //   if (!doc.data || !doc.data.id) {
+  //     console.error("❌ Invalid document or missing header ID:", doc);
+  //     alert("The selected document is invalid or missing required information.");
+  //     return;
+  //   }
 
-    try {
-      setSelectedDoc(doc);
-      const filteredPaths = await fetchPaths(doc);
+  //   try {
+  //     setSelectedDoc(doc);
+  //     const filteredPaths = await fetchPaths(doc);
 
-      if (filteredPaths && filteredPaths.length > 0) {
-        console.log("✅ Paths fetched successfully, opening modal");
-        setIsOpen(true);
-      } else {
-        console.warn("⚠️ No matching paths found for this document");
-        alert("No matching files found for this document.");
-      }
-    } catch (error) {
-      console.error("❌ Failed to fetch paths:", error);
-      alert("Could not load the document. Please try again later.");
-    }
+  //     if (filteredPaths && filteredPaths.length > 0) {
+  //       console.log("✅ Paths fetched successfully, opening modal");
+  //       setIsOpen(true);
+  //     } else {
+  //       console.warn("⚠️ No matching paths found for this document");
+  //       alert("No matching files found for this document.");
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Failed to fetch paths:", error);
+  //     alert("Could not load the document. Please try again later.");
+  //   }
+  // };
+  const openModal = (doc) => {
+    setSelectedDoc(doc);
+    fetchPaths(doc);
+    setIsOpen(true);
+    fetchQRCode(doc.id);
   };
 
   const closeModal = () => {
@@ -255,30 +262,26 @@ const AdminOCRResponse = () => {
     }
   }, [selectedDoc]);
 
-  const fetchQRCode = async (documentId) => {
-    console.log("📱 fetchQRCode called with documentId:", documentId);
+const fetchQRCode = async (documentId) => {
+  try {
     
-    try {
-      const apiUrl = `${DOCUMENTHEADER_API}/documents/download/qr/${documentId}`;
+    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
-      }
+    const qrCodeBlob = response.data;
 
-      const qrCodeBlob = await response.blob();
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-      setQrCodeUrl(qrCodeUrl);
-    } catch (error) {
-      console.error("❌ Error fetching QR code:", error);
+    if (!qrCodeBlob.type.includes("image/png")) {
+      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
     }
-  };
+
+    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+    setQrCodeUrl(qrCodeUrl);
+  } catch (error) {
+    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+  }
+};
+
 
   const downloadQRCode = async () => {
     if (!selectedDoc?.data?.id) {
@@ -414,7 +417,6 @@ const AdminOCRResponse = () => {
                   <th className="border p-2 text-left">Subject</th>
                   <th className="border p-2 text-left">Year</th>
                   <th className="border p-2 text-left">Category</th>
-                  <th className="border p-2 text-left">Status</th>
                   <th className="border p-2 text-left">Branch</th>
                   <th className="border p-2 text-left">Department</th>
                   <th className="border p-2 text-left">Uploaded By</th>
@@ -430,14 +432,6 @@ const AdminOCRResponse = () => {
                     <td className="border p-2">{doc.data?.subject || "N/A"}</td>
                     <td className="border p-2">{doc.data?.yearMaster?.name || "N/A"}</td>
                     <td className="border p-2">{doc.data?.categoryMaster?.name || "N/A"}</td>
-                    <td className="border p-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold
-                        ${doc.data?.approvalStatus === "APPROVED" ? "bg-green-100 text-green-800" :
-                          doc.data?.approvalStatus === "PENDING" ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"}`}>
-                        {doc.data?.approvalStatus || "N/A"}
-                      </span>
-                    </td>
                     <td className="border p-2">{doc.data?.employee?.branch?.name || ""}</td>
                     <td className="border p-2">{doc.data?.employee?.department?.name || ""}</td>
                     <td className="border p-2">{doc.data?.employee?.name || ""}</td>
