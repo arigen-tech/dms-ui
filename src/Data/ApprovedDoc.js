@@ -383,7 +383,7 @@ const ApprovedDoc = () => {
       console.error('Error checking document shares:', error);
       return false;
     }
-  }, [token]);
+  }, []);
 
   // Load all document shares on component mount
   const loadAllDocumentShares = useCallback(async () => {
@@ -412,7 +412,7 @@ const ApprovedDoc = () => {
     }
 
     setDocumentsWithShares(sharesSet);
-  }, [documents, token]);
+  }, [documents]);
 
   useEffect(() => {
     console.log('🔍 ApprovedDoc Component - Language Status:', {

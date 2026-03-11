@@ -26,6 +26,7 @@ import { DOCUMENTHEADER_API, API_HOST } from "../API/apiConfig"
 import LoadingComponent from '../Components/LoadingComponent'
 import Popup from '../Components/Popup'
 import AutoTranslate from '../i18n/AutoTranslate'
+import exportDuplicateReport from "./exportDuplicateReport" 
 
 const tokenKey = "tokenKey"
 
@@ -582,30 +583,52 @@ const DuplicateFilesPage = () => {
 
         {/* Search and Pagination Controls */}
         <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
-              <AutoTranslate>Show:</AutoTranslate>
-            </label>
-            <select
-              id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
-              value={itemsPerPage}
-              onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1) }}
-            >
-              {[5, 10, 15, 20].map(num => <option key={num} value={num}>{num}</option>)}
-            </select>
-          </div>
-          <div className="flex items-center w-full md:w-auto flex-1">
-            <input
-              type="text"
-              placeholder="Search duplicate files..."
-              className="border rounded-l-md p-1 outline-none w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
-          </div>
-        </div>
+
+  {/* Show items */}
+  <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/3">
+    <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
+      <AutoTranslate>Show:</AutoTranslate>
+    </label>
+    <select
+      id="itemsPerPage"
+      className="border rounded-r-lg p-1.5 outline-none w-full"
+      value={itemsPerPage}
+      onChange={(e) => {
+        setItemsPerPage(Number(e.target.value))
+        setCurrentPage(1)
+      }}
+    >
+      {[5, 10, 15, 20].map((num) => (
+        <option key={num} value={num}>
+          {num}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Search */}
+  <div className="flex items-center w-full md:w-1/3 flex-1">
+    <input
+      type="text"
+      placeholder="Search duplicate files..."
+      className="border rounded-l-md p-1 outline-none w-full"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+    />
+    <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+  </div>
+
+  {/* Export Button */}
+  <div className="w-full md:w-auto flex justify-end">
+    <button
+      onClick={() => exportDuplicateReport(duplicateGroups)}
+      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow transition"
+    >
+      Export Report
+    </button>
+  </div>
+
+</div>
 
         {/* Duplicate Groups List */}
         <div className="space-y-4">

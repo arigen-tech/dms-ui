@@ -141,6 +141,7 @@ const BrAdminOCR = () => {
       setIsLoading(false);
     }
   };
+  
 
   // Fetch departments when branch changes
   useEffect(() => {

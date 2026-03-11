@@ -59,7 +59,6 @@ const AllowFunctionalityByRole = () => {
     const [endpointTypeFilter, setEndpointTypeFilter] = useState(null);
 
     const formSectionRef = useRef(null);
-    const token = localStorage.getItem("tokenKey");
 
     // Helper functions
     const getRoleName = (access) => access.role?.role || 'N/A';
