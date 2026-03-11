@@ -143,11 +143,11 @@ const ChangePasswordPage = () => {
 
     try {
       await apiClient.post(`${API_HOST}/api/change-password`, changePasswordData);
-      showPopup(<AutoTranslate>Password Changed successfully!</AutoTranslate>, "success");
+      showPopup("Password Changed successfully", "success");
       setActiveForm(null);
     } catch (error) {
       if (error.response && error.response.data) {
-        showPopup(<AutoTranslate>Failed to Changed Password</AutoTranslate>, "error");
+        showPopup("Failed to Change Password", "error");
         setError(error.response.data);
       } else {
         setError(<AutoTranslate>An unexpected error occurred.</AutoTranslate>);
@@ -190,15 +190,15 @@ const ChangePasswordPage = () => {
       const updatedEmployee = response.data;
       localStorage.setItem("UserName", updatedEmployee.name);
 
-      showPopup(<AutoTranslate>Profile Updated successfully!</AutoTranslate>, "success");
+      showPopup("Profile Updated successfully", "success");
       setActiveForm(null);
-      console.log(<AutoTranslate>Profile updated:</AutoTranslate>, response.data);
+      console.log("Profile updated:", response.data);
     } catch (error) {
-      console.error(<AutoTranslate>Error updating profile:</AutoTranslate>, error.response || error);
-      showPopup(<AutoTranslate>Failed to Updating Profile</AutoTranslate>, "error");
+      console.error("Error updating profile:", error.response || error);
+      showPopup("Failed to Update Profile", "error");
       setError(
         error.response?.data?.message ||
-        <AutoTranslate>Error updating profile. Please try again.</AutoTranslate>
+        "Error updating profile. Please try again."
       );
     }
   };
@@ -242,16 +242,16 @@ const ChangePasswordPage = () => {
           },
         }
       );
-      showPopup(<AutoTranslate>Photo Update successfully!</AutoTranslate>, "success");
+      showPopup("Photo Updated successfully", "success");
       setActiveForm(null);
-      console.log(<AutoTranslate>Upload response:</AutoTranslate>, response.data);
+      console.log("Upload response:", response.data);
 
       if (typeof fetchImageSrc === "function") {
         fetchImageSrc();
       }
     } catch (error) {
-      console.error(<AutoTranslate>Error uploading image:</AutoTranslate>, error.response || error);
-      showPopup(<AutoTranslate>Image Uploading failed</AutoTranslate>, "error");
+      console.error("Error uploading image:", error.response || error);
+      showPopup("Image Uploading failed", "error");
       setUploadMessage(
         error.response?.data?.message ||
         <AutoTranslate>An error occurred while uploading the image. Please try again.</AutoTranslate>
