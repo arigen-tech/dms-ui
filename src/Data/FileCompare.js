@@ -24,9 +24,6 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { translateInstant } from '../i18n/autoTranslator'
 import apiClient from "../API/apiClient";
 
-// ✅ FIX: Get the actual token from localStorage, not the string literal
-const tokenKey = typeof window !== "undefined" ? localStorage.getItem("tokenKey") : null
-
 const imageExtensions = ["png", "jpg", "jpeg", "gif", "bmp", "svg", "tiff", "webp", "heic", "heif"]
 const textExtensions = ["txt", "csv", "log", "xml", "html", "htm", "js", "jsx", "ts",
   "css", "scss", "json", "md", "yml", "yaml", "java", "py", "cpp",
@@ -63,6 +60,7 @@ function isTextFile(fileType, contentType, fileName) {
   return isTextExt || isTextMime
 }
 
+// ✅ Extract display name - removes prefix like "AGT_" up to first underscore-number pattern
 const extractFileName = (fullName) => {
   if (!fullName) return "Unknown"
   const fileNameParts = fullName.split("_")
@@ -80,18 +78,6 @@ const FileCompare = () => {
     translate,
     preloadTranslationsForTerms
   } = useLanguage()
-
-  // Debug log
-  useEffect(() => {
-    console.log('🔍 FileCompare Component - Language Status:', {
-      currentLanguage,
-      defaultLanguage,
-      isTranslationNeeded: isTranslationNeeded(),
-      translationStatus,
-      availableLanguagesCount: availableLanguages.length,
-      pathname: window.location.pathname
-    })
-  }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages])
 
   // ============================================================
   // STATE DECLARATIONS
@@ -115,10 +101,6 @@ const FileCompare = () => {
   const [isLoadingFiles, setIsLoadingFiles] = useState(false)
   const [activeTab, setActiveTab] = useState("preview")
   const [warningMessage, setWarningMessage] = useState("")
-
-  // ============================================================
-  // NEW STATE DECLARATIONS
-  // ============================================================
   const [categoryOptions, setCategoryOptions] = useState([])
   const [firstSearchTerm, setFirstSearchTerm] = useState("")
   const [firstSelectedCategory, setFirstSelectedCategory] = useState("")
@@ -127,13 +109,10 @@ const FileCompare = () => {
   const [secondSelectedCategory, setSecondSelectedCategory] = useState("")
   const [secondShowDropdown, setSecondShowDropdown] = useState(false)
 
-  const [selectedDoc, setSelectedDoc] = useState(null);
-
   // ============================================================
-  // EFFECT 1: Initialize on mount
+  // EFFECTS
   // ============================================================
   useEffect(() => {
-    console.log('📍 FileCompare Component Mounted')
     fetchAllDocumentHeaders()
     fetchCategory()
   }, [])
@@ -160,48 +139,38 @@ const FileCompare = () => {
     }
   }
 
-  // ============================================================
-  // UPDATED fetchDocumentsByFileNo FUNCTION
-  // ============================================================
   const fetchDocumentsByFileNo = async (fileNo, isFirst = true) => {
     try {
-      console.log(`📋 Fetching documents for file: ${fileNo}`);
+      const response = await apiClient.get(`${DOCUMENTHEADER_API}/getFile/${fileNo}`)
+      const data = response.data || {}
+      const fileList = data.fileList || []
+      const docHeader = documentHeaders.find(header => header.fileNo === fileNo)
 
-      const response = await apiClient.get(`${DOCUMENTHEADER_API}/getFile/${fileNo}`);
-
-      const data = response.data || {};
-      const fileList = data.fileList || [];
-
-      // Find the document header for this file
-      const docHeader = documentHeaders.find(header => header.fileNo === fileNo);
-
-      console.log(`✅ Found ${fileList.length} documents for file ${fileNo}`);
-      console.log('Document Header:', docHeader);
-
-      // Add document header info to each file (for reference)
       const filesWithHeader = fileList.map(file => ({
         ...file,
         docHeader: docHeader
-      }));
+      }))
 
       if (isFirst) {
-        setFirstFileDocuments(filesWithHeader);
+        setFirstFileDocuments(filesWithHeader)
       } else {
-        setSecondFileDocuments(filesWithHeader);
+        setSecondFileDocuments(filesWithHeader)
       }
 
-      setWarningMessage("");
-      return filesWithHeader;
+      setWarningMessage("")
+      return filesWithHeader
     } catch (error) {
-      console.error("❌ Error fetching documents:", error);
-      showPopup("Failed to fetch documents", "error");
-      return [];
+      console.error("Error fetching documents:", error)
+      showPopup("Failed to fetch documents", "error")
+      return []
     }
-  };
+  }
 
+  // ============================================================
+  // FILTERED HEADERS
+  // ============================================================
   const filteredFirstFileHeaders = useMemo(() => {
     let filtered = documentHeaders
-
     if (firstSearchTerm) {
       const searchLower = firstSearchTerm.toLowerCase()
       filtered = filtered.filter(header =>
@@ -210,25 +179,18 @@ const FileCompare = () => {
         header.subject?.toLowerCase().includes(searchLower)
       )
     }
-
     if (firstSelectedCategory) {
       filtered = filtered.filter(header => {
-        if (header.categoryMaster && header.categoryMaster.id) {
-          return header.categoryMaster.id.toString() === firstSelectedCategory.toString()
-        }
-        if (header.category && header.category.id) {
-          return header.category.id.toString() === firstSelectedCategory.toString()
-        }
+        if (header.categoryMaster?.id) return header.categoryMaster.id.toString() === firstSelectedCategory.toString()
+        if (header.category?.id) return header.category.id.toString() === firstSelectedCategory.toString()
         return false
       })
     }
-
     return filtered
   }, [documentHeaders, firstSearchTerm, firstSelectedCategory])
 
   const filteredSecondFileHeaders = useMemo(() => {
     let filtered = documentHeaders
-
     if (secondSearchTerm) {
       const searchLower = secondSearchTerm.toLowerCase()
       filtered = filtered.filter(header =>
@@ -237,22 +199,19 @@ const FileCompare = () => {
         header.subject?.toLowerCase().includes(searchLower)
       )
     }
-
     if (secondSelectedCategory) {
       filtered = filtered.filter(header => {
-        if (header.categoryMaster && header.categoryMaster.id) {
-          return header.categoryMaster.id.toString() === secondSelectedCategory.toString()
-        }
-        if (header.category && header.category.id) {
-          return header.category.id.toString() === secondSelectedCategory.toString()
-        }
+        if (header.categoryMaster?.id) return header.categoryMaster.id.toString() === secondSelectedCategory.toString()
+        if (header.category?.id) return header.category.id.toString() === secondSelectedCategory.toString()
         return false
       })
     }
-
     return filtered
   }, [documentHeaders, secondSearchTerm, secondSelectedCategory])
 
+  // ============================================================
+  // FILE SELECTION
+  // ============================================================
   const handleFileSelection = (fileId, isFirst = true) => {
     const currentFirstCount = selectedFirstFileIds.length
     const currentSecondCount = selectedSecondFileIds.length
@@ -260,163 +219,93 @@ const FileCompare = () => {
 
     const selectedFile = isFirst
       ? firstFileDocuments.find(doc => doc.detailsId === fileId)
-      : secondFileDocuments.find(doc => doc.detailsId === fileId);
+      : secondFileDocuments.find(doc => doc.detailsId === fileId)
 
     if (totalSelected === 1) {
-      let existingFile;
-
+      let existingFile
       if (currentFirstCount === 1) {
-        existingFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0]);
+        existingFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0])
       } else if (currentSecondCount === 1) {
-        existingFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
+        existingFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0])
       }
 
       if (existingFile && !areFilesComparable(existingFile, selectedFile)) {
-        const existingFileName = existingFile.fileName || existingFile.docName || "File";
-        const selectedFileName = selectedFile.fileName || selectedFile.docName || "File";
-        const existingExt = existingFileName.split('.').pop()?.toUpperCase() || "Unknown";
-        const selectedExt = selectedFileName.split('.').pop()?.toUpperCase() || "Unknown";
-
-        setWarningMessage(<AutoTranslate>Cannot compare {existingExt} with {selectedExt}. Please select files with the same format.</AutoTranslate>);
-        return;
+        const existingFileName = existingFile.fileName || existingFile.docName || "File"
+        const selectedFileName = selectedFile.fileName || selectedFile.docName || "File"
+        const existingExt = existingFileName.split('.').pop()?.toUpperCase() || "Unknown"
+        const selectedExt = selectedFileName.split('.').pop()?.toUpperCase() || "Unknown"
+        setWarningMessage(`Cannot compare ${existingExt} with ${selectedExt}. Please select files with the same format.`)
+        return
       }
     }
 
     if (isFirst) {
       const isAlreadySelected = selectedFirstFileIds.includes(fileId)
       if (isAlreadySelected) {
-        setSelectedFirstFileIds((prev) => prev.filter((id) => id !== fileId))
+        setSelectedFirstFileIds(prev => prev.filter(id => id !== fileId))
         setWarningMessage("")
       } else {
         if (totalSelected >= 2) {
-          setWarningMessage(<AutoTranslate>Warning: You cannot select more than 2 documents in total across both files.</AutoTranslate>)
+          setWarningMessage("Warning: You cannot select more than 2 documents in total across both files.")
           return
         }
         if (currentFirstCount >= 2) {
-          setWarningMessage(<AutoTranslate>Warning: You cannot select more than 2 documents in the first file.</AutoTranslate>)
+          setWarningMessage("Warning: You cannot select more than 2 documents in the first file.")
           return
         }
-        setSelectedFirstFileIds((prev) => [...prev, fileId])
+        setSelectedFirstFileIds(prev => [...prev, fileId])
         setWarningMessage("")
       }
     } else {
       const isAlreadySelected = selectedSecondFileIds.includes(fileId)
       if (isAlreadySelected) {
-        setSelectedSecondFileIds((prev) => prev.filter((id) => id !== fileId))
+        setSelectedSecondFileIds(prev => prev.filter(id => id !== fileId))
         setWarningMessage("")
       } else {
         if (totalSelected >= 2) {
-          setWarningMessage(<AutoTranslate>Warning: You cannot select more than 2 documents in total across both files.</AutoTranslate>)
+          setWarningMessage("Warning: You cannot select more than 2 documents in total across both files.")
           return
         }
         if (currentSecondCount >= 2) {
-          setWarningMessage(<AutoTranslate>Warning: You cannot select more than 2 documents in the second file.</AutoTranslate>)
+          setWarningMessage("Warning: You cannot select more than 2 documents in the second file.")
           return
         }
-        setSelectedSecondFileIds((prev) => [...prev, fileId])
+        setSelectedSecondFileIds(prev => [...prev, fileId])
         setWarningMessage("")
       }
     }
   }
 
-  // 🔧 COPY-PASTE THIS FUNCTION
-  // Replace your entire getFilePreviewUrl function with this version
-
-  const getFilePreviewUrl = async (file, docHeader) => {
-    console.log("🔍 getFilePreviewUrl called with:", {
-      file: {
-        docName: file?.docName,
-        fileName: file?.fileName,
-        year: file?.year,
-        version: file?.version,
-        fileType: file?.fileType
-      },
-      docHeader: {
-        fileNo: docHeader?.fileNo,
-        branch: docHeader?.employee?.branch?.name || docHeader?.branchMaster?.name,
-        department: docHeader?.employee?.department?.name || docHeader?.departmentMaster?.name,
-        category: docHeader?.categoryMaster?.name
-      }
-    });
-
-    // Guard clauses
-    if (!docHeader) {
-      console.error("❌ docHeader is missing");
-      return null;
+  // ============================================================
+  // ✅ FIXED: getFilePreviewUrl - uses file.path directly
+  // ============================================================
+  const getFilePreviewUrl = async (file) => {
+    if (!file) {
+      console.error("❌ file is missing")
+      return null
     }
 
-    if (!file) {
-      console.error("❌ file is missing");
-      return null;
+    // ✅ Use file.path directly — it already contains the full relative path
+    const rawPath = file.path || file.filePath || file.documentPath
+    if (!rawPath) {
+      console.error("❌ No path found on file object", file)
+      return null
     }
 
     try {
-      // Extract branch with fallbacks
-      const branch = (
-        docHeader.employee?.branch?.name ||
-        docHeader.branchMaster?.name ||
-        ""
-      )?.replace(/ /g, "_")?.trim();
+      // Split path into parts: branch/department/year/category/version/filename
+      const pathParts = rawPath.replace(/\\/g, '/').split('/').filter(Boolean)
 
-      // Extract department with fallbacks
-      const department = (
-        docHeader.employee?.department?.name ||
-        docHeader.departmentMaster?.name ||
-        ""
-      )?.replace(/ /g, "_")?.trim();
-
-      // Extract year
-      const year = (file.year || "")?.toString()?.replace(/ /g, "_")?.trim();
-
-      // Extract category
-      const category = (docHeader.categoryMaster?.name || "")?.replace(/ /g, "_")?.trim();
-
-      // Extract version
-      const version = (file.version || "")?.toString()?.trim();
-
-      // Extract fileName - TRY MULTIPLE PROPERTIES
-      const fileName = (
-        file.docName ||
-        file.fileName ||
-        file.name ||
-        ""
-      )?.replace(/ /g, "_")?.trim();
-
-      // Log exactly what we have
-      console.log("✅ Extracted path components:", {
-        branch: `"${branch}"`,
-        department: `"${department}"`,
-        year: `"${year}"`,
-        category: `"${category}"`,
-        version: `"${version}"`,
-        fileName: `"${fileName}"`
-      });
-
-      // Validate - tell us WHICH ones are missing
-      const missing = [];
-      if (!branch || branch === "") missing.push("branch");
-      if (!department || department === "") missing.push("department");
-      if (!year || year === "") missing.push("year");
-      if (!category || category === "") missing.push("category");
-      if (!version || version === "") missing.push("version");
-      if (!fileName || fileName === "") missing.push("fileName");
-
-      if (missing.length > 0) {
-        console.error("❌ MISSING FIELDS:", missing);
-        console.error("Debug info:", {
-          branch,
-          department,
-          year,
-          category,
-          version,
-          fileName,
-          file,
-          docHeader
-        });
-        return null;
+      if (pathParts.length < 6) {
+        console.error("❌ Path has fewer than 6 parts:", pathParts)
+        return null
       }
 
-      // Build the URL
+      // Parts: [branch, department, year, category, version, ...fileName]
+      const [branch, department, year, category, version, ...fileNameParts] = pathParts
+      const fileName = fileNameParts.join('/')
+
+      // ✅ Build URL without double-encoding — category may have underscores already
       const fileUrl =
         `${API_HOST}/api/documents/download/` +
         `${encodeURIComponent(branch)}/` +
@@ -424,66 +313,38 @@ const FileCompare = () => {
         `${encodeURIComponent(year)}/` +
         `${encodeURIComponent(category)}/` +
         `${encodeURIComponent(version)}/` +
-        `${encodeURIComponent(fileName)}?action=view`;
+        `${encodeURIComponent(fileName)}?action=view`
 
-      console.log("🔗 Full URL:", fileUrl);
+      console.log("🔗 Preview URL:", fileUrl)
 
-      // Check token
-      if (!tokenKey) {
-        console.error("❌ No authentication token");
-        return null;
-      }
+      const response = await apiClient.get(fileUrl, { responseType: "blob" })
 
-      console.log("📡 Making API request...");
+      const contentType = response.headers["content-type"] || "application/octet-stream"
+      const blob = new Blob([response.data], { type: contentType })
+      const blobUrl = URL.createObjectURL(blob)
 
-      // Fetch the file
-      const response = await apiClient.get(fileUrl, {
-        responseType: "blob"
-      });
-
-      console.log("✅ API response received:", {
-        status: response.status,
-        contentType: response.headers["content-type"],
-        dataSize: response.data.size
-      });
-
-      // Create blob and URL
-      const blob = new Blob([response.data], {
-        type: response.headers["content-type"]
-      });
-
-      const blobUrl = URL.createObjectURL(blob);
-
-      console.log("✅ File preview loaded successfully");
-      console.log("📄 Preview URL:", blobUrl);
+      console.log("✅ File loaded successfully:", fileName, "| type:", contentType)
 
       return {
         url: blobUrl,
         fileName,
-        contentType: response.headers["content-type"]
-      };
-
+        contentType
+      }
     } catch (error) {
-      console.error("❌ Error in getFilePreviewUrl:");
-      console.error({
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText
-      });
-
+      console.error("❌ Error loading file preview:", error.message, "| status:", error.response?.status)
       if (error.response?.data instanceof Blob) {
         try {
-          const text = await error.response.data.text();
-          console.error("Server error response:", text);
-        } catch (e) {
-          console.error("Could not parse error blob");
-        }
+          const text = await error.response.data.text()
+          console.error("Server error response:", text)
+        } catch (e) {}
       }
-
-      return null;
+      return null
     }
-  };
+  }
 
+  // ============================================================
+  // FILE TYPE HELPERS
+  // ============================================================
   const getFileTypeIcon = (fileType) => {
     const type = (fileType || "").toLowerCase()
     if (type.includes("pdf")) return <DocumentIcon className="h-5 w-5 text-red-500" />
@@ -491,83 +352,90 @@ const FileCompare = () => {
       return <DocumentIcon className="h-5 w-5 text-blue-500" />
     if (type.includes("xls") || type.includes("xlsx") || type.includes("csv"))
       return <DocumentIcon className="h-5 w-5 text-green-600" />
-    if (type.includes("ppt") || type.includes("pptx")) return <DocumentIcon className="h-5 w-5 text-orange-500" />
-    if (type.includes("image") || imageExtensions.includes(type)) return <PhotoIcon className="h-5 w-5 text-blue-500" />
-    if (type.includes("svg") || type.includes("psd") || type.includes("ai") || type.includes("eps"))
-      return <PhotoIcon className="h-5 w-5 text-purple-500" />
-    if (type.includes("video") || ["mp4", "avi", "mov", "wmv", "flv", "h264", "h265"].includes(type))
+    if (type.includes("ppt") || type.includes("pptx"))
+      return <DocumentIcon className="h-5 w-5 text-orange-500" />
+    if (type.includes("image") || imageExtensions.includes(type))
+      return <PhotoIcon className="h-5 w-5 text-blue-500" />
+    if (type.includes("video") || ["mp4", "avi", "mov", "wmv", "flv"].includes(type))
       return <FilmIcon className="h-5 w-5 text-purple-500" />
     if (type.includes("audio") || ["mp3", "wav", "ogg", "aac"].includes(type))
       return <SpeakerWaveIcon className="h-5 w-5 text-green-500" />
     return <DocumentIcon className="h-5 w-5 text-gray-500" />
   }
 
+  const areFilesComparable = (file1, file2) => {
+    if (!file1 || !file2) return false
+    const getExt = (file) => (file.fileName || file.docName || "").split('.').pop()?.toLowerCase() || ""
+    const ext1 = getExt(file1)
+    const ext2 = getExt(file2)
+    if (ext1 && ext2 && ext1 === ext2) return true
+    const officeGroups = { doc: "word", docx: "word", xls: "excel", xlsx: "excel", ppt: "ppt", pptx: "ppt" }
+    const cat1 = officeGroups[ext1] || ext1
+    const cat2 = officeGroups[ext2] || ext2
+    return cat1 === cat2
+  }
+
+  // ============================================================
+  // DOCX VIEWER
+  // ============================================================
   const DocxViewer = ({ fileUrl, fileName }) => {
-    const [htmlContent, setHtmlContent] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const [htmlContent, setHtmlContent] = useState("")
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState("")
 
     useEffect(() => {
       const convertDocxToHtml = async () => {
         try {
-          setLoading(true);
-          const response = await fetch(fileUrl);
-          const arrayBuffer = await response.arrayBuffer();
-
-          const mammoth = await import('mammoth');
-          const result = await mammoth.default.convertToHtml({ arrayBuffer });
-
-          setHtmlContent(result.value);
-          setError("");
+          setLoading(true)
+          const response = await fetch(fileUrl)
+          const arrayBuffer = await response.arrayBuffer()
+          const mammoth = await import('mammoth')
+          const result = await mammoth.default.convertToHtml({ arrayBuffer })
+          setHtmlContent(result.value)
+          setError("")
         } catch (err) {
-          console.error("DOCX conversion error:", err);
-          setError("Failed to load DOCX document");
+          console.error("DOCX conversion error:", err)
+          setError("Failed to load DOCX document")
         } finally {
-          setLoading(false);
+          setLoading(false)
         }
-      };
+      }
+      convertDocxToHtml()
+    }, [fileUrl])
 
-      convertDocxToHtml();
-    }, [fileUrl]);
-
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-full bg-gray-50">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-600">
-              <AutoTranslate>Loading document...</AutoTranslate>
-            </p>
-          </div>
+    if (loading) return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '400px', background: '#f9fafb' }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-sm text-gray-600"><AutoTranslate>Loading document...</AutoTranslate></p>
         </div>
-      );
-    }
+      </div>
+    )
 
-    if (error) {
-      return (
-        <div className="flex items-center justify-center h-full bg-gray-50">
-          <div className="text-center">
-            <DocumentIcon className="h-12 w-12 text-red-500 mx-auto mb-2" />
-            <p className="text-sm text-red-600">
-              <AutoTranslate>{error}</AutoTranslate>
-            </p>
-          </div>
+    if (error) return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '400px', background: '#f9fafb' }}>
+        <div className="text-center">
+          <DocumentIcon className="h-12 w-12 text-red-500 mx-auto mb-2" />
+          <p className="text-sm text-red-600">{error}</p>
         </div>
-      );
-    }
+      </div>
+    )
 
     return (
       <div
-        className="h-full overflow-auto p-4 bg-white"
+        style={{ height: '100%', overflow: 'auto', padding: '16px', background: 'white' }}
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
-    );
-  };
+    )
+  }
 
+  // ============================================================
+  // ✅ FIXED: renderFileViewer — uses inline styles for guaranteed height
+  // ============================================================
   const renderFileViewer = (file, fileData, isFirst = true) => {
     if (!fileData || !fileData.url) {
       return (
-        <div className="flex items-center justify-center h-full bg-gray-50">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '400px', background: '#f9fafb' }}>
           <div className="text-center">
             <DocumentIcon className="h-20 w-20 text-gray-400 mx-auto mb-4" />
             <p className="text-sm text-gray-600">
@@ -579,39 +447,42 @@ const FileCompare = () => {
     }
 
     const contentType = (fileData.contentType || "").toLowerCase()
-    const fileName = file?.fileName || file?.docName || ""
+    // ✅ file here is comparisonResult.leftFile/rightFile which has fileName property
+    const fileName = file?.fileName || file?.docName || fileData?.fileName || ""
     const extension = getExtension(fileName)
 
     if (contentType.includes("pdf") || extension === "pdf") {
       return (
         <iframe
           src={fileData.url}
-          className="w-full h-full"
-          frameBorder={0}
+          style={{ width: '100%', height: '100%', minHeight: '500px', border: 'none', display: 'block' }}
           title={`${isFirst ? "First" : "Second"} file - ${fileName}`}
         />
       )
     }
-    else if (contentType.includes("word") || contentType.includes("docx") || extension === "docx") {
-      return (
-        <DocxViewer fileUrl={fileData.url} fileName={fileName} />
-      )
+    else if (
+      contentType.includes("word") ||
+      contentType.includes("vnd.openxmlformats-officedocument.wordprocessingml") ||
+      extension === "docx" ||
+      extension === "doc"
+    ) {
+      return <DocxViewer fileUrl={fileData.url} fileName={fileName} />
     }
     else if (contentType.includes("image") || imageExtensions.includes(extension)) {
       return (
-        <div className="flex items-center justify-center h-full bg-gray-50">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '400px', background: '#f9fafb' }}>
           <img
-            src={fileData.url || "/placeholder.svg"}
+            src={fileData.url}
             alt={fileName}
-            className="max-w-full max-h-full object-contain"
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
           />
         </div>
       )
     }
     else if (contentType.includes("video") || ["mp4", "avi", "mov", "wmv", "flv"].includes(extension)) {
       return (
-        <div className="flex items-center justify-center h-full bg-gray-50">
-          <video controls className="max-w-full max-h-full">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '400px', background: '#f9fafb' }}>
+          <video controls style={{ maxWidth: '100%', maxHeight: '100%' }}>
             <source src={fileData.url} type={contentType} />
             <AutoTranslate>Your browser does not support the video tag.</AutoTranslate>
           </video>
@@ -620,12 +491,11 @@ const FileCompare = () => {
     }
     else if (contentType.includes("audio") || ["mp3", "wav", "ogg", "aac"].includes(extension)) {
       return (
-        <div className="flex items-center justify-center h-full bg-gray-50">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '400px', background: '#f9fafb' }}>
           <div className="text-center">
             <SpeakerWaveIcon className="h-20 w-20 text-gray-400 mx-auto mb-4" />
-            <audio controls className="w-full max-w-md">
+            <audio controls style={{ width: '100%', maxWidth: '400px' }}>
               <source src={fileData.url} type={contentType} />
-              <AutoTranslate>Your browser does not support the audio tag.</AutoTranslate>
             </audio>
             <p className="mt-2 text-sm text-gray-600">{fileName}</p>
           </div>
@@ -636,143 +506,63 @@ const FileCompare = () => {
       return (
         <iframe
           src={fileData.url}
-          className="w-full h-full"
-          frameBorder="0"
+          style={{ width: '100%', height: '100%', minHeight: '500px', border: 'none', display: 'block' }}
           title={`${isFirst ? "First" : "Second"} file - ${fileName}`}
         />
       )
     }
   }
 
-  const areFilesComparable = (file1, file2) => {
-    if (!file1 || !file2) return false;
-
-    const getFileExtension = (file) => {
-      const fileName = file.fileName || file.docName || "";
-      const ext = fileName.split('.').pop()?.toLowerCase() || "";
-      return ext;
-    };
-
-    const getContentTypeCategory = (contentType) => {
-      if (!contentType) return "unknown";
-
-      if (contentType.includes("pdf")) return "pdf";
-      if (contentType.includes("word") || contentType.includes("docx")) return "docx";
-      if (contentType.includes("excel") || contentType.includes("xlsx") || contentType.includes("spreadsheet")) return "excel";
-      if (contentType.includes("powerpoint") || contentType.includes("pptx") || contentType.includes("presentation")) return "powerpoint";
-      if (contentType.includes("image/")) return "image";
-      if (contentType.includes("text/")) return "text";
-      if (contentType.includes("video/")) return "video";
-      if (contentType.includes("audio/")) return "audio";
-
-      return "other";
-    };
-
-    const ext1 = getFileExtension(file1);
-    const ext2 = getFileExtension(file2);
-
-    const contentType1 = getContentTypeCategory(file1.fileType);
-    const contentType2 = getContentTypeCategory(file2.fileType);
-
-    if (ext1 && ext2 && ext1 === ext2) return true;
-
-    if (contentType1 !== "unknown" && contentType1 === contentType2) return true;
-
-    const officeExtensions = {
-      doc: "docx",
-      docx: "docx",
-      xls: "excel",
-      xlsx: "excel",
-      ppt: "powerpoint",
-      pptx: "powerpoint"
-    };
-
-    const category1 = officeExtensions[ext1] || contentType1;
-    const category2 = officeExtensions[ext2] || contentType2;
-
-    return category1 === category2;
-  };
-
-
-
+  // ============================================================
+  // COMPARE FILES
+  // ============================================================
   const compareFiles = async () => {
-    const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length;
+    const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length
 
     if (totalSelected !== 2) {
-      setWarningMessage(<AutoTranslate>Please select exactly 2 documents to compare.</AutoTranslate>);
-      return;
+      setWarningMessage("Please select exactly 2 documents to compare.")
+      return
     }
 
-    // Get the selected files
-    let firstFile, secondFile;
-    let firstDocHeader, secondDocHeader;
+    let firstFile, secondFile, firstDocHeader, secondDocHeader
 
     if (selectedFirstFileIds.length === 2) {
-      firstFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0]);
-      secondFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[1]);
-      // Find document headers for these files
-      firstDocHeader = documentHeaders.find(header => header.fileNo === selectedFirstFileNo);
-      secondDocHeader = firstDocHeader; // Same file, same header
+      firstFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0])
+      secondFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[1])
+      firstDocHeader = documentHeaders.find(header => header.fileNo === selectedFirstFileNo)
+      secondDocHeader = firstDocHeader
     } else if (selectedSecondFileIds.length === 2) {
-      firstFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
-      secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[1]);
-      // Find document headers for these files
-      secondDocHeader = documentHeaders.find(header => header.fileNo === selectedSecondFileNo);
-      firstDocHeader = secondDocHeader; // Same file, same header
-    } else if (selectedFirstFileIds.length === 1 && selectedSecondFileIds.length === 1) {
-      firstFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0]);
-      secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0]);
-      // Find document headers for these files
-      firstDocHeader = documentHeaders.find(header => header.fileNo === selectedFirstFileNo);
-      secondDocHeader = documentHeaders.find(header => header.fileNo === selectedSecondFileNo);
+      firstFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0])
+      secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[1])
+      secondDocHeader = documentHeaders.find(header => header.fileNo === selectedSecondFileNo)
+      firstDocHeader = secondDocHeader
+    } else {
+      firstFile = firstFileDocuments.find(doc => doc.detailsId === selectedFirstFileIds[0])
+      secondFile = secondFileDocuments.find(doc => doc.detailsId === selectedSecondFileIds[0])
+      firstDocHeader = documentHeaders.find(header => header.fileNo === selectedFirstFileNo)
+      secondDocHeader = documentHeaders.find(header => header.fileNo === selectedSecondFileNo)
     }
 
-    // Validate files exist
     if (!firstFile || !secondFile) {
-      setWarningMessage(<AutoTranslate>Selected files not found. Please try again.</AutoTranslate>);
-      return;
+      setWarningMessage("Selected files not found. Please try again.")
+      return
     }
 
-    // Validate document headers exist
-    if (!firstDocHeader || !secondDocHeader) {
-      setWarningMessage(<AutoTranslate>Document headers not found. Please try again.</AutoTranslate>);
-      return;
-    }
-
-    // Check if trying to compare the same file (same detailsId)
     if (firstFile.detailsId === secondFile.detailsId) {
-      setWarningMessage(<AutoTranslate>Cannot compare the same document. Please select two different documents.</AutoTranslate>);
-      return;
+      setWarningMessage("Cannot compare the same document. Please select two different documents.")
+      return
     }
 
-    setIsComparing(true);
-    setIsLoadingFiles(true);
-    setComparisonResult(null);
+    setIsComparing(true)
+    setIsLoadingFiles(true)
+    setComparisonResult(null)
 
     try {
-      // Get file IDs for comparison
-      const firstFileId = firstFile.detailsId;
-      const secondFileId = secondFile.detailsId;
+      const firstFileId = firstFile.detailsId
+      const secondFileId = secondFile.detailsId
 
-      console.log('📊 Comparing files with IDs:', { firstFileId, secondFileId });
-      console.log('📄 First file metadata:', {
-        fileName: firstFile.docName,
-        branch: firstDocHeader?.employee?.branch?.name,
-        department: firstDocHeader?.employee?.department?.name,
-        category: firstDocHeader?.categoryMaster?.name,
-        year: firstFile.year,
-        version: firstFile.version
-      });
-      console.log('📄 Second file metadata:', {
-        fileName: secondFile.docName,
-        branch: secondDocHeader?.employee?.branch?.name,
-        department: secondDocHeader?.employee?.department?.name,
-        category: secondDocHeader?.categoryMaster?.name,
-        year: secondFile.year,
-        version: secondFile.version
-      });
+      console.log('📊 Comparing files:', { firstFileId, secondFileId })
 
-      // Make API call to compare files
       const response = await apiClient.post(
         `${DOCUMENTHEADER_API}/compare`,
         {
@@ -780,33 +570,30 @@ const FileCompare = () => {
           secondFileId: secondFileId.toString()
         },
         {
-          headers: {  
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           timeout: 60000
         }
-      );
+      )
 
-      console.log('✅ Compare API response:', response.data);
-
-      const result = response.data;
+      const result = response.data
 
       if (result.status === 200 && result.message === "success") {
-        const apiResponse = result.response;
+        const apiResponse = result.response
 
-        // ✅ FIX: Pass docHeader to getFilePreviewUrl function
-        console.log('🔄 Loading file previews...');
+        console.log('🔄 Loading file previews...')
+
+        // ✅ Pass only file — path is on the file object directly
         const [firstFileData, secondFileData] = await Promise.all([
-          getFilePreviewUrl(firstFile, firstDocHeader),
-          getFilePreviewUrl(secondFile, secondDocHeader)
-        ]);
+          getFilePreviewUrl(firstFile),
+          getFilePreviewUrl(secondFile)
+        ])
 
-        console.log('📸 File preview data loaded:', {
+        console.log('📸 Preview load result:', {
           firstFile: firstFileData ? '✅ Loaded' : '❌ Failed',
           secondFile: secondFileData ? '✅ Loaded' : '❌ Failed'
-        });
+        })
 
-        setFileUrls({ firstFile: firstFileData, secondFile: secondFileData });
+        setFileUrls({ firstFile: firstFileData, secondFile: secondFileData })
 
         const comparisonResultData = {
           identical: apiResponse.identical,
@@ -835,53 +622,43 @@ const FileCompare = () => {
             docHeader: secondDocHeader
           },
           diffImagePath: apiResponse.diffImagePath,
-        };
+        }
 
-        setComparisonResult(comparisonResultData);
-        setShowComparisonModal(true);
+        setComparisonResult(comparisonResultData)
+        setShowComparisonModal(true)
 
         if (apiResponse.identical) {
-          showPopup(
-            <AutoTranslate>Files are identical ({apiResponse.similarityPercentage?.toFixed(1)}% similar)</AutoTranslate>,
-            "success"
-          );
+          showPopup(`Files are identical (${apiResponse.similarityPercentage?.toFixed(1)}% similar)`, "success")
         } else {
-          showPopup(
-            <AutoTranslate>Differences found ({apiResponse.similarityPercentage?.toFixed(1)}% similar)</AutoTranslate>,
-            "info"
-          );
+          showPopup(`Differences found (${apiResponse.similarityPercentage?.toFixed(1)}% similar)`, "info")
         }
       } else {
-        showPopup(result.message || <AutoTranslate>Failed to compare files</AutoTranslate>, "error");
+        showPopup(result.message || "Failed to compare files", "error")
       }
     } catch (error) {
-      console.error("❌ Error comparing files:", error);
-
-      let errorMessage = <AutoTranslate>Failed to compare files</AutoTranslate>;
-
+      console.error("Error comparing files:", error)
+      let errorMessage = "Failed to compare files"
       if (error.response?.status === 400) {
-        errorMessage = error.response.data?.message || <AutoTranslate>Invalid file paths or files are missing</AutoTranslate>;
+        errorMessage = error.response.data?.message || "Invalid file paths or files are missing"
       } else if (error.code === 'ECONNABORTED') {
-        errorMessage = <AutoTranslate>Comparison timeout. Files might be too large.</AutoTranslate>;
+        errorMessage = "Comparison timeout. Files might be too large."
       } else if (error.response) {
-        errorMessage = error.response.data?.message || <AutoTranslate>Server error occurred</AutoTranslate>;
+        errorMessage = error.response.data?.message || "Server error occurred"
       } else if (error.request) {
-        errorMessage = <AutoTranslate>No response from server. Please check your connection.</AutoTranslate>;
+        errorMessage = "No response from server. Please check your connection."
       }
-
-      showPopup(errorMessage, "error");
+      showPopup(errorMessage, "error")
     } finally {
-      setIsComparing(false);
-      setIsLoadingFiles(false);
+      setIsComparing(false)
+      setIsLoadingFiles(false)
     }
-  };
+  }
 
   const downloadFile = async (fileId, fileName) => {
     try {
       const response = await apiClient.get(`${DOCUMENTHEADER_API}/download/${fileId}`, {
         responseType: "blob",
       })
-
       const blob = new Blob([response.data], { type: response.headers["content-type"] })
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
@@ -901,19 +678,15 @@ const FileCompare = () => {
     setPopupMessage({
       message,
       type,
-      onClose: () => {
-        setPopupMessage(null);
-      }
-    });
-  };
+      onClose: () => setPopupMessage(null)
+    })
+  }
 
   const closeComparisonModal = () => {
     setShowComparisonModal(false)
     setActiveTab("preview")
-
     if (fileUrls.firstFile?.url) URL.revokeObjectURL(fileUrls.firstFile.url)
     if (fileUrls.secondFile?.url) URL.revokeObjectURL(fileUrls.secondFile.url)
-
     setFileUrls({ firstFile: null, secondFile: null })
   }
 
@@ -925,14 +698,10 @@ const FileCompare = () => {
 
   const getDifferenceTypeColor = (type) => {
     switch (type) {
-      case "ADDED":
-        return "bg-green-100 border-green-400 text-green-800"
-      case "DELETED":
-        return "bg-red-100 border-red-400 text-red-800"
-      case "MODIFIED":
-        return "bg-yellow-100 border-yellow-400 text-yellow-800"
-      default:
-        return "bg-gray-100 border-gray-400 text-gray-800"
+      case "ADDED": return "bg-green-100 border-green-400 text-green-800"
+      case "DELETED": return "bg-red-100 border-red-400 text-red-800"
+      case "MODIFIED": return "bg-yellow-100 border-yellow-400 text-yellow-800"
+      default: return "bg-gray-100 border-gray-400 text-gray-800"
     }
   }
 
@@ -942,33 +711,16 @@ const FileCompare = () => {
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-700">
-              <AutoTranslate>No differences found</AutoTranslate>
-            </p>
-            <p className="text-sm text-gray-500">
-              <AutoTranslate>Files are identical</AutoTranslate>
-            </p>
+            <p className="text-lg font-medium text-gray-700"><AutoTranslate>No differences found</AutoTranslate></p>
+            <p className="text-sm text-gray-500"><AutoTranslate>Files are identical</AutoTranslate></p>
           </div>
         </div>
       )
     }
 
-    if (isLoading) {
-      return <LoadingComponent />;
-    }
-
     return (
       <div className="h-full overflow-auto p-4">
         <div className="space-y-3">
-
-          {popupMessage && (
-            <Popup
-              message={popupMessage.message}
-              type={popupMessage.type}
-              onClose={popupMessage.onClose}
-            />
-          )}
-
           {comparisonResult.differences.map((diff, index) => (
             <div key={index} className={`p-3 rounded-lg border-l-4 ${getDifferenceTypeColor(diff.type)}`}>
               <div className="flex items-center justify-between mb-2">
@@ -980,20 +732,15 @@ const FileCompare = () => {
                   {diff.rightLineNumber !== -1 ? diff.rightLineNumber : "N/A"}
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">
-                    <AutoTranslate>Original</AutoTranslate>
-                  </div>
+                  <div className="text-xs font-medium text-gray-600 mb-1"><AutoTranslate>Original</AutoTranslate></div>
                   <div className="text-sm bg-white p-2 rounded border font-mono">
                     {diff.leftContent || <span className="text-gray-400 italic"><AutoTranslate>No content</AutoTranslate></span>}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">
-                    <AutoTranslate>Modified</AutoTranslate>
-                  </div>
+                  <div className="text-xs font-medium text-gray-600 mb-1"><AutoTranslate>Modified</AutoTranslate></div>
                   <div className="text-sm bg-white p-2 rounded border font-mono">
                     {diff.rightContent || <span className="text-gray-400 italic"><AutoTranslate>No content</AutoTranslate></span>}
                   </div>
@@ -1024,6 +771,17 @@ const FileCompare = () => {
     return !!(leftIsText && rightIsText && fileUrls.firstFile?.url && fileUrls.secondFile?.url)
   }, [comparisonResult, fileUrls.firstFile, fileUrls.secondFile])
 
+  // Clear warning after 5s
+  useEffect(() => {
+    if (warningMessage) {
+      const timer = setTimeout(() => setWarningMessage(""), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [warningMessage])
+
+  // ============================================================
+  // FILE SEARCH DROPDOWN
+  // ============================================================
   const FileSearchDropdown = ({ isFirst = true }) => {
     const dropdownRef = useRef(null)
     const inputRef = useRef(null)
@@ -1049,7 +807,6 @@ const FileCompare = () => {
           setShowDropdown(false)
         }
       }
-
       if (showDropdown) {
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -1057,25 +814,14 @@ const FileCompare = () => {
     }, [showDropdown, setShowDropdown])
 
     const handleInputChange = (e) => {
-      const value = e.target.value
-      setSearchTerm(value)
-      if (!showDropdown) {
-        setShowDropdown(true)
-      }
-    }
-
-    const handleInputFocus = () => {
-      setShowDropdown(true)
+      setSearchTerm(e.target.value)
+      if (!showDropdown) setShowDropdown(true)
     }
 
     const handleCategoryChange = (e) => {
       setSelectedCategory(e.target.value)
       setShowDropdown(true)
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus()
-        }
-      }, 0)
+      setTimeout(() => { if (inputRef.current) inputRef.current.focus() }, 0)
     }
 
     const handleSelectFile = (fileNo) => {
@@ -1083,16 +829,12 @@ const FileCompare = () => {
         setSelectedFirstFileNo(fileNo)
         setFirstSearchTerm("")
         setFirstSelectedCategory("")
-        if (fileNo) {
-          fetchDocumentsByFileNo(fileNo, true)
-        }
+        if (fileNo) fetchDocumentsByFileNo(fileNo, true)
       } else {
         setSelectedSecondFileNo(fileNo)
         setSecondSearchTerm("")
         setSecondSelectedCategory("")
-        if (fileNo) {
-          fetchDocumentsByFileNo(fileNo, false)
-        }
+        if (fileNo) fetchDocumentsByFileNo(fileNo, false)
       }
       setShowDropdown(false)
     }
@@ -1114,18 +856,13 @@ const FileCompare = () => {
       setShowDropdown(false)
     }
 
-    const getCategoryName = (header) => {
-      return header.categoryMaster?.name || header.category?.name || "Unknown Category"
-    }
+    const getCategoryName = (header) =>
+      header.categoryMaster?.name || header.category?.name || "Unknown Category"
 
     const handleKeyDown = (e) => {
       if (e.key === 'Enter' && filteredHeaders.length > 0) {
         handleSelectFile(filteredHeaders[0].fileNo)
       }
-    }
-
-    const handleDropdownMouseDown = (e) => {
-      e.preventDefault()
     }
 
     return (
@@ -1139,7 +876,7 @@ const FileCompare = () => {
               placeholder={translateInstant('Select File', currentLanguage)}
               value={searchTerm}
               onChange={handleInputChange}
-              onFocus={handleInputFocus}
+              onFocus={() => setShowDropdown(true)}
               onKeyDown={handleKeyDown}
               autoComplete="off"
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
@@ -1161,9 +898,7 @@ const FileCompare = () => {
           >
             <option value=""><AutoTranslate>All Categories</AutoTranslate></option>
             {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
+              <option key={category.id} value={category.id}>{category.name}</option>
             ))}
           </select>
         </div>
@@ -1176,10 +911,7 @@ const FileCompare = () => {
                 {documentHeaders.find(h => h.fileNo === selectedFileNo)?.title || 'Unknown'}
               </div>
             </div>
-            <button
-              onClick={clearSelection}
-              className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-100 rounded"
-            >
+            <button onClick={clearSelection} className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-100 rounded">
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
@@ -1188,7 +920,7 @@ const FileCompare = () => {
         {showDropdown && !selectedFileNo && (
           <div
             className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col"
-            onMouseDown={handleDropdownMouseDown}
+            onMouseDown={(e) => e.preventDefault()}
           >
             {(searchTerm || selectedCategory) && (
               <div className="px-3 py-2 bg-gray-50 border-b text-xs text-gray-600 sticky top-0">
@@ -1210,7 +942,9 @@ const FileCompare = () => {
                 <div className="p-6 text-center">
                   <DocumentIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500 text-sm font-medium">
-                    {searchTerm.trim().length > 0 ? <AutoTranslate>No files found</AutoTranslate> : <AutoTranslate>Start typing to search</AutoTranslate>}
+                    {searchTerm.trim().length > 0
+                      ? <AutoTranslate>No files found</AutoTranslate>
+                      : <AutoTranslate>Start typing to search</AutoTranslate>}
                   </p>
                 </div>
               ) : (
@@ -1220,18 +954,14 @@ const FileCompare = () => {
                     onClick={() => handleSelectFile(header.fileNo)}
                     className="px-3 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
                   >
-                    <div className="font-semibold text-gray-900 text-sm">
-                      {header.fileNo}
-                    </div>
+                    <div className="font-semibold text-gray-900 text-sm">{header.fileNo}</div>
                     <div className="text-sm text-gray-700 mt-0.5 truncate">
                       {header.title || <AutoTranslate>No title</AutoTranslate>}
                     </div>
                     <div className="text-xs text-gray-500 mt-1 truncate">
                       {header.subject || <AutoTranslate>No subject</AutoTranslate>}
                     </div>
-                    <div className="text-xs text-blue-600 mt-1">
-                      {getCategoryName(header)}
-                    </div>
+                    <div className="text-xs text-blue-600 mt-1">{getCategoryName(header)}</div>
                   </div>
                 ))
               )}
@@ -1239,7 +969,7 @@ const FileCompare = () => {
 
             {filteredHeaders.length > 0 && (
               <div className="px-3 py-2 bg-gray-50 border-t text-xs text-gray-600 text-center">
-                {filteredHeaders.length} <AutoTranslate>result{filteredHeaders.length !== 1 ? 's' : ''}</AutoTranslate>
+                {filteredHeaders.length} <AutoTranslate>results</AutoTranslate>
               </div>
             )}
           </div>
@@ -1248,20 +978,23 @@ const FileCompare = () => {
     )
   }
 
-  // Clear warning message after 5 seconds
-  useEffect(() => {
-    if (warningMessage) {
-      const timer = setTimeout(() => setWarningMessage(""), 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [warningMessage])
-
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <div className="px-2">
       <h1 className="text-2xl mb-1 font-semibold">
         <AutoTranslate>File Compare</AutoTranslate>
       </h1>
       <div className="bg-white p-4 rounded-lg shadow-sm">
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={popupMessage.onClose}
+          />
+        )}
+
         {warningMessage && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start">
             <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />
@@ -1271,21 +1004,16 @@ const FileCompare = () => {
 
         <div className="mb-4 bg-slate-100 p-4 rounded-lg">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* First File */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-700">
-                  <AutoTranslate>First File</AutoTranslate>
-                </h3>
-                <span className="text-sm text-gray-500">
-                  <AutoTranslate>Selected:</AutoTranslate> {selectedFirstFileIds.length}/2
-                </span>
+                <h3 className="text-lg font-medium text-gray-700"><AutoTranslate>First File</AutoTranslate></h3>
+                <span className="text-sm text-gray-500"><AutoTranslate>Selected:</AutoTranslate> {selectedFirstFileIds.length}/2</span>
               </div>
-
               <div className="block text-md font-medium text-gray-700">
                 <AutoTranslate>Select File</AutoTranslate> <span className="text-red-500">*</span>
                 <FileSearchDropdown isFirst={true} />
               </div>
-
               <div className="block text-md font-medium text-gray-700">
                 <AutoTranslate>Select Documents</AutoTranslate> <span className="text-red-500">*</span>
                 <div className="mt-1 border rounded-md p-2 max-h-40 overflow-y-auto">
@@ -1294,12 +1022,8 @@ const FileCompare = () => {
                       const isSelected = selectedFirstFileIds.includes(doc.detailsId)
                       const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length
                       const canSelect = totalSelected < 2 || isSelected
-
                       return (
-                        <div
-                          key={doc.detailsId}
-                          className={`flex items-center p-2 hover:bg-gray-50 rounded ${!canSelect ? "opacity-50" : ""}`}
-                        >
+                        <div key={doc.detailsId} className={`flex items-center p-2 hover:bg-gray-50 rounded ${!canSelect ? "opacity-50" : ""}`}>
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -1311,9 +1035,7 @@ const FileCompare = () => {
                             {getFileTypeIcon(doc.fileType)}
                             <label className="ml-2 block text-sm text-gray-700 cursor-pointer flex-1">
                               <div className="font-medium">{extractFileName(doc.fileName || doc.docName)}</div>
-                              <div className="text-xs text-gray-500">
-                                <AutoTranslate>Version:</AutoTranslate> {doc.version}
-                              </div>
+                              <div className="text-xs text-gray-500"><AutoTranslate>Version:</AutoTranslate> {doc.version}</div>
                             </label>
                           </div>
                         </div>
@@ -1321,28 +1043,25 @@ const FileCompare = () => {
                     })
                   ) : (
                     <p className="text-sm text-gray-500 p-2">
-                      {selectedFirstFileNo ? <AutoTranslate>No documents available</AutoTranslate> : <AutoTranslate>Select a file to see documents</AutoTranslate>}
+                      {selectedFirstFileNo
+                        ? <AutoTranslate>No documents available</AutoTranslate>
+                        : <AutoTranslate>Select a file to see documents</AutoTranslate>}
                     </p>
                   )}
                 </div>
               </div>
             </div>
 
+            {/* Second File */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-700">
-                  <AutoTranslate>Second File</AutoTranslate>
-                </h3>
-                <span className="text-sm text-gray-500">
-                  <AutoTranslate>Selected:</AutoTranslate> {selectedSecondFileIds.length}/2
-                </span>
+                <h3 className="text-lg font-medium text-gray-700"><AutoTranslate>Second File</AutoTranslate></h3>
+                <span className="text-sm text-gray-500"><AutoTranslate>Selected:</AutoTranslate> {selectedSecondFileIds.length}/2</span>
               </div>
-
               <div className="block text-md font-medium text-gray-700">
                 <AutoTranslate>Select File</AutoTranslate> <span className="text-red-500">*</span>
                 <FileSearchDropdown isFirst={false} />
               </div>
-
               <div className="block text-md font-medium text-gray-700">
                 <AutoTranslate>Select Documents</AutoTranslate> <span className="text-red-500">*</span>
                 <div className="mt-1 border rounded-md p-2 max-h-40 overflow-y-auto">
@@ -1351,12 +1070,8 @@ const FileCompare = () => {
                       const isSelected = selectedSecondFileIds.includes(doc.detailsId)
                       const totalSelected = selectedFirstFileIds.length + selectedSecondFileIds.length
                       const canSelect = totalSelected < 2 || isSelected
-
                       return (
-                        <div
-                          key={doc.detailsId}
-                          className={`flex items-center p-2 hover:bg-gray-50 rounded ${!canSelect ? "opacity-50" : ""}`}
-                        >
+                        <div key={doc.detailsId} className={`flex items-center p-2 hover:bg-gray-50 rounded ${!canSelect ? "opacity-50" : ""}`}>
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -1368,9 +1083,7 @@ const FileCompare = () => {
                             {getFileTypeIcon(doc.fileType)}
                             <label className="ml-2 block text-sm text-gray-700 cursor-pointer flex-1">
                               <div className="font-medium">{extractFileName(doc.fileName || doc.docName)}</div>
-                              <div className="text-xs text-gray-500">
-                                <AutoTranslate>Version:</AutoTranslate> {doc.version}
-                              </div>
+                              <div className="text-xs text-gray-500"><AutoTranslate>Version:</AutoTranslate> {doc.version}</div>
                             </label>
                           </div>
                         </div>
@@ -1378,7 +1091,9 @@ const FileCompare = () => {
                     })
                   ) : (
                     <p className="text-sm text-gray-500 p-2">
-                      {selectedSecondFileNo ? <AutoTranslate>No documents available</AutoTranslate> : <AutoTranslate>Select a file to see documents</AutoTranslate>}
+                      {selectedSecondFileNo
+                        ? <AutoTranslate>No documents available</AutoTranslate>
+                        : <AutoTranslate>Select a file to see documents</AutoTranslate>}
                     </p>
                   )}
                 </div>
@@ -1390,10 +1105,11 @@ const FileCompare = () => {
             <button
               onClick={compareFiles}
               disabled={isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2}
-              className={`bg-blue-900 text-white rounded-2xl px-6 py-3 text-sm flex items-center justify-center transition-all ${isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-blue-800 hover:scale-105"
-                }`}
+              className={`bg-blue-900 text-white rounded-2xl px-6 py-3 text-sm flex items-center justify-center transition-all ${
+                isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-blue-800 hover:scale-105"
+              }`}
             >
               {isComparing ? (
                 <>
@@ -1403,144 +1119,146 @@ const FileCompare = () => {
               ) : (
                 <>
                   <ArrowsRightLeftIcon className="h-5 w-5 mr-2" />
-                  <AutoTranslate>CompareFiles</AutoTranslate>
+                  <AutoTranslate>Compare Files</AutoTranslate>
                 </>
               )}
             </button>
           </div>
         </div>
 
+        {/* ✅ FIXED COMPARISON MODAL — uses inline styles for reliable height */}
         {showComparisonModal && comparisonResult && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-5/6 flex flex-col">
-              <div className="flex justify-between items-center p-4 border-b bg-gray-50">
-                <div className="flex items-center space-x-4">
-                  <h2 className="text-xl font-semibold">
-                    <AutoTranslate>File Compare</AutoTranslate>
-                  </h2>
-                  <div className="flex items-center">
-                    {comparisonResult.identical ? (
-                      <CheckCircleIcon className="h-6 w-6 text-green-500 mr-2" />
-                    ) : (
-                      <XCircleIcon className="h-6 w-6 text-red-500 mr-2" />
-                    )}
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${comparisonResult.identical ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                        }`}
-                    >
-                      {comparisonResult.similarityPercentage?.toFixed(1) || "0.0"}% <AutoTranslate>Similar</AutoTranslate>
-                    </span>
+          <div
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 50, padding: '16px'
+            }}
+          >
+            <div
+              style={{
+                background: 'white', borderRadius: '8px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                width: '100%', maxWidth: '1280px', height: '90vh',
+                display: 'flex', flexDirection: 'column', overflow: 'hidden'
+              }}
+            >
+              {/* Modal Header */}
+              <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 600, margin: 0 }}>
+                      <AutoTranslate>File Compare</AutoTranslate>
+                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {comparisonResult.identical
+                        ? <CheckCircleIcon style={{ height: '24px', width: '24px', color: '#22c55e', marginRight: '8px' }} />
+                        : <XCircleIcon style={{ height: '24px', width: '24px', color: '#ef4444', marginRight: '8px' }} />
+                      }
+                      <span style={{
+                        padding: '4px 12px', borderRadius: '9999px', fontSize: '14px', fontWeight: 500,
+                        background: comparisonResult.identical ? '#dcfce7' : '#fee2e2',
+                        color: comparisonResult.identical ? '#166534' : '#991b1b'
+                      }}>
+                        {comparisonResult.similarityPercentage?.toFixed(1) || "0.0"}% <AutoTranslate>Similar</AutoTranslate>
+                      </span>
+                    </div>
                   </div>
+                  <button
+                    onClick={closeComparisonModal}
+                    style={{ padding: '4px', borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent' }}
+                    className="hover:bg-gray-100"
+                  >
+                    <XMarkIcon style={{ height: '24px', width: '24px', color: '#6b7280' }} />
+                  </button>
                 </div>
-                <button
-                  onClick={closeComparisonModal}
-                  className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
               </div>
 
-              <div className="border-b bg-gray-50">
-                <nav className="flex space-x-8 px-4">
-                  <button
-                    onClick={() => setActiveTab("preview")}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "preview"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
-                  >
-                    <AutoTranslate>File </AutoTranslate><AutoTranslate> Preview</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("differences")}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "differences"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
-                  >
-                    <AutoTranslate>Difference</AutoTranslate> ({comparisonResult.differences?.length || 0})
-                  </button>
-                  {bothImages && (
+              {/* Tabs */}
+              <div style={{ borderBottom: '1px solid #e5e7eb', background: '#f9fafb', flexShrink: 0 }}>
+                <nav style={{ display: 'flex', gap: '0', padding: '0 16px' }}>
+                  {[
+                    { id: 'preview', label: 'File Preview' },
+                    { id: 'differences', label: `Differences (${comparisonResult.differences?.length || 0})` },
+                    ...(bothImages ? [{ id: 'visualDiff', label: 'Visual Diff' }] : []),
+                    ...(bothText ? [{ id: 'textDiff', label: 'Text Comparison' }] : []),
+                  ].map(tab => (
                     <button
-                      onClick={() => setActiveTab("visualDiff")}
-                      className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "visualDiff"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      style={{
+                        padding: '10px 4px', marginRight: '24px',
+                        borderBottom: activeTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent',
+                        color: activeTab === tab.id ? '#2563eb' : '#6b7280',
+                        fontWeight: 500, fontSize: '14px', background: 'transparent',
+                        border: 'none', borderBottom: activeTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent',
+                        cursor: 'pointer'
+                      }}
                     >
-                      <AutoTranslate>VisualDifference</AutoTranslate> (<AutoTranslate>Images</AutoTranslate>)
+                      {tab.label}
                     </button>
-                  )}
-                  {bothText && (
-                    <button
-                      onClick={() => setActiveTab("textDiff")}
-                      className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === "textDiff"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                      <AutoTranslate>Text Comparison</AutoTranslate>
-                    </button>
-                  )}
+                  ))}
                 </nav>
               </div>
 
+              {/* File name headers for preview tab */}
               {activeTab === "preview" && (
-                <div className="grid grid-cols-2 gap-px bg-gray-200">
-                  <div className="bg-blue-50 p-3 flex items-center justify-between">
-                    <div className="flex items-center">
-                      {getFileTypeIcon(comparisonResult.leftFile.fileType)}
-                      <div className="ml-2">
-                        <h3 className="font-medium text-gray-800">{extractFileName(comparisonResult.leftFile.fileName)}</h3>
-                        <p className="text-xs text-gray-600">
-                          <AutoTranslate>Version:</AutoTranslate> {comparisonResult.leftFile.version} | <AutoTranslate>fileType:</AutoTranslate> {comparisonResult.leftFile.fileType}
-                        </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: '#e5e7eb', flexShrink: 0 }}>
+                  <div style={{ background: '#eff6ff', padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
+                    {getFileTypeIcon(comparisonResult.leftFile.fileType)}
+                    <div style={{ marginLeft: '8px' }}>
+                      <div style={{ fontWeight: 500, fontSize: '14px', color: '#111827' }}>
+                        {extractFileName(comparisonResult.leftFile.fileName)}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                        Version: {comparisonResult.leftFile.version} | Type: {comparisonResult.leftFile.fileType}
                       </div>
                     </div>
                   </div>
-                  <div className="bg-blue-50 p-3 flex items-center justify-between">
-                    <div className="flex items-center">
-                      {getFileTypeIcon(comparisonResult.rightFile.fileType)}
-                      <div className="ml-2">
-                        <h3 className="font-medium text-gray-800">{extractFileName(comparisonResult.rightFile.fileName)}</h3>
-                        <p className="text-xs text-gray-600">
-                          <AutoTranslate>Version:</AutoTranslate> {comparisonResult.rightFile.version} | <AutoTranslate>fileType:</AutoTranslate> {" "}
-                          {comparisonResult.rightFile.fileType}
-                        </p>
+                  <div style={{ background: '#eff6ff', padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
+                    {getFileTypeIcon(comparisonResult.rightFile.fileType)}
+                    <div style={{ marginLeft: '8px' }}>
+                      <div style={{ fontWeight: 500, fontSize: '14px', color: '#111827' }}>
+                        {extractFileName(comparisonResult.rightFile.fileName)}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                        Version: {comparisonResult.rightFile.version} | Type: {comparisonResult.rightFile.fileType}
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="flex-1 overflow-hidden">
+              {/* ✅ MAIN CONTENT AREA — flex:1 + minHeight:0 is the critical fix */}
+              <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 {activeTab === "preview" ? (
-                  <div className="h-full flex">
+                  <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
                     {isLoadingFiles ? (
-                      <div className="w-full flex items-center justify-center">
+                      <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <div className="text-center">
                           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                          <p className="text-gray-600">
-                            <AutoTranslate>Loading file previews...</AutoTranslate>
-                          </p>
+                          <p className="text-gray-600"><AutoTranslate>Loading file previews...</AutoTranslate></p>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <div
-                          className={`w-1/2 border-r-4 ${getDifferenceColor(comparisonResult.similarityPercentage)}`}
-                        >
-                          <div className="h-full flex flex-col">
-                            <div className="flex-1 overflow-auto">
-                              {renderFileViewer(comparisonResult.leftFile, fileUrls.firstFile, true)}
-                            </div>
+                        {/* ✅ LEFT PANEL */}
+                        <div style={{
+                          width: '50%', display: 'flex', flexDirection: 'column',
+                          minHeight: 0, borderRight: '4px solid',
+                          borderColor: comparisonResult.similarityPercentage === 100 ? '#4ade80'
+                            : comparisonResult.similarityPercentage >= 80 ? '#facc15' : '#f87171'
+                        }}>
+                          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                            {renderFileViewer(comparisonResult.leftFile, fileUrls.firstFile, true)}
                           </div>
                         </div>
-                        <div className={`w-1/2 ${getDifferenceColor(comparisonResult.similarityPercentage)}`}>
-                          <div className="h-full flex flex-col">
-                            <div className="flex-1 overflow-auto">
-                              {renderFileViewer(comparisonResult.rightFile, fileUrls.secondFile, false)}
-                            </div>
+
+                        {/* ✅ RIGHT PANEL */}
+                        <div style={{
+                          width: '50%', display: 'flex', flexDirection: 'column', minHeight: 0
+                        }}>
+                          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                            {renderFileViewer(comparisonResult.rightFile, fileUrls.secondFile, false)}
                           </div>
                         </div>
                       </>
@@ -1569,58 +1287,49 @@ const FileCompare = () => {
                 ) : null}
               </div>
 
-              <div className="p-4 bg-gray-50 border-t">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                    <div className="text-sm">
-                      <span className="font-medium">
-                        <AutoTranslate>Status:</AutoTranslate>
-                      </span>
-                      <span className={`ml-1 ${comparisonResult.identical ? "text-green-600" : "text-red-600"}`}>
+              {/* Modal Footer */}
+              <div style={{ padding: '12px 16px', background: '#f9fafb', borderTop: '1px solid #e5e7eb', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                    <div style={{ fontSize: '14px' }}>
+                      <span style={{ fontWeight: 500 }}>Status: </span>
+                      <span style={{ color: comparisonResult.identical ? '#16a34a' : '#dc2626' }}>
                         {comparisonResult.message}
                       </span>
                     </div>
-                    {!comparisonResult.identical && comparisonResult.differences && (
-                      <div className="text-sm">
-                        <span className="font-medium">
-                          <AutoTranslate>Differences Found:</AutoTranslate>
-                        </span>
-                        <span className="ml-1 text-red-600">{comparisonResult.differences.length}</span>
+                    {!comparisonResult.identical && comparisonResult.differences?.length > 0 && (
+                      <div style={{ fontSize: '14px' }}>
+                        <span style={{ fontWeight: 500 }}>Differences: </span>
+                        <span style={{ color: '#dc2626' }}>{comparisonResult.differences.length}</span>
                       </div>
                     )}
                     {comparisonResult.comparisonResult?.summary && (
-                      <div className="flex items-center space-x-4 text-sm">
+                      <div style={{ display: 'flex', gap: '16px', fontSize: '14px' }}>
                         {comparisonResult.comparisonResult.summary.totalLinesAdded > 0 && (
-                          <div className="text-green-600">
-                            +{comparisonResult.comparisonResult.summary.totalLinesAdded} <AutoTranslate>added</AutoTranslate>
-                          </div>
+                          <span style={{ color: '#16a34a' }}>+{comparisonResult.comparisonResult.summary.totalLinesAdded} added</span>
                         )}
                         {comparisonResult.comparisonResult.summary.totalLinesDeleted > 0 && (
-                          <div className="text-red-600">
-                            -{comparisonResult.comparisonResult.summary.totalLinesDeleted} <AutoTranslate>deleted</AutoTranslate>
-                          </div>
+                          <span style={{ color: '#dc2626' }}>-{comparisonResult.comparisonResult.summary.totalLinesDeleted} deleted</span>
                         )}
                         {comparisonResult.comparisonResult.summary.totalLinesModified > 0 && (
-                          <div className="text-yellow-600">
-                            ~{comparisonResult.comparisonResult.summary.totalLinesModified} <AutoTranslate>modified</AutoTranslate>
-                          </div>
+                          <span style={{ color: '#ca8a04' }}>~{comparisonResult.comparisonResult.summary.totalLinesModified} modified</span>
                         )}
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-4 text-xs">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-green-50 border-2 border-green-400 mr-1"></div>
-                      <span><AutoTranslate>Identical (100%)</AutoTranslate></span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ width: '12px', height: '12px', background: '#f0fdf4', border: '2px solid #4ade80', marginRight: '4px' }}></div>
+                      <span>Identical (100%)</span>
                     </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-yellow-50 border-2 border-yellow-400 mr-1"></div>
-                      <span><AutoTranslate>Similar (80-99%)</AutoTranslate></span>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ width: '12px', height: '12px', background: '#fefce8', border: '2px solid #facc15', marginRight: '4px' }}></div>
+                      <span>Similar (80-99%)</span>
                     </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-red-50 border-2 border-red-400 mr-1"></div>
-                      <span><AutoTranslate>Different (&lt;80%)</AutoTranslate></span>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ width: '12px', height: '12px', background: '#fef2f2', border: '2px solid #f87171', marginRight: '4px' }}></div>
+                      <span>Different (&lt;80%)</span>
                     </div>
                   </div>
                 </div>
@@ -1632,12 +1341,8 @@ const FileCompare = () => {
         {!comparisonResult && !showComparisonModal && (
           <div className="text-center py-12 text-gray-500">
             <DocumentDuplicateIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <p className="text-lg font-medium">
-              <AutoTranslate>Select exactly 2 documents to compare</AutoTranslate>
-            </p>
-            <p className="text-sm">
-              <AutoTranslate>You can select documents from the same file or different files</AutoTranslate>
-            </p>
+            <p className="text-lg font-medium"><AutoTranslate>Select exactly 2 documents to compare</AutoTranslate></p>
+            <p className="text-sm"><AutoTranslate>You can select documents from the same file or different files</AutoTranslate></p>
             <div className="mt-4 text-xs text-gray-400">
               <p>• <AutoTranslate>Select 2 documents from first file only</AutoTranslate></p>
               <p>• <AutoTranslate>Select 2 documents from second file only</AutoTranslate></p>
@@ -1652,13 +1357,10 @@ const FileCompare = () => {
 
 export default FileCompare
 
-/* Visual diff panel for images with Overlay and Pixel Diff modes */
-function VisualDiffPanel({
-  leftUrl,
-  rightUrl,
-  leftName,
-  rightName,
-}) {
+// ============================================================
+// VISUAL DIFF PANEL
+// ============================================================
+function VisualDiffPanel({ leftUrl, rightUrl, leftName, rightName }) {
   const [mode, setMode] = useState("overlay")
   const [opacity, setOpacity] = useState(0.5)
   const [threshold, setThreshold] = useState(30)
@@ -1683,24 +1385,20 @@ function VisualDiffPanel({
       if (cancelled) return
       const w = Math.min(imgA.width, imgB.width)
       const h = Math.min(imgA.height, imgB.height)
-
       if (!w || !h) return
 
       canvas.width = w
       canvas.height = h
-
       const ctx = canvas.getContext("2d")
       if (!ctx) return
 
       const aCanvas = document.createElement("canvas")
-      aCanvas.width = w
-      aCanvas.height = h
+      aCanvas.width = w; aCanvas.height = h
       const aCtx = aCanvas.getContext("2d")
       aCtx.drawImage(imgA, 0, 0, w, h)
 
       const bCanvas = document.createElement("canvas")
-      bCanvas.width = w
-      bCanvas.height = h
+      bCanvas.width = w; bCanvas.height = h
       const bCtx = bCanvas.getContext("2d")
       bCtx.drawImage(imgB, 0, 0, w, h)
 
@@ -1709,139 +1407,73 @@ function VisualDiffPanel({
       const out = ctx.createImageData(w, h)
 
       for (let i = 0; i < aData.data.length; i += 4) {
-        const r1 = aData.data[i]
-        const g1 = aData.data[i + 1]
-        const b1 = aData.data[i + 2]
-        const r2 = bData.data[i]
-        const g2 = bData.data[i + 1]
-        const b2 = bData.data[i + 2]
-
-        const colorDiff = Math.sqrt(
-          Math.pow(r1 - r2, 2) +
-          Math.pow(g1 - g2, 2) +
-          Math.pow(b1 - b2, 2)
-        )
-
-        const isDifferent = colorDiff > threshold
-
-        if (!isDifferent) {
-          out.data[i] = r1
-          out.data[i + 1] = g1
-          out.data[i + 2] = b1
-          out.data[i + 3] = 255
+        const r1 = aData.data[i], g1 = aData.data[i + 1], b1 = aData.data[i + 2]
+        const r2 = bData.data[i], g2 = bData.data[i + 1], b2 = bData.data[i + 2]
+        const diff = Math.sqrt((r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2)
+        if (diff <= threshold) {
+          out.data[i] = r1; out.data[i+1] = g1; out.data[i+2] = b1; out.data[i+3] = 255
         } else {
-          const intensity = Math.min(colorDiff / 100, 1)
-
           out.data[i] = Math.min(255, r1 + (255 - r1) * 0.8)
-          out.data[i + 1] = Math.max(0, g1 * 0.3)
-          out.data[i + 2] = Math.max(0, b1 * 0.3)
-          out.data[i + 3] = 255
+          out.data[i+1] = Math.max(0, g1 * 0.3)
+          out.data[i+2] = Math.max(0, b1 * 0.3)
+          out.data[i+3] = 255
         }
       }
-
       ctx.putImageData(out, 0, 0)
     }
 
-    imgA.onload = () => {
-      if (imgB.complete) draw()
-    }
-    imgB.onload = () => {
-      if (imgA.complete) draw()
-    }
-
-    return () => {
-      cancelled = true
-    }
+    imgA.onload = () => { if (imgB.complete) draw() }
+    imgB.onload = () => { if (imgA.complete) draw() }
+    return () => { cancelled = true }
   }, [leftUrl, rightUrl, mode, threshold])
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-3 border-b bg-white">
-        <div className="text-sm text-gray-700">
-          <span className="font-medium">{leftName}</span> vs <span className="font-medium">{rightName}</span>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb', background: 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: '14px', color: '#374151' }}>
+          <span style={{ fontWeight: 500 }}>{leftName}</span> vs <span style={{ fontWeight: 500 }}>{rightName}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <label className="text-sm text-gray-600">
-            <AutoTranslate>Mode:</AutoTranslate>
-          </label>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMode("overlay")}
-              className={`px-3 py-1 rounded text-sm ${mode === "overlay" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
-                }`}
-            >
-              <AutoTranslate>Overlay</AutoTranslate>
-            </button>
-            <button
-              onClick={() => setMode("pixel")}
-              className={`px-3 py-1 rounded text-sm ${mode === "pixel" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
-                }`}
-            >
-              <AutoTranslate>Pixel Diff</AutoTranslate>
-            </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {['overlay', 'pixel'].map(m => (
+              <button key={m} onClick={() => setMode(m)}
+                style={{ padding: '4px 12px', borderRadius: '4px', fontSize: '14px', border: 'none', cursor: 'pointer',
+                  background: mode === m ? '#2563eb' : '#f3f4f6', color: mode === m ? 'white' : '#374151' }}>
+                {m === 'overlay' ? 'Overlay' : 'Pixel Diff'}
+              </button>
+            ))}
           </div>
-
           {mode === "overlay" && (
-            <div className="flex items-center gap-2 ml-4">
-              <span className="text-xs text-gray-600">{leftName}</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={opacity}
-                onChange={(e) => setOpacity(Number.parseFloat(e.target.value))}
-                className="w-24"
-              />
-              <span className="text-xs text-gray-600">{rightName}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+              <span>{leftName}</span>
+              <input type="range" min={0} max={1} step={0.01} value={opacity}
+                onChange={e => setOpacity(parseFloat(e.target.value))} style={{ width: '96px' }} />
+              <span>{rightName}</span>
             </div>
           )}
-
           {mode === "pixel" && (
-            <div className="flex items-center gap-2 ml-4">
-              <span className="text-xs text-gray-600">
-                <AutoTranslate>Sensitivity:</AutoTranslate>
-              </span>
-              <input
-                type="range"
-                min={5}
-                max={100}
-                step={5}
-                value={threshold}
-                onChange={(e) => setThreshold(Number.parseInt(e.target.value))}
-                className="w-24"
-              />
-              <span className="text-xs text-gray-600">{threshold}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+              <span>Sensitivity:</span>
+              <input type="range" min={5} max={100} step={5} value={threshold}
+                onChange={e => setThreshold(parseInt(e.target.value))} style={{ width: '96px' }} />
+              <span>{threshold}</span>
             </div>
           )}
         </div>
       </div>
-
-      <div ref={containerRef} className="flex-1 bg-gray-50 overflow-auto p-4">
-        <div className="w-full h-full flex items-start justify-center">
+      <div ref={containerRef} style={{ flex: 1, background: '#f9fafb', overflow: 'auto', padding: '16px' }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
           {mode === "overlay" ? (
-            <div className="relative inline-block">
-              <img
-                src={leftUrl || "/placeholder.svg"}
-                crossOrigin="anonymous"
-                alt={leftName}
-                className="w-auto h-auto max-w-full block"
-                style={{ maxHeight: 'calc(100vh - 300px)' }}
-              />
-              <img
-                src={rightUrl || "/placeholder.svg"}
-                crossOrigin="anonymous"
-                alt={rightName}
-                style={{ opacity }}
-                className="w-auto h-auto max-w-full block absolute top-0 left-0"
-              />
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <img src={leftUrl} crossOrigin="anonymous" alt={leftName}
+                style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: 'calc(90vh - 300px)', display: 'block' }} />
+              <img src={rightUrl} crossOrigin="anonymous" alt={rightName}
+                style={{ opacity, width: 'auto', height: 'auto', maxWidth: '100%', position: 'absolute', top: 0, left: 0 }} />
             </div>
           ) : (
-            <div className="text-center">
-              <canvas ref={canvasRef} className="w-auto h-auto max-w-full border" style={{ maxHeight: 'calc(100vh - 300px)' }} />
-              <div className="mt-2 text-xs text-gray-600">
-                <AutoTranslate>Red areas indicate differences between images</AutoTranslate>
-              </div>
+            <div style={{ textAlign: 'center' }}>
+              <canvas ref={canvasRef} style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: 'calc(90vh - 300px)', border: '1px solid #e5e7eb' }} />
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#6b7280' }}>Red areas indicate differences</div>
             </div>
           )}
         </div>
@@ -1850,40 +1482,24 @@ function VisualDiffPanel({
   )
 }
 
-/* Text diff panel for text files with inline highlighted differences */
-function TextDiffPanel({
-  leftContent,
-  rightContent,
-  differences,
-  leftName,
-  rightName,
-  comparisonResult,
-  leftHighlightedContent,
-  rightHighlightedContent
-}) {
-  const [viewMode, setViewMode] = useState('full-document');
+// ============================================================
+// TEXT DIFF PANEL
+// ============================================================
+function TextDiffPanel({ leftContent, rightContent, differences, leftName, rightName, comparisonResult, leftHighlightedContent, rightHighlightedContent }) {
+  const [viewMode, setViewMode] = useState('full-document')
 
-  const leftHighlighted = leftHighlightedContent ||
-    (comparisonResult?.leftFile?.highlightedContent || '');
-  const rightHighlighted = rightHighlightedContent ||
-    (comparisonResult?.rightFile?.highlightedContent || '');
+  const leftHighlighted = leftHighlightedContent || (comparisonResult?.leftFile?.highlightedContent || '')
+  const rightHighlighted = rightHighlightedContent || (comparisonResult?.rightFile?.highlightedContent || '')
 
   const renderHighlightedContent = (content, isLeft = true) => {
-    if (!content) {
-      return (
-        <div className="no-content">
-          <AutoTranslate>No content available for</AutoTranslate> {isLeft ? leftName : rightName}
-        </div>
-      );
-    }
+    if (!content) return (
+      <div style={{ color: '#9ca3af', fontStyle: 'italic', padding: '16px', textAlign: 'center' }}>
+        No content available for {isLeft ? leftName : rightName}
+      </div>
+    )
 
-    if (content.includes('<span class="diff-')) {
-      return (
-        <div
-          className="highlighted-content"
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
-      );
+    if (typeof content === 'string' && content.includes('<span class="diff-')) {
+      return <div className="highlighted-content" dangerouslySetInnerHTML={{ __html: content }} />
     }
 
     if (Array.isArray(content)) {
@@ -1893,259 +1509,141 @@ function TextDiffPanel({
             const lineDiff = differences?.find(d =>
               (isLeft && d.leftLineNumber === index + 1) ||
               (!isLeft && d.rightLineNumber === index + 1)
-            );
-
-            let className = "document-line";
-            if (lineDiff) {
-              if (lineDiff.type === 'DELETED') className += " deleted";
-              else if (lineDiff.type === 'ADDED') className += " added";
-              else if (lineDiff.type === 'MODIFIED') className += " modified";
-            }
-
-            return (
-              <div key={index} className={className}>
-                {line || <span className="empty-line">&nbsp;</span>}
-              </div>
-            );
+            )
+            let className = "document-line"
+            if (lineDiff?.type === 'DELETED') className += " deleted"
+            else if (lineDiff?.type === 'ADDED') className += " added"
+            else if (lineDiff?.type === 'MODIFIED') className += " modified"
+            return <div key={index} className={className}>{line || <span>&nbsp;</span>}</div>
           })}
         </div>
-      );
+      )
     }
 
     return (
       <div className="full-document-content">
-        {content.split('\n').map((line, index) => (
-          <div key={index} className="document-line">
-            {line}
-          </div>
+        {String(content).split('\n').map((line, index) => (
+          <div key={index} className="document-line">{line}</div>
         ))}
       </div>
-    );
-  };
+    )
+  }
 
-  const renderFullDocumentView = () => (
-    <div className="grid grid-cols-2 gap-4 h-full overflow-auto p-4">
-      <div className="border rounded-lg bg-white overflow-hidden">
-        <div className="sticky top-0 bg-blue-50 p-3 border-b font-medium text-blue-800 flex justify-between items-center">
-          <span>{leftName} (<AutoTranslate>Original</AutoTranslate>)</span>
-          <span className="text-xs font-normal text-blue-600">
-            {differences && differences.filter(d => d.type === 'DELETED' || d.type === 'MODIFIED').length} <AutoTranslate>changes</AutoTranslate>
-          </span>
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb', background: 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: '14px', color: '#374151' }}>
+          <span style={{ fontWeight: 500 }}>{leftName}</span> vs <span style={{ fontWeight: 500 }}>{rightName}</span>
+          {differences?.length > 0 && <span style={{ marginLeft: '12px', color: '#dc2626' }}>({differences.length} differences)</span>}
         </div>
-        <div className="p-4 overflow-auto max-h-96 full-document-container">
-          {renderHighlightedContent(leftHighlighted || leftContent, true)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: '#6b7280' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '12px', height: '12px', background: '#fef2f2', border: '1px solid #ef4444', marginRight: '4px' }}></div>
+              <span>Deleted</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '12px', height: '12px', background: '#f0fdf4', border: '1px solid #22c55e', marginRight: '4px' }}></div>
+              <span>Added</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '12px', height: '12px', background: '#fffbeb', border: '1px solid #eab308', marginRight: '4px' }}></div>
+              <span>Modified</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {['full-document', 'differences-only'].map(mode => (
+              <button key={mode} onClick={() => setViewMode(mode)}
+                style={{ padding: '4px 12px', borderRadius: '4px', fontSize: '12px', border: 'none', cursor: 'pointer',
+                  background: viewMode === mode ? '#2563eb' : '#f3f4f6', color: viewMode === mode ? 'white' : '#374151' }}>
+                {mode === 'full-document' ? 'Full Document' : 'Differences Only'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="border rounded-lg bg-white overflow-hidden">
-        <div className="sticky top-0 bg-blue-50 p-3 border-b font-medium text-blue-800 flex justify-between items-center">
-          <span>{rightName} (<AutoTranslate>Modified</AutoTranslate>)</span>
-          <span className="text-xs font-normal text-blue-600">
-            {differences && differences.filter(d => d.type === 'ADDED' || d.type === 'MODIFIED').length} <AutoTranslate>changes</AutoTranslate>
-          </span>
-        </div>
-        <div className="p-4 overflow-auto max-h-96 full-document-container">
-          {renderHighlightedContent(rightHighlighted || rightContent, false)}
-        </div>
-      </div>
-    </div>
-  );
+      <style>{`
+        .full-document-content { background: white; padding: 16px; border-radius: 8px; }
+        .document-line { padding: 4px 8px; margin: 2px 0; border-left: 3px solid transparent; white-space: pre-wrap; word-wrap: break-word; line-height: 1.5; font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; font-size: 13px; }
+        .document-line.deleted { background: #fef2f2; color: #dc2626; text-decoration: line-through; border-left-color: #dc2626; }
+        .document-line.added { background: #f0fdf4; color: #16a34a; border-left-color: #16a34a; }
+        .document-line.modified { background: #fffbeb; color: #ca8a04; border-left-color: #ca8a04; }
+        .highlighted-content { font-family: 'Monaco','Menlo',monospace; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: white; padding: 16px; border-radius: 8px; }
+        .highlighted-content .diff-deleted { background: #fef2f2; color: #dc2626; text-decoration: line-through; }
+        .highlighted-content .diff-added { background: #f0fdf4; color: #16a34a; }
+        .highlighted-content .diff-modified { background: #fffbeb; color: #ca8a04; }
+      `}</style>
 
-  const renderDifferencesOnlyView = () => (
-    <div className="h-full overflow-auto p-4">
-      <div className="space-y-3">
-        {differences && differences.length > 0 ? (
-          differences.map((diff, index) => (
-            <div key={index} className={`p-3 rounded-lg border-l-4 ${diff.type === 'ADDED' ? 'bg-green-100 border-green-400' :
-              diff.type === 'DELETED' ? 'bg-red-100 border-red-400' :
-                'bg-yellow-100 border-yellow-400'
-              }`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${diff.type === 'ADDED' ? 'bg-green-100 text-green-800' :
-                  diff.type === 'DELETED' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                  {diff.type}
-                </span>
-                <div className="text-xs text-gray-600">
-                  <AutoTranslate>Line</AutoTranslate> {diff.leftLineNumber !== -1 ? diff.leftLineNumber : "N/A"} →{" "}
-                  {diff.rightLineNumber !== -1 ? diff.rightLineNumber : "N/A"}
-                </div>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', background: '#f9fafb' }}>
+        {viewMode === 'full-document' ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', height: '100%', overflow: 'auto', padding: '16px' }}>
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ background: '#eff6ff', padding: '12px 16px', borderBottom: '1px solid #e5e7eb', fontWeight: 500, color: '#1e40af', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
+                <span>{leftName} (Original)</span>
+                <span style={{ fontSize: '12px', fontWeight: 400 }}>{differences?.filter(d => d.type === 'DELETED' || d.type === 'MODIFIED').length} changes</span>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">
-                    <AutoTranslate>Original</AutoTranslate>
-                  </div>
-                  <div className="text-sm bg-white p-2 rounded border font-mono">
-                    {diff.leftContent || <span className="text-gray-400 italic"><AutoTranslate>No content</AutoTranslate></span>}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">
-                    <AutoTranslate>Modified</AutoTranslate>
-                  </div>
-                  <div className="text-sm bg-white p-2 rounded border font-mono">
-                    {diff.rightContent || <span className="text-gray-400 italic"><AutoTranslate>No content</AutoTranslate></span>}
-                  </div>
-                </div>
+              <div style={{ padding: '16px', overflow: 'auto', flex: 1 }}>
+                {renderHighlightedContent(leftHighlighted || leftContent, true)}
               </div>
             </div>
-          ))
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ background: '#eff6ff', padding: '12px 16px', borderBottom: '1px solid #e5e7eb', fontWeight: 500, color: '#1e40af', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
+                <span>{rightName} (Modified)</span>
+                <span style={{ fontSize: '12px', fontWeight: 400 }}>{differences?.filter(d => d.type === 'ADDED' || d.type === 'MODIFIED').length} changes</span>
+              </div>
+              <div style={{ padding: '16px', overflow: 'auto', flex: 1 }}>
+                {renderHighlightedContent(rightHighlighted || rightContent, false)}
+              </div>
+            </div>
+          </div>
         ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <p className="text-lg font-medium text-gray-700">
-                <AutoTranslate>No differences found</AutoTranslate>
-              </p>
-              <p className="text-sm text-gray-500">
-                <AutoTranslate>Files are identical</AutoTranslate>
-              </p>
+          <div style={{ height: '100%', overflow: 'auto', padding: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {differences?.length > 0 ? differences.map((diff, index) => (
+                <div key={index} style={{
+                  padding: '12px', borderRadius: '8px', borderLeft: '4px solid',
+                  borderLeftColor: diff.type === 'ADDED' ? '#4ade80' : diff.type === 'DELETED' ? '#f87171' : '#facc15',
+                  background: diff.type === 'ADDED' ? '#f0fdf4' : diff.type === 'DELETED' ? '#fef2f2' : '#fffbeb'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 500,
+                      background: diff.type === 'ADDED' ? '#dcfce7' : diff.type === 'DELETED' ? '#fee2e2' : '#fef9c3',
+                      color: diff.type === 'ADDED' ? '#166534' : diff.type === 'DELETED' ? '#991b1b' : '#854d0e' }}>
+                      {diff.type}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                      Line {diff.leftLineNumber !== -1 ? diff.leftLineNumber : "N/A"} → {diff.rightLineNumber !== -1 ? diff.rightLineNumber : "N/A"}
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 500, color: '#6b7280', marginBottom: '4px' }}>Original</div>
+                      <div style={{ fontSize: '13px', background: 'white', padding: '8px', borderRadius: '4px', border: '1px solid #e5e7eb', fontFamily: 'monospace' }}>
+                        {diff.leftContent || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>No content</span>}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 500, color: '#6b7280', marginBottom: '4px' }}>Modified</div>
+                      <div style={{ fontSize: '13px', background: 'white', padding: '8px', borderRadius: '4px', border: '1px solid #e5e7eb', fontFamily: 'monospace' }}>
+                        {diff.rightContent || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>No content</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <CheckCircleIcon style={{ height: '64px', width: '64px', color: '#22c55e', margin: '0 auto 16px' }} />
+                    <p style={{ fontSize: '18px', fontWeight: 500, color: '#374151' }}>No differences found</p>
+                    <p style={{ fontSize: '14px', color: '#6b7280' }}>Files are identical</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
     </div>
-  );
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-3 border-b bg-white">
-        <div className="text-sm text-gray-700">
-          <span className="font-medium">{leftName}</span> vs <span className="font-medium">{rightName}</span>
-          {differences && differences.length > 0 && (
-            <span className="ml-3 text-red-600">({differences.length} <AutoTranslate>differences found</AutoTranslate>)</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-xs text-gray-600">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-red-100 border border-red-500 mr-1"></div>
-              <span><AutoTranslate>Deleted content</AutoTranslate></span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-100 border border-green-500 mr-1"></div>
-              <span><AutoTranslate>Added content</AutoTranslate></span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-yellow-100 border border-yellow-500 mr-1"></div>
-              <span><AutoTranslate>Modified content</AutoTranslate></span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode('full-document')}
-              className={`px-3 py-1 rounded text-xs ${viewMode === 'full-document'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700'
-                }`}
-            >
-              <AutoTranslate>Full Document</AutoTranslate>
-            </button>
-            <button
-              onClick={() => setViewMode('differences-only')}
-              className={`px-3 py-1 rounded text-xs ${viewMode === 'differences-only'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700'
-                }`}
-            >
-              <AutoTranslate>Differences Only</AutoTranslate>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <style>
-        {`
-          .full-document-container {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8fafc;
-          }
-          
-          .full-document-content {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          }
-          
-          .document-line {
-            padding: 4px 8px;
-            margin: 2px 0;
-            border-left: 3px solid transparent;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            line-height: 1.5;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 13px;
-          }
-          
-          .document-line.empty-line {
-            height: 1.2em;
-            background-color: #f9fafb;
-          }
-          
-          .document-line.deleted {
-            background-color: #fef2f2;
-            color: #dc2626;
-            text-decoration: line-through;
-            border-left-color: #dc2626;
-          }
-          
-          .document-line.added {
-            background-color: #f0fdf4;
-            color: #16a34a;
-            border-left-color: #16a34a;
-          }
-          
-          .document-line.modified {
-            background-color: #fffbeb;
-            color: #ca8a04;
-            border-left-color: #ca8a04;
-          }
-          
-          .highlighted-content {
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-          }
-          
-          .highlighted-content .diff-deleted {
-            background-color: #fef2f2;
-            color: #dc2626;
-            text-decoration: line-through;
-          }
-          
-          .highlighted-content .diff-added {
-            background-color: #f0fdf4;
-            color: #16a34a;
-          }
-          
-          .highlighted-content .diff-modified {
-            background-color: #fffbeb;
-            color: #ca8a04;
-          }
-          
-          .no-content {
-            color: #9ca3af;
-            font-style: italic;
-            padding: 16px;
-            text-align: center;
-          }
-        `}
-      </style>
-
-      <div className="flex-1 overflow-hidden bg-gray-50">
-        {viewMode === 'full-document' ? renderFullDocumentView() : renderDifferencesOnlyView()}
-      </div>
-    </div>
-  );
+  )
 }
