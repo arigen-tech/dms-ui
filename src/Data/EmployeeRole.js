@@ -499,9 +499,9 @@ const EmployeeRole = () => {
                 <AutoTranslate>Confirm Role Assignment</AutoTranslate>
               </h2>
               <p className="mb-4">
-                <AutoTranslate>Are you sure you want to assign the role</AutoTranslate>{" "}
-                <strong>{selectedRole}</strong> <AutoTranslate>to</AutoTranslate>{" "}
-                <strong>{users.find((user) => user.id === selectedUser)?.name}</strong>?
+                <AutoTranslate>
+                  Are you sure you want to assign the role {selectedRole} to {users.find((user) => user.id === selectedUser)?.name}?
+                </AutoTranslate>
               </p>
               <div className="flex justify-end gap-4">
                 <button
@@ -536,5 +536,5 @@ const EmployeeRole = () => {
     </div>
   );
 };
-  
+
 export default EmployeeRole;

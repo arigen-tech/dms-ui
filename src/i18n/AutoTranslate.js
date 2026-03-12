@@ -1,97 +1,142 @@
-// frontend/i18n/AutoTranslate.jsx - FIXED VERSION
+// frontend/i18n/AutoTranslate.jsx - FIXED VERSION WITH AUTO-SAVE
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { translateText, getFallbackTranslation } from '../i18n/autoTranslator';
+import { translateText, getFallbackTranslation, loadAllTranslations } from '../i18n/autoTranslator';
 import { useLanguage } from '../i18n/LanguageContext';
+import apiClient from '../API/apiClient';
+import { API_HOST } from '../API/apiConfig';
 
-// Global cache
+// Global cache — persists across renders, survives re-mounts
 const translationCache = new Map();
 
-const AutoTranslate = ({ 
-  children, 
-  className = '', 
+// Track which texts are currently being translated (prevent duplicate API calls)
+const pendingTranslations = new Set();
+
+const AutoTranslate = ({
+  children,
+  className = '',
   showOriginalOnHover = false,
-  skipTranslation = false 
+  skipTranslation = false
 }) => {
   const [translatedText, setTranslatedText] = useState('');
   const { currentLanguage, isTranslationNeeded } = useLanguage();
   const isMounted = useRef(true);
-  const lastText = useRef('');
   const lastLanguage = useRef(currentLanguage);
-  const translationAttempted = useRef(false);
 
-  const getCacheKey = useCallback((text, lang) => {
-    return `${text}_${lang}`;
-  }, []);
+  const getCacheKey = useCallback((text, lang) => `${text}_${lang}`, []);
 
-  const translate = useCallback(async (text) => {
-    if (!text || typeof text !== 'string' || !isTranslationNeeded() || currentLanguage === 'en' || skipTranslation) {
-      return text;
-    }
+  // ─────────────────────────────────────────────
+  // Core: translate text with fallback → DB → API → save
+  // ─────────────────────────────────────────────
+  const resolveTranslation = useCallback(async (text) => {
+    if (!text || typeof text !== 'string' || text.trim() === '') return text;
+    if (!isTranslationNeeded() || currentLanguage === 'en' || skipTranslation) return text;
 
     const cacheKey = getCacheKey(text, currentLanguage);
-    
-    // Check cache first
+
+    // 1. Check local component cache
     if (translationCache.has(cacheKey)) {
       return translationCache.get(cacheKey);
     }
 
-    // Try to translate
-    try {
-      const result = await translateText(text, currentLanguage);
-      translationCache.set(cacheKey, result);
-      return result;
-    } catch (error) {
-      console.error('Translation error:', error);
-      return text;
+    // 2. Try fallback translations (synchronous, instant)
+    const fallback = getFallbackTranslation(text, currentLanguage);
+    if (fallback && fallback !== text) {
+      translationCache.set(cacheKey, fallback);
+      // Save fallback to DB in background
+      saveToDatabase(text, fallback, currentLanguage);
+      return fallback;
     }
+
+    // 3. Try DB via translateText (loads all translations if not loaded)
+    try {
+      const dbResult = await translateText(text, currentLanguage);
+      if (dbResult && dbResult !== text) {
+        translationCache.set(cacheKey, dbResult);
+        return dbResult;
+      }
+    } catch (e) {}
+
+    // 4. Not in DB — call MyMemory API directly and save to DB
+    if (navigator.onLine && !pendingTranslations.has(cacheKey)) {
+      pendingTranslations.add(cacheKey);
+      try {
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${currentLanguage}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const apiResult = json?.responseData?.translatedText;
+
+        if (apiResult
+          && apiResult.trim() !== ''
+          && apiResult.toLowerCase() !== text.toLowerCase()) {
+
+          let clean = apiResult;
+          try { clean = decodeURIComponent(apiResult); } catch (e) {}
+
+          translationCache.set(cacheKey, clean);
+          // Save to DB so next time it comes from DB
+          saveToDatabase(text, clean, currentLanguage);
+          pendingTranslations.delete(cacheKey);
+          return clean;
+        }
+      } catch (e) {
+        // Silent fail
+      }
+      pendingTranslations.delete(cacheKey);
+    }
+
+    // 5. Nothing worked — return original
+    return text;
   }, [currentLanguage, isTranslationNeeded, skipTranslation, getCacheKey]);
 
+  // ─────────────────────────────────────────────
+  // Save to DB (silent, background)
+  // ─────────────────────────────────────────────
+  const saveToDatabase = async (sourceText, translatedText, languageCode) => {
+    try {
+      await apiClient.post(`${API_HOST}/translate/saveFallback`, {
+        sourceText,
+        translatedText,
+        languageCode
+      });
+      console.log(`💾 [AutoTranslate] Saved: "${sourceText}" → "${translatedText}" (${languageCode})`);
+    } catch (e) {
+      // Silent fail
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Main effect — runs on mount and when text/language changes
+  // ─────────────────────────────────────────────
   useEffect(() => {
     isMounted.current = true;
-    translationAttempted.current = false;
-    
+
     const processTranslation = async () => {
       if (!children) {
-        if (isMounted.current) {
-          setTranslatedText('');
-        }
+        if (isMounted.current) setTranslatedText('');
         return;
       }
 
       const text = typeof children === 'string' ? children : String(children);
-      
-      // Check if we need to translate
-      const shouldTranslate = isTranslationNeeded() && 
-                            currentLanguage !== 'en' && 
-                            !skipTranslation;
 
-      if (shouldTranslate) {
-        // Try fallback FIRST for immediate display
-        const fallbackResult = getFallbackTranslation(text, currentLanguage);
-        if (fallbackResult && isMounted.current) {
-          setTranslatedText(fallbackResult);
-          translationCache.set(getCacheKey(text, currentLanguage), fallbackResult);
-          console.log(`✓ [Fallback - Immediate] "${text}" -> "${fallbackResult}"`);
-          translationAttempted.current = true;
-          return;
-        }
+      if (!isTranslationNeeded() || currentLanguage === 'en' || skipTranslation) {
+        if (isMounted.current) setTranslatedText(text);
+        return;
+      }
 
-        // If no fallback, set to original text initially
-        if (isMounted.current) {
-          setTranslatedText(text);
-        }
+      // Show original immediately while translating
+      if (isMounted.current) setTranslatedText(text);
 
-        // Then try async translation in background
-        const result = await translate(text);
-        if (isMounted.current && result !== text && translationAttempted.current === false) {
-          setTranslatedText(result);
-          translationAttempted.current = true;
-        }
-      } else {
-        // English or translation not needed
-        if (isMounted.current) {
-          setTranslatedText(text);
-        }
+      // Check component cache for instant display
+      const cacheKey = getCacheKey(text, currentLanguage);
+      if (translationCache.has(cacheKey)) {
+        if (isMounted.current) setTranslatedText(translationCache.get(cacheKey));
+        return;
+      }
+
+      // Resolve translation (fallback → DB → API → save)
+      const result = await resolveTranslation(text);
+      if (isMounted.current && result) {
+        setTranslatedText(result);
       }
     };
 
@@ -100,41 +145,42 @@ const AutoTranslate = ({
     return () => {
       isMounted.current = false;
     };
-  }, [children, currentLanguage, isTranslationNeeded, skipTranslation, translate, getCacheKey]);
+  }, [children, currentLanguage, isTranslationNeeded, skipTranslation, resolveTranslation, getCacheKey]);
 
-  // Handle language changes
+  // ─────────────────────────────────────────────
+  // Language change effect
+  // ─────────────────────────────────────────────
   useEffect(() => {
-    if (lastLanguage.current !== currentLanguage && children && isTranslationNeeded()) {
-      translationAttempted.current = false;
+    if (lastLanguage.current !== currentLanguage) {
+      lastLanguage.current = currentLanguage;
+
+      if (!children || !isTranslationNeeded() || currentLanguage === 'en') return;
+
       const text = typeof children === 'string' ? children : String(children);
-      
-      // Try fallback FIRST
-      const fallbackResult = getFallbackTranslation(text, currentLanguage);
-      if (fallbackResult && isMounted.current) {
-        setTranslatedText(fallbackResult);
-        translationCache.set(getCacheKey(text, currentLanguage), fallbackResult);
-        console.log(`✓ [Fallback - Language Change] "${text}" -> "${fallbackResult}"`);
-        lastLanguage.current = currentLanguage;
-        translationAttempted.current = true;
+      const cacheKey = getCacheKey(text, currentLanguage);
+
+      // Clear old language cache entry so fresh translation happens
+      if (translationCache.has(getCacheKey(text, lastLanguage.current))) {
+        translationCache.delete(getCacheKey(text, lastLanguage.current));
+      }
+
+      // Show instantly from cache if available
+      if (translationCache.has(cacheKey)) {
+        if (isMounted.current) setTranslatedText(translationCache.get(cacheKey));
         return;
       }
 
-      // Then try async
-      const processLanguageChange = async () => {
-        const result = await translate(text);
-        if (isMounted.current && result !== text && !translationAttempted.current) {
-          setTranslatedText(result);
-          translationAttempted.current = true;
-        }
-        lastLanguage.current = currentLanguage;
+      // Otherwise resolve fresh
+      const resolve = async () => {
+        const result = await resolveTranslation(text);
+        if (isMounted.current && result) setTranslatedText(result);
       };
-      
-      processLanguageChange();
+      resolve();
     }
-  }, [currentLanguage, children, isTranslationNeeded, translate, getCacheKey]);
+  }, [currentLanguage, children, isTranslationNeeded, resolveTranslation, getCacheKey]);
 
-  const textToDisplay = translatedText || children || '';
-  const originalText = typeof children === 'string' ? children : String(children);
+  const textToDisplay = translatedText || (typeof children === 'string' ? children : String(children || ''));
+  const originalText = typeof children === 'string' ? children : String(children || '');
 
   if (showOriginalOnHover && textToDisplay !== originalText) {
     return (

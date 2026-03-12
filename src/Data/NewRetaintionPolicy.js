@@ -81,7 +81,7 @@ const NewRetaintionPolicy = () => {
                 await fetchPolicies();
             } catch (error) {
                 console.error("Error loading initial data:", error);
-                showPopup(<AutoTranslate>Failed to load initial data</AutoTranslate>, "error");
+                showPopup("Failed to load initial data", "error");
             } finally {
                 setIsLoading(false);
             }
@@ -163,7 +163,7 @@ const NewRetaintionPolicy = () => {
             setPolicies(normalizedPolicies);
         } catch (error) {
             console.error("Error fetching retention policies:", error);
-            showPopup(<AutoTranslate>Failed to fetch retention policies</AutoTranslate>, "error");
+            showPopup("Failed to fetch retention policies", "error");
         }
     };
 
@@ -225,7 +225,7 @@ const NewRetaintionPolicy = () => {
             setBranches(Array.isArray(branchesData) ? branchesData : [branchesData])
         } catch (error) {
             console.error("Error fetching branches:", error)
-            showPopup(<AutoTranslate>Failed to fetch branches</AutoTranslate>, "error")
+            showPopup("Failed to fetch branches", "error")
         }
     }
 
@@ -238,7 +238,7 @@ const NewRetaintionPolicy = () => {
             setDepartments(Array.isArray(departmentsData) ? departmentsData : [departmentsData])
         } catch (error) {
             console.error("Error fetching departments:", error)
-            showPopup(<AutoTranslate>Failed to fetch departments</AutoTranslate>, "error")
+            showPopup("Failed to fetch departments", "error")
             setDepartments([])
         }
     }
@@ -252,7 +252,7 @@ const NewRetaintionPolicy = () => {
             setCategories(Array.isArray(categoriesData) ? categoriesData : [categoriesData])
         } catch (error) {
             console.error("Error fetching categories:", error)
-            showPopup(<AutoTranslate>Failed to fetch categories</AutoTranslate>, "error")
+            showPopup("Failed to fetch categories", "error")
         }
     }
 
@@ -391,7 +391,7 @@ const NewRetaintionPolicy = () => {
 
     const handleAddPolicy = async () => {
         if (!formData.retentionDate) {
-            showPopup(<AutoTranslate>Please select a retention date</AutoTranslate>, "warning");
+            showPopup("Please select a retention date", "warning");
             return;
         }
 
@@ -420,11 +420,11 @@ const NewRetaintionPolicy = () => {
 
             await fetchPolicies();
             resetForm();
-            showPopup(<AutoTranslate>Policy created successfully!</AutoTranslate>, "success");
+            showPopup("Policy created successfully!", "success");
         } catch (error) {
             console.error("Error creating policy:", error);
 
-            const backendMessage = error.response?.data?.message || error.message || <AutoTranslate>Something went wrong</AutoTranslate>;
+            const backendMessage = error.response?.data?.message || error.message || "Something went wrong";
             showPopup(backendMessage, "warning");
         }
     };
@@ -476,7 +476,7 @@ const NewRetaintionPolicy = () => {
         try {
             const policyIndex = policies.findIndex((policy) => policy.id === editId);
             if (policyIndex === -1) {
-                showPopup(<AutoTranslate>Policy not found!</AutoTranslate>, "error");
+                showPopup("Policy not found!", "error");
                 return;
             }
 
@@ -521,11 +521,11 @@ const NewRetaintionPolicy = () => {
 
             await fetchPolicies();
             resetForm();
-            showPopup(<AutoTranslate>Retention policy updated successfully!</AutoTranslate>, "success");
+            showPopup("Retention policy updated successfully!", "success");
         } catch (error) {
             console.error("Error creating policy:", error);
             const backendMessage =
-                error.response?.data?.message || error.message || <AutoTranslate>Something went wrong</AutoTranslate>;
+                error.response?.data?.message || error.message || "Something went wrong";
             showPopup(backendMessage, "warning");
         }
     };
@@ -567,11 +567,11 @@ const NewRetaintionPolicy = () => {
                 setModalVisible(false);
                 setPolicyToToggle(null);
 
-                const statusText = newActiveStatus ? <AutoTranslate>activated</AutoTranslate> : <AutoTranslate>deactivated</AutoTranslate>;
-                showPopup(<AutoTranslate>Policy {statusText} successfully!</AutoTranslate>, "success");
+                const statusText = newActiveStatus ? "activated" : "deactivated";
+                showPopup(`Policy ${statusText} successfully!`, "success");
             } catch (error) {
                 console.error("Error toggling policy status:", error);
-                showPopup(<AutoTranslate>Failed to change the status</AutoTranslate>, "error");
+                showPopup("Failed to change the status", "error");
                 setModalVisible(false);
                 setPolicyToToggle(null);
             }
