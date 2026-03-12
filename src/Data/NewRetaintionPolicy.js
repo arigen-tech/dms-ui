@@ -118,21 +118,21 @@ const NewRetaintionPolicy = () => {
     };
 
     const getBranchNameById = (id) => {
-        if (!id || id === null) return <AutoTranslate>All Branches</AutoTranslate>;
+        if (!id || id === null) return "All Branches";
         const branch = branches.find(b => b.id === id);
-        return branch ? branch.name : <AutoTranslate>Unknown Branch</AutoTranslate>;
+        return branch ? branch.name : "Unknown Branch";
     };
 
     const getDepartmentNameById = (departmentId) => {
-        if (!departmentId || departmentId === null) return <AutoTranslate>All Departments</AutoTranslate>;
+        if (!departmentId || departmentId === null) return "All Departments";
         const department = allDepartments.find((dept) => dept.id === departmentId);
-        return department?.name || <AutoTranslate>Unknown Department</AutoTranslate>;
+        return department?.name || "Unknown Department";
     };
 
     const getCategoryNameById = (id) => {
-        if (!id || id === null) return <AutoTranslate>All Categorys</AutoTranslate>;
+        if (!id || id === null) return "All Categorys";
         const cat = categories.find(b => b.id === id);
-        return cat ? cat.name : <AutoTranslate>Unknown Category</AutoTranslate>;
+        return cat ? cat.name : "Unknown Category";
     };
 
     const fetchPolicies = async () => {
@@ -292,7 +292,6 @@ const NewRetaintionPolicy = () => {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Error downloading ZIP:", error);
-            alert(<AutoTranslate>Failed to download ZIP file</AutoTranslate>);
         } finally {
             setDownloadingId(null);
         }
@@ -329,7 +328,6 @@ const NewRetaintionPolicy = () => {
         }
         else if (name === "todate" && value) {
             if (formData.fromdate && value <= formData.fromdate) {
-                alert(<AutoTranslate>Archive To Date must be greater than Archive From Date</AutoTranslate>);
                 return;
             }
 
@@ -345,7 +343,6 @@ const NewRetaintionPolicy = () => {
         else if (name === "retentionDate" && value) {
             // compare with todate if exists
             if (formData.todate && value <= formData.todate) {
-                alert(<AutoTranslate>Retention Date must be greater than Archive To Date</AutoTranslate>);
                 return;
             }
 
@@ -889,8 +886,8 @@ const NewRetaintionPolicy = () => {
                                                 }`}
                                         >
                                             {policy.policyType === "FILE_RETENTION"
-                                                ? <AutoTranslate>File Retention</AutoTranslate>
-                                                : <AutoTranslate>Data Retention</AutoTranslate>}
+                                                ? "File Retention"
+                                                : "Data Retention"}
                                         </span>
                                     </td>
                                     <td className="border p-2 w-[500px] text-center text-gray-700">
@@ -918,7 +915,7 @@ const NewRetaintionPolicy = () => {
                                                 : "bg-green-100 text-green-800"
                                                 }`}
                                         >
-                                            {policy.isActive ? <AutoTranslate>Waiting For Archive</AutoTranslate> : <AutoTranslate>Archived</AutoTranslate>}
+                                            {policy.isActive ? "Waiting For Archive: " : "Archived"}
                                         </span>
                                     </td>
                                     <td className="border p-2 w-20 text-center">
