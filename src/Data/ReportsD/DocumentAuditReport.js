@@ -16,6 +16,16 @@ const Spinner = ({ size = "h-5 w-5", color = "text-white" }) => (
     </svg>
 );
 
+// Helper function to convert date to local date string (YYYY-MM-DD)
+// Prevents timezone issues that cause date shifts
+const toLocalDateString = (date) => {
+    if (!date) return null;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
 const DocumentAuditReport = () => {
     const { currentLanguage } = useLanguage();
 
@@ -41,6 +51,7 @@ const DocumentAuditReport = () => {
     // Loading states
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [isExportingExcel, setIsExportingExcel] = useState(false);
 
     // Action type options for audit dropdown
     const actionTypeOptions = [
@@ -69,6 +80,7 @@ const DocumentAuditReport = () => {
     }, []);
 
     const formatDate = (dateArray) => {
+        if (!dateArray) return '';
         const [year, month, day] = dateArray;
         const date = new Date(year, month - 1, day);
         return date.toLocaleDateString('en-GB');
@@ -158,7 +170,7 @@ const DocumentAuditReport = () => {
     };
 
     const handleSearch = async () => {
-        setIsSearching(true); // Start loading
+        setIsSearching(true);
         try {
             // Determine action types array based on selection
             let actionTypes = [];
@@ -204,46 +216,57 @@ const DocumentAuditReport = () => {
         } catch (error) {
             console.error("Search failed:", error);
         } finally {
-            setIsSearching(false); // Stop loading
+            setIsSearching(false);
         }
     };
 
+    // Build parameters for audit-files report endpoint
+    const buildAuditFilesParams = (flagType) => {
+        // IMPORTANT: For audit report, send "AUDIT" when ALL is selected
+        let actionTypeForReport = searchCriteria.actionType;
+        
+        // If "ALL" is selected, send "AUDIT" to the backend
+        if (searchCriteria.actionType === "ALL") {
+            actionTypeForReport = "AUDIT";
+        }
+
+        return {
+            branchId:
+                currRole === SYSTEM_ADMIN
+                    ? searchCriteria.branch || 0
+                    : currentEmp?.branch?.id || 0,
+
+            departmentId:
+                currRole === SYSTEM_ADMIN || currRole === BRANCH_ADMIN
+                    ? searchCriteria.department || 0
+                    : currentEmp?.department?.id || 0,
+
+            employeeId: currRole === USER ? currentEmp?.id : 0,
+
+            categoryId: searchCriteria.category || 0,
+
+            // Use local date string to prevent timezone issues
+            fromDate: toLocalDateString(fromDate),
+            toDate: toLocalDateString(toDate),
+
+            // For audit report, send "AUDIT" for ALL actions
+            actionType: actionTypeForReport,
+            flag: flagType,
+        };
+    };
+
     const handleDownloadReport = async (flagType) => {
-        // For audit report, ALL is now allowed - pass "ALL" directly to the API
-        setIsGeneratingReport(true); // Start loading
+        setIsGeneratingReport(true);
         try {
+            const params = buildAuditFilesParams(flagType);
+            
+            // Log params for debugging
+            console.log("Report params:", params);
+            
             const response = await apiClient.get(
                 `${API_HOST}/jasper-report/audit-files`,
                 {
-                    params: {
-                        branchId:
-                            currRole === SYSTEM_ADMIN
-                                ? searchCriteria.branch || 0
-                                : currentEmp?.branch?.id || 0,
-
-                        departmentId:
-                            currRole === SYSTEM_ADMIN || currRole === BRANCH_ADMIN
-                                ? searchCriteria.department || 0
-                                : currentEmp?.department?.id || 0,
-
-                        employeeId:
-                            currRole === USER
-                                ? currentEmp?.id
-                                : 0,
-
-                        categoryId: searchCriteria.category || 0,
-
-                        fromDate: fromDate
-                            ? fromDate.toISOString().split("T")[0]
-                            : null,
-
-                        toDate: toDate
-                            ? toDate.toISOString().split("T")[0]
-                            : null,
-
-                        actionType: "AUDIT", // Now passes "ALL" directly
-                        flag: flagType,
-                    },
+                    params: params,
                     responseType: "blob",
                 }
             );
@@ -252,15 +275,49 @@ const DocumentAuditReport = () => {
                 const blob = new Blob([response.data], {
                     type: "application/pdf",
                 });
-
                 const url = window.URL.createObjectURL(blob);
                 setPdfUrl(url);
                 setShowPdf(true);
             }
+            // For flagType "P", the API prints directly, no frontend action needed
         } catch (error) {
             console.error("Report generation failed:", error);
+            alert("Failed to generate report. Please check your parameters and try again.");
         } finally {
-            setIsGeneratingReport(false); // Stop loading
+            setIsGeneratingReport(false);
+        }
+    };
+
+    const handleExportExcel = async () => {
+        setIsExportingExcel(true);
+        try {
+            const params = buildAuditFilesParams("E");
+            
+            // Log params for debugging
+            console.log("Excel export params:", params);
+            
+            const response = await apiClient.get(
+                `${API_HOST}/jasper-report/audit-files`,
+                {
+                    params: params,
+                    responseType: "blob",
+                }
+            );
+
+            // Create download link for Excel file
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "Audit_Report.xlsx");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Excel export failed:", error);
+            alert("Failed to export Excel. Please check your parameters and try again.");
+        } finally {
+            setIsExportingExcel(false);
         }
     };
 
@@ -279,6 +336,8 @@ const DocumentAuditReport = () => {
         };
         return actionMap[actionType] || actionType;
     };
+
+    const anyReportLoading = isGeneratingReport || isExportingExcel;
 
     return (
         <div className="p-4">
@@ -361,6 +420,25 @@ const DocumentAuditReport = () => {
                         </select>
                     </div>
 
+                    {/* Action Type Dropdown */}
+                    <div className="flex flex-col">
+                        <label className="mb-1">
+                            <AutoTranslate>Action Type</AutoTranslate>
+                        </label>
+                        <select
+                            name="actionType"
+                            value={searchCriteria.actionType}
+                            onChange={handleInputChange}
+                            className="p-2 border rounded-md"
+                        >
+                            {actionTypeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    <AutoTranslate>{option.label}</AutoTranslate>
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     {/* From Date */}
                     <div className="flex flex-col">
                         <label className="mb-1">
@@ -421,7 +499,7 @@ const DocumentAuditReport = () => {
                 <div className="flex gap-4 mt-4">
                     <button
                         onClick={() => handleDownloadReport("D")}
-                        disabled={isGeneratingReport}
+                        disabled={anyReportLoading}
                         className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-green-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
                         {isGeneratingReport ? (
@@ -436,7 +514,7 @@ const DocumentAuditReport = () => {
 
                     <button
                         onClick={() => handleDownloadReport("P")}
-                        disabled={isGeneratingReport}
+                        disabled={anyReportLoading}
                         className="px-4 py-2 bg-orange-600 text-white rounded-md disabled:bg-orange-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
                         {isGeneratingReport ? (
@@ -448,12 +526,21 @@ const DocumentAuditReport = () => {
                             "Print"
                         )}
                     </button>
-                </div>
-            )}
 
-            {searchResults.length === 0 && !isSearching && (
-                <div className="mt-6 text-center text-gray-500">
-                    <AutoTranslate>No results found</AutoTranslate>
+                    <button
+                        onClick={handleExportExcel}
+                        disabled={anyReportLoading}
+                        className="px-4 py-2 bg-emerald-700 text-white rounded-md disabled:bg-emerald-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                    >
+                        {isExportingExcel ? (
+                            <>
+                                <Spinner size="h-4 w-4" />
+                                <span className="ml-2">Exporting...</span>
+                            </>
+                        ) : (
+                            "Export Excel"
+                        )}
+                    </button>
                 </div>
             )}
 
@@ -484,7 +571,19 @@ const DocumentAuditReport = () => {
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
                                     <td className="border px-2 py-1">
-                                        {getActionTypeDisplay(item.actionType)}
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                            item.actionType === 'APPROVE' ? 'bg-green-100 text-green-800' :
+                                            item.actionType === 'REJECT' ? 'bg-red-100 text-red-800' :
+                                            item.actionType === 'DOWNLOAD' ? 'bg-blue-100 text-blue-800' :
+                                            item.actionType === 'UPLOAD' ? 'bg-purple-100 text-purple-800' :
+                                            item.actionType === 'ARCHIVE' ? 'bg-yellow-100 text-yellow-800' :
+                                            item.actionType === 'RETRIEVE' ? 'bg-indigo-100 text-indigo-800' :
+                                            item.actionType === 'TRASH' ? 'bg-gray-100 text-gray-800' :
+                                            item.actionType === 'UNTRASH' ? 'bg-gray-100 text-gray-800' :
+                                            'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {getActionTypeDisplay(item.actionType)}
+                                        </span>
                                     </td>
                                     <td className="border px-2 py-1">
                                         {formatDate(item.actionDate)}
@@ -495,7 +594,11 @@ const DocumentAuditReport = () => {
                         </tbody>
                     </table>
                 </div>
-            ) : null}
+            ) : (
+                <div className="mt-6 text-center text-gray-500">
+                    <AutoTranslate>No results found</AutoTranslate>
+                </div>
+            )}
 
             {showPdf && (
                 <PdfViewer

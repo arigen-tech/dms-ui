@@ -16,6 +16,16 @@ const Spinner = ({ size = "h-5 w-5", color = "text-white" }) => (
     </svg>
 );
 
+// Helper function to convert date to local date string (YYYY-MM-DD)
+// Prevents timezone issues that cause date shifts
+const toLocalDateString = (date) => {
+    if (!date) return null;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
 const DocumentUploadReport = () => {
     const { currentLanguage } = useLanguage();
 
@@ -41,6 +51,7 @@ const DocumentUploadReport = () => {
     // Loading states
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [isExportingExcel, setIsExportingExcel] = useState(false);
 
     // Action type options for dropdown
     const actionTypeOptions = [
@@ -153,7 +164,7 @@ const DocumentUploadReport = () => {
     };
 
     const handleSearch = async () => {
-        setIsSearching(true); // Start loading
+        setIsSearching(true);
         try {
             // Determine action types array based on selection
             let actionTypes = [];
@@ -195,45 +206,41 @@ const DocumentUploadReport = () => {
         } catch (error) {
             console.error("Search failed:", error);
         } finally {
-            setIsSearching(false); // Stop loading
+            setIsSearching(false);
         }
     };
 
+    // Build parameters for uploaded-files report endpoint
+    const buildUploadedFilesParams = (flagType) => ({
+        branchId:
+            currRole === SYSTEM_ADMIN
+                ? searchCriteria.branch || 0
+                : currentEmp?.branch?.id || 0,
+
+        departmentId:
+            currRole === SYSTEM_ADMIN || currRole === BRANCH_ADMIN
+                ? searchCriteria.department || 0
+                : currentEmp?.department?.id || 0,
+
+        employeeId: currRole === USER ? currentEmp?.id : 0,
+
+        categoryId: searchCriteria.category || 0,
+
+        // Use local date string to prevent timezone issues
+        fromDate: toLocalDateString(fromDate),
+        toDate: toLocalDateString(toDate),
+
+        actionType: searchCriteria.actionType,
+        flag: flagType,
+    });
+
     const handleDownloadReport = async (flagType) => {
-        setIsGeneratingReport(true); // Start loading
+        setIsGeneratingReport(true);
         try {
             const response = await apiClient.get(
-                `${API_HOST}/jasper-report/uploaded-files`, // Using uploaded-files endpoint
+                `${API_HOST}/jasper-report/uploaded-files`,
                 {
-                    params: {
-                        branchId:
-                            currRole === SYSTEM_ADMIN
-                                ? searchCriteria.branch || 0
-                                : currentEmp?.branch?.id || 0,
-
-                        departmentId:
-                            currRole === SYSTEM_ADMIN || currRole === BRANCH_ADMIN
-                                ? searchCriteria.department || 0
-                                : currentEmp?.department?.id || 0,
-
-                        employeeId:
-                            currRole === USER
-                                ? currentEmp?.id
-                                : 0,
-
-                        categoryId: searchCriteria.category || 0,
-
-                        fromDate: fromDate
-                            ? fromDate.toISOString().split("T")[0]
-                            : null,
-
-                        toDate: toDate
-                            ? toDate.toISOString().split("T")[0]
-                            : null,
-
-                        actionType: searchCriteria.actionType, // Pass "ALL" directly to API
-                        flag: flagType,
-                    },
+                    params: buildUploadedFilesParams(flagType),
                     responseType: "blob",
                 }
             );
@@ -242,15 +249,42 @@ const DocumentUploadReport = () => {
                 const blob = new Blob([response.data], {
                     type: "application/pdf",
                 });
-
                 const url = window.URL.createObjectURL(blob);
                 setPdfUrl(url);
                 setShowPdf(true);
             }
+            // For flagType "P", the API prints directly, no frontend action needed
         } catch (error) {
             console.error("Report generation failed:", error);
         } finally {
-            setIsGeneratingReport(false); // Stop loading
+            setIsGeneratingReport(false);
+        }
+    };
+
+    const handleExportExcel = async () => {
+        setIsExportingExcel(true);
+        try {
+            const response = await apiClient.get(
+                `${API_HOST}/jasper-report/uploaded-files`,
+                {
+                    params: buildUploadedFilesParams("E"),
+                    responseType: "blob",
+                }
+            );
+
+            // Create download link for Excel file
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "Upload_Files_Report.xlsx");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Excel export failed:", error);
+        } finally {
+            setIsExportingExcel(false);
         }
     };
 
@@ -267,6 +301,8 @@ const DocumentUploadReport = () => {
                 return actionType;
         }
     };
+
+    const anyReportLoading = isGeneratingReport || isExportingExcel;
 
     return (
         <div className="p-4">
@@ -428,7 +464,7 @@ const DocumentUploadReport = () => {
                 <div className="flex gap-4 mt-4">
                     <button
                         onClick={() => handleDownloadReport("D")}
-                        disabled={isGeneratingReport}
+                        disabled={anyReportLoading}
                         className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-green-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
                         {isGeneratingReport ? (
@@ -443,7 +479,7 @@ const DocumentUploadReport = () => {
 
                     <button
                         onClick={() => handleDownloadReport("P")}
-                        disabled={isGeneratingReport}
+                        disabled={anyReportLoading}
                         className="px-4 py-2 bg-orange-600 text-white rounded-md disabled:bg-orange-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
                         {isGeneratingReport ? (
@@ -453,6 +489,21 @@ const DocumentUploadReport = () => {
                             </>
                         ) : (
                             "Print"
+                        )}
+                    </button>
+
+                    <button
+                        onClick={handleExportExcel}
+                        disabled={anyReportLoading}
+                        className="px-4 py-2 bg-emerald-700 text-white rounded-md disabled:bg-emerald-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                    >
+                        {isExportingExcel ? (
+                            <>
+                                <Spinner size="h-4 w-4" />
+                                <span className="ml-2">Exporting...</span>
+                            </>
+                        ) : (
+                            "Export Excel"
                         )}
                     </button>
                 </div>

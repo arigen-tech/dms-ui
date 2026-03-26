@@ -16,6 +16,16 @@ const Spinner = ({ size = "h-5 w-5", color = "text-white" }) => (
     </svg>
 );
 
+// ✅ FIX: Use local date parts instead of toISOString() which converts to UTC
+// toISOString() causes date to shift back 1 day for IST (UTC+5:30) users
+const toLocalDateString = (date) => {
+    if (!date) return null;
+    const year  = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day   = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
 const DocumentTrashReport = () => {
     const { currentLanguage } = useLanguage();
 
@@ -23,7 +33,7 @@ const DocumentTrashReport = () => {
         branch: "",
         department: "",
         category: "",
-        actionType: "TRASH", // Default action type
+        actionType: "TRASH",
     };
 
     const [searchCriteria, setSearchCriteria] = useState(initialFormData);
@@ -37,25 +47,23 @@ const DocumentTrashReport = () => {
     const [showPdf, setShowPdf] = useState(false);
     const [currRole, setCurrRole] = useState(null);
     const [currentEmp, setCurrentEmp] = useState(null);
-    
+
     // Loading states
     const [isSearching, setIsSearching] = useState(false);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [isExportingExcel, setIsExportingExcel] = useState(false);
 
-    // Action type options for dropdown
     const actionTypeOptions = [
-        { value: "TRASH", label: "Trash" },
+        { value: "TRASH",   label: "Trash"   },
         { value: "UNTRASH", label: "Untrash" },
-        { value: "ALL", label: "All" }
+        { value: "ALL",     label: "All"     },
     ];
 
     useEffect(() => {
         const role = localStorage.getItem("role");
         setCurrRole(role);
-
         fetchCategories();
         fetchBranches();
-
         if (role !== SYSTEM_ADMIN) {
             fetchUserDetails(role);
         }
@@ -79,20 +87,13 @@ const DocumentTrashReport = () => {
     const fetchUserDetails = async (role) => {
         try {
             const userId = localStorage.getItem("id");
-            const response = await apiClient.get(
-                `${API_HOST}/employee/findById/${userId}`
-            );
-
+            const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
             const empData = response.data;
             setCurrentEmp(empData);
 
             if (role === BRANCH_ADMIN) {
-                setSearchCriteria((prev) => ({
-                    ...prev,
-                    branch: empData.branch?.id || "",
-                }));
+                setSearchCriteria((prev) => ({ ...prev, branch: empData.branch?.id || "" }));
             }
-
             if (role === DEPARTMENT_ADMIN) {
                 setSearchCriteria((prev) => ({
                     ...prev,
@@ -100,7 +101,6 @@ const DocumentTrashReport = () => {
                     department: empData.department?.id || "",
                 }));
             }
-
             if (role === USER) {
                 setSearchCriteria((prev) => ({
                     ...prev,
@@ -124,9 +124,7 @@ const DocumentTrashReport = () => {
 
     const fetchDepartments = async (branchId) => {
         try {
-            const response = await apiClient.get(
-                `${API_HOST}/DepartmentMaster/findByBranch/${branchId}`
-            );
+            const response = await apiClient.get(`${API_HOST}/DepartmentMaster/findByBranch/${branchId}`);
             setDepartmentOptions(response.data);
         } catch (error) {
             console.error("Error fetching departments:", error);
@@ -152,9 +150,8 @@ const DocumentTrashReport = () => {
     };
 
     const handleSearch = async () => {
-        setIsSearching(true); // Start loading
+        setIsSearching(true);
         try {
-            // Determine action types array based on selection
             let actionTypes = [];
             if (searchCriteria.actionType === "ALL") {
                 actionTypes = ["TRASH", "UNTRASH"];
@@ -175,73 +172,63 @@ const DocumentTrashReport = () => {
 
                 categoryId: searchCriteria.category || null,
 
-                empId:
-                    currRole === USER
-                        ? currentEmp?.id
-                        : null,
+                empId: currRole === USER ? currentEmp?.id : null,
 
+                // ✅ FIX: Use toLocalDateString() instead of toISOString()
                 fromDate: fromDate ? fromDate.toISOString() : null,
-                toDate: toDate ? toDate.toISOString() : null,
+                toDate:   toDate   ? toDate.toISOString()   : null,
+
                 actionTypes: actionTypes,
             };
 
-            const response = await apiClient.post(
-                `${API_HOST}/jasper-report/search`,
-                requestBody
-            );
-
+            const response = await apiClient.post(`${API_HOST}/jasper-report/search`, requestBody);
             setSearchResults(response.data || []);
         } catch (error) {
             console.error("Search failed:", error);
         } finally {
-            setIsSearching(false); // Stop loading
+            setIsSearching(false);
         }
     };
 
+    // ✅ FIX: Use toLocalDateString() for all report param builders
+    // Previously used toISOString().split("T")[0] which shifts date back 1 day for IST users
+    const buildTrashedFilesParams = (flagType) => ({
+        branchId:
+            currRole === SYSTEM_ADMIN
+                ? searchCriteria.branch || 0
+                : currentEmp?.branch?.id || 0,
+
+        departmentId:
+            currRole === SYSTEM_ADMIN || currRole === BRANCH_ADMIN
+                ? searchCriteria.department || 0
+                : currentEmp?.department?.id || 0,
+
+        employeeId: currRole === USER ? currentEmp?.id : 0,
+
+        categoryId: searchCriteria.category || 0,
+
+        // ✅ KEY FIX: toLocalDateString() reads local date parts (day/month/year)
+        // toISOString() was converting to UTC which caused 01/03/2025 → 28/02/2025 for IST
+        fromDate: toLocalDateString(fromDate),
+        toDate:   toLocalDateString(toDate),
+
+        actionType: searchCriteria.actionType,
+        flag: flagType,
+    });
+
     const handleDownloadReport = async (flagType) => {
-        setIsGeneratingReport(true); // Start loading
+        setIsGeneratingReport(true);
         try {
             const response = await apiClient.get(
-                `${API_HOST}/jasper-report/trashed-files`, // Using trashed-files endpoint
+                `${API_HOST}/jasper-report/trashed-files`,
                 {
-                    params: {
-                        branchId:
-                            currRole === SYSTEM_ADMIN
-                                ? searchCriteria.branch || 0
-                                : currentEmp?.branch?.id || 0,
-
-                        departmentId:
-                            currRole === SYSTEM_ADMIN || currRole === BRANCH_ADMIN
-                                ? searchCriteria.department || 0
-                                : currentEmp?.department?.id || 0,
-
-                        employeeId:
-                            currRole === USER
-                                ? currentEmp?.id
-                                : 0,
-
-                        categoryId: searchCriteria.category || 0,
-
-                        fromDate: fromDate
-                            ? fromDate.toISOString().split("T")[0]
-                            : null,
-
-                        toDate: toDate
-                            ? toDate.toISOString().split("T")[0]
-                            : null,
-
-                        actionType: searchCriteria.actionType, // Pass "ALL" directly to API
-                        flag: flagType,
-                    },
+                    params: buildTrashedFilesParams(flagType),
                     responseType: "blob",
                 }
             );
 
             if (flagType === "D") {
-                const blob = new Blob([response.data], {
-                    type: "application/pdf",
-                });
-
+                const blob = new Blob([response.data], { type: "application/pdf" });
                 const url = window.URL.createObjectURL(blob);
                 setPdfUrl(url);
                 setShowPdf(true);
@@ -249,21 +236,45 @@ const DocumentTrashReport = () => {
         } catch (error) {
             console.error("Report generation failed:", error);
         } finally {
-            setIsGeneratingReport(false); // Stop loading
+            setIsGeneratingReport(false);
         }
     };
 
-    // Helper function to get action type display name
-    const getActionTypeDisplay = (actionType) => {
-        switch(actionType) {
-            case 'TRASH':
-                return 'Trash';
-            case 'UNTRASH':
-                return 'Untrash';
-            default:
-                return actionType;
+    const handleExportExcel = async () => {
+        setIsExportingExcel(true);
+        try {
+            const response = await apiClient.get(
+                `${API_HOST}/jasper-report/trashed-files`,
+                {
+                    params: buildTrashedFilesParams("E"),
+                    responseType: "blob",
+                }
+            );
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "Trash_Files_Report.xlsx");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Excel export failed:", error);
+        } finally {
+            setIsExportingExcel(false);
         }
     };
+
+    const getActionTypeDisplay = (actionType) => {
+        switch (actionType) {
+            case 'TRASH':   return 'Trash';
+            case 'UNTRASH': return 'Untrash';
+            default:        return actionType;
+        }
+    };
+
+    const anyReportLoading = isGeneratingReport || isExportingExcel;
 
     return (
         <div className="p-4">
@@ -276,9 +287,7 @@ const DocumentTrashReport = () => {
 
                     {/* Branch */}
                     <div className="flex flex-col">
-                        <label className="mb-1">
-                            <AutoTranslate>Branch</AutoTranslate>
-                        </label>
+                        <label className="mb-1"><AutoTranslate>Branch</AutoTranslate></label>
                         <select
                             name="branch"
                             value={searchCriteria.branch}
@@ -286,22 +295,16 @@ const DocumentTrashReport = () => {
                             className="p-2 border rounded-md"
                             disabled={currRole !== SYSTEM_ADMIN}
                         >
-                            <option value="">
-                                <AutoTranslate>All</AutoTranslate>
-                            </option>
+                            <option value=""><AutoTranslate>All</AutoTranslate></option>
                             {branchOptions.map((branch) => (
-                                <option key={branch.id} value={branch.id}>
-                                    {branch.name}
-                                </option>
+                                <option key={branch.id} value={branch.id}>{branch.name}</option>
                             ))}
                         </select>
                     </div>
 
                     {/* Department */}
                     <div className="flex flex-col">
-                        <label className="mb-1">
-                            <AutoTranslate>Department</AutoTranslate>
-                        </label>
+                        <label className="mb-1"><AutoTranslate>Department</AutoTranslate></label>
                         <select
                             name="department"
                             value={searchCriteria.department}
@@ -313,44 +316,32 @@ const DocumentTrashReport = () => {
                                 !searchCriteria.branch
                             }
                         >
-                            <option value="">
-                                <AutoTranslate>All</AutoTranslate>
-                            </option>
+                            <option value=""><AutoTranslate>All</AutoTranslate></option>
                             {departmentOptions.map((dept) => (
-                                <option key={dept.id} value={dept.id}>
-                                    {dept.name}
-                                </option>
+                                <option key={dept.id} value={dept.id}>{dept.name}</option>
                             ))}
                         </select>
                     </div>
 
                     {/* Category */}
                     <div className="flex flex-col">
-                        <label className="mb-1">
-                            <AutoTranslate>Category</AutoTranslate>
-                        </label>
+                        <label className="mb-1"><AutoTranslate>Category</AutoTranslate></label>
                         <select
                             name="category"
                             value={searchCriteria.category}
                             onChange={handleInputChange}
                             className="p-2 border rounded-md"
                         >
-                            <option value="">
-                                <AutoTranslate>All</AutoTranslate>
-                            </option>
+                            <option value=""><AutoTranslate>All</AutoTranslate></option>
                             {categoryOptions.map((cat) => (
-                                <option key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                </option>
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
                             ))}
                         </select>
                     </div>
 
-                    {/* Action Type Dropdown */}
+                    {/* Action Type */}
                     <div className="flex flex-col">
-                        <label className="mb-1">
-                            <AutoTranslate>Action Type</AutoTranslate>
-                        </label>
+                        <label className="mb-1"><AutoTranslate>Action Type</AutoTranslate></label>
                         <select
                             name="actionType"
                             value={searchCriteria.actionType}
@@ -367,18 +358,13 @@ const DocumentTrashReport = () => {
 
                     {/* From Date */}
                     <div className="flex flex-col">
-                        <label className="mb-1">
-                            <AutoTranslate>From Date</AutoTranslate>
-                        </label>
+                        <label className="mb-1"><AutoTranslate>From Date</AutoTranslate></label>
                         <DatePicker
                             selected={fromDate}
                             onChange={(date) => setFromDate(date)}
                             maxDate={new Date()}
                             dateFormat="dd/MM/yyyy"
-                            placeholderText={getFallbackTranslation(
-                                "Select Start Date",
-                                currentLanguage
-                            )}
+                            placeholderText={getFallbackTranslation("Select Start Date", currentLanguage)}
                             className="w-full px-3 py-2 border rounded-md"
                             isClearable
                         />
@@ -386,19 +372,14 @@ const DocumentTrashReport = () => {
 
                     {/* To Date */}
                     <div className="flex flex-col">
-                        <label className="mb-1">
-                            <AutoTranslate>To Date</AutoTranslate>
-                        </label>
+                        <label className="mb-1"><AutoTranslate>To Date</AutoTranslate></label>
                         <DatePicker
                             selected={toDate}
                             onChange={(date) => setToDate(date)}
                             minDate={fromDate}
                             maxDate={new Date()}
                             dateFormat="dd/MM/yyyy"
-                            placeholderText={getFallbackTranslation(
-                                "Select End Date",
-                                currentLanguage
-                            )}
+                            placeholderText={getFallbackTranslation("Select End Date", currentLanguage)}
                             className="w-full px-3 py-2 border rounded-md"
                             isClearable
                         />
@@ -411,50 +392,50 @@ const DocumentTrashReport = () => {
                     className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                 >
                     {isSearching ? (
-                        <>
-                            <Spinner size="h-4 w-4" />
-                            <span className="ml-2">Searching...</span>
-                        </>
+                        <><Spinner size="h-4 w-4" /><span className="ml-2">Searching...</span></>
                     ) : (
                         <AutoTranslate>Search</AutoTranslate>
                     )}
                 </button>
             </div>
 
+            {/* Action Buttons */}
             {searchResults.length > 0 && (
                 <div className="flex gap-4 mt-4">
+
                     <button
                         onClick={() => handleDownloadReport("D")}
-                        disabled={isGeneratingReport}
+                        disabled={anyReportLoading}
                         className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-green-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
                         {isGeneratingReport ? (
-                            <>
-                                <Spinner size="h-4 w-4" />
-                                <span className="ml-2">Loading...</span>
-                            </>
-                        ) : (
-                            "View"
-                        )}
+                            <><Spinner size="h-4 w-4" /><span className="ml-2">Loading...</span></>
+                        ) : "View"}
                     </button>
 
                     <button
                         onClick={() => handleDownloadReport("P")}
-                        disabled={isGeneratingReport}
+                        disabled={anyReportLoading}
                         className="px-4 py-2 bg-orange-600 text-white rounded-md disabled:bg-orange-300 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
                         {isGeneratingReport ? (
-                            <>
-                                <Spinner size="h-4 w-4" />
-                                <span className="ml-2">Loading...</span>
-                            </>
-                        ) : (
-                            "Print"
-                        )}
+                            <><Spinner size="h-4 w-4" /><span className="ml-2">Loading...</span></>
+                        ) : "Print"}
+                    </button>
+
+                    <button
+                        onClick={handleExportExcel}
+                        disabled={anyReportLoading}
+                        className="px-4 py-2 bg-emerald-700 text-white rounded-md disabled:bg-emerald-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                    >
+                        {isExportingExcel ? (
+                            <><Spinner size="h-4 w-4" /><span className="ml-2">Exporting...</span></>
+                        ) : "Export Excel"}
                     </button>
                 </div>
             )}
 
+            {/* Results Table */}
             {isSearching ? (
                 <div className="mt-6 flex justify-center items-center p-8">
                     <Spinner size="h-8 w-8" color="text-blue-500" />
@@ -481,12 +462,8 @@ const DocumentTrashReport = () => {
                                     <td className="border px-2 py-1">{item.title}</td>
                                     <td className="border px-2 py-1">{item.category}</td>
                                     <td className="border px-2 py-1">{item.version}</td>
-                                    <td className="border px-2 py-1">
-                                        {getActionTypeDisplay(item.actionType)}
-                                    </td>
-                                    <td className="border px-2 py-1">
-                                        {formatDate(item.actionDate)}
-                                    </td>
+                                    <td className="border px-2 py-1">{getActionTypeDisplay(item.actionType)}</td>
+                                    <td className="border px-2 py-1">{formatDate(item.actionDate)}</td>
                                     <td className="border px-2 py-1">{item.actionBy}</td>
                                 </tr>
                             ))}
