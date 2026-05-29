@@ -611,7 +611,7 @@ useEffect(() => {
       const response = await axios.post(LOGIN_API, {
         email: formData.username,
         password: formData.password,
-        languageId: selectedLanguageId,
+        // languageId: selectedLanguageId,
         deviceId: deviceId
       });
 
