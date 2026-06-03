@@ -1,61 +1,480 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-:root{
-    --primarycolor:#1e40af;
-    --textcolor:#fff;
+
+:root {
+    /* New theme Colors */
+    --primary-color: #044f76;
+    --white-color: #fff;
+    --black-color: #000;
+
+    /* --secondary-color: #1E88E5; */
+    --black-color-60: rgb(0 0 0/0.6);
+
+    --lightBg: #f5f5f5;
+
+    --border-color-15: rgb(0 0 0/0.15);
+    --bg-color-8: rgb(0 0 0/0.08);
+    --red-color: #ff7777;
+
+    --body-color: #f3f0ec;
+    --menu-text-color: #cbd5e1;
+
+
+
+    /* ************* */
+    --primarycolor: #1e40af;
     --count: #2563eb;
-    --maincontainbg:#fff;
-    --tablebg:#f1f5f9;
-    --pagebg:#f5f5f5;
+
+    --tablebg: #f1f5f9;
+    --pagebg: #f5f5f5;
 
     /* dashbord */
-    --dcolor:#EF4444;
-    --icon:#28e731;
-    --bgdashColor:#f4f5f7;
+    --dcolor: #EF4444;
+    --icon: #28e731;
+    --bgdashColor: #f4f5f7;
 }
-.bg-blue-800{
+
+body {
+    background-color: var(--body-color);
+}
+
+.bg-slate-100,
+.bg-neutral-100 {
+    background-color: var(--body-color) !important;
+}
+
+header {
+    background-color: var(--white-color);
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1);
+    margin-bottom: 5px;
+
+    & .menuBtn {
+        background-color: var(--lightBg);
+        width: 36px;
+        height: 36px;
+        border-radius: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 12px;
+        transition: all 0.35s ease-in-out;
+
+        & svg {
+            -webkit-transform: scaleX(-1);
+            transform: scaleX(-1);
+            font-size: 24px;
+            color: var(--black-color-80);
+        }
+
+        &:hover {
+            background-color: var(--bg-color-8);
+
+            & svg {
+                color: var(--black-color-80);
+                color: var(--black-color);
+            }
+        }
+
+        /* &:hover{
+            background-color: var(--primary-color);
+            & svg{
+                color: var(--white-color);
+            }
+        } */
+    }
+
+    & .mainHeading {
+        font-size: 16px;
+        color: var(--black-color-80);
+        font-weight: 600;
+    }
+
+    & .topRightMenu {
+        display: flex;
+        position: relative;
+
+        &>div {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0px 16px;
+        }
+
+        &>div:last-child {
+            padding-right: 0;
+        }
+
+        &>div:not(:last-child)::after {
+            content: "";
+            width: 1px;
+            height: 30px;
+            position: absolute;
+            right: 0;
+            top: 5;
+            background: var(--border-color-15);
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 5px;
+            border-radius: 30px;
+            color: var(--black-color-80);
+            position: relative;
+            transition: all 0.35s ease-in-out;
+
+            &:hover {
+                background-color: var(--bg-color-8);
+                color: var(--black-color)
+            }
+
+            & .iconBg {
+                /* background-color: #F5F5F5; */
+                width: 36px;
+                height: 36px;
+                border-radius: 30px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            & svg {
+                width: 26px;
+                height: 26px;
+                color: var(--primary-color);
+            }
+
+            img {
+                width: 36px;
+                height: 36px;
+                border-radius: 30px;
+            }
+
+            .notificationText {
+                background-color: var(--red-color);
+                width: 24px;
+                height: 24px;
+                border-radius: 30px;
+                font-size: 13px;
+                color: var(--white-color);
+                position: absolute;
+                top: -6px;
+                right: -2px;
+            }
+        }
+
+        & .dropDownIcon {
+            position: relative;
+            padding-right: 25px;
+
+            &::after {
+                content: "";
+                width: 12px;
+                height: 8px;
+                position: absolute;
+                right: 5px;
+                top: 50%;
+                margin-top: -4px;
+                background: url("../src/Assets/icons/dropdown-icon.svg");
+            }
+        }
+    }
+
+    & .dropDownMenu {
+        position: absolute;
+        top: 48px;
+        right: 0;
+        border-radius: 0px 0px 6px 6px;
+        width: 200px;
+
+        &>div {
+            padding: 14px 15px;
+        }
+
+        &>div:not(:last-child) {
+            border-bottom: solid 1px var(--border-color-15);
+            border-radius: 0;
+        }
+
+        & .langIcon {
+            width: 16px;
+            height: 16px;
+            font-size: 16px;
+        }
+    }
+}
+
+footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    border-top: solid 1px var(--border-color-15);
+
+    & p {
+        font-size: 14px;
+        color: var(--black-color-80);
+        margin: 0;
+    }
+}
+
+.sideBarMenu {
+    margin: 0;
+    padding: 0;
+
+    & .logo {
+        height: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-bottom: solid 1px rgb(255 255 255 /0.20);
+        padding: 10px;
+    }
+
+    & .main-navbar {
+        padding: 15px 10px;
+    }
+
+    & .searchBox {
+        margin-bottom: 15px;
+
+        & input {
+            width: 100%;
+            height: 34px;
+            font-size: 16px;
+            color: var(--black-color-80);
+            padding: 10px 15px;
+            border-radius: 30px;
+            background: var(--white-color) url(../src/Assets/icons/search-icon.svg) no-repeat right center;
+        }
+    }
+
+    nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        /* class 1111 */
+        & .commonNavLink {
+            width: 100%;
+            height: 38px;
+            color: var(--menu-text-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 6px;
+            border-radius: 5px;
+
+            &:hover {
+                background-color: rgb(0 0 0/0.12);
+                color: var(--white-color);
+            }
+
+            & .menu-icon {
+                width: 20px;
+                height: 20px;
+                margin-right: 8px;
+            }
+        }
+
+        & .active {
+            background-color: var(--white-color);
+            color: var(--primary-color);
+
+            & .menu-icon {
+                color: var(--primary-color);
+            }
+
+            & span {
+                color: var(--primary-color);
+            }
+
+            &:hover {
+                background-color: rgb(255 255 255 /0.90);
+
+                & .menu-icon {
+                    color: var(--primary-color);
+                }
+
+                & span {
+                    color: var(--primary-color);
+                    ;
+                }
+            }
+        }
+
+
+    }
+
+    & .dropdownNav {
+
+        /* background-color: pink; */
+        button {
+            width: 100%;
+            height: 38px;
+            font-size: 16px;
+            color: var(--menu-text-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 6px;
+            border-radius: 5px;
+
+            &:hover {
+                background-color: rgb(0 0 0/0.12);
+                color: var(--white-color);
+            }
+        }
+
+        & .dropdownSubMenu {
+            background-color: rgb(255 255 255/0.05);
+            border-radius: 5px;
+            padding: 3px 0px 3px 26px;
+            /* padding-left: 38px; */
+
+            /* class 2222 */
+            & .commonNavLink {
+                background: url(../src/Assets/icons/arrow-right.svg) no-repeat left center;
+                background-size: 12px;
+                height: 36px;
+                padding-left: 20px;
+                margin-left: -4px;
+
+                &:hover {
+                    background-color: rgb(0 0 0/0.12);
+                    color: var(--white-color);
+                }
+
+                & .menu-icon {
+                    display: none;
+                }
+            }
+
+            & .active {
+                background: var(--white-color) url(../src/Assets/icons/arrow-right-active.svg) no-repeat left center;
+                background-size: 12px;
+                color: var(--primary-color);
+
+                & .count {
+                    background-color: rgb(0 0 0/0.08);
+                }
+
+                &:hover {
+                    background-color: rgb(255 255 255 /0.90);
+                }
+            }
+
+        }
+
+        & .arrowIcon {
+            width: 16px;
+            height: 16px;
+            margin-right: -4px;
+        }
+
+        & .arrowDown path {
+            /* fill: var(--secondary-color); */
+            fill: #4FC3F7;
+        }
+    }
+
+    & .count {
+        background-color: rgb(255 255 255/0.10);
+        width: 24px;
+        height: 24px;
+        border-radius: 30px;
+        font-size: 11px;
+        color: var(--white-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+main {
+    padding-top: 15px !important;
+}
+
+/* Dashboard css beginning here */
+
+.dashboardGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+
+    & .card {
+        background-color: var(--white-color);
+        border-radius: 5px;
+        padding: 10px 15px;
+        display: grid;
+        grid-template-columns: 1fr 100px;
+        align-items: center;
+    }
+}
+
+
+
+/* ***************************** */
+.bg-blue-800 {
     /* background:linear-gradient(to right, #2563eb , #a855f7 , #ec4899) !important; */
-    background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
-
+    /* background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%); */
 }
-.bg-blue-verticle{
-    background: linear-gradient(183deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
+
+.bg-blue-verticle {
+    /* background: linear-gradient(183deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%); */
+    background-color: var(--primary-color);
     width: 16rem;
+}
 
-}
 .text-white {
-    color:var(--textcolor) !important;
+    color: var(--white-color) !important;
 }
-.bg-blue-600{
+
+.bg-blue-600 {
     background-color: var(--count) !;
 }
-.bg-white{
-    background-color: var(--maincontainbg);
+
+.bg-white {
+    background-color: var(--white-color);
 }
-.bg-slate-100{
+
+.bg-slate-100 {
     background-color: var(--tablebg);
 }
-.bg-neutral-100{
+
+.bg-neutral-100 {
     background-color: var(--pagebg);
 
 }
+
 .bg-blue-950 {
     --tw-bg-opacity: 1;
     background-color: rgb(145 169 249) !important;
 }
-td{
+
+td {
     font-size: .8rem !important;
 }
+
 /* For DashBord */
-.border-blue-50{
-   /* olor: var(--Dcolor); */
-   border-color : var(--dcolor) ;
+.border-blue-50 {
+    /* olor: var(--Dcolor); */
+    border-color: var(--dcolor);
 }
-.text-blue-100{
-    text : var(--icon);
+
+.text-blue-100 {
+    text: var(--icon);
 }
-.bg-gray-50{
+
+.bg-gray-50 {
     background-color: var(--bgdashColor);
 }
 
@@ -63,17 +482,20 @@ td{
 
 /* Add this to your CSS file */
 .hide-scrollbar {
-    scrollbar-width: none; /* For Firefox */
-    -ms-overflow-style: none; /* For Internet Explorer and Edge */
-  }
-  
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* For Chrome, Safari, and Opera */
-  }
-  
+    scrollbar-width: none;
+    /* For Firefox */
+    -ms-overflow-style: none;
+    /* For Internet Explorer and Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+    /* For Chrome, Safari, and Opera */
+}
+
 
 /* login-- */
-.loginLeft{
+.loginLeft {
     background: url(./Assets/image.png) no-repeat;
     background-size: cover;
     background-position: center centerD;
@@ -82,30 +504,36 @@ td{
 /* sidebar-- */
 
 .custom-scrollbar {
-    scrollbar-width: none; /* Firefox */
-  }
+    scrollbar-width: none;
+    /* Firefox */
+}
 
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 0px; /* Chrome, Safari, Edge */
-    background: transparent !important; /* No background */
-  }
-
-  .hover-scrollbar:hover {
-    scrollbar-width: thin;
-  }
-
-  .hover-scrollbar:hover::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .hover-scrollbar:hover::-webkit-scrollbar-thumb {
-    background-color: rgba(100, 100, 100, 0.5); /* Scroll thumb color */
-    border-radius: 6px;
-  }
-
-  .hover-scrollbar:hover::-webkit-scrollbar-track {
-    background: transparent !important; /* Still keep track invisible */
-  }
-  ::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar {
+    width: 0px;
+    /* Chrome, Safari, Edge */
     background: transparent !important;
-  }
+    /* No background */
+}
+
+.hover-scrollbar:hover {
+    scrollbar-width: thin;
+}
+
+.hover-scrollbar:hover::-webkit-scrollbar {
+    width: 6px;
+}
+
+.hover-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 100, 100, 0.5);
+    /* Scroll thumb color */
+    border-radius: 6px;
+}
+
+.hover-scrollbar:hover::-webkit-scrollbar-track {
+    background: transparent !important;
+    /* Still keep track invisible */
+}
+
+::-webkit-scrollbar-track {
+    background: transparent !important;
+}

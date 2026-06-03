@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Bars3Icon,
-  PencilIcon,
-  ArrowRightOnRectangleIcon,
-} from "@heroicons/react/24/solid";
+import { PencilIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/solid";
+import { CgMenuRight } from "react-icons/cg";
+import { FaEarthAmericas } from "react-icons/fa6";
 import adminPhoto from "../Assets/profile.svg";
 import { PiUserSwitchFill } from "react-icons/pi";
 import { TbPasswordUser, TbUserCog } from "react-icons/tb";
@@ -12,7 +10,7 @@ import { PiUserCircleGear } from "react-icons/pi";
 import { FiUser, FiGlobe } from "react-icons/fi";
 import apiClient from "../API/apiClient";
 import { getEmployeeImage } from "../API/apiClient";
-import { API_HOST ,SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER} from "../API/apiConfig";
+import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER } from "../API/apiConfig";
 import Popup from "../Components/Popup";
 import { NotificationBell } from "../Data/Notification";
 import { ImSpinner2 } from "react-icons/im";
@@ -20,10 +18,9 @@ import { ImSpinner2 } from "react-icons/im";
 import AutoTranslate from '../i18n/AutoTranslate';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
-import { GlobeAltIcon } from "@heroicons/react/24/outline";
 
 const DropdownMenu = ({ items, onSelect, emptyMessage, className }) => (
-  <div className={`absolute right-0 mt-0.5 w-48 bg-white rounded-md shadow-lg z-10 ${className}`}>
+  <div className={`absolute right-0 mt-0.5 w-48 bg-white rounded-md shadow-lg z-10 dropDownMenu ${className}`}>
     {items && items.length > 0 ? (
       items.map((item, index) => (
         <div
@@ -40,7 +37,7 @@ const DropdownMenu = ({ items, onSelect, emptyMessage, className }) => (
   </div>
 );
 
-function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
+function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
   // Get language context
   const {
     currentLanguage,
@@ -111,20 +108,20 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh  }) {
     }
   };
 
-const fetchImageSrc = async () => {
-  try {
-    const employeeId = localStorage.getItem("id");
+  const fetchImageSrc = async () => {
+    try {
+      const employeeId = localStorage.getItem("id");
 
-    // Call standalone function
-    const imageArrayBuffer = await getEmployeeImage(employeeId);
+      // Call standalone function
+      const imageArrayBuffer = await getEmployeeImage(employeeId);
 
-    const imageBlob = new Blob([imageArrayBuffer], { type: "image/jpeg" });
-    const imageUrl = URL.createObjectURL(imageBlob);
-    setImageSrc(imageUrl);
-  } catch (error) {
-    console.error("Error fetching image source", error);
-  }
-};
+      const imageBlob = new Blob([imageArrayBuffer], { type: "image/jpeg" });
+      const imageUrl = URL.createObjectURL(imageBlob);
+      setImageSrc(imageUrl);
+    } catch (error) {
+      console.error("Error fetching image source", error);
+    }
+  };
 
   const fetchUserRole = async () => {
     try {
@@ -154,15 +151,15 @@ const fetchImageSrc = async () => {
     try {
       setIsConfSwitch(true);
       const employeeId = localStorage.getItem("id");
-       const response = await apiClient.put(
-      `/employee/${employeeId}/role/switch`,
-      { targetRoleName } // request body
-    );
+      const response = await apiClient.put(
+        `/employee/${employeeId}/role/switch`,
+        { targetRoleName } // request body
+      );
 
       const roleId = response.data?.response?.role?.id;
-    if (roleId) {
-      localStorage.setItem("currRoleId", roleId);
-    }
+      if (roleId) {
+        localStorage.setItem("currRoleId", roleId);
+      }
 
       localStorage.setItem("role", targetRoleName);
       setRole(targetRoleName);
@@ -204,7 +201,7 @@ const fetchImageSrc = async () => {
   const getLanguageNativeNameByCode = (languageCode) => {
     if (!availableLanguages.length) {
       // Default fallbacks
-      switch(languageCode) {
+      switch (languageCode) {
         case 'en': return 'English';
         case 'hi': return 'हिंदी';
         case 'or': return 'ଓଡିଆ';
@@ -217,7 +214,7 @@ const fetchImageSrc = async () => {
   };
 
   const getLanguageIcon = (code) => {
-    switch(code) {
+    switch (code) {
       case 'en': return '🇺🇸';
       case 'hi': return '🇮🇳';
       case 'or': return '🇮🇳';
@@ -230,16 +227,16 @@ const fetchImageSrc = async () => {
     try {
       // Show loading state
       setDropdownLanguageOpen(false);
-      
+
       // Get language name for popup
       const languageName = getLanguageNativeNameByCode(languageCode);
-      
+
       // Change the language
       await changeLanguage(languageCode);
-      
+
       // Show success message with language name
       showPopup(`Language changed to ${languageName}`, "success");
-      
+
     } catch (error) {
       console.error('Error changing language:', error);
       showPopup("Error changing language!", "error");
@@ -257,7 +254,7 @@ const fetchImageSrc = async () => {
   }, []);
 
   return (
-    <header className="bg-blue-800 text-white flex flex-col md:flex-row justify-between items-end shadow-inner relative">
+    <header className="bg-blue-800- text-white- flex- flex-col- md:flex-row- justify-between- items-end- shadow-inner- relative-">
       {popupMessage && (
         <Popup
           message={popupMessage.message}
@@ -265,49 +262,43 @@ const fetchImageSrc = async () => {
           onClose={handleClose}
         />
       )}
-      <div className="flex items-center w-full justify-between md:justify-start">
-        <button
-          onClick={toggleSidebar}
-          className="text-gray-300 hover:text-white p-2 rounded-lg transition duration-200 mr-4"
-        >
-          <Bars3Icon className="h-7 w-7" />
+      <div className="flex items-center w-full- justify-between- md:justify-start-">
+        <button onClick={toggleSidebar} className="menuBtn" >
+          <CgMenuRight />
         </button>
-        <h3 className="font-bold text-lg mb-1.5">
+        <h1 className="mainHeading font-bold- text-lg- mb-1.5-">
           <AutoTranslate>Document Management System</AutoTranslate>
-        </h3>
+        </h1>
       </div>
 
-      <div className="flex space-x-2 items-center mr-10">
+      <div className="topRightMenu">
         {/* Language Dropdown */}
-        <div className="relative dropdown-toggle">
-          <div
-            className="flex items-center space-x-1 cursor-pointer hover:bg-blue-700 px-2 py-1 rounded-lg transition duration-200"
-            onClick={() => setDropdownLanguageOpen(!dropdownLanguageOpen)}
-          >
-            <GlobeAltIcon className="h-5 w-5 text-white" />
-            <span className="font-bold text-sm mr-1">{getCurrentLanguageName()}</span>
-          </div>
+        <div className="dropdown-toggle">
+
+          <button className="dropDownIcon" onClick={() => setDropdownLanguageOpen(!dropdownLanguageOpen)}>
+            <span className="iconBg"><FaEarthAmericas /></span>
+            <span>{getCurrentLanguageName()}</span>
+          </button>
 
           {dropdownLanguageOpen && (
-            <DropdownMenu
-              className="max-h-48 overflow-y-auto"
+            <DropdownMenu className="max-h-48 overflow-y-auto"
               items={
                 availableLanguages && availableLanguages.length > 0
                   ? availableLanguages
-                      .filter(lang => lang.isActive !== false)
-                      .map((lang) => ({
-                        label: (
-                          <span className="flex items-center text-sm text-gray-800 p-2 hover:bg-gray-100 rounded">
-                            <span className="mr-2">{getLanguageIcon(lang.code)}</span>
-                            {getLanguageNativeNameByCode(lang.code)}
-                            {lang.code === currentLanguage && (
-                              <span className="ml-auto text-green-500 font-semibold">✓</span>
-                            )}
-                          </span>
-                        ),
-                        onClick: () => handleLanguageChange(lang.code),
-                      }))
-                  : 
+                    .filter(lang => lang.isActive !== false)
+                    .map((lang) => ({
+                      label: (
+                        <span className="flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded">
+                          <span className="mr-3 langIcon">{getLanguageIcon(lang.code)}</span>
+                          <span>{getLanguageNativeNameByCode(lang.code)}</span>
+                          {lang.code === currentLanguage && (
+                            <span className="ml-auto text-green-500 font-semibold">✓</span>
+                          )}
+                        </span>
+                      ),
+                      onClick: () => handleLanguageChange(lang.code),
+                    }))
+                  :
 
                   []
               }
@@ -317,18 +308,14 @@ const fetchImageSrc = async () => {
           )}
         </div>
 
-        <NotificationBell />
-        <h1 className="text-3xl mb-2">|</h1>
-
         {/* Role Dropdown */}
-        <div className="relative dropdown-toggle">
-          <div
-            className="flex items-center space-x-2 cursor-pointer hover:bg-blue-700 px-2 py-1 rounded-lg transition duration-200"
-            onClick={() => setDropdownRoleOpen(!dropdownRoleOpen)}
-          >
-            <PiUserSwitchFill className="h-10 w-10" />
-            <span className="font-bold text-sm mr-1">{role || <AutoTranslate>Role</AutoTranslate>}</span>
-          </div>
+        <div className="dropdown-toggle">
+          <button className="dropDownIcon" onClick={() => setDropdownRoleOpen(!dropdownRoleOpen)}>
+            <span className="iconBg">
+              <PiUserSwitchFill />
+            </span>
+            <span>{role || <AutoTranslate>Role</AutoTranslate>}</span>
+          </button>
 
           {dropdownRoleOpen && (
             <DropdownMenu
@@ -345,8 +332,9 @@ const fetchImageSrc = async () => {
 
                       return {
                         label: (
-                          <span className="flex items-center text-sm text-gray-800 p-2 hover:bg-gray-100 rounded">
-                            <IconComponent className="h-5 w-5 mr-2" /> {roleItem}
+                          <span className="flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded">
+                            <IconComponent className="h-5 w-5 mr-3" />
+                            <span>{roleItem}</span> 
                           </span>
                         ),
                         onClick: () => {
@@ -363,39 +351,39 @@ const fetchImageSrc = async () => {
           )}
         </div>
 
+        {/* Notification component */}
+        <div className="">
+          <NotificationBell />
+        </div>
+
         {/* Profile Dropdown */}
-        <div className="relative" ref={dropdownRef}>
-          <div
-            className="flex items-center space-x-2 cursor-pointer hover:bg-blue-700 px-2 py-1 rounded-lg transition duration-200"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          >
-            <h1 className="text-3xl pb-2 mr-1">|</h1>
-            <span className="font-bold text-sm mr-1 flex-shrink-0 whitespace-nowrap">
-              {UserName}
-            </span>
+        <div className="" ref={dropdownRef}>
+          <button className="dropDownIcon" onClick={() => setDropdownOpen(!dropdownOpen)}>
+            <span>{UserName}</span>
             <img
               src={imageSrc || adminPhoto}
               onError={(e) => (e.currentTarget.src = adminPhoto)}
               alt={getFallbackTranslation('Profile', currentLanguage)}
-              className="h-8 w-8 rounded-full"
             />
-          </div>
+          </button>
 
           {dropdownOpen && (
             <DropdownMenu
               items={[
                 {
                   label: (
-                    <span className="flex items-center text-gray-800 p-1 text-sm">
-                      <PencilIcon className="h-4 w-4 mr-2" /> <AutoTranslate>Edit Profile</AutoTranslate>
+                    <span className="flex items-center text-gray-800 text-sm">
+                      <PencilIcon className="h-4 w-4 mr-3" />
+                      <AutoTranslate>Edit Profile</AutoTranslate>
                     </span>
                   ),
                   onClick: handleChangePassword,
                 },
                 {
                   label: (
-                    <span className="flex items-center text-gray-800 p-1 text-sm">
-                      <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" /> <AutoTranslate>Logout</AutoTranslate>
+                    <span className="flex items-center text-gray-800 text-sm">
+                      <ArrowRightOnRectangleIcon className="h-4 w-4 mr-3" />
+                      <AutoTranslate>Logout</AutoTranslate>
                     </span>
                   ),
                   onClick: handleLogout,
@@ -407,43 +395,45 @@ const fetchImageSrc = async () => {
           )}
         </div>
 
-        {/* Confirmation Popup */}
-        {showConfirmationPopup && (
-          <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 w-96 relative z-60">
-              <h2 className="text-lg font-semibold mb-4">
-                <AutoTranslate>Confirm Role Switch</AutoTranslate>
-              </h2>
-              <p className="text-gray-700 mb-6">
-                <AutoTranslate>Are you sure you want to switch to the role:</AutoTranslate>{" "}
-                <strong>{targetRoleName}</strong>?
-              </p>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={cancelRoleSwitch}
-                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-                >
-                  <AutoTranslate>Cancel</AutoTranslate>
-                </button>
-                <button
-                  onClick={confirmRoleSwitch}
-                  disabled={isConfSwitch}
-                  className={`bg-indigo-500 text-white px-4 py-2 rounded transition duration-300 no-print ${isConfSwitch ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-600"
-                    }`}
-                >
-                  {isConfSwitch ? (
-                    <span className="flex items-center">
-                      <ImSpinner2 className="animate-spin mr-2" /> <AutoTranslate>Switching...</AutoTranslate>
-                    </span>
-                  ) : (
-                    <AutoTranslate>Confirm</AutoTranslate>
-                  )}
-                </button>
-              </div>
+      </div>
+
+      {/* Confirmation Popup */}
+      {showConfirmationPopup && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-96 relative z-60">
+            <h2 className="text-lg font-semibold mb-4">
+              <AutoTranslate>Confirm Role Switch</AutoTranslate>
+            </h2>
+            <p className="text-gray-700 mb-6">
+              <AutoTranslate>Are you sure you want to switch to the role:</AutoTranslate>{" "}
+              <strong>{targetRoleName}</strong>?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={cancelRoleSwitch}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              >
+                <AutoTranslate>Cancel</AutoTranslate>
+              </button>
+              <button
+                onClick={confirmRoleSwitch}
+                disabled={isConfSwitch}
+                className={`bg-indigo-500 text-white px-4 py-2 rounded transition duration-300 no-print ${isConfSwitch ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-600"
+                  }`}
+              >
+                {isConfSwitch ? (
+                  <span className="flex items-center">
+                    <ImSpinner2 className="animate-spin mr-2" /> <AutoTranslate>Switching...</AutoTranslate>
+                  </span>
+                ) : (
+                  <AutoTranslate>Confirm</AutoTranslate>
+                )}
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </header>
   );
 }

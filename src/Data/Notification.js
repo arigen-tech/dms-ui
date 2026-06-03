@@ -133,24 +133,19 @@ export const NotificationBell = () => {
   }, [fetchUnreadCount])
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => navigate("/notifications")}
-        className="relative p-3 text-gray-300 hover:text-white rounded-full "
-      >
-        {unreadCount > 0 ? (
-          <BellAlertIcon className="h-7 w-7 text-white" />
-        ) : (
-          <BellIcon className="h-7 w-7 text-white" />
-        )}
+    <button onClick={() => navigate("/notifications")}>
+      {unreadCount > 0 ? (
+        <span className="iconBg"><BellAlertIcon /></span>
+      ) : (
+        <span className="iconBg"><BellIcon /></span>
+      )}
 
-        {unreadCount > 0 && (
-          <span className="absolute top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse shadow-lg">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
-        )}
-      </button>
-    </div>
+      {unreadCount > 0 && (
+        <span className="notificationText bg-red-500 animate-pulse">
+          {unreadCount > 99 ? "99+" : unreadCount}
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -371,7 +366,7 @@ export const Notification = () => {
 
     try {
       const markAsReadPromises = notifications.map(notification =>
-        axios.put(`${API_HOST}/notifications/${notification.id}/read`, null, )
+        axios.put(`${API_HOST}/notifications/${notification.id}/read`, null,)
       );
 
       await Promise.all(markAsReadPromises);

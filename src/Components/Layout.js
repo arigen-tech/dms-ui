@@ -19,8 +19,7 @@ const Layout = ({ children }) => {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-100">
       {/* Sidebar Container */}
-      <div
-        className={`fixed md:relative z-30 h-full transition-transform duration-300 ${
+      <div className={`fixed md:relative z-30 h-full transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -45,7 +44,7 @@ const Layout = ({ children }) => {
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-auto">
           <div className="min-h-full flex flex-col">
-            <main className="p-4 flex-1">
+            <main className="p-5 flex-1">
               {children}
             </main>
             <Footer />

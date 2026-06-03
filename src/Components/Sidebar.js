@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { MdDashboard } from "react-icons/md";
+import { IoDocumentText } from "react-icons/io5";
+import { HiUsers } from "react-icons/hi2";
+import { GoOrganization } from "react-icons/go";
+
+
 import {
   InboxIcon,
   ChevronDownIcon,
@@ -35,7 +41,7 @@ import { AiOutlineFileSearch } from "react-icons/ai";
 import { MdAdfScanner } from "react-icons/md";
 import { FaUserClock } from "react-icons/fa6";
 import { GiFiles } from "react-icons/gi";
-import logo3 from "../Assets/logo3.png";
+import logo from "../Assets/aridocsLogo.png";
 import {
   API_HOST,
   SYSTEM_ADMIN,
@@ -97,22 +103,22 @@ function Sidebar({ roleChanged }) {
   }, []);
 
   useEffect(() => {
-  if (searchTerm.trim() !== "") {
-    const expandAllMatching = (items, state = {}) => {
-      items.forEach((item) => {
-        if (searchInAllLanguages(item, searchTerm)) {
-          state[item.appId] = true;
-        }
-        if (item.children?.length > 0) {
-          expandAllMatching(item.children, state);
-        }
-      });
-      return state;
-    };
+    if (searchTerm.trim() !== "") {
+      const expandAllMatching = (items, state = {}) => {
+        items.forEach((item) => {
+          if (searchInAllLanguages(item, searchTerm)) {
+            state[item.appId] = true;
+          }
+          if (item.children?.length > 0) {
+            expandAllMatching(item.children, state);
+          }
+        });
+        return state;
+      };
 
-    setOpenMenus(expandAllMatching(menuData));
-  }
-}, [searchTerm]);
+      setOpenMenus(expandAllMatching(menuData));
+    }
+  }, [searchTerm]);
 
 
   // Function to search in all languages
@@ -155,25 +161,25 @@ function Sidebar({ roleChanged }) {
   }, [translationDictionary]);
 
   // Recursive function to restore open state for ALL levels
-const buildOpenMenuState = (items) => {
-  const state = {};
+  const buildOpenMenuState = (items) => {
+    const state = {};
 
-  const traverse = (menuItems) => {
-    menuItems.forEach((item) => {
-      if (item.children && item.children.length > 0) {
-        const storedState = localStorage.getItem(`menu-${item.appId}-open`);
-        state[item.appId] = storedState
-          ? JSON.parse(storedState)
-          : false;
+    const traverse = (menuItems) => {
+      menuItems.forEach((item) => {
+        if (item.children && item.children.length > 0) {
+          const storedState = localStorage.getItem(`menu-${item.appId}-open`);
+          state[item.appId] = storedState
+            ? JSON.parse(storedState)
+            : false;
 
-        traverse(item.children);
-      }
-    });
+          traverse(item.children);
+        }
+      });
+    };
+
+    traverse(items);
+    return state;
   };
-
-  traverse(items);
-  return state;
-};
 
 
   // Fetch menu data
@@ -202,8 +208,8 @@ const buildOpenMenuState = (items) => {
           return state;
         };
 
-const initialOpenMenus = buildOpenMenuState(data.response);
-setOpenMenus(initialOpenMenus);
+        const initialOpenMenus = buildOpenMenuState(data.response);
+        setOpenMenus(initialOpenMenus);
 
 
 
@@ -281,7 +287,7 @@ setOpenMenus(initialOpenMenus);
         const parsed = JSON.parse(cached);
         setMenuData(parsed);
         const initialOpenMenus = buildOpenMenuState(parsed);
-setOpenMenus(initialOpenMenus);
+        setOpenMenus(initialOpenMenus);
 
         setLoading(false);
 
@@ -416,19 +422,24 @@ setOpenMenus(initialOpenMenus);
   // Active link style
   const isActive = (path) =>
     location.pathname === path
-      ? "bg-blue-950 text-white"
-      : "text-white hover:bg-blue-950 hover:text-white";
+      ? ""
+      : "";
+      // ? "bg-blue-950- text-white-"
+      // : "text-white- hover:bg-blue-950- hover:text-white-";
 
   // Icon mapping
   const getIconComponent = (name) => {
     const iconMap = {
-      Dashboard: InboxIcon,
+      // Dashboard: InboxIcon,
+      Dashboard: MdDashboard,
       "Archival Dashboard": SiArchiveofourown,
-      Users: UserGroupIcon,
+      // Users: UserGroupIcon,
+      Users: HiUsers,
       "Pending Users": FaUserClock,
       "Manage Users Roles": UserPlusIcon,
       "Generate I'D Card": IdentificationIcon,
-      Organisation: BuildingOfficeIcon,
+      // Organisation: BuildingOfficeIcon,
+      Organisation: GoOrganization,
       Branch: KeyIcon,
       Department: ComputerDesktopIcon,
       Role: UserCircleIcon,
@@ -441,7 +452,8 @@ setOpenMenus(initialOpenMenus);
       "assign applications": UserIcon,
       "Role Rights": UserIcon,
       "Files Types": GiFiles,
-      Document: DocumentIcon,
+      // Document: DocumentIcon,
+      Document: IoDocumentText,
       "Pending Approvals": IoDocumentLock,
       "Approved Document": DocumentCheckIcon,
       "Rejected Document": DocumentMinusIcon,
@@ -459,10 +471,11 @@ setOpenMenus(initialOpenMenus);
       "Archival Policy": ClockIcon,
       "Scan Document": MdAdfScanner,
       "Upload Document": DocumentArrowUpIcon,
-      "Main Dashboard": InboxIcon,
+      // "Main Dashboard": InboxIcon,
+      "Main Dashboard": MdDashboard,
     };
 
-    return iconMap[name] || DocumentIcon;
+    return iconMap[name] || IoDocumentText;
   };
 
   // Get count for menu item
@@ -534,27 +547,24 @@ setOpenMenus(initialOpenMenus);
 
   // Sidebar Link component
   const SidebarLink = ({ to, icon: Icon, text, count }) => (
-    <Link
+
+    <NavLink
       to={to}
       onClick={() => {
         try {
           if (sidebarRef.current) sessionStorage.setItem("sidebarScroll", String(sidebarRef.current.scrollTop || 0));
         } catch (e) { }
       }}
-      className={`px-3 py-1 rounded-lg text-base font-lg flex items-center justify-between ${isActive(to)}`}
+      className={`commonNavLink ${isActive(to)}`}
     >
       <div className="flex items-center">
-        <Icon className="h-5 w-5 mr-3" />
+        <Icon className="menu-icon" />
         <span>
           <AutoTranslate>{text}</AutoTranslate>
         </span>
       </div>
-      {count > 0 && (
-        <span className="bg-red-600 text-white rounded-2xl px-2 text-sm font-semibold">
-          {count}
-        </span>
-      )}
-    </Link>
+      {count > 0 && (<span className="count">{count}</span>)}
+    </NavLink>
   );
 
   // Render menu items with multilingual search
@@ -578,22 +588,19 @@ setOpenMenus(initialOpenMenus);
         if (!shouldShowParent) return null;
 
         return (
-          <div key={item.appId}>
-            <button
-              onClick={() => handleMenuToggle(item.appId)}
-              className="w-full px-3 py-1 rounded-lg text-base flex items-center justify-between text-white hover:bg-blue-950 hover:text-white mt-2"
-            >
+          <div className="dropdownNav" key={item.appId}>
+            <button onClick={() => handleMenuToggle(item.appId)} className="btnDropdown" >
               <div className="flex items-center">
                 <IconComponent className="h-5 w-5 mr-3" />
                 <AutoTranslate>{item.name}</AutoTranslate>
               </div>
               {isOpen ? (
-                <ChevronDownIcon className="h-4 w-4" />
+                <ChevronDownIcon className="arrowIcon arrowDown" />
               ) : (
-                <ChevronRightIcon className="h-4 w-4" />
+                <ChevronRightIcon className="arrowIcon" />
               )}
             </button>
-            {isOpen && <div className="ml-2 flex flex-col space-y-1">{renderMenuItems(item.children)}</div>}
+            {isOpen && <div className="dropdownSubMenu">{renderMenuItems(item.children)}</div>}
           </div>
         );
       } else {
@@ -623,14 +630,14 @@ setOpenMenus(initialOpenMenus);
   return (
     <div
       ref={sidebarRef}
-      className="max-h-[100%] overflow-y-auto print:max-h-none print:overflow-auto h-screen flex flex-col justify-between bg-blue-verticle text-white p-1 transition-all duration-300 overflow-hidden hover:overflow-y-auto custom-scrollbar hover-scrollbar"
+      className="max-h-[100%] overflow-y-auto print:max-h-none print:overflow-auto h-screen flex flex-col justify-between bg-blue-verticle text-white transition-all duration-300 overflow-hidden hover:overflow-y-auto custom-scrollbar hover-scrollbar"
     >
-      <div>
-        <div className="flex items-center border-b border-t justify-center mb-2">
-          <img className="flex w-30 h-30" src={logo3} alt="DMS" />
+      <div className="sideBarMenu">
+        <div className="logo flex items-center justify-center">
+          <img src={logo} alt="DMS" />
         </div>
-        <nav className="flex flex-col space-y-1">
-          <div>
+        <div className="main-navbar">
+          <div className="searchBox mb-2">
             <input
               type="text"
               placeholder={searchPlaceholder}
@@ -638,18 +645,20 @@ setOpenMenus(initialOpenMenus);
               value={searchTerm}
               onChange={handleInputChange}
               maxLength={30}
-              className="mt-1 block w-full p-1 mb-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400"
+              className="border outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400"
             />
           </div>
 
-          {loading ? (
-            <div className="text-center py-4">
-              <AutoTranslate>Loading menu...</AutoTranslate>
-            </div>
-          ) : (
-            renderMenuItems(menuData)
-          )}
-        </nav>
+          <nav className="">
+            {loading ? (
+              <div className="text-center py-4">
+                <AutoTranslate>Loading menu...</AutoTranslate>
+              </div>
+            ) : (
+              renderMenuItems(menuData)
+            )}
+          </nav>
+        </div>
       </div>
     </div>
   );

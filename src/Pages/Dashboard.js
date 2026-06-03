@@ -445,18 +445,22 @@ function Dashboard() {
 
   function StatBlock({ title, value, Icon }) {
     return (
-      <div className="p-3 rounded-lg shadow flex items-center justify-between border-l-4 border-blue-50 bg-white">
+      <div className="card p-3- rounded-lg- shadow- flex- items-center- justify-between- border-l-4- border-blue-50- bg-white-">
         <div>
+          <Icon className="w-8 h-8 text-blue-800" />
           <h3 className="text-md font-semibold text-gray-700">
             <AutoTranslate>{title}</AutoTranslate>
           </h3>
+
+        </div>
+        <div>
           {loading ? (
             <div className="h-7 w-20 bg-gray-200 rounded animate-pulse" />
           ) : (
             <p className="text-2xl font-bold text-gray-900">{value}</p>
           )}
         </div>
-        <Icon className="w-8 h-8 text-blue-800" />
+
       </div>
     );
   }
@@ -513,16 +517,16 @@ function Dashboard() {
 
   return (
     <Layout>
-      <div className="flex flex-col p-4 min-h-full w-full bg-slate-100">
+      <div className="flex flex-col min-h-full w-full bg-slate-100">
         <h2 className="text-xl mb-4 font-semibold">
           <AutoTranslate>DASHBOARD</AutoTranslate>
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="dashboardGrid">
           {role === SYSTEM_ADMIN && (
             <>
               <Link to="/users" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+                <div className="gridItems transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                   <StatBlock title="Total Users" value={stats.totalUser} Icon={UsersIcon} />
                 </div>
               </Link>
