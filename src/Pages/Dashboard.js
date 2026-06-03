@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER, BRANCH_API, EMPLOYEE_API, DOCUMENTHEADER_API } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
+import demoIcon from "../Assets/icons/demo-icon.svg";
 import {
   BarChart,
   Bar,
@@ -528,6 +529,7 @@ function Dashboard() {
               <Link to="/users" className="block">
                 <div className="gridItems transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
                   <StatBlock title="Total Users" value={stats.totalUser} Icon={UsersIcon} />
+                  {/* <img src={demoIcon} alt="" /> */}
                 </div>
               </Link>
 

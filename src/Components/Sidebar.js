@@ -5,6 +5,8 @@ import { IoDocumentText } from "react-icons/io5";
 import { HiUsers } from "react-icons/hi2";
 import { GoOrganization } from "react-icons/go";
 
+// import demoIcon from "../Assets/icons/demo-icon.svg";
+
 
 import {
   InboxIcon,
@@ -473,6 +475,7 @@ function Sidebar({ roleChanged }) {
       "Upload Document": DocumentArrowUpIcon,
       // "Main Dashboard": InboxIcon,
       "Main Dashboard": MdDashboard,
+      "Archival": MdDashboard,
     };
 
     return iconMap[name] || IoDocumentText;
