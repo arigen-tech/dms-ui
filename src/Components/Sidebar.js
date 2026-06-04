@@ -428,21 +428,16 @@ function Sidebar({ roleChanged }) {
     location.pathname === path
       ? ""
       : "";
-      // ? "bg-blue-950- text-white-"
-      // : "text-white- hover:bg-blue-950- hover:text-white-";
 
-  // Icon mapping
+  // Icon mapping - Returns null if icon not found
   const getIconComponent = (name) => {
     const iconMap = {
-      // Dashboard: InboxIcon,
       Dashboard: MdDashboard,
       "Archival Dashboard": SiArchiveofourown,
-      // Users: UserGroupIcon,
       Users: HiUsers,
       "Pending Users": FaUserClock,
       "Manage Users Roles": UserPlusIcon,
       "Generate I'D Card": IdentificationIcon,
-      // Organisation: BuildingOfficeIcon,
       Organisation: GoOrganization,
       Branch: KeyIcon,
       Department: ComputerDesktopIcon,
@@ -456,7 +451,6 @@ function Sidebar({ roleChanged }) {
       "assign applications": UserIcon,
       "Role Rights": UserIcon,
       "Files Types": GiFiles,
-      // Document: DocumentIcon,
       Document: IoDocumentText,
       "Pending Approvals": IoDocumentLock,
       "Approved Document": DocumentCheckIcon,
@@ -475,14 +469,12 @@ function Sidebar({ roleChanged }) {
       "Archival Policy": ClockIcon,
       "Scan Document": MdAdfScanner,
       "Upload Document": DocumentArrowUpIcon,
-      // "Main Dashboard": InboxIcon,
       "Main Dashboard": MdDashboard,
       Archival: IoArchiveSharp,
-      "Audit & Reports" : TbReportSearch,
+      "Audit & Reports": TbReportSearch,
     };
     
-
-    return iconMap[name] || IoDocumentText;
+    return iconMap[name] || null; // Return null if icon not found
   };
 
   // Get count for menu item
@@ -530,9 +522,6 @@ function Sidebar({ roleChanged }) {
               ? counts.totalApprovedStatusDocByDepartmentId
               : 0,
 
-
-
-
       "/approvedDocs": currentRole === USER ? counts.approvedDocsbyid : 0,
       "/total-rejected":
         currentRole === SYSTEM_ADMIN
@@ -550,29 +539,51 @@ function Sidebar({ roleChanged }) {
     return countMap[url] || 0;
   };
 
+  // Sidebar Link component with null check
+  const SidebarLink = ({ to, icon: Icon, text, count }) => {
+    // If Icon is null or undefined, render without icon
+    if (!Icon) {
+      return (
+        <NavLink
+          to={to}
+          onClick={() => {
+            try {
+              if (sidebarRef.current) sessionStorage.setItem("sidebarScroll", String(sidebarRef.current.scrollTop || 0));
+            } catch (e) { }
+          }}
+          className={`commonNavLink ${isActive(to)}`}
+        >
+          <div className="flex items-center">
+            <span>
+              <AutoTranslate>{text}</AutoTranslate>
+            </span>
+          </div>
+          {count > 0 && (<span className="count">{count}</span>)}
+        </NavLink>
+      );
+    }
 
-
-  // Sidebar Link component
-  const SidebarLink = ({ to, icon: Icon, text, count }) => (
-
-    <NavLink
-      to={to}
-      onClick={() => {
-        try {
-          if (sidebarRef.current) sessionStorage.setItem("sidebarScroll", String(sidebarRef.current.scrollTop || 0));
-        } catch (e) { }
-      }}
-      className={`commonNavLink ${isActive(to)}`}
-    >
-      <div className="">
-        <Icon className="menu-icon" />
-        <span>
-          <AutoTranslate>{text}</AutoTranslate>
-        </span>
-      </div>
-      {count > 0 && (<span className="count">{count}</span>)}
-    </NavLink>
-  );
+    // Render with icon
+    return (
+      <NavLink
+        to={to}
+        onClick={() => {
+          try {
+            if (sidebarRef.current) sessionStorage.setItem("sidebarScroll", String(sidebarRef.current.scrollTop || 0));
+          } catch (e) { }
+        }}
+        className={`commonNavLink ${isActive(to)}`}
+      >
+        <div className="flex items-center">
+          <Icon className="menu-icon" />
+          <span>
+            <AutoTranslate>{text}</AutoTranslate>
+          </span>
+        </div>
+        {count > 0 && (<span className="count">{count}</span>)}
+      </NavLink>
+    );
+  };
 
   // Render menu items with multilingual search
   const renderMenuItems = (items) => {
@@ -596,9 +607,13 @@ function Sidebar({ roleChanged }) {
 
         return (
           <div className="dropdownNav" key={item.appId}>
-            <button onClick={() => handleMenuToggle(item.appId)} className="btnDropdown" >
-              <div className="">
-                <IconComponent className="h-5 w-5 mr-3" />
+            <button onClick={() => handleMenuToggle(item.appId)} className="btnDropdown">
+              <div className="flex items-center">
+                {IconComponent ? (
+                  <IconComponent className="h-5 w-5 mr-3" />
+                ) : (
+                  <div className="w-5 h-5 mr-3" /> // Empty placeholder for spacing
+                )}
                 <AutoTranslate>{item.name}</AutoTranslate>
               </div>
               {isOpen ? (
