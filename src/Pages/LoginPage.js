@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { LOGIN_API, LOGIN_API_verify, FORGATE_PASS_API, VERIFY_FORGATE_OTP, RESET_PASS_API, API_HOST } from "../API/apiConfig";
 import image from "../Assets/image.png";
-import logo2 from "../Assets/logo2.jpg";
+import logo2 from "../Assets/logo2.png";
 import { jwtDecode } from "jwt-decode";
 import AutoTranslate from "../i18n/AutoTranslate";
 import { useLanguage } from "../i18n/LanguageContext";

@@ -6,8 +6,14 @@ import chartIcon from "../Assets/icons/chart-icon.svg";
 import lineChartIcon from "../Assets/icons/line-chart-icon.svg";
 import fileTypesIcon from "../Assets/icons/file-types-icon.svg";
 import statusIcon from "../Assets/icons/status-icon.svg";
-
-import {Icon} from "@iconify/react";
+import { FaCodeBranch } from "react-icons/fa6";
+import { TbCategoryFilled } from "react-icons/tb";
+import { PiFilesFill } from "react-icons/pi";
+import { MdPendingActions } from "react-icons/md";
+import { BsTrash3Fill } from "react-icons/bs";
+import { IoDocuments } from "react-icons/io5";
+import { HiDocumentArrowUp } from "react-icons/hi2";
+import { Icon } from "@iconify/react";
 
 
 import { FcDepartment } from "react-icons/fc";
@@ -519,8 +525,12 @@ function Dashboard() {
   const totalDocsbyUser = (stats.rejectedDocsbyid + stats.approvedDocsbyid + stats.pendingDocsbyid);
 
   const SkeletonBox = () => (
-    <div className="bg-gray-200 animate-pulse rounded-lg h-[300px] w-full"></div>
+    <div className="loading- bg-gray-200 animate-pulse rounded-lg h-[300px] w-full">
+      
+    </div>
   );
+
+  // <span><img src={lodingIcon} alt="loading..." /></span>
 
   const legendItems = [
     { name: "Active", color: COLORS[0] },
@@ -556,7 +566,7 @@ function Dashboard() {
 
               <Link to="/create-branch">
                 <div className="gridItems">
-                  <StatBlock title="Total Branches" value={stats.totalBranches} Icon={KeyIcon} />
+                  <StatBlock title="Total Branches" value={stats.totalBranches} Icon={FaCodeBranch} />
                 </div>
               </Link>
 
@@ -570,27 +580,27 @@ function Dashboard() {
                 <div className="gridItems">
                   <StatBlock title="Total Roles" value={stats.totalRoles} Icon={RiFunctionAddFill} />
                 </div>
-              </Link>              
+              </Link>
 
               <Link to="/create-category">
                 <div className="gridItems">
-                  <StatBlock title="Total Categories" value={stats.totalCategories} Icon={ShoppingCartIcon} />
+                  <StatBlock title="Total Categories" value={stats.totalCategories} Icon={TbCategoryFilled} />
                 </div>
               </Link>
 
               <Link to="/create-fileType">
                 <div className="gridItems">
-                  <StatBlock title="Total Files Types" value={stats.totalFilesType} Icon={GiFiles} />
+                  <StatBlock title="Total Files Types" value={stats.totalFilesType} Icon={ PiFilesFill } />  
                 </div>
               </Link>
 
               <div className="gridItems">
-                <StatBlock title="Total Documents" value={stats.totalDocument} Icon={DocumentIcon} />
-              </div>
+                <StatBlock title="Total Documents" value={stats.totalDocument} Icon={IoDocuments} />
+              </div>             
 
               <Link to="/approve-documents">
                 <div className="gridItems pending">
-                  <StatBlock title="Pending Documents" value={stats.totalPendingDocuments} Icon={IoDocumentLock} />
+                  <StatBlock title="Pending Documents" value={stats.totalPendingDocuments} Icon={MdPendingActions} />
                 </div>
               </Link>
 
@@ -608,7 +618,7 @@ function Dashboard() {
 
               <Link to="/trash-documents">
                 <div className="gridItems rejected">
-                  <StatBlock title="Trash Documents" value={stats.trashTotalDoc} Icon={TrashIcon} />
+                  <StatBlock title="Trash Documents" value={stats.trashTotalDoc} Icon={BsTrash3Fill} />
                 </div>
               </Link>
             </>
@@ -618,7 +628,7 @@ function Dashboard() {
             <>
               <Link to="/branchusers">
                 <div className="gridItems">
-                  <StatBlock title="Branch Users" value={stats.branchUser} Icon={UsersIcon} />
+                  <StatBlock title="Branch Users" value={stats.branchUser} Icon={UserGroupIcon} />
                 </div>
               </Link>
 
@@ -630,17 +640,17 @@ function Dashboard() {
 
               <Link to="/create-departments">
                 <div className="gridItems">
-                  <StatBlock title="Total Departments" value={stats.departmentCountForBranch} Icon={ComputerDesktopIcon} />
+                  <StatBlock title="Total Departments" value={stats.departmentCountForBranch} Icon={FcDepartment} />
                 </div>
               </Link>
 
               <div className="gridItems">
-                <StatBlock title="Total Documents" value={totalDocsbyBranch} Icon={DocumentIcon} />
+                <StatBlock title="Total Documents" value={totalDocsbyBranch} Icon={IoDocuments} />
               </div>
 
               <Link to="/approve-documents">
                 <div className="gridItems pending">
-                  <StatBlock title="Pending Documents" value={stats.totalPendingDocumentsById} Icon={IoDocumentLock} />
+                  <StatBlock title="Pending Documents" value={stats.totalPendingDocumentsById} Icon={MdPendingActions} />
                 </div>
               </Link>
 
@@ -658,7 +668,7 @@ function Dashboard() {
 
               <Link to="/trash-documents">
                 <div className="gridItems rejected">
-                  <StatBlock title="Trash Documents" value={stats.trashTotalDocByBranch} Icon={TrashIcon} />
+                  <StatBlock title="Trash Documents" value={stats.trashTotalDocByBranch} Icon={BsTrash3Fill} />
                 </div>
               </Link>
             </>
@@ -668,7 +678,7 @@ function Dashboard() {
             <>
               <Link to="/Departmentusers">
                 <div className="gridItems">
-                  <StatBlock title="Department Users" value={stats.departmentUser} Icon={UsersIcon} />
+                  <StatBlock title="Department Users" value={stats.departmentUser} Icon={UserGroupIcon} />
                 </div>
               </Link>
 
@@ -679,12 +689,12 @@ function Dashboard() {
               </Link>
 
               <div className="gridItems">
-                <StatBlock title="Total Documents" value={totalDocsbyDep} Icon={DocumentIcon} />
+                <StatBlock title="Total Documents" value={totalDocsbyDep} Icon={IoDocuments} />
               </div>
 
               <Link to="/approve-documents">
                 <div className="gridItems pending">
-                  <StatBlock title="Pending Documents" value={stats.totalPendingDocumentsByDepartmentId} Icon={IoDocumentLock} />
+                  <StatBlock title="Pending Documents" value={stats.totalPendingDocumentsByDepartmentId} Icon={MdPendingActions} />
                 </div>
               </Link>
 
@@ -702,7 +712,7 @@ function Dashboard() {
 
               <Link to="/trash-documents">
                 <div className="gridItems rejected">
-                  <StatBlock title="Trash Documents" value={stats.trashTotalDocByDepartment} Icon={TrashIcon} />
+                  <StatBlock title="Trash Documents" value={stats.trashTotalDocByDepartment} Icon={BsTrash3Fill} />
                 </div>
               </Link>
             </>
@@ -711,12 +721,12 @@ function Dashboard() {
           {role === USER && (
             <>
               <div className="gridItems">
-                <StatBlock title="Total Uploaded Doc" value={totalDocsbyUser} Icon={DocumentIcon} />
+                <StatBlock title="Total Uploaded Doc" value={totalDocsbyUser} Icon={HiDocumentArrowUp} />
               </div>
 
               <Link to="/all-documents">
                 <div className="gridItems pending">
-                  <StatBlock title="Pending For Approval" value={stats.pendingDocsbyid} Icon={IoDocumentLock} />
+                  <StatBlock title="Pending For Approval" value={stats.pendingDocsbyid} Icon={MdPendingActions} />
                 </div>
               </Link>
 

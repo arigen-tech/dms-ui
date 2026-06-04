@@ -101,6 +101,7 @@ body {
     font-weight: 400;
     margin-bottom: 5px;
 }
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -389,6 +390,7 @@ footer {
             align-items: center;
             padding: 10px 6px;
             border-radius: 5px;
+            transition: all 0.3s ease-in-out;
 
             &>div {
                 display: flex;
@@ -398,6 +400,12 @@ footer {
             &:hover {
                 background-color: rgb(0 0 0/0.12);
                 color: var(--white-color);
+
+                & .count {
+                    -ms-transform: scale(1.15);
+                    -webkit-transform: scale(1.15);
+                    transform: scale(1.15);
+                }
             }
 
             & .menu-icon {
@@ -832,10 +840,20 @@ main {
     }
 }
 
-.icon {
-  width: 24px;
-  height: 24px;
-  color: #2563eb;
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    & span {
+        width: 50px;
+        height: 50px;
+
+        & img {
+            width: 100%;
+            height: auto;
+        }
+    }
 }
 
 /* aanand */
@@ -846,8 +864,8 @@ main {
 
 
 /* ***************************** */
-.bg-blue-800 {
-    /* background:linear-gradient(to right, #2563eb , #a855f7 , #ec4899) !important; */
+.bg-blue-800-- {
+    background: linear-gradient(to right, #2563eb, #a855f7, #ec4899) !important;
     /* background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%); */
 }
 
@@ -894,7 +912,7 @@ td {
 }
 
 .text-blue-100 {
-    text: var(--icon);
+    color: var(--icon);
 }
 
 .bg-gray-50 {
