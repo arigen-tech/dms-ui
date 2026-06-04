@@ -1,7 +1,17 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN, USER, BRANCH_API, EMPLOYEE_API, DOCUMENTHEADER_API } from "../API/apiConfig";
 import apiClient from "../API/apiClient";
+import lodingIcon from "../Assets/icons/loader.gif";
+import chartIcon from "../Assets/icons/chart-icon.svg";
+import lineChartIcon from "../Assets/icons/line-chart-icon.svg";
+import fileTypesIcon from "../Assets/icons/file-types-icon.svg";
+import statusIcon from "../Assets/icons/status-icon.svg";
+
 import demoIcon from "../Assets/icons/demo-icon.svg";
+
+
+import { FcDepartment } from "react-icons/fc";
+import { RiFunctionAddFill } from "react-icons/ri";
 import {
   BarChart,
   Bar,
@@ -24,6 +34,7 @@ import {
 } from "recharts";
 import { useNavigate, Link } from "react-router-dom";
 import { GiFiles } from "react-icons/gi";
+import { FaUsers } from "react-icons/fa";
 import {
   CalendarDaysIcon,
   ComputerDesktopIcon,
@@ -35,6 +46,7 @@ import {
   ShoppingCartIcon,
   UserCircleIcon,
   UsersIcon,
+  UserGroupIcon
 } from "@heroicons/react/24/solid";
 import { IoDocumentLock } from "react-icons/io5";
 import { FaUserClock } from "react-icons/fa6";
@@ -446,19 +458,19 @@ function Dashboard() {
 
   function StatBlock({ title, value, Icon }) {
     return (
-      <div className="card p-3- rounded-lg- shadow- flex- items-center- justify-between- border-l-4- border-blue-50- bg-white-">
+      <div className="card">
         <div>
-          <Icon className="w-8 h-8 text-blue-800" />
-          <h3 className="text-md font-semibold text-gray-700">
+          <Icon />
+          <h3>
             <AutoTranslate>{title}</AutoTranslate>
           </h3>
 
         </div>
         <div>
           {loading ? (
-            <div className="h-7 w-20 bg-gray-200 rounded animate-pulse" />
+            <span><img src={lodingIcon} alt="loading..." /></span>
           ) : (
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p>{value}</p>
           )}
         </div>
 
@@ -519,80 +531,82 @@ function Dashboard() {
   return (
     <Layout>
       <div className="flex flex-col min-h-full w-full bg-slate-100">
-        <h2 className="text-xl mb-4 font-semibold">
-          <AutoTranslate>DASHBOARD</AutoTranslate>
-        </h2>
+        <div className="title">
+          <h2>
+            <AutoTranslate>Dashboard</AutoTranslate>
+          </h2>
+        </div>
 
         <div className="dashboardGrid">
           {role === SYSTEM_ADMIN && (
             <>
-              <Link to="/users" className="block">
-                <div className="gridItems transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="Total Users" value={stats.totalUser} Icon={UsersIcon} />
+              <Link to="/users">
+                <div className="gridItems">
+                  <StatBlock title="Total Users" value={stats.totalUser} Icon={UserGroupIcon} />
                   {/* <img src={demoIcon} alt="" /> */}
                 </div>
               </Link>
 
-              <Link to="/userRoleAssing" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/userRoleAssing">
+                <div className="gridItems pending">
                   <StatBlock title="Total Pending Users" value={stats.totalNullEmployeeType} Icon={FaUserClock} />
                 </div>
               </Link>
 
-              <Link to="/create-branch" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/create-branch">
+                <div className="gridItems">
                   <StatBlock title="Total Branches" value={stats.totalBranches} Icon={KeyIcon} />
                 </div>
               </Link>
 
-              <Link to="/create-department" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="Total Departments" value={stats.totalDepartment} Icon={ComputerDesktopIcon} />
+              <Link to="/create-department">
+                <div className="gridItems">
+                  <StatBlock title="Total Departments" value={stats.totalDepartment} Icon={FcDepartment} />
                 </div>
               </Link>
 
-              <Link to="/create-role" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                  <StatBlock title="Total Roles" value={stats.totalRoles} Icon={UserCircleIcon} />
+              <Link to="/create-role">
+                <div className="gridItems">
+                  <StatBlock title="Total Roles" value={stats.totalRoles} Icon={RiFunctionAddFill} />
                 </div>
-              </Link>
+              </Link>              
 
-              <Link to="/create-category" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/create-category">
+                <div className="gridItems">
                   <StatBlock title="Total Categories" value={stats.totalCategories} Icon={ShoppingCartIcon} />
                 </div>
               </Link>
 
-              <Link to="/create-fileType" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/create-fileType">
+                <div className="gridItems">
                   <StatBlock title="Total Files Types" value={stats.totalFilesType} Icon={GiFiles} />
                 </div>
               </Link>
 
-              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <div className="gridItems">
                 <StatBlock title="Total Documents" value={stats.totalDocument} Icon={DocumentIcon} />
               </div>
 
-              <Link to="/approve-documents" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/approve-documents">
+                <div className="gridItems pending">
                   <StatBlock title="Pending Documents" value={stats.totalPendingDocuments} Icon={IoDocumentLock} />
                 </div>
               </Link>
 
-              <Link to="/total-approved" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/total-approved">
+                <div className="gridItems approved">
                   <StatBlock title="Approved Documents" value={stats.totalApprovedDocuments} Icon={DocumentCheckIcon} />
                 </div>
               </Link>
 
-              <Link to="/total-rejected" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/total-rejected">
+                <div className="gridItems rejected">
                   <StatBlock title="Rejected Documents" value={stats.totalRejectedDocuments} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
 
-              <Link to="/trash-documents" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/trash-documents">
+                <div className="gridItems rejected">
                   <StatBlock title="Trash Documents" value={stats.trashTotalDoc} Icon={TrashIcon} />
                 </div>
               </Link>
@@ -601,48 +615,48 @@ function Dashboard() {
 
           {role === BRANCH_ADMIN && (
             <>
-              <Link to="/branchusers" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/branchusers">
+                <div className="gridItems">
                   <StatBlock title="Branch Users" value={stats.branchUser} Icon={UsersIcon} />
                 </div>
               </Link>
 
-              <Link to="/userRoleAssing" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/userRoleAssing">
+                <div className="gridItems pending">
                   <StatBlock title="Pending Users" value={stats.nullRoleEmployeeCountForBranch} Icon={FaUserClock} />
                 </div>
               </Link>
 
-              <Link to="/create-departments" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/create-departments">
+                <div className="gridItems">
                   <StatBlock title="Total Departments" value={stats.departmentCountForBranch} Icon={ComputerDesktopIcon} />
                 </div>
               </Link>
 
-              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <div className="gridItems">
                 <StatBlock title="Total Documents" value={totalDocsbyBranch} Icon={DocumentIcon} />
               </div>
 
-              <Link to="/approve-documents" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/approve-documents">
+                <div className="gridItems pending">
                   <StatBlock title="Pending Documents" value={stats.totalPendingDocumentsById} Icon={IoDocumentLock} />
                 </div>
               </Link>
 
-              <Link to="/total-approved" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/total-approved">
+                <div className="gridItems approved">
                   <StatBlock title="Approved Documents" value={stats.totalApprovedStatusDocById} Icon={DocumentCheckIcon} />
                 </div>
               </Link>
 
-              <Link to="/total-rejected" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/total-rejected">
+                <div className="gridItems rejected">
                   <StatBlock title="Rejected Documents" value={stats.totalRejectedStatusDocById} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
 
-              <Link to="/trash-documents" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/trash-documents">
+                <div className="gridItems rejected">
                   <StatBlock title="Trash Documents" value={stats.trashTotalDocByBranch} Icon={TrashIcon} />
                 </div>
               </Link>
@@ -651,42 +665,42 @@ function Dashboard() {
 
           {role === DEPARTMENT_ADMIN && (
             <>
-              <Link to="/Departmentusers" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/Departmentusers">
+                <div className="gridItems">
                   <StatBlock title="Department Users" value={stats.departmentUser} Icon={UsersIcon} />
                 </div>
               </Link>
 
-              <Link to="/PendingRole" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/PendingRole">
+                <div className="gridItems pending">
                   <StatBlock title="Pending Users" value={stats.nullRoleEmployeeCountForDepartment} Icon={FaUserClock} />
                 </div>
               </Link>
 
-              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <div className="gridItems">
                 <StatBlock title="Total Documents" value={totalDocsbyDep} Icon={DocumentIcon} />
               </div>
 
-              <Link to="/approve-documents" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/approve-documents">
+                <div className="gridItems pending">
                   <StatBlock title="Pending Documents" value={stats.totalPendingDocumentsByDepartmentId} Icon={IoDocumentLock} />
                 </div>
               </Link>
 
-              <Link to="/total-approved" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/total-approved">
+                <div className="gridItems approved">
                   <StatBlock title="Approved Documents" value={stats.totalApprovedStatusDocByDepartmentId} Icon={DocumentCheckIcon} />
                 </div>
               </Link>
 
-              <Link to="/total-rejected" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/total-rejected">
+                <div className="gridItems rejected">
                   <StatBlock title="Rejected Documents" value={stats.totalRejectedStatusDocByDepartmentId} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
 
-              <Link to="/trash-documents" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/trash-documents">
+                <div className="gridItems rejected">
                   <StatBlock title="Trash Documents" value={stats.trashTotalDocByDepartment} Icon={TrashIcon} />
                 </div>
               </Link>
@@ -695,24 +709,24 @@ function Dashboard() {
 
           {role === USER && (
             <>
-              <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
-                <StatBlock title="Total Uploaded Documents" value={totalDocsbyUser} Icon={DocumentIcon} />
+              <div className="gridItems">
+                <StatBlock title="Total Uploaded Doc" value={totalDocsbyUser} Icon={DocumentIcon} />
               </div>
 
-              <Link to="/all-documents" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/all-documents">
+                <div className="gridItems pending">
                   <StatBlock title="Pending For Approval" value={stats.pendingDocsbyid} Icon={IoDocumentLock} />
                 </div>
               </Link>
 
-              <Link to="/approvedDocs" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/approvedDocs">
+                <div className="gridItems approved">
                   <StatBlock title="Approved Documents" value={stats.approvedDocsbyid} Icon={DocumentCheckIcon} />
                 </div>
               </Link>
 
-              <Link to="/rejectedDocs" className="block">
-                <div className="transition duration-300 ease-in-out hover:shadow-md hover:scale-105 hover:bg-blue-300 rounded-lg cursor-pointer">
+              <Link to="/rejectedDocs">
+                <div className="gridItems rejected">
                   <StatBlock title="Rejected Documents" value={stats.rejectedDocsbyid} Icon={DocumentMinusIcon} />
                 </div>
               </Link>
@@ -720,76 +734,83 @@ function Dashboard() {
           )}
         </div>
 
-        <div className="mb-4">
-          <label className="mr-2 font-semibold text-gray-700">
-            <AutoTranslate>Select Year:</AutoTranslate>
-          </label>
-          <div className="relative w-40">
-            <input
-              list="year-options"
-              type="text"
-              inputMode="numeric"
-              pattern="\d{4}"
-              placeholder="YYYY"
-              value={selectedYear || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (/^\d{0,4}$/.test(val)) {
-                  setSelectedYear(val ? Number(val) : "");
-                }
-              }}
-              className="w-full border border-gray-300 rounded px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            <datalist id="year-options">
-              {years.map((year) => (
-                <option key={year} value={year} />
-              ))}
-            </datalist>
-            <span className="absolute right-2 top-2 text-gray-400 pointer-events-none">📅</span>
+        <div className="grid grid-col-4">
+          <div className="dateInput">
+            <label>
+              <AutoTranslate>Select Year:</AutoTranslate>
+            </label>
+            <div className="relative">
+              <input
+                list="year-options"
+                type="text"
+                inputMode="numeric"
+                pattern="\d{4}"
+                placeholder="YYYY"
+                value={selectedYear || ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^\d{0,4}$/.test(val)) {
+                    setSelectedYear(val ? Number(val) : "");
+                  }
+                }}
+                className="w-full border border-gray-300 rounded px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <datalist id="year-options">
+                {years.map((year) => (
+                  <option key={year} value={year} />
+                ))}
+              </datalist>
+              <span></span>
+
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+
+        <div className="chartGrid">
           {/* Bar Chart */}
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <div className="mb-4">
-              <h3 className="flex text-lg font-bold text-gray-800 border-b pb-2 mb-3">
-                <AutoTranslate>📊 Monthly Documents Status {selectedYear}</AutoTranslate>
-                {role === SYSTEM_ADMIN && (
-                  <div className="items-center gap-2">
-                    <div className="relative">
-                      <select
-                        value={selectedBranch}
-                        onChange={(e) => setSelectedBranch(e.target.value)}
-                        disabled={isBranchLoading}
-                        className="appearance-none bg-white border ml-3 border-gray-300 rounded-lg px-2 py-1 pr-8 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-w-[150px] disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="all" className="font-medium">
-                          🌐 <AutoTranslate>All Branches</AutoTranslate>
-                        </option>
-                        {branches.map((branch) => (
-                          <option key={branch.id} value={branch.id} className="font-medium">
-                            🏢 {branch.name}
-                          </option>
-                        ))}
-                        <option value="top10">
-                          <AutoTranslate>Top 10 Branches</AutoTranslate>
-                        </option>
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                      {isBranchLoading && (
-                        <div className="absolute inset-y-0 right-8 flex items-center pr-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+          <div className="card forBarChart">
+            <div className="chartTitle mb-4">
+              <h3>
+                <span className="icon"><img src={chartIcon} alt="icon" /></span>
+                <AutoTranslate>Monthly Documents Status {selectedYear}</AutoTranslate>
+                {/* 📊 */}
               </h3>
+              {role === SYSTEM_ADMIN && (
+                <div className="items-center gap-2">
+                  <div className="relative">
+                    <select
+                      value={selectedBranch}
+                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      disabled={isBranchLoading}
+                      className="appearance-none hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-w-[150px] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="all" className="font-medium">
+                        🌐 <AutoTranslate>All Branches</AutoTranslate>
+                      </option>
+                      {branches.map((branch) => (
+                        <option key={branch.id} value={branch.id} className="font-medium">
+                          🏢 {branch.name}
+                        </option>
+                      ))}
+                      <option value="top10">
+                        <AutoTranslate>Top 10 Branches</AutoTranslate>
+                      </option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    {isBranchLoading && (
+                      <div className="absolute inset-y-0 right-8 flex items-center pr-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {isBarChartLoading ? (
@@ -866,10 +887,12 @@ function Dashboard() {
           </div>
 
           {/* Line Chart */}
-          <div className="bg-white p-4 rounded-lg shadow-lg">
+          <div className="card forLineChart">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-bold text-gray-800 border-b pb-2">
-                <AutoTranslate>📈 Top 10 Office {selectedYear}</AutoTranslate>
+              <h3>
+                <span className="icon"><img src={lineChartIcon} alt="icon" /></span>
+                <AutoTranslate>Top 10 Office {selectedYear}</AutoTranslate>
+                {/* 📈  */}
               </h3>
               <select
                 value={selectedLineStatus}
@@ -969,9 +992,11 @@ function Dashboard() {
           </div>
 
           {/* Polar Chart */}
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">
-              <AutoTranslate>🌀 Top 10 File Types {selectedYear}</AutoTranslate>
+          <div className="card">
+            <h3>
+              <span className="icon"><img src={fileTypesIcon} alt="icon" /></span>
+              <AutoTranslate>Top 10 File Types {selectedYear}</AutoTranslate>
+              {/* 🌀  */}
             </h3>
             {isGrLoading ? (
               <SkeletonBox />
@@ -1030,9 +1055,11 @@ function Dashboard() {
           </div>
 
           {/* Pie Chart */}
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <h3 className="text-lg font-bold mb-3 text-gray-800 border-b pb-2">
-              <AutoTranslate>🎯 Users Status {selectedYear}</AutoTranslate>
+          <div className="card">
+            <h3>
+              <span className="icon"><img src={statusIcon} alt="icon" /></span>
+              <AutoTranslate>Users Status {selectedYear}</AutoTranslate>
+              {/* 🎯  */}
             </h3>
 
             {isGrLoading ? (
@@ -1043,7 +1070,7 @@ function Dashboard() {
               </p>
             ) : (
               <>
-                <div style={{ width: "100%", height: 300 }}>
+                <div style={{ width: "100%", height: "270px" }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
                       <Pie
@@ -1082,17 +1109,11 @@ function Dashboard() {
                   </ResponsiveContainer>
                 </div>
 
-                <div className="flex justify-center gap-8 mt-6">
+                <div className="forPieChart">
                   {legendItems.map((item) => (
-                    <div key={item.name} className="flex items-center space-x-2">
-                      <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      ></div>
-                      <span
-                        className="text-base font-semibold"
-                        style={{ color: item.color }}
-                      >
+                    <div key={item.name} className="gridItems flex items-center space-x-2">
+                      {/* <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }}></div> */}
+                      <span style={{ color: item.color }}>
                         <AutoTranslate>{item.name}</AutoTranslate>
                       </span>
                     </div>

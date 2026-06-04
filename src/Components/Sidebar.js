@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { MdDashboard } from "react-icons/md";
-import { IoDocumentText } from "react-icons/io5";
+import { IoDocumentText, IoArchiveSharp } from "react-icons/io5";
 import { HiUsers } from "react-icons/hi2";
 import { GoOrganization } from "react-icons/go";
+
+import { TbReportSearch } from "react-icons/tb";
 
 // import demoIcon from "../Assets/icons/demo-icon.svg";
 
@@ -475,8 +477,10 @@ function Sidebar({ roleChanged }) {
       "Upload Document": DocumentArrowUpIcon,
       // "Main Dashboard": InboxIcon,
       "Main Dashboard": MdDashboard,
-      "Archival": MdDashboard,
+      Archival: IoArchiveSharp,
+      "Audit & Reports" : TbReportSearch,
     };
+    
 
     return iconMap[name] || IoDocumentText;
   };
@@ -560,7 +564,7 @@ function Sidebar({ roleChanged }) {
       }}
       className={`commonNavLink ${isActive(to)}`}
     >
-      <div className="flex items-center">
+      <div className="">
         <Icon className="menu-icon" />
         <span>
           <AutoTranslate>{text}</AutoTranslate>
@@ -593,7 +597,7 @@ function Sidebar({ roleChanged }) {
         return (
           <div className="dropdownNav" key={item.appId}>
             <button onClick={() => handleMenuToggle(item.appId)} className="btnDropdown" >
-              <div className="flex items-center">
+              <div className="">
                 <IconComponent className="h-5 w-5 mr-3" />
                 <AutoTranslate>{item.name}</AutoTranslate>
               </div>
