@@ -7,7 +7,7 @@ import lineChartIcon from "../Assets/icons/line-chart-icon.svg";
 import fileTypesIcon from "../Assets/icons/file-types-icon.svg";
 import statusIcon from "../Assets/icons/status-icon.svg";
 
-import demoIcon from "../Assets/icons/demo-icon.svg";
+import {Icon} from "@iconify/react";
 
 
 import { FcDepartment } from "react-icons/fc";
@@ -534,6 +534,8 @@ function Dashboard() {
         <div className="title">
           <h2>
             <AutoTranslate>Dashboard</AutoTranslate>
+            {/* <Icon icon="gravity-ui:branches-down" />
+            <Icon icon="charm:organisation" /> */}
           </h2>
         </div>
 
@@ -543,7 +545,6 @@ function Dashboard() {
               <Link to="/users">
                 <div className="gridItems">
                   <StatBlock title="Total Users" value={stats.totalUser} Icon={UserGroupIcon} />
-                  {/* <img src={demoIcon} alt="" /> */}
                 </div>
               </Link>
 

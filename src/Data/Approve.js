@@ -4,7 +4,6 @@ import { useLocation } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
-  MagnifyingGlassIcon,
   ArrowPathIcon,
   PrinterIcon,
   XMarkIcon,
@@ -147,7 +146,7 @@ const Approve = () => {
     try {
       const userId = localStorage.getItem("id");
 
-      if ( !userId) {
+      if (!userId) {
         setError("Authentication details missing. Please log in again.");
         setLoading(false);
         return;
@@ -366,69 +365,69 @@ const Approve = () => {
     }
   };
 
-const approveDocument = async () => {
-  try {
-    const employeeId = localStorage.getItem("id");
+  const approveDocument = async () => {
+    try {
+      const employeeId = localStorage.getItem("id");
 
-    const response = await apiClient.patch(
-      `/api/documents/${documentToApprove.id}/approval-status`,
-      null, 
-      {
-        headers: {
-          employeeId: employeeId,
-        },
-        params: {
-          status: "APPROVED",
-        },
-      }
-    );
+      const response = await apiClient.patch(
+        `/api/documents/${documentToApprove.id}/approval-status`,
+        null,
+        {
+          headers: {
+            employeeId: employeeId,
+          },
+          params: {
+            status: "APPROVED",
+          },
+        }
+      );
 
-    console.log("Approval response:", response.data);
+      console.log("Approval response:", response.data);
 
-    setSuccessMessage("Document Approved Successfully");
-    setIsConfirmModalOpen(false);
-    fetchDocuments();
+      setSuccessMessage("Document Approved Successfully");
+      setIsConfirmModalOpen(false);
+      fetchDocuments();
 
-    setIsSuccessModalOpen(true);
-  } catch (error) {
-    console.error("Error approving document:", error);
-  }
-};
-
-
+      setIsSuccessModalOpen(true);
+    } catch (error) {
+      console.error("Error approving document:", error);
+    }
+  };
 
 
-const handleRejectDocument = async () => {
-  try {
-    const employeeId = localStorage.getItem("id");
 
-    const response = await apiClient.patch(
-      `/api/documents/${documentToApprove.id}/approval-status`,
-      null, 
-      {
-        headers: {
-          employeeId: employeeId,
-        },
-        params: {
-          status: "REJECTED",
-          rejectionReason: rejectReason,
-        },
-      }
-    );
 
-    console.log("Rejection response:", response.data);
+  const handleRejectDocument = async () => {
+    try {
+      const employeeId = localStorage.getItem("id");
 
-    setSuccessMessage("Document Rejected Successfully");
-    setIsRejectReasonModalOpen(false);
-    setRejectReason("");
-    fetchDocuments();
+      const response = await apiClient.patch(
+        `/api/documents/${documentToApprove.id}/approval-status`,
+        null,
+        {
+          headers: {
+            employeeId: employeeId,
+          },
+          params: {
+            status: "REJECTED",
+            rejectionReason: rejectReason,
+          },
+        }
+      );
 
-    setIsConfirmModalOpen(false);
-    setIsSuccessModalOpen(true);
-  } catch (error) {
-    console.error("Error rejecting document:", error);
-  }
-};
+      console.log("Rejection response:", response.data);
+
+      setSuccessMessage("Document Rejected Successfully");
+      setIsRejectReasonModalOpen(false);
+      setRejectReason("");
+      fetchDocuments();
+
+      setIsConfirmModalOpen(false);
+      setIsSuccessModalOpen(true);
+    } catch (error) {
+      console.error("Error rejecting document:", error);
+    }
+  };
 
 
   const openModal = (doc) => {
@@ -444,52 +443,52 @@ const handleRejectDocument = async () => {
     setSelectedDoc(null);
   };
 
-const fetchQRCode = async (documentId) => {
-  try {
-    
-    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
+  const fetchQRCode = async (documentId) => {
+    try {
 
-    const response = await apiClient.get(apiUrl, { responseType: "blob" });
+      const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
-    const qrCodeBlob = response.data;
+      const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-    if (!qrCodeBlob.type.includes("image/png")) {
-      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
+      const qrCodeBlob = response.data;
+
+      if (!qrCodeBlob.type.includes("image/png")) {
+        throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
+      }
+
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+      setQrCodeUrl(qrCodeUrl);
+    } catch (error) {
+      setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+    }
+  };
+
+
+  const downloadQRCode = async () => {
+    if (!selectedDoc.id) {
+      alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
+      return;
     }
 
-    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-    setQrCodeUrl(qrCodeUrl);
-  } catch (error) {
-    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
-  }
-};
+    try {
 
+      const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
 
-const downloadQRCode = async () => {
-  if (!selectedDoc.id) {
-    alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
-    return;
-  }
+      const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-  try {
+      const qrCodeBlob = response.data;
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
 
-    const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
+      const link = document.createElement("a");
+      link.href = qrCodeUrl;
+      link.download = `QR_Code_${selectedDoc.id}.png`;
+      link.click();
 
-    const response = await apiClient.get(apiUrl, { responseType: "blob" });
-
-    const qrCodeBlob = response.data;
-    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-
-    const link = document.createElement("a");
-    link.href = qrCodeUrl;
-    link.download = `QR_Code_${selectedDoc.id}.png`;
-    link.click();
-
-    window.URL.revokeObjectURL(qrCodeUrl);
-  } catch (error) {
-    setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
-  }
-};
+      window.URL.revokeObjectURL(qrCodeUrl);
+    } catch (error) {
+      setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
+    }
+  };
 
 
   const printPage = () => {
@@ -551,10 +550,13 @@ const downloadQRCode = async () => {
 
   return (
     <div className="px-1">
-      <h1 className="text-lg mb-1 font-semibold">
-        <AutoTranslate>Pending Documents</AutoTranslate>
-      </h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+      <div class="title">
+        <h2>
+          <AutoTranslate>Pending Documents</AutoTranslate>
+        </h2>
+      </div>
+
+      <div className="card">
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -562,18 +564,15 @@ const downloadQRCode = async () => {
             onClose={popupMessage.onClose}
           />
         )}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="grid grid-col-4 mb-4">
           {/* Items Per Page (50%) */}
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
+          <div className="form-group ">
+            <label htmlFor="itemsPerPage">
               <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
+              className="dropIcon"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -589,13 +588,13 @@ const downloadQRCode = async () => {
           </div>
 
           {/* Branch Filter Dropdown */}
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
-            <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+          <div className="form-group">
+            <label htmlFor="branchFilter">
               <AutoTranslate>Branch</AutoTranslate>
             </label>
             <select
               id="branchFilter"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
+              className="dropIcon"
               value={branchFilter}
               onChange={(e) => {
                 setBranchFilter(e.target.value);
@@ -613,13 +612,13 @@ const downloadQRCode = async () => {
           </div>
 
           {/* Department Filter Dropdown */}
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
-            <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+          <div className="form-group">
+            <label htmlFor="departmentFilter">
               <AutoTranslate>Department</AutoTranslate>
             </label>
             <select
               id="departmentFilter"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
+              className="dropIcon"
               value={departmentFilter}
               onChange={(e) => {
                 setDepartmentFilter(e.target.value);
@@ -639,15 +638,17 @@ const downloadQRCode = async () => {
           </div>
 
           {/* Search Input (Remaining Space) */}
-          <div className="flex items-center w-full md:w-auto flex-1">
+          <div className="form-group">
+            <label htmlFor="departmentFilter">
+              <AutoTranslate>Search</AutoTranslate>
+            </label>
             <input
               type="text"
               placeholder="Search..."
-              className="border rounded-l-md p-1 outline-none w-full"
+              className="searchIcon"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
         </div>
 

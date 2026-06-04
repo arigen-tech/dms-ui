@@ -53,7 +53,7 @@ body {
     background-color: var(--body-color) !important;
 }
 
-/* blobal Css beginning */
+/* global Css beginning */
 
 .grid {
     display: grid;
@@ -82,12 +82,83 @@ body {
 
 .card {
     background-color: var(--white-color);
-    border-radius: 5px;
+    border-radius: 8px;
     padding: 15px;
     border: solid 1px rgb(0 0 0/0.1);
 }
 
-/* blobal Css end */
+.form-group {
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+
+.form-group label {
+    display: inline-block;
+    font-size: 16px;
+    color: var(--black-color-80);
+    line-height: 1.5;
+    font-weight: 400;
+    margin-bottom: 5px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+    background: var(--white-color);
+    border: solid 1px var(--border-color-15);
+    display: block;
+    width: 100%;
+    font-size: 16px;
+    color: var(--black-color-80);
+    font-weight: 400;
+    line-height: 1.5;
+    border-radius: 5px;
+    padding: 8px 12px;
+}
+
+.form-group input,
+.form-group select {
+    height: 40px;
+}
+
+.form-group select.dropIcon {
+    background: var(--white-color) url(../src/Assets/icons/arrow-down-icon.svg) no-repeat right center;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding-right: 38px;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: rgba(15, 27, 33, 0.40);
+}
+
+.form-group input.searchIcon {
+    background: var(--white-color) url(../src/Assets/icons/searchIcon.svg) no-repeat right center;
+    padding-right: 38px;
+}
+
+.form-group .error-msg {
+    font-size: 13px;
+    color: #dc3545;
+    position: absolute;
+    bottom: -18px;
+    left: 0;
+    /* display: none; */
+}
+
+.form-group input:disabled,
+.form-group input[disabled],
+.form-group select:disabled,
+.form-group select[disabled] {
+    background-color: rgb(0 0 0/0.08);
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.60;
+}
+
+/* global Css end */
 
 header {
     background-color: var(--white-color);
@@ -495,6 +566,7 @@ footer {
 
 
     & .card {
+        border-radius: 5px;
         padding: 10px 15px;
         display: grid;
         grid-template-columns: 1fr 110px;
@@ -602,21 +674,24 @@ main {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-    & .chartTitle{
+
+    & .chartTitle {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 15px;
     }
-    & h3{        
+
+    & h3 {
         font-size: 16px;
         color: var(--black-color);
         font-weight: 600;
         display: flex;
         align-items: center;
         gap: 5px;
-        & .icon{
-            background-color:var(--lightBg);
+
+        & .icon {
+            background-color: var(--lightBg);
             width: 36px;
             height: 36px;
             border-radius: 30px;
@@ -624,9 +699,10 @@ main {
             justify-content: center;
             align-items: center;
             padding: 4px;
-         }
+        }
     }
-    & select{
+
+    & select {
         height: 34px;
         border-radius: 5px;
         background-color: rgb(0 0 0/0.02);
@@ -634,9 +710,7 @@ main {
         padding: 4px 8px;
     }
 
-
     & .card {
-        border-radius: 8px;
         box-shadow: 0px 2px 5px rgb(0 0 0/0.08);
     }
 
@@ -732,6 +806,7 @@ main {
         padding: 10px;
         background-color: rgb(0 0 0/0.06);
     }
+
     &>div:first-child {
         background-color: var(--approved-bg) !important;
 
@@ -757,6 +832,11 @@ main {
     }
 }
 
+.icon {
+  width: 24px;
+  height: 24px;
+  color: #2563eb;
+}
 
 /* aanand */
 

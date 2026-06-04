@@ -7,8 +7,6 @@ import { GoOrganization } from "react-icons/go";
 
 import { TbReportSearch } from "react-icons/tb";
 
-// import demoIcon from "../Assets/icons/demo-icon.svg";
-
 
 import {
   InboxIcon,

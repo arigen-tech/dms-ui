@@ -1,9 +1,5 @@
 import React from "react";
-
-import demoIcon from "../Assets/icons/demo-icon.svg";
-import arrowRightIcon from "../Assets/icons/arrow-right.svg";
-
-
+import iconUsers from "../Assets/icons/users.svg";
 
 const CustomIcon = ({ src, className, alt = "icon", ...props }) => (
   <img 
@@ -13,9 +9,7 @@ const CustomIcon = ({ src, className, alt = "icon", ...props }) => (
     {...props} 
   />
 );
-
-    export const DemoIcon = (props) => <CustomIcon src={demoIcon} {...props} />;
-    export const ArrowRightIcon = (props) => <CustomIcon src={arrowRightIcon} {...props} />;
+export const IconUsers = (props) => <CustomIcon src={iconUsers} {...props} />;
 
 
 
