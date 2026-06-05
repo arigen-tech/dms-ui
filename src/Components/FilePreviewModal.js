@@ -244,13 +244,13 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
       }
 
       // Convert to HTML table
-      let html = '<table class="w-full border-collapse">';
+      let html = '<table className="w-full border-collapse">';
 
       // Headers
       if (result.meta && result.meta.fields && result.meta.fields.length > 0) {
         html += '<thead><tr>';
         result.meta.fields.forEach(field => {
-          html += `<th class="border border-gray-300 px-4 py-2 bg-gray-100">${field}</th>`;
+          html += `<th className="border border-gray-300 px-4 py-2 bg-gray-100">${field}</th>`;
         });
         html += '</tr></thead>';
       }
@@ -261,7 +261,7 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
       displayData.forEach(row => {
         html += '<tr>';
         result.meta.fields.forEach(field => {
-          html += `<td class="border border-gray-300 px-4 py-2">${row[field] ?? ''}</td>`;
+          html += `<td className="border border-gray-300 px-4 py-2">${row[field] ?? ''}</td>`;
         });
         html += '</tr>';
       });
@@ -269,7 +269,7 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
 
       // Add note if data was truncated
       if (result.data.length > 100) {
-        html += `<div class="text-sm text-gray-500 mt-2">Showing first 100 rows of ${result.data.length} total rows.</div>`;
+        html += `<div className="text-sm text-gray-500 mt-2">Showing first 100 rows of ${result.data.length} total rows.</div>`;
       }
 
       setPreviewContent(html);
@@ -301,7 +301,7 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
           const obj = JSON.parse(text);
           const formatted = JSON.stringify(obj, null, 2);
           setPreviewContent(
-            `<pre class="whitespace-pre-wrap font-mono text-sm">${formatted}</pre>`
+            `<pre className="whitespace-pre-wrap font-mono text-sm">${formatted}</pre>`
           );
           setTypeToPreview("json/html");
           return;
@@ -318,7 +318,7 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
           .replace(/\n\n/g, "\n");
 
         setPreviewContent(
-          `<pre class="whitespace-pre-wrap font-mono text-sm">${formatted}</pre>`
+          `<pre className="whitespace-pre-wrap font-mono text-sm">${formatted}</pre>`
         );
         setTypeToPreview("xml/html");
         return;
@@ -326,7 +326,7 @@ const FilePreviewModal = ({ isOpen, onClose, className, onDownload, fileType, fi
 
       // Default text
       setPreviewContent(
-        `<pre class="whitespace-pre-wrap font-mono text-sm">${text}</pre>`
+        `<pre className="whitespace-pre-wrap font-mono text-sm">${text}</pre>`
       );
       setTypeToPreview("text/html");
     } catch (err) {

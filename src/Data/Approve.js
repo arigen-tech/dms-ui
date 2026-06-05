@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useLocation } from 'react-router-dom';
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { MdRemoveRedEye } from "react-icons/md";
+import { MdOutlineClose } from "react-icons/md";
+
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -550,7 +554,7 @@ const Approve = () => {
 
   return (
     <div className="px-1">
-      <div class="title">
+      <div className="title">
         <h2>
           <AutoTranslate>Pending Documents</AutoTranslate>
         </h2>
@@ -652,41 +656,41 @@ const Approve = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="table-scroller overflow-x-auto-">
           <table className="w-full border-collapse border">
             <thead>
-              <tr className="bg-slate-100">
-                <th className="border p-2 text-left">
+              <tr>
+                <th>
                   <AutoTranslate>SN</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Title</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>File No</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Subject</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Branch</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Department</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Category</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Uploaded Date</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>User</AutoTranslate><AutoTranslate> Name</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>No. Of Attached Files</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>View</AutoTranslate>
                 </th>
               </tr>
@@ -703,130 +707,130 @@ const Approve = () => {
                         : ''
                     }
                   >
-                    <td className="border p-2">
+                    <td>
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                    <td className="border p-2">{doc.title}</td>
-                    <td className="border p-2">{doc.fileNo}</td>
-                    <td className="border p-2">{doc.subject}</td>
-                    <td className="border p-2">
+                    <td>{doc.title}</td>
+                    <td>{doc.fileNo}</td>
+                    <td>{doc.subject}</td>
+                    <td>
                       {doc.branchMaster
                         ? doc.branchMaster?.name
                         : <AutoTranslate>No Branch</AutoTranslate>}
                     </td>
-                    <td className="border p-2">
+                    <td>
                       {doc.departmentMaster
                         ? doc.departmentMaster?.name
                         : <AutoTranslate>No Department</AutoTranslate>}
                     </td>
-                    <td className="border p-2">
+                    <td>
                       {doc.categoryMaster ? doc.categoryMaster.name : ""}
                     </td>
-                    <td className="border p-2">
+                    <td>
                       {new Date(doc.createdOn).toLocaleDateString()}
                     </td>
 
-                    <td className="border p-2">
+                    <td>
                       {doc.employee ? doc.employee.name : "N/A"}
                     </td>
 
-                    <td className="border p-2">{doc.documentDetails.length}</td>
-                    <td className="border p-2">
-                      <button onClick={() => openModal(doc)}>
-                        <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
+                    <td>{doc.documentDetails.length}</td>
+                    <td>
+                      <button className="viewBtn" onClick={() => openModal(doc)}>
+                        {/* <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" /> */}
+                        <MdRemoveRedEye />
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="11"
-                    className="border p-4 text-center text-gray-500"
-                  >
+                  <td colSpan="11" className="text-center">
                     <AutoTranslate>No data found.</AutoTranslate>
                   </td>
                 </tr>
               )}
+
             </tbody>
           </table>
 
+
+
           <>
             {isOpen && selectedDoc && (
-              <div className="fixed inset-0 flex items-center justify-center z-30 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
-                <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-6xl p-4 sm:p-6 my-8 mx-4">
-                  <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
+              <div className="overlayModal fixed inset-0 flex items-center justify-center z-30 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
+                <div className="document-modal">
 
-                    {/* Print Button */}
-                    <button
-                      className="absolute top-4 right-16 text-gray-500 hover:text-gray-700 no-print"
-                      onClick={printPage}
-                    >
-                      <PrinterIcon className="h-6 w-6" />
-                    </button>
+                  {/* Header */}
+                  <div className="modal-header">
+                    <div className="flex items-center space-x-2">
+                      <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
+                      <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
+                    </div>
+                    <div className="headerRight">
+                      <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+                        <strong><AutoTranslate>Uploaded Date:</AutoTranslate></strong> {formatDate(selectedDoc?.createdOn)}
+                      </p>
+                      {/* Print Button */}
+                      <button className="printBtn hover:text-gray-700- no-print-" onClick={printPage} title="Print">
+                        <PrinterIcon className="h-6 w-6" />
+                      </button>
 
-                    {/* Close Button */}
-                    <button
-                      className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 no-print"
-                      onClick={closeModal}
-                    >
-                      <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" />
-                    </button>
+                      {/* Close Button */}
+                      <button className="closeBtn hover:text-gray-700- no-print" onClick={closeModal} title="Close">
+                        {/* <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" /> */}
+                        <MdOutlineClose />
+                      </button>
+                    </div>
 
-                    {/* Modal Content */}
-                    <div className="flex flex-col h-full mt-8">
-                      {/* Header */}
-                      <div className="flex flex-col sm:flex-row justify-between items-center border-b-2 border-gray-300 pb-4">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
-                          <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-                          <strong><AutoTranslate>Uploaded Date:</AutoTranslate></strong> {formatDate(selectedDoc?.createdOn)}
-                        </p>
-                      </div>
+                  </div>
 
+                  {/* Modal body Content */}
+                  <div className="modal-body">
+                    <div className="bodyScroller max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
                       {/* Document Details */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="mt-6 text-left space-y-2">
-                          {[
-                            { label: "Branch", value: selectedDoc?.employee?.branch?.name },
-                            { label: "Department", value: selectedDoc?.employee?.department?.name },
-                            { label: "File No.", value: selectedDoc?.fileNo },
-                            { label: "Title", value: selectedDoc?.title },
-                            { label: "Subject", value: selectedDoc?.subject },
-                            {
-                              label: "Category",
-                              value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>,
-                            },
-                            // { label: "Status", value: selectedDoc?.approvalStatus },
-                            { label: "Upload By", value: selectedDoc?.employee?.name },
-                          ].map((item, idx) => (
-                            <p key={idx} className="text-md text-gray-700">
-                              <strong><AutoTranslate>{item.label}</AutoTranslate> :-</strong> {item.value || <AutoTranslate>N/A</AutoTranslate>}
-                            </p>
-                          ))}
-                        </div>
+                      <div className="top-section">
+                        <div className="info-card">
 
+                          <h2>Document Information</h2>
+                          <div class="info-grid">
+                            {[
+                              { label: "Branch", value: selectedDoc?.employee?.branch?.name },
+                              { label: "Department", value: selectedDoc?.employee?.department?.name },
+                              { label: "File No.", value: selectedDoc?.fileNo },
+                              { label: "Title", value: selectedDoc?.title },
+                              { label: "Subject", value: selectedDoc?.subject },
+                              {
+                                label: "Category",
+                                value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>,
+                              },
+                              // { label: "Status", value: selectedDoc?.approvalStatus },
+                              { label: "Upload By", value: selectedDoc?.employee?.name },
+                            ].map((item, idx) => (
+                              <p key={idx} className="text-md text-gray-700">
+                                <AutoTranslate>{item.label}</AutoTranslate> <AutoTranslate>{item.value || "N/A"}</AutoTranslate>
+                              </p>
+                            ))}
+
+                          </div>
+
+                        </div>
                         {/* QR Code */}
-                        <div className="items-center justify-center text-center">
-                          <p className="text-md text-gray-700 mt-3">
-                            <strong><AutoTranslate>QR Code:</AutoTranslate></strong>
-                          </p>
+                        <div className="qr-card">
+                        <h2 className="mb-4"><AutoTranslate>QR Code:</AutoTranslate></h2>
+
                           {selectedDoc?.qrPath ? (
-                            <div className="mt-4">
-                              <img
-                                src={qrCodeUrl}
-                                alt="QR Code"
-                                className="mx-auto w-24 h-24 sm:w-32 sm:h-32 object-contain border border-gray-300 p-2"
-                              />
+                            <>
+                              <div className="imgWp">
+                                <img src={qrCodeUrl} alt="QR Code" />
+                              </div>
                               <button
                                 onClick={downloadQRCode}
                                 className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
                               >
                                 <AutoTranslate>Download</AutoTranslate>
                               </button>
-                            </div>
+                            </>
                           ) : (
                             <p className="text-gray-500">
                               <AutoTranslate>No QR code available</AutoTranslate>
@@ -837,8 +841,8 @@ const Approve = () => {
 
                       {/* Attached Files */}
                       <div className="mt-8">
-                        <div className="flex justify-between items-center mb-4 relative">
-                          <h2 className="text-lg font-bold text-indigo-700">
+                        <div className="attachedWp flex justify-between items-center mb-4 relative">
+                          <h2 className="mb-0">
                             <AutoTranslate>Attached Files</AutoTranslate>
                           </h2>
                           <input
@@ -981,12 +985,14 @@ const Approve = () => {
                         )}
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>
             )}
           </>
         </div>
+
         <FilePreviewModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -997,53 +1003,54 @@ const Approve = () => {
           fileData={selectedDocFile}
         />
         {/* Pagination Controls */}
-        <div className="flex items-center mt-4">
-          {/* Previous Button */}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1 || totalPages === 0}
-            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
-          >
-            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            <AutoTranslate>Previous</AutoTranslate>
-          </button>
-
-          {/* Page Number Buttons */}
-          {totalPages > 0 && getPageNumbers().map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                }`}
-            >
-              {page}
-            </button>
-          ))}
-
-          {/* Page Count Info */}
-          <span className="text-sm text-gray-700 mx-2">
-            <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-          </span>
-
-          {/* Next Button */}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
-          >
-            <AutoTranslate>Next</AutoTranslate>
-            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-          </button>
-          <div className="ml-4">
-            <span className="text-sm text-gray-700">
-              <AutoTranslate>
-                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                  } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-              </AutoTranslate>
-            </span>
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
+            </div>
           </div>
+          <div className="items">
+            <div className="paginationBtn">
+              {/* Previous Button */}
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                {/* <AutoTranslate>Previous</AutoTranslate> */}
+                <IoIosArrowBack />
+              </button>
+
+              {/* Page Number Buttons */}
+              {totalPages > 0 && getPageNumbers().map((page) => (
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                  {page}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <AutoTranslate>Next</AutoTranslate> */}
+                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
 

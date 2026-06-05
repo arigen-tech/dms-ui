@@ -525,12 +525,11 @@ function Dashboard() {
   const totalDocsbyUser = (stats.rejectedDocsbyid + stats.approvedDocsbyid + stats.pendingDocsbyid);
 
   const SkeletonBox = () => (
-    <div className="loading- bg-gray-200 animate-pulse rounded-lg h-[300px] w-full">
-      
+    <div className="loading bg-gray-200 animate-pulse rounded-lg h-[300px] w-full">
+      <span><img src={lodingIcon} alt="loading..." /></span>      
     </div>
   );
 
-  // <span><img src={lodingIcon} alt="loading..." /></span>
 
   const legendItems = [
     { name: "Active", color: COLORS[0] },

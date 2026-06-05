@@ -82,24 +82,24 @@ const LoginPage = () => {
     });
   }, [currentLanguage, defaultLanguage, translationStatus, isTranslationNeeded, availableLanguages]);
 
-useEffect(() => {
-  const fetchOtpFlag = async () => {
-    try {
-      console.log("Calling OTP API...");
-      const response = await apiClient.get(`/auth/is-otp-enabled`);
+  useEffect(() => {
+    const fetchOtpFlag = async () => {
+      try {
+        console.log("Calling OTP API...");
+        const response = await apiClient.get(`/auth/is-otp-enabled`);
 
-      console.log("OTP Flag:", response.data);
+        console.log("OTP Flag:", response.data);
 
-      setOtpIsEnabled(response.data);
-      localStorage.setItem("otpIsEnabled", String(response.data));
-    } catch (error) {
-      console.error("Error fetching OTP flag:", error);
-      setOtpIsEnabled(false); 
-    }
-  };
+        setOtpIsEnabled(response.data);
+        localStorage.setItem("otpIsEnabled", String(response.data));
+      } catch (error) {
+        console.error("Error fetching OTP flag:", error);
+        setOtpIsEnabled(false);
+      }
+    };
 
-  fetchOtpFlag();
-}, []);
+    fetchOtpFlag();
+  }, []);
 
   const [selectedLanguageId, setSelectedLanguageId] = useState(null);
 
@@ -782,23 +782,23 @@ useEffect(() => {
     }
   };
 
-const getViewSubtitle = () => {
-  switch (currentView) {
-    case "forgot-password":
-      return `Enter your ${otpIsEnabled ? "mobile number" : "email"} to reset password`;
+  const getViewSubtitle = () => {
+    switch (currentView) {
+      case "forgot-password":
+        return `Enter your ${otpIsEnabled ? "mobile number" : "email"} to reset password`;
 
-    case "forgot-otp":
-      return `Please enter the OTP sent to your ${otpIsEnabled ? "mobile number" : "email"}`;
+      case "forgot-otp":
+        return `Please enter the OTP sent to your ${otpIsEnabled ? "mobile number" : "email"}`;
 
-    case "reset-password":
-      return "Create a new password for your account";
+      case "reset-password":
+        return "Create a new password for your account";
 
-    default:
-      return isOtpRequested
-        ? "Please enter the OTP sent to your mobile no."
-        : "Please sign in to your account";
-  }
-};
+      default:
+        return isOtpRequested
+          ? "Please enter the OTP sent to your mobile no."
+          : "Please sign in to your account";
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -822,7 +822,7 @@ const getViewSubtitle = () => {
           />
         </div>
 
-        <div className="w-full max-w-lg bg-gray-50 rounded-lg shadow-lg border border-gray-200 p-4">
+        <div className="w-full- max-w-lg- bg-gray-50 rounded-lg shadow-lg border border-gray-200- p-4- loginBox">
           {(isOtpRequested || currentView !== "login") && (
             <div className="flex items-center justify-between mb-3">
               <button
@@ -846,8 +846,8 @@ const getViewSubtitle = () => {
               }`}>
               <AutoTranslate>{getViewTitle()}</AutoTranslate>
             </h2>
-            <div className="flex items-center justify-between w-full">
-              <p className="flex-1 text-center text-gray-600 mt-1 text-md font-bold">
+            <div className="loginTitle">
+              <p>
                 <AutoTranslate>{getViewSubtitle()}</AutoTranslate>
               </p>
 
@@ -857,24 +857,14 @@ const getViewSubtitle = () => {
                 onMouseLeave={() => setShowTooltip(false)}
                 onClick={() => setShowTooltip(!showTooltip)}
               >
-                <button
-                  type="button"
-                  className="text-gray-500 hover:text-gray-700 ml-2 mr-2"
-                >
+                <button type="button" className="text-gray-500 hover:text-gray-700">
                   <InformationCircleIcon className="h-5 w-5" />
                 </button>
-
                 {showTooltip && (
-
-
                   //<AutoTranslate>This website is running on Release Version 1.20, which is currently under testing.</AutoTranslate>
-
-
-
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-1 shadow-lg z-10 whitespace-nowrap">
+                  <div className="toolTip">
                     <AutoTranslate>This website is running on Release Version 3.0, which is currently under testing.</AutoTranslate>
                   </div>
-
                 )}
               </div>
             </div>
@@ -1027,10 +1017,10 @@ const getViewSubtitle = () => {
                   <button
                     type="button"
                     onClick={handleRefresh}
-                    className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                    className="refreshBtn"
                     title="Refresh Captcha"
                   >
-                    <ArrowPathIcon className={`w-4 h-4 ${isRotated ? "animate-spin" : ""}`} />
+                    <ArrowPathIcon className={`${isRotated ? "animate-spin" : ""}`} />
                   </button>
                 </div>
 
@@ -1142,19 +1132,19 @@ const getViewSubtitle = () => {
                     <span className="text-sm"><AutoTranslate>Email</AutoTranslate></span>
                   </label>
                   {otpIsEnabled && (
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="identifierType"
-                      value="mobile"
-                      checked={forgotPasswordData.identifierType === "mobile"}
-                      onChange={handleForgotPasswordChange}
-                      className="mr-2 text-blue-600 focus:ring-blue-500"
-                    />
-                    <DevicePhoneMobileIcon className="w-4 h-4 mr-1 text-blue-600" />
-                    <span className="text-sm"><AutoTranslate>Mobile</AutoTranslate></span>
-                  </label>
-)}
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="identifierType"
+                        value="mobile"
+                        checked={forgotPasswordData.identifierType === "mobile"}
+                        onChange={handleForgotPasswordChange}
+                        className="mr-2 text-blue-600 focus:ring-blue-500"
+                      />
+                      <DevicePhoneMobileIcon className="w-4 h-4 mr-1 text-blue-600" />
+                      <span className="text-sm"><AutoTranslate>Mobile</AutoTranslate></span>
+                    </label>
+                  )}
                 </div>
               </div>
 
