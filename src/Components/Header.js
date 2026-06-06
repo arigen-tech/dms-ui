@@ -279,33 +279,32 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
             <span className="iconBg"><FaEarthAmericas /></span>
             <span>{getCurrentLanguageName()}</span>
           </button>
+          {/* {dropdownLanguageOpen && ( DropdownMenu - component )} */}
+          <DropdownMenu className="max-h-48 overflow-y-auto"
+            items={
+              availableLanguages && availableLanguages.length > 0
+                ? availableLanguages
+                  .filter(lang => lang.isActive !== false)
+                  .map((lang) => ({
+                    label: (
+                      <span className="flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded">
+                        <span className="mr-3 langIcon">{getLanguageIcon(lang.code)}</span>
+                        <span>{getLanguageNativeNameByCode(lang.code)}</span>
+                        {lang.code === currentLanguage && (
+                          <span className="ml-auto text-green-500 font-semibold">✓</span>
+                        )}
+                      </span>
+                    ),
+                    onClick: () => handleLanguageChange(lang.code),
+                  }))
+                :
 
-          {dropdownLanguageOpen && (
-            <DropdownMenu className="max-h-48 overflow-y-auto"
-              items={
-                availableLanguages && availableLanguages.length > 0
-                  ? availableLanguages
-                    .filter(lang => lang.isActive !== false)
-                    .map((lang) => ({
-                      label: (
-                        <span className="flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded">
-                          <span className="mr-3 langIcon">{getLanguageIcon(lang.code)}</span>
-                          <span>{getLanguageNativeNameByCode(lang.code)}</span>
-                          {lang.code === currentLanguage && (
-                            <span className="ml-auto text-green-500 font-semibold">✓</span>
-                          )}
-                        </span>
-                      ),
-                      onClick: () => handleLanguageChange(lang.code),
-                    }))
-                  :
+                []
+            }
+            onSelect={(item) => item.onClick && item.onClick()}
+            emptyMessage={<AutoTranslate>No languages available</AutoTranslate>}
+          />
 
-                  []
-              }
-              onSelect={(item) => item.onClick && item.onClick()}
-              emptyMessage={<AutoTranslate>No languages available</AutoTranslate>}
-            />
-          )}
         </div>
 
         {/* Role Dropdown */}
@@ -317,47 +316,47 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
             <span>{role || <AutoTranslate>Role</AutoTranslate>}</span>
           </button>
 
-          {dropdownRoleOpen && (
-            <DropdownMenu
-              className="max-h-48 overflow-y-auto"
-              items={
-                Array.isArray(roleName)
-                  ? roleName
-                    .filter((roleItem) => roleItem !== currentRole)
-                    .map((roleItem) => {
-                      let IconComponent = FiUser;
-                      if (roleItem === SYSTEM_ADMIN) IconComponent = TbPasswordUser;
-                      else if (roleItem === BRANCH_ADMIN) IconComponent = TbUserCog;
-                      else if (roleItem === DEPARTMENT_ADMIN) IconComponent = PiUserCircleGear;
+          {/* {dropdownRoleOpen && ( DropdownMenu - component )} */}
+          <DropdownMenu
+            className="max-h-48 overflow-y-auto"
+            items={
+              Array.isArray(roleName)
+                ? roleName
+                  .filter((roleItem) => roleItem !== currentRole)
+                  .map((roleItem) => {
+                    let IconComponent = FiUser;
+                    if (roleItem === SYSTEM_ADMIN) IconComponent = TbPasswordUser;
+                    else if (roleItem === BRANCH_ADMIN) IconComponent = TbUserCog;
+                    else if (roleItem === DEPARTMENT_ADMIN) IconComponent = PiUserCircleGear;
 
-                      return {
-                        label: (
-                          <span className="flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded">
-                            <IconComponent className="h-5 w-5 mr-3" />
-                            <span>{roleItem}</span> 
-                          </span>
-                        ),
-                        onClick: () => {
-                          handleRoleSwitch(roleItem);
-                          setDropdownRoleOpen(false);
-                        },
-                      };
-                    })
-                  : []
-              }
-              onSelect={(item) => item.onClick && item.onClick()}
-              emptyMessage={<AutoTranslate>No Multiple roles available</AutoTranslate>}
-            />
-          )}
+                    return {
+                      label: (
+                        <span className="flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded">
+                          <IconComponent className="h-5 w-5 mr-3" />
+                          <span>{roleItem}</span>
+                        </span>
+                      ),
+                      onClick: () => {
+                        handleRoleSwitch(roleItem);
+                        setDropdownRoleOpen(false);
+                      },
+                    };
+                  })
+                : []
+            }
+            onSelect={(item) => item.onClick && item.onClick()}
+            emptyMessage={<AutoTranslate>No Multiple roles available</AutoTranslate>}
+          />
+
         </div>
 
         {/* Notification component */}
-        <div className="">
+        <div className="dropdown-toggle">
           <NotificationBell />
         </div>
 
         {/* Profile Dropdown */}
-        <div className="" ref={dropdownRef}>
+        <div className="dropdown-toggle" ref={dropdownRef}>
           <button className="dropDownIcon" onClick={() => setDropdownOpen(!dropdownOpen)}>
             <span>{UserName}</span>
             <img
@@ -366,33 +365,31 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
               alt={getFallbackTranslation('Profile', currentLanguage)}
             />
           </button>
-
-          {dropdownOpen && (
-            <DropdownMenu
-              items={[
-                {
-                  label: (
-                    <span className="flex items-center text-gray-800 text-sm">
-                      <PencilIcon className="h-4 w-4 mr-3" />
-                      <AutoTranslate>Edit Profile</AutoTranslate>
-                    </span>
-                  ),
-                  onClick: handleChangePassword,
-                },
-                {
-                  label: (
-                    <span className="flex items-center text-gray-800 text-sm">
-                      <ArrowRightOnRectangleIcon className="h-4 w-4 mr-3" />
-                      <AutoTranslate>Logout</AutoTranslate>
-                    </span>
-                  ),
-                  onClick: handleLogout,
-                },
-              ]}
-              onSelect={(item) => item.onClick && item.onClick()}
-              emptyMessage={<AutoTranslate>No options available</AutoTranslate>}
-            />
-          )}
+          {/* {dropdownOpen && ( DropdownMenu - component )} */}
+          <DropdownMenu
+            items={[
+              {
+                label: (
+                  <span className="flex items-center text-gray-800 text-sm">
+                    <PencilIcon className="h-4 w-4 mr-3" />
+                    <AutoTranslate>Edit Profile</AutoTranslate>
+                  </span>
+                ),
+                onClick: handleChangePassword,
+              },
+              {
+                label: (
+                  <span className="flex items-center text-gray-800 text-sm">
+                    <ArrowRightOnRectangleIcon className="h-4 w-4 mr-3" />
+                    <AutoTranslate>Logout</AutoTranslate>
+                  </span>
+                ),
+                onClick: handleLogout,
+              },
+            ]}
+            onSelect={(item) => item.onClick && item.onClick()}
+            emptyMessage={<AutoTranslate>No options available</AutoTranslate>}
+          />
         </div>
 
       </div>

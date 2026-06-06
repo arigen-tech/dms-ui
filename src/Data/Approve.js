@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useLocation } from 'react-router-dom';
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
-import { MdRemoveRedEye } from "react-icons/md";
-import { MdOutlineClose } from "react-icons/md";
+import { MdRemoveRedEye, MdOutlineClose } from "react-icons/md";
 
 import {
   ArrowLeftIcon,
@@ -553,21 +552,22 @@ const Approve = () => {
   }
 
   return (
-    <div className="px-1">
+    <div className="">
       <div className="title">
         <h2>
           <AutoTranslate>Pending Documents</AutoTranslate>
         </h2>
       </div>
 
+
+      {popupMessage && (
+        <Popup
+          message={popupMessage.message}
+          type={popupMessage.type}
+          onClose={popupMessage.onClose}
+        />
+      )}
       <div className="card">
-        {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={popupMessage.onClose}
-          />
-        )}
         <div className="grid grid-col-4 mb-4">
           {/* Items Per Page (50%) */}
           <div className="form-group ">
@@ -643,11 +643,12 @@ const Approve = () => {
 
           {/* Search Input (Remaining Space) */}
           <div className="form-group">
-            <label htmlFor="departmentFilter">
+            <label htmlFor="searchId">
               <AutoTranslate>Search</AutoTranslate>
             </label>
             <input
               type="text"
+              id="searchId"
               placeholder="Search..."
               className="searchIcon"
               value={searchTerm}
@@ -656,11 +657,11 @@ const Approve = () => {
           </div>
         </div>
 
-        <div className="table-scroller overflow-x-auto-">
-          <table className="w-full border-collapse border">
+        <div className="table-wrapper">
+          <table className="">
             <thead>
               <tr>
-                <th>
+                <th className="text-center">
                   <AutoTranslate>SN</AutoTranslate>
                 </th>
                 <th>
@@ -690,7 +691,7 @@ const Approve = () => {
                 <th>
                   <AutoTranslate>No. Of Attached Files</AutoTranslate>
                 </th>
-                <th>
+                <th className="text-center">
                   <AutoTranslate>View</AutoTranslate>
                 </th>
               </tr>
@@ -707,7 +708,7 @@ const Approve = () => {
                         : ''
                     }
                   >
-                    <td>
+                    <td className="text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td>{doc.title}</td>
@@ -734,12 +735,14 @@ const Approve = () => {
                       {doc.employee ? doc.employee.name : "N/A"}
                     </td>
 
-                    <td>{doc.documentDetails.length}</td>
-                    <td>
-                      <button className="viewBtn" onClick={() => openModal(doc)}>
-                        {/* <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" /> */}
-                        <MdRemoveRedEye />
-                      </button>
+                    <td className="text-center">{doc.documentDetails.length}</td>
+                    <td className="text-center">
+                      <div className="btn-center">
+                        <button className="viewBtn" onClick={() => openModal(doc)}>
+                          {/* <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" /> */}
+                          <MdRemoveRedEye />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -758,27 +761,29 @@ const Approve = () => {
 
           <>
             {isOpen && selectedDoc && (
-              <div className="overlayModal fixed inset-0 flex items-center justify-center z-30 bg-gray-800 bg-opacity-75 print-modal overflow-y-auto">
+              <div className="overlayModal">
                 <div className="document-modal">
 
                   {/* Header */}
                   <div className="modal-header">
-                    <div className="flex items-center space-x-2">
-                      <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
-                      <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
+                    <div className="modal-title">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
+                        <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
+                      </div>
+                        <h2><AutoTranslate>Document Information</AutoTranslate></h2>
                     </div>
                     <div className="headerRight">
                       <p className="text-sm text-gray-600 mt-2 sm:mt-0">
                         <strong><AutoTranslate>Uploaded Date:</AutoTranslate></strong> {formatDate(selectedDoc?.createdOn)}
                       </p>
                       {/* Print Button */}
-                      <button className="printBtn hover:text-gray-700- no-print-" onClick={printPage} title="Print">
+                      <button className="printBtn" onClick={printPage} title="Print">
                         <PrinterIcon className="h-6 w-6" />
                       </button>
 
                       {/* Close Button */}
-                      <button className="closeBtn hover:text-gray-700- no-print" onClick={closeModal} title="Close">
-                        {/* <XMarkIcon className="h-6 w-6 text-black hover:text-white hover:bg-red-600 rounded-full p-1" /> */}
+                      <button className="closeBtn" onClick={closeModal} title="Close">
                         <MdOutlineClose />
                       </button>
                     </div>
@@ -787,12 +792,10 @@ const Approve = () => {
 
                   {/* Modal body Content */}
                   <div className="modal-body">
-                    <div className="bodyScroller max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
+                    <div className="bodyScroller print:overflow-visible print:max-h-none">
                       {/* Document Details */}
                       <div className="top-section">
                         <div className="info-card">
-
-                          <h2>Document Information</h2>
                           <div class="info-grid">
                             {[
                               { label: "Branch", value: selectedDoc?.employee?.branch?.name },
@@ -817,7 +820,7 @@ const Approve = () => {
                         </div>
                         {/* QR Code */}
                         <div className="qr-card">
-                        <h2 className="mb-4"><AutoTranslate>QR Code:</AutoTranslate></h2>
+                          <h2 className="mb-4"><AutoTranslate>QR Code:</AutoTranslate></h2>
 
                           {selectedDoc?.qrPath ? (
                             <>
@@ -841,7 +844,7 @@ const Approve = () => {
 
                       {/* Attached Files */}
                       <div className="mt-8">
-                        <div className="attachedWp flex justify-between items-center mb-4 relative">
+                        <div className="attachedWp relative">
                           <h2 className="mb-0">
                             <AutoTranslate>Attached Files</AutoTranslate>
                           </h2>

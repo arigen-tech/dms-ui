@@ -8,7 +8,7 @@
     --white-color: #fff;
     --black-color: #000;
 
-    --secondary-color: #1E88E5;
+    --secondary-color: rgb(31, 137, 229);
     --black-color-60: rgb(0 0 0/0.6);
     --black-color-80: rgb(0 0 0/0.8);
     --black-bg-2: #1a1a1a;
@@ -216,13 +216,6 @@ header {
                 color: var(--black-color);
             }
         }
-
-        /* &:hover{
-            background-color: var(--primary-color);
-            & svg{
-                color: var(--white-color);
-            }
-        } */
     }
 
     & .mainHeading {
@@ -233,17 +226,18 @@ header {
 
     & .topRightMenu {
         display: flex;
+        align-items: center;
         position: relative;
+        gap: 16px;
 
-        &>div {
+        & .dropdown-toggle {
             position: relative;
             display: flex;
             align-items: center;
-            padding: 0px 16px;
         }
 
-        &>div:last-child {
-            padding-right: 0;
+        &>div:not(:last-child) {
+            padding-right: 16px;
         }
 
         &>div:not(:last-child)::after {
@@ -306,6 +300,32 @@ header {
             }
         }
 
+        & .dropDownMenu {
+            background-color: var(--white-color);
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            border-radius: 0px 0px 6px 6px;
+            width: 200px;
+            padding-top: 10px;
+
+            &>div {
+                padding: 14px 15px;
+            }
+
+            &>div:not(:last-child) {
+                border-bottom: solid 1px var(--border-color-15);
+                border-radius: 0;
+            }
+
+            & .langIcon {
+                width: 16px;
+                height: 16px;
+                font-size: 16px;
+            }
+        }
+
         & .dropDownIcon {
             position: relative;
             padding-right: 25px;
@@ -321,31 +341,14 @@ header {
                 background: url("../src/Assets/icons/dropdown-icon.svg");
             }
         }
-    }
 
-    & .dropDownMenu {
-        position: absolute;
-        top: 48px;
-        right: 0;
-        border-radius: 0px 0px 6px 6px;
-        width: 200px;
-
-        &>div {
-            padding: 14px 15px;
-        }
-
-        &>div:not(:last-child) {
-            border-bottom: solid 1px var(--border-color-15);
-            border-radius: 0;
-        }
-
-        & .langIcon {
-            width: 16px;
-            height: 16px;
-            font-size: 16px;
+        & .dropdown-toggle:hover .dropDownMenu {
+            display: block;
         }
     }
 }
+
+/* top menu end here */
 
 footer {
     display: flex;
@@ -963,7 +966,7 @@ main {
 
 
 
-.table-scroller {
+.table-wrapper {
     margin: 0;
     padding: 0;
     margin-bottom: 12px;
@@ -1004,10 +1007,10 @@ main {
             background-color: rgb(0 0 0/0.06)
         }
 
-        & td:first-child,
+        /* & td:first-child,
         & td:last-child {
             text-align: center;
-        }
+        } */
 
         .text-center {
             text-align: center !important;
@@ -1071,30 +1074,84 @@ main {
     }
 }
 
-.viewBtn {
-    background-color: rgb(0 0 0/ 0.03);
-    border: solid 1px rgb(0 0 0/ 0.05);
-    width: 30px;
-    height: 30px;
-    border-radius: 30px;
-    color: var(--secondary-color);
+.btn-center {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 18px;
-    transition: all .35s ease-in-out;
+    gap: 10px;
 
-    &:hover {
-        background-color: rgb(0 0 0/ 0.12);
+    & button {
+        background-color: rgb(0 0 0/ 0.03);
+        border: solid 1px rgb(0 0 0/ 0.05);
+        width: 30px;
+        height: 30px;
+        border-radius: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all .35s ease-in-out;
+
+        & svg {
+            width: 18px;
+            height: 18px;
+        }
     }
 
-    /* &:hover{
-        background-color: var(--secondary-color);
-        color: var(--white-color);
-    } */
+    & .viewBtn {
+        color: var(--secondary-color);
+
+        &:hover {
+            background-color: rgb(31 137 229/0.2);
+            border: solid 1px rgb(0 0 0/ 0);
+        }
+    }
+
+    & .shareBtn {
+        color: rgb(22 163 74/1);
+
+        &:hover {
+            background-color: rgb(220 252 231);
+            border: solid 1px rgb(0 0 0/ 0);
+        }
+    }
+
+    & .viewAccessBtn {
+        color: rgb(147 51 234 / 1);
+
+        &:hover {
+            background-color: rgb(243 232 255 / 1);
+            border: solid 1px rgb(0 0 0/ 0);
+        }
+    }
+
+    & .delBtn {
+        color: rgb(220 38 38 / 1);
+
+        &:hover {
+            background-color: rgb(254 226 226 / 1);
+            border: solid 1px rgb(0 0 0/ 0);
+        }
+    }
 }
 
+/* Aanand */
+
+
 /* Document Modal css beginning here */
+.overlayModal {
+    background-color: rgb(31 41 55 / 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 30;
+    position: fixed;
+    /* left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0; */
+    inset: 0px;
+}
+
 .document-modal {
     background-color: var(--white-color);
     width: 72rem;
@@ -1107,6 +1164,15 @@ main {
         border-bottom: solid 2px rgb(0 0 0/0.15);
         padding: 12px 20px;
         border-radius: 8px 8px 0px 0px;
+
+        & .modal-title{
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            & h2{
+                margin-bottom: 0;
+            }
+        }
 
         & .headerRight {
             display: flex;
@@ -1143,6 +1209,9 @@ main {
         overflow-y: auto;
         padding: 8px;
     }
+
+
+    
 
     & .modal-body {
         padding: 12px;
@@ -1214,12 +1283,20 @@ main {
                 }
             }
         }
-        & .attachedWp{
+
+        & .attachedWp {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
     }
+}
+
+.pendingStyle {
+    background-color: var(--pending-gb);
+    color: var(--pending-color);
+    font-weight: 600;
 }
 
 

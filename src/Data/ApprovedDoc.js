@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from 'react-router-dom';
+import { MdRemoveRedEye, MdOutlineClose } from "react-icons/md";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
   PencilIcon,
   MagnifyingGlassIcon,
@@ -1440,20 +1442,18 @@ const ApprovedDoc = () => {
         />
       )}
 
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+      <div className="card">
+
         {error && <div className="text-red-500 mb-4">{error}</div>}
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
+        <div className="grid grid-col-4 mb-4">
+          <div className="form-group">
+            <label htmlFor="itemsPerPage">
               <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
+              className="dropIcon"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -1468,15 +1468,19 @@ const ApprovedDoc = () => {
             </select>
           </div>
 
-          <div className="flex items-center w-full md:w-auto flex-1">
+          <div className="form-group">
+            <label htmlFor="searchId">
+              <AutoTranslate>Search</AutoTranslate>
+            </label>
             <input
               type="text"
+              id="searchId"
               placeholder="Search..."
-              className="border rounded-l-md p-1 outline-none w-full"
+              className="searchIcon"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
+            {/* <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" /> */}
           </div>
         </div>
 
@@ -1518,11 +1522,11 @@ const ApprovedDoc = () => {
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border">
+        <div className="table-wrapper">
+          <table className="">
             <thead>
-              <tr className="bg-slate-100">
-                <th className="border p-2 text-left">
+              <tr>
+                <th className="text-center">
                   <input
                     type="checkbox"
                     checked={selectAllDocsChecked}
@@ -1532,36 +1536,36 @@ const ApprovedDoc = () => {
                   />
                 </th>
 
-                <th className="border p-2 text-left">
+                <th className="text-center">
                   <AutoTranslate>SN</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>File No</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Title</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Subject</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Category</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th className="text-center">
                   <AutoTranslate>No. Of Attached Files</AutoTranslate>
                 </th>
                 {role === USER && (
-                  <th className="border p-2 text-left">
+                  <th>
                     <AutoTranslate>Edit</AutoTranslate>
                   </th>)}
 
-                <th className="border p-2 text-left">
+                <th className="text-center">
                   <AutoTranslate>View</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th className="text-center">
                   <AutoTranslate>Share</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th className="text-center">
                   <AutoTranslate>Trash</AutoTranslate>
                 </th>
               </tr>
@@ -1587,7 +1591,7 @@ const ApprovedDoc = () => {
                             : ''
                       }
                     >
-                      <td className="border p-2">
+                      <td className="text-center">
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -1596,24 +1600,24 @@ const ApprovedDoc = () => {
                         />
                       </td>
 
-                      <td className="border p-2">
+                      <td className="text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
 
-                      <td className="border p-2">{doc.fileNo || "N/A"}</td>
-                      <td className="border p-2">{doc.title || "N/A"}</td>
-                      <td className="border p-2">{doc.subject || "N/A"}</td>
+                      <td>{doc.fileNo || "N/A"}</td>
+                      <td>{doc.title || "N/A"}</td>
+                      <td>{doc.subject || "N/A"}</td>
 
-                      <td className="border p-2">
+                      <td>
                         {doc.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>}
                       </td>
 
-                      <td className="border p-2">
+                      <td className="text-center">
                         {doc.documentDetails?.length || 0}
                       </td>
 
                       {role === USER && (
-                        <td className="border p-2">
+                        <td>
                           <button onClick={() => handleEdit(doc.id)}>
                             <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
                           </button>
@@ -1621,21 +1625,22 @@ const ApprovedDoc = () => {
                       )}
 
                       {/* View Button Column */}
-                      <td className="border p-2">
-                        <div className="flex justify-center">
+                      <td className="text-center">
+                        <div className="btn-center">
                           <button
+                            className="viewBtn"
                             onClick={() => openModal(doc, isSelected)}
                             title={`View details for ${doc.title || "this document"}`}
-                            className="p-1.5 rounded hover:bg-blue-100 text-blue-600 transition-colors duration-200"
                           >
-                            <EyeIcon className="h-5 w-5" />
+                            {/* <EyeIcon className="h-5 w-5" /> */}
+                            <MdRemoveRedEye />
                           </button>
                         </div>
                       </td>
 
                       {/* Share Button Column */}
-                      <td className="border p-2">
-                        <div className="flex justify-center gap-1">
+                      <td className="text-center">
+                        <div className="btn-center">
                           <button
                             onClick={() => {
                               // Open modal first, then open share modal
@@ -1646,29 +1651,25 @@ const ApprovedDoc = () => {
                               }, 100);
                             }}
                             title="Share document within department"
-                            className={`p-1.5 rounded transition-colors duration-200 ${hasApprovedFiles
-                              ? 'hover:bg-green-100 text-green-600'
-                              : 'text-gray-400 cursor-not-allowed'
-                              }`}
-                            disabled={!hasApprovedFiles}
-                          >
-                            <ShareIcon className="h-5 w-5" />
+                            className={`shareBtn ${hasApprovedFiles ? '' : 'cursor-not-allowed'}`}
+                            disabled={!hasApprovedFiles}>
+                            <ShareIcon />
                           </button>
                           {hasShares && (
                             <button
                               onClick={() => handleViewShares(doc)}
                               title="View shared access"
-                              className="p-1.5 rounded hover:bg-purple-100 text-purple-600 transition-colors duration-200"
+                              className="viewAccessBtn"
                             >
-                              <UserGroupIcon className="h-5 w-5" />
+                              <UserGroupIcon />
                             </button>
                           )}
                         </div>
                       </td>
 
                       {/* Trash Button Column */}
-                      <td className="border p-2">
-                        <div className="flex justify-center">
+                      <td className="text-center">
+                        <div className="btn-center">
                           <button
                             onClick={() => {
                               // For single document, add it to selection and show bulk delete modal
@@ -1676,13 +1677,9 @@ const ApprovedDoc = () => {
                               setBulkDocDeleteModalVisible(true);
                             }}
                             title="Move to trash"
-                            className={`p-1.5 rounded transition-colors duration-200 ${hasApprovedFiles
-                              ? 'hover:bg-red-100 text-red-600'
-                              : 'text-gray-400 cursor-not-allowed'
-                              }`}
-                            disabled={!hasApprovedFiles}
-                          >
-                            <TrashIcon className="h-5 w-5" />
+                            className={`delBtn ${hasApprovedFiles ? '' : 'cursor-not-allowed'}`}
+                            disabled={!hasApprovedFiles}>
+                            <TrashIcon />
                           </button>
                         </div>
                       </td>
@@ -1691,10 +1688,7 @@ const ApprovedDoc = () => {
                 })
               ) : (
                 <tr>
-                  <td
-                    colSpan={10}
-                    className="border p-4 text-center text-gray-500"
-                  >
+                  <td colSpan={10} className="text-center">
                     <AutoTranslate>No data found.</AutoTranslate>
                   </td>
                 </tr>
@@ -1702,589 +1696,923 @@ const ApprovedDoc = () => {
             </tbody>
 
           </table>
+        </div>
 
-          <FilePreviewModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onDownload={(file, action = "download") => handleDownload(file, action)}
-            fileType={contentType}
-            fileUrl={blobUrl}
-            fileName={selectedDocFile?.docName}
-            fileData={selectedDocFile}
-          />
+        <FilePreviewModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onDownload={(file, action = "download") => handleDownload(file, action)}
+          fileType={contentType}
+          fileUrl={blobUrl}
+          fileName={selectedDocFile?.docName}
+          fileData={selectedDocFile}
+        />
 
-          {/* Document Details Modal */}
-          {isOpen && selectedDoc && (
-            <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900/80 backdrop-blur-sm print:bg-white overflow-y-auto p-4">
-              <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl p-6 my-8 mx-auto">
-                <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
 
-                  <div className="flex justify-between items-center mb-6 no-print">
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-indigo-600 text-white rounded-lg p-2">
-                        <span className="text-lg font-bold">D</span>
-                        <span className="text-lg font-bold">MS</span>
-                      </div>
-                      <h1 className="text-2xl font-bold text-gray-800">
-                        <AutoTranslate>Document Details</AutoTranslate>
-                      </h1>
-                    </div>
+        {/* Pagination Controls */}
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
+            </div>
+          </div>
+          <div className="items">
+            <div className="paginationBtn">
+              {/* Previous Button */}
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                {/* <AutoTranslate>Previous</AutoTranslate> */}
+                <IoIosArrowBack />
+              </button>
 
-                    {/* Auto-selection Notification Banner */}
-                    {(selectedFileIds.length > 0 && (modalOpenedFromSelectedDoc || selectedDocuments.some(d => d.id === selectedDoc.id))) && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div className="flex items-center">
-                          <CheckIcon className="h-5 w-5 text-blue-600 mr-2" />
-                          <span className="text-blue-700 font-medium">
-                            <AutoTranslate>{selectedFileIds.length} approved file(s) auto-selected for sharing</AutoTranslate>
-                          </span>
-                        </div>
-                        <p className="text-sm text-blue-600 mt-1">
-                          <AutoTranslate>All approved files are selected because this document was selected in the table.</AutoTranslate>
+              {/* Page Number Buttons */}
+              {totalPages > 0 && getPageNumbers().map((page) => (
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                  {page}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <AutoTranslate>Next</AutoTranslate> */}
+                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Document Details Modal */}
+      {isOpen && selectedDoc && (
+        <div className="overlayModal">
+          <div className="document-modal">
+
+
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <div className="bg-indigo-600 text-white rounded-lg p-1">
+                  <span className="text-lg font-bold">D</span>
+                  <span className="text-lg font-bold">MS</span>
+                </div>
+                <h2>
+                  <AutoTranslate>Document Details</AutoTranslate>
+                </h2>
+              </div>
+              {/* Auto-selection Notification Banner */}
+              {(selectedFileIds.length > 0 && (modalOpenedFromSelectedDoc || selectedDocuments.some(d => d.id === selectedDoc.id))) && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center">
+                    <CheckIcon className="h-5 w-5 text-blue-600 mr-2" />
+                    <span className="text-blue-700 font-medium">
+                      <AutoTranslate>{selectedFileIds.length} approved file(s) auto-selected for sharing</AutoTranslate>
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    <AutoTranslate>All approved files are selected because this document was selected in the table.</AutoTranslate>
+                  </p>
+                </div>
+              )}
+
+
+              <div className="headerRight">
+                {/* Print Button */}
+                {/* <button className="printBtn hover:text-gray-700- no-print-" onClick={printPage} title="Print">
+                <PrinterIcon className="h-6 w-6" />
+              </button> */}
+
+                {/* Close Button */}
+                {/* <button className="closeBtn hover:text-gray-700- no-print" onClick={closeModal} title="Close">
+                 <MdOutlineClose />
+              </button> */}
+
+
+                <button
+                  onClick={() => handlePrintReport(selectedDoc?.id)}
+                  className="printBtn"
+                  title="Print">
+                  <PrinterIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={closeModal}
+                  className="closeBtn"
+                  title="Close"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+
+            </div>
+
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+
+                <div className="top-section">
+                  <div className="info-card">
+                    <div class="info-grid">
+                      {[
+                        { label: "Branch", value: selectedDoc?.branchMaster?.name },
+                        { label: "Department", value: selectedDoc?.departmentMaster?.name },
+                        { label: "File No.", value: selectedDoc?.fileNo },
+                        { label: "Title", value: selectedDoc?.title },
+                        { label: "Subject", value: selectedDoc?.subject },
+                        { label: "Category", value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate> },
+                        { label: "Upload By", value: selectedDoc?.employee?.name },
+                      ].map((item, idx) => (
+                        <p key={idx} className="text-md text-gray-700">
+                          <AutoTranslate>{item.label}</AutoTranslate> <AutoTranslate>{item.value || "N/A"}</AutoTranslate>
                         </p>
-                      </div>
-                    )}
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handlePrintReport(selectedDoc?.id)}
-                        className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
-                        title="Print document"
-                      >
-                        <PrinterIcon className="h-5 w-5" />
-                        <span><AutoTranslate>Print</AutoTranslate></span>
-                      </button>
-                      <button
-                        onClick={closeModal}
-                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 transition-colors duration-200 bg-gray-100 hover:bg-gray-200 rounded-lg"
-                        title="Close modal"
-                      >
-                        <XMarkIcon className="h-5 w-5" />
-                        <span><AutoTranslate>Close</AutoTranslate></span>
-                      </button>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <div className="lg:col-span-2 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[
-                          { label: "Branch", value: selectedDoc?.branchMaster?.name },
-                          { label: "Department", value: selectedDoc?.departmentMaster?.name },
-                          { label: "File No.", value: selectedDoc?.fileNo },
-                          { label: "Title", value: selectedDoc?.title },
-                          { label: "Subject", value: selectedDoc?.subject },
-                          { label: "Category", value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate> },
-                          { label: "Upload By", value: selectedDoc?.employee?.name },
-                        ].map((item, idx) => (
-                          <div key={idx} className="space-y-1">
-                            <p className="text-sm font-medium text-gray-500">
-                              <AutoTranslate>{item.label}</AutoTranslate>
-                            </p>
-                            <p className="text-gray-900 font-medium">
-                              {item.value || <span className="text-gray-400"><AutoTranslate>N/A</AutoTranslate></span>}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                        <AutoTranslate>QR Code</AutoTranslate>
-                      </h3>
-                      {selectedDoc?.qrPath ? (
-                        <>
-                          <div className="p-3 bg-white rounded-lg border border-gray-300">
-                            <img
-                              src={qrCodeUrl}
-                              alt="QR Code"
-                              className="w-32 h-32 object-contain"
-                            />
-                          </div>
-                          <button
-                            onClick={downloadQRCode}
-                            className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
-                          >
-                            <ArrowDownTrayIcon className="h-4 w-4" />
-                            <AutoTranslate>Download QR</AutoTranslate>
-                          </button>
-                        </>
-                      ) : (
-                        <div className="text-center text-gray-500 py-8">
-                          <QrCodeIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                          <p><AutoTranslate>No QR code available</AutoTranslate></p>
+                  <div className="qr-card">
+                    <h2 className="mb-4">
+                      <AutoTranslate>QR Code</AutoTranslate>
+                    </h2>
+                    {selectedDoc?.qrPath ? (
+                      <>
+                        <div className="imgWp">
+                          <img
+                            src={qrCodeUrl}
+                            alt="QR Code"
+                          />
                         </div>
+                        <button
+                          onClick={downloadQRCode}
+                          className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+                        >
+                          <ArrowDownTrayIcon className="h-4 w-4" />
+                          <AutoTranslate>Download QR</AutoTranslate>
+                        </button>
+                      </>
+                    ) : (
+                      <div className="text-center text-gray-500 py-8">
+                        <QrCodeIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                        <p><AutoTranslate>No QR code available</AutoTranslate></p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Attached Files Section */}
+                <div className="AAAAA border-t border-gray-200 pt-6">
+                  <div className="attachedWp relative">
+                    <h2 className="mb-0">
+                      <AutoTranslate>Attached Files</AutoTranslate>
+                      <span className="ml-2 text-sm font-normal text-gray-600">
+                        ({selectedFiles.length} selected for trash, {selectedFileIds.length} selected for sharing)
+                      </span>
+                    </h2>
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-full sm:w-64">
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search files..."
+                          value={searchFileTerm}
+                          onChange={(e) => setSearchFileTerm(e.target.value)}
+                          className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+
+                      {/* Share Button - Moved here between search and trash */}
+                      <button
+                        onClick={() => handleShareDocument(selectedDoc)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+                        title="Share document"
+                      >
+                        <ShareIcon className="h-4 w-4" />
+                        <AutoTranslate>Share ({selectedFileIds.length} files)</AutoTranslate>
+                      </button>
+
+                      {/* View Shares Button */}
+                      {documentsWithShares.has(selectedDoc.id) && (
+                        <button
+                          onClick={() => handleViewShares(selectedDoc)}
+                          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+                          title="View shared access"
+                        >
+                          <UserGroupIcon className="h-4 w-4" />
+                          <AutoTranslate>View Shares ({documentShares[selectedDoc.id]?.length || 0})</AutoTranslate>
+                        </button>
+                      )}
+
+                      {selectedFiles.length > 0 && (
+                        <button
+                          onClick={handleBulkFileDelete}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                          <span><AutoTranslate>Move to Trash ({selectedFiles.length})</AutoTranslate></span>
+                        </button>
                       )}
                     </div>
                   </div>
 
-                  {/* Attached Files Section */}
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-                      <h2 className="text-xl font-semibold text-gray-800">
-                        <AutoTranslate>Attached Files</AutoTranslate>
-                        <span className="ml-2 text-sm font-normal text-gray-600">
-                          ({selectedFiles.length} selected for trash, {selectedFileIds.length} selected for sharing)
-                        </span>
-                      </h2>
-                      <div className="flex items-center gap-4">
-                        <div className="relative w-full sm:w-64">
-                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <input
-                            type="text"
-                            placeholder="Search files..."
-                            value={searchFileTerm}
-                            onChange={(e) => setSearchFileTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-
-                        {/* Share Button - Moved here between search and trash */}
-                        <button
-                          onClick={() => handleShareDocument(selectedDoc)}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
-                          title="Share document"
-                        >
-                          <ShareIcon className="h-4 w-4" />
-                          <AutoTranslate>Share ({selectedFileIds.length} files)</AutoTranslate>
-                        </button>
-
-                        {/* View Shares Button */}
-                        {documentsWithShares.has(selectedDoc.id) && (
-                          <button
-                            onClick={() => handleViewShares(selectedDoc)}
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
-                            title="View shared access"
-                          >
-                            <UserGroupIcon className="h-4 w-4" />
-                            <AutoTranslate>View Shares ({documentShares[selectedDoc.id]?.length || 0})</AutoTranslate>
-                          </button>
-                        )}
-
-                        {selectedFiles.length > 0 && (
-                          <button
-                            onClick={handleBulkFileDelete}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                            <span><AutoTranslate>Move to Trash ({selectedFiles.length})</AutoTranslate></span>
-                          </button>
-                        )}
-                      </div>
+                  {loadingFiles ? (
+                    <div className="flex justify-center items-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                      <span className="ml-3 text-gray-600">
+                        <AutoTranslate>Loading files...</AutoTranslate>
+                      </span>
                     </div>
-
-                    {loadingFiles ? (
-                      <div className="flex justify-center items-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                        <span className="ml-3 text-gray-600">
-                          <AutoTranslate>Loading files...</AutoTranslate>
+                  ) : selectedDoc && filteredDocFiles.length > 0 ? (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Desktop View Table Header - Added Checkbox columns */}
+                      <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
+                        <span className="text-left">
+                          <input
+                            type="checkbox"
+                            checked={selectAllFilesChecked}
+                            onChange={handleSelectAllFiles}
+                            className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                            title="Select all APPROVED files for trash"
+                          />
+                        </span>
+                        <span className="text-left">
+                          <input
+                            type="checkbox"
+                            checked={selectedFileIds.length === getApprovedFileIds(selectedDoc).length}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedFileIds(getApprovedFileIds(selectedDoc));
+                              } else {
+                                setSelectedFileIds([]);
+                              }
+                            }}
+                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                            title="Select all APPROVED files for sharing"
+                          />
+                        </span>
+                        <span className="text-left">
+                          <AutoTranslate>File Name</AutoTranslate>
+                        </span>
+                        <span className="text-center">
+                          <AutoTranslate>Year</AutoTranslate>
+                        </span>
+                        <span className="text-center">
+                          <AutoTranslate>Version</AutoTranslate>
+                        </span>
+                        <span className="text-center">
+                          <AutoTranslate>Status</AutoTranslate>
+                        </span>
+                        <span className="text-center">
+                          <AutoTranslate>Action By</AutoTranslate>
+                        </span>
+                        <span className="text-center">
+                          <AutoTranslate>Action Date</AutoTranslate>
+                        </span>
+                        <span className="text-center">
+                          <AutoTranslate>Reason</AutoTranslate>
+                        </span>
+                        <span className="text-center no-print">
+                          <AutoTranslate>View</AutoTranslate>
+                        </span>
+                        <span className="text-center no-print">
+                          <AutoTranslate>Action</AutoTranslate>
                         </span>
                       </div>
-                    ) : selectedDoc && filteredDocFiles.length > 0 ? (
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        {/* Desktop View Table Header - Added Checkbox columns */}
-                        <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
-                          <span className="text-left">
-                            <input
-                              type="checkbox"
-                              checked={selectAllFilesChecked}
-                              onChange={handleSelectAllFiles}
-                              className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                              title="Select all APPROVED files for trash"
-                            />
-                          </span>
-                          <span className="text-left">
-                            <input
-                              type="checkbox"
-                              checked={selectedFileIds.length === getApprovedFileIds(selectedDoc).length}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedFileIds(getApprovedFileIds(selectedDoc));
-                                } else {
-                                  setSelectedFileIds([]);
-                                }
-                              }}
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                              title="Select all APPROVED files for sharing"
-                            />
-                          </span>
-                          <span className="text-left">
-                            <AutoTranslate>File Name</AutoTranslate>
-                          </span>
-                          <span className="text-center">
-                            <AutoTranslate>Year</AutoTranslate>
-                          </span>
-                          <span className="text-center">
-                            <AutoTranslate>Version</AutoTranslate>
-                          </span>
-                          <span className="text-center">
-                            <AutoTranslate>Status</AutoTranslate>
-                          </span>
-                          <span className="text-center">
-                            <AutoTranslate>Action By</AutoTranslate>
-                          </span>
-                          <span className="text-center">
-                            <AutoTranslate>Action Date</AutoTranslate>
-                          </span>
-                          <span className="text-center">
-                            <AutoTranslate>Reason</AutoTranslate>
-                          </span>
-                          <span className="text-center no-print">
-                            <AutoTranslate>View</AutoTranslate>
-                          </span>
-                          <span className="text-center no-print">
-                            <AutoTranslate>Action</AutoTranslate>
-                          </span>
-                        </div>
 
-                        <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                          {filteredDocFiles.map((file, index) => {
-                            const isSelectedForTrash = selectedFiles.some(f => f.id === file.id);
-                            const isSelectedForShare = selectedFileIds.includes(file.id);
-                            const canDelete = file.status === "APPROVED";
-                            const canShare = file.status === "APPROVED" && !file.isDeleted;
+                      <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                        {filteredDocFiles.map((file, index) => {
+                          const isSelectedForTrash = selectedFiles.some(f => f.id === file.id);
+                          const isSelectedForShare = selectedFileIds.includes(file.id);
+                          const canDelete = file.status === "APPROVED";
+                          const canShare = file.status === "APPROVED" && !file.isDeleted;
 
-                            return (
-                              <div key={index} className={`hover:bg-gray-50 transition-colors duration-150 ${isSelectedForTrash ? 'bg-blue-50' : ''}`}>
-                                {/* Desktop View */}
-                                <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] items-center px-6 py-4 text-sm">
-                                  <div className="text-left">
-                                    {canDelete ? (
-                                      <input
-                                        type="checkbox"
-                                        checked={isSelectedForTrash}
-                                        onChange={() => handleSelectFile(file)}
-                                        className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                      />
-                                    ) : (
-                                      <span className="text-gray-400">-</span>
-                                    )}
-                                  </div>
-                                  <div className="text-left">
-                                    {canShare ? (
-                                      <input
-                                        type="checkbox"
-                                        checked={isSelectedForShare}
-                                        onChange={(e) => {
-                                          if (e.target.checked) {
-                                            setSelectedFileIds(prev => [...prev, file.id]);
-                                          } else {
-                                            setSelectedFileIds(prev => prev.filter(id => id !== file.id));
-                                          }
-                                        }}
-                                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                                      />
-                                    ) : (
-                                      <span className="text-gray-400">-</span>
-                                    )}
-                                  </div>
-                                  <div className="text-left text-gray-800 break-words">
-                                    <strong>{index + 1}.</strong> {file.docName}
-                                  </div>
-                                  <div className="text-center text-gray-700">{file.yearMaster?.name || "--"}</div>
-                                  <div className="text-center text-gray-700">{file.version}</div>
-                                  <div className="text-center">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                        file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                          "bg-yellow-100 text-yellow-800"}`}
-                                    >
-                                      {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                    </span>
-                                  </div>
-                                  <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
-                                  <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
-                                  <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
-                                  <div className="flex justify-center no-print">
-                                    <button
-                                      onClick={() => {
-                                        setOpeningFileIndex(index);
-                                        setSelectedDocFiles(file);
-                                        openFile(file).finally(() => setOpeningFileIndex(null));
+                          return (
+                            <div key={index} className={`hover:bg-gray-50 transition-colors duration-150 ${isSelectedForTrash ? 'bg-blue-50' : ''}`}>
+                              {/* Desktop View */}
+                              <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] items-center px-6 py-4 text-sm">
+                                <div className="text-left">
+                                  {canDelete ? (
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelectedForTrash}
+                                      onChange={() => handleSelectFile(file)}
+                                      className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </div>
+                                <div className="text-left">
+                                  {canShare ? (
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelectedForShare}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setSelectedFileIds(prev => [...prev, file.id]);
+                                        } else {
+                                          setSelectedFileIds(prev => prev.filter(id => id !== file.id));
+                                        }
                                       }}
-                                      disabled={openingFileIndex !== null}
-                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </div>
+                                <div className="text-left text-gray-800 break-words">
+                                  <strong>{index + 1}.</strong> {file.docName}
+                                </div>
+                                <div className="text-center text-gray-700">{file.yearMaster?.name || "--"}</div>
+                                <div className="text-center text-gray-700">{file.version}</div>
+                                <div className="text-center">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                        "bg-yellow-100 text-yellow-800"}`}
+                                  >
+                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                                  </span>
+                                </div>
+                                <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
+                                <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
+                                <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
+                                <div className="flex justify-center no-print">
+                                  <button
+                                    onClick={() => {
+                                      setOpeningFileIndex(index);
+                                      setSelectedDocFiles(file);
+                                      openFile(file).finally(() => setOpeningFileIndex(null));
+                                    }}
+                                    disabled={openingFileIndex !== null}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
                           ${openingFileIndex === index ?
-                                          "bg-indigo-400 cursor-not-allowed" :
-                                          "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                        "bg-indigo-400 cursor-not-allowed" :
+                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                  >
+                                    {openingFileIndex === index ? (
+                                      <>
+                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                        </AutoTranslate>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {file.ltoArchived && !file.restored ? (
+                                          <ArrowPathIcon className="h-3 w-3" />
+                                        ) : (
+                                          <EyeIcon className="h-3 w-3" />
+                                        )}
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+                                        </AutoTranslate>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                                <div className="flex justify-center no-print">
+                                  {canDelete && (
+                                    <button
+                                      onClick={() => handleDeleteFile(file)}
+                                      className="p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
+                                      title="Move to Trash"
                                     >
-                                      {openingFileIndex === index ? (
-                                        <>
-                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                          <AutoTranslate>
-                                            {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-                                          </AutoTranslate>
-                                        </>
-                                      ) : (
-                                        <>
-                                          {file.ltoArchived && !file.restored ? (
-                                            <ArrowPathIcon className="h-3 w-3" />
-                                          ) : (
-                                            <EyeIcon className="h-3 w-3" />
-                                          )}
-                                          <AutoTranslate>
-                                            {file.ltoArchived && !file.restored ? "Restore" : "View"}
-                                          </AutoTranslate>
-                                        </>
-                                      )}
+                                      <TrashIcon className="h-5 w-5" />
                                     </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Mobile View */}
+                              <div className="md:hidden p-4">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex items-center">
+                                    <div className="flex items-center mr-2">
+                                      {canDelete && (
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelectedForTrash}
+                                          onChange={() => handleSelectFile(file)}
+                                          className="h-4 w-4 mr-1 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                        />
+                                      )}
+                                      {canShare && (
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelectedForShare}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setSelectedFileIds(prev => [...prev, file.id]);
+                                            } else {
+                                              setSelectedFileIds(prev => prev.filter(id => id !== file.id));
+                                            }
+                                          }}
+                                          className="h-4 w-4 mr-1 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                        />
+                                      )}
+                                    </div>
+                                    <div className="text-left text-gray-800 break-words flex-1">
+                                      <strong>{index + 1}.</strong> {file.docName}
+                                    </div>
                                   </div>
-                                  <div className="flex justify-center no-print">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
+                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                        "bg-yellow-100 text-yellow-800"}`}
+                                  >
+                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                                  <div>
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
+                                    <p className="text-gray-700">{file.yearMaster?.name || "--"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
+                                    <p className="text-gray-700">{file.version}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
+                                    <p className="text-gray-700">{file.approvedBy || "--"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
+                                    <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
+                                    <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 flex justify-between items-center">
+                                  <button
+                                    onClick={() => {
+                                      setOpeningFileIndex(index);
+                                      setSelectedDocFiles(file);
+                                      openFile(file).finally(() => setOpeningFileIndex(null));
+                                    }}
+                                    disabled={openingFileIndex !== null}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                          ${openingFileIndex === index ?
+                                        "bg-indigo-400 cursor-not-allowed" :
+                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                  >
+                                    {openingFileIndex === index ? (
+                                      <>
+                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                        </AutoTranslate>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {file.ltoArchived && !file.restored ? (
+                                          <ArrowPathIcon className="h-3 w-3" />
+                                        ) : (
+                                          <EyeIcon className="h-3 w-3" />
+                                        )}
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restore" : "View File"}
+                                        </AutoTranslate>
+                                      </>
+                                    )}
+                                  </button>
+
+                                  <div className="flex gap-2">
                                     {canDelete && (
                                       <button
                                         onClick={() => handleDeleteFile(file)}
-                                        className="p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
+                                        className="p-1.5 rounded-full bg-red-100 hover:bg-red-200"
                                         title="Move to Trash"
                                       >
-                                        <TrashIcon className="h-5 w-5" />
+                                        <TrashIcon className="h-5 w-5 text-red-700" />
                                       </button>
                                     )}
                                   </div>
                                 </div>
-
-                                {/* Mobile View */}
-                                <div className="md:hidden p-4">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <div className="flex items-center">
-                                      <div className="flex items-center mr-2">
-                                        {canDelete && (
-                                          <input
-                                            type="checkbox"
-                                            checked={isSelectedForTrash}
-                                            onChange={() => handleSelectFile(file)}
-                                            className="h-4 w-4 mr-1 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                          />
-                                        )}
-                                        {canShare && (
-                                          <input
-                                            type="checkbox"
-                                            checked={isSelectedForShare}
-                                            onChange={(e) => {
-                                              if (e.target.checked) {
-                                                setSelectedFileIds(prev => [...prev, file.id]);
-                                              } else {
-                                                setSelectedFileIds(prev => prev.filter(id => id !== file.id));
-                                              }
-                                            }}
-                                            className="h-4 w-4 mr-1 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                                          />
-                                        )}
-                                      </div>
-                                      <div className="text-left text-gray-800 break-words flex-1">
-                                        <strong>{index + 1}.</strong> {file.docName}
-                                      </div>
-                                    </div>
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
-                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                        file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                          "bg-yellow-100 text-yellow-800"}`}
-                                    >
-                                      {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-2 text-sm mt-3">
-                                    <div>
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
-                                      <p className="text-gray-700">{file.yearMaster?.name || "--"}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
-                                      <p className="text-gray-700">{file.version}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
-                                      <p className="text-gray-700">{file.approvedBy || "--"}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
-                                      <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
-                                    </div>
-                                    <div className="col-span-2">
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
-                                      <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-3 flex justify-between items-center">
-                                    <button
-                                      onClick={() => {
-                                        setOpeningFileIndex(index);
-                                        setSelectedDocFiles(file);
-                                        openFile(file).finally(() => setOpeningFileIndex(null));
-                                      }}
-                                      disabled={openingFileIndex !== null}
-                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                          ${openingFileIndex === index ?
-                                          "bg-indigo-400 cursor-not-allowed" :
-                                          "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                    >
-                                      {openingFileIndex === index ? (
-                                        <>
-                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                          <AutoTranslate>
-                                            {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-                                          </AutoTranslate>
-                                        </>
-                                      ) : (
-                                        <>
-                                          {file.ltoArchived && !file.restored ? (
-                                            <ArrowPathIcon className="h-3 w-3" />
-                                          ) : (
-                                            <EyeIcon className="h-3 w-3" />
-                                          )}
-                                          <AutoTranslate>
-                                            {file.ltoArchived && !file.restored ? "Restore" : "View File"}
-                                          </AutoTranslate>
-                                        </>
-                                      )}
-                                    </button>
-
-                                    <div className="flex gap-2">
-                                      {canDelete && (
-                                        <button
-                                          onClick={() => handleDeleteFile(file)}
-                                          className="p-1.5 rounded-full bg-red-100 hover:bg-red-200"
-                                          title="Move to Trash"
-                                        >
-                                          <TrashIcon className="h-5 w-5 text-red-700" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
                               </div>
-                            );
-                          })}
-                        </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ) : (
-                      <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
-                        <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                        <p className="text-gray-500">
-                          <AutoTranslate>No attached files found</AutoTranslate>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
+                      <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                      <p className="text-gray-500">
+                        <AutoTranslate>No attached files found</AutoTranslate>
+                      </p>
+                      {searchFileTerm && (
+                        <p className="text-sm text-gray-400 mt-1">
+                          <AutoTranslate>Try adjusting your search term</AutoTranslate>
                         </p>
-                        {searchFileTerm && (
-                          <p className="text-sm text-gray-400 mt-1">
-                            <AutoTranslate>Try adjusting your search term</AutoTranslate>
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Confirmation Modal for Single File Deletion */}
-          {confirmDeleteModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Move to Trash</AutoTranslate>
-                </h2>
-                <p className="mb-4">
-                  <AutoTranslate>Are you sure you want to move this file to trash?</AutoTranslate>
-                  <br />
-                  <strong>"{fileToDelete?.docName}"</strong>
-                </p>
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => setConfirmDeleteModalVisible(false)}
-                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
-                    disabled={isDeleteConfirmDisabled}
-                  >
-                    <AutoTranslate>Cancel</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={confirmDeleteFile}
-                    disabled={isDeleteConfirmDisabled}
-                    className={`px-4 py-2 rounded-md text-white ${isDeleteConfirmDisabled
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700'} transition-colors`}
-                  >
-                    {isDeleteConfirmDisabled ? (
-                      <AutoTranslate>Processing...</AutoTranslate>
-                    ) : (
-                      <AutoTranslate>Move to Trash</AutoTranslate>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Confirmation Modal for Bulk File Deletion (inside modal) */}
-          {bulkFileDeleteModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Bulk Move to Trash</AutoTranslate>
-                </h2>
-                <p className="mb-4">
-                  <AutoTranslate>Are you sure you want to move {selectedFiles.length} file(s) to trash?</AutoTranslate>
-                </p>
-                <ul className="mb-4 max-h-40 overflow-y-auto">
-                  {selectedFiles.slice(0, 5).map((file, index) => (
-                    <li key={index} className="text-sm text-gray-600 truncate">
-                      • {file.docName}
-                    </li>
-                  ))}
-                  {selectedFiles.length > 5 && (
-                    <li className="text-sm text-gray-500">
-                      ... and {selectedFiles.length - 5} more
-                    </li>
+                      )}
+                    </div>
                   )}
-                </ul>
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => setBulkFileDeleteModalVisible(false)}
-                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
-                    disabled={isBulkFileDeleting}
-                  >
-                    <AutoTranslate>Cancel</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={confirmBulkFileDelete}
-                    disabled={isBulkFileDeleting}
-                    className={`px-4 py-2 rounded-md text-white ${isBulkFileDeleting
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700'} transition-colors`}
-                  >
-                    {isBulkFileDeleting ? (
-                      <AutoTranslate>Processing...</AutoTranslate>
-                    ) : (
-                      <AutoTranslate>Move All to Trash</AutoTranslate>
-                    )}
-                  </button>
                 </div>
+
               </div>
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-          {/* Confirmation Modal for Bulk Document Deletion (main table) */}
-          {bulkDocDeleteModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Bulk Move to Trash</AutoTranslate>
-                </h2>
-                <p className="mb-4">
-                  <AutoTranslate>Are you sure you want to move all approved files from {selectedDocuments.length} document(s) to trash?</AutoTranslate>
-                  <br />
-                  <small className="text-gray-600">
-                    <AutoTranslate>This will move only APPROVED files from the selected documents to trash.</AutoTranslate>
-                  </small>
+      {/* Confirmation Modal for Single File Deletion */}
+      {confirmDeleteModalVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">
+              <AutoTranslate>Move to Trash</AutoTranslate>
+            </h2>
+            <p className="mb-4">
+              <AutoTranslate>Are you sure you want to move this file to trash?</AutoTranslate>
+              <br />
+              <strong>"{fileToDelete?.docName}"</strong>
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setConfirmDeleteModalVisible(false)}
+                className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                disabled={isDeleteConfirmDisabled}
+              >
+                <AutoTranslate>Cancel</AutoTranslate>
+              </button>
+              <button
+                onClick={confirmDeleteFile}
+                disabled={isDeleteConfirmDisabled}
+                className={`px-4 py-2 rounded-md text-white ${isDeleteConfirmDisabled
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700'} transition-colors`}
+              >
+                {isDeleteConfirmDisabled ? (
+                  <AutoTranslate>Processing...</AutoTranslate>
+                ) : (
+                  <AutoTranslate>Move to Trash</AutoTranslate>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Bulk File Deletion (inside modal) */}
+      {bulkFileDeleteModalVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">
+              <AutoTranslate>Bulk Move to Trash</AutoTranslate>
+            </h2>
+            <p className="mb-4">
+              <AutoTranslate>Are you sure you want to move {selectedFiles.length} file(s) to trash?</AutoTranslate>
+            </p>
+            <ul className="mb-4 max-h-40 overflow-y-auto">
+              {selectedFiles.slice(0, 5).map((file, index) => (
+                <li key={index} className="text-sm text-gray-600 truncate">
+                  • {file.docName}
+                </li>
+              ))}
+              {selectedFiles.length > 5 && (
+                <li className="text-sm text-gray-500">
+                  ... and {selectedFiles.length - 5} more
+                </li>
+              )}
+            </ul>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setBulkFileDeleteModalVisible(false)}
+                className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                disabled={isBulkFileDeleting}
+              >
+                <AutoTranslate>Cancel</AutoTranslate>
+              </button>
+              <button
+                onClick={confirmBulkFileDelete}
+                disabled={isBulkFileDeleting}
+                className={`px-4 py-2 rounded-md text-white ${isBulkFileDeleting
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700'} transition-colors`}
+              >
+                {isBulkFileDeleting ? (
+                  <AutoTranslate>Processing...</AutoTranslate>
+                ) : (
+                  <AutoTranslate>Move All to Trash</AutoTranslate>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Bulk Document Deletion (main table) */}
+      {bulkDocDeleteModalVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">
+              <AutoTranslate>Bulk Move to Trash</AutoTranslate>
+            </h2>
+            <p className="mb-4">
+              <AutoTranslate>Are you sure you want to move all approved files from {selectedDocuments.length} document(s) to trash?</AutoTranslate>
+              <br />
+              <small className="text-gray-600">
+                <AutoTranslate>This will move only APPROVED files from the selected documents to trash.</AutoTranslate>
+              </small>
+            </p>
+            <ul className="mb-4 max-h-40 overflow-y-auto">
+              {selectedDocuments.slice(0, 5).map((doc, index) => {
+                const approvedFilesCount = doc.documentDetails?.filter(file =>
+                  !file.isDeleted && file.status === "APPROVED"
+                ).length || 0;
+                return (
+                  <li key={index} className="text-sm text-gray-600 truncate">
+                    • {doc.title} ({approvedFilesCount} approved file{approvedFilesCount !== 1 ? 's' : ''})
+                  </li>
+                );
+              })}
+              {selectedDocuments.length > 5 && (
+                <li className="text-sm text-gray-500">
+                  ... and {selectedDocuments.length - 5} more
+                </li>
+              )}
+            </ul>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setBulkDocDeleteModalVisible(false)}
+                className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                disabled={isBulkDocDeleting}
+              >
+                <AutoTranslate>Cancel</AutoTranslate>
+              </button>
+              <button
+                onClick={confirmBulkDocumentDelete}
+                disabled={isBulkDocDeleting}
+                className={`px-4 py-2 rounded-md text-white ${isBulkDocDeleting
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700'} transition-colors`}
+              >
+                {isBulkDocDeleting ? (
+                  <AutoTranslate>Processing...</AutoTranslate>
+                ) : (
+                  <AutoTranslate>Move All to Trash</AutoTranslate>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Document Modal (Single Document) */}
+      {shareModalVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">
+              <AutoTranslate>Share Document</AutoTranslate>
+            </h2>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                <AutoTranslate>Document:</AutoTranslate> {documentToShare?.title}
+              </p>
+              <p className="text-sm text-gray-600">
+                <AutoTranslate>Selected {selectedFileIds.length} file(s) to share with employees in your department.</AutoTranslate>
+              </p>
+              <p className="text-sm text-blue-600 mt-1">
+                <AutoTranslate>You can change which files to share by checking/unchecking files in the document details.</AutoTranslate>
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <AutoTranslate>Select Employees</AutoTranslate>
+              </label>
+              {loadingEmployees ? (
+                <div className="flex items-center">
+                  <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                  <AutoTranslate>Loading employees...</AutoTranslate>
+                </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
+                  {availableEmployees.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      <AutoTranslate>No other employees in this department</AutoTranslate>
+                    </p>
+                  ) : (
+                    availableEmployees.map(emp => (
+                      <div key={emp.id} className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          id={`emp-${emp.id}`}
+                          checked={shareRecipients.includes(emp.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setShareRecipients([...shareRecipients, emp.id]);
+                            } else {
+                              setShareRecipients(shareRecipients.filter(id => id !== emp.id));
+                            }
+                          }}
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <label htmlFor={`emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
+                          {emp.name} ({emp.email})
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="flex items-center">
+                  <ClockIcon className="h-4 w-4 mr-1" />
+                  <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
+                </div>
+              </label>
+
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                {/* Date Picker */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    <AutoTranslate>Date</AutoTranslate>
+                  </label>
+                  <input
+                    type="date"
+                    value={shareDate}
+                    onChange={(e) => {
+                      setShareDate(e.target.value);
+                      if (!e.target.value) {
+                        setShareTime("");
+                      } else if (e.target.value === new Date().toISOString().split('T')[0]) {
+                        // If selecting today, auto-select next available time
+                        const nextTime = getNextAvailableTime();
+                        setShareTime(`${nextTime.hour}:${nextTime.minute}`);
+                      }
+                    }}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Time Picker */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    <AutoTranslate>Time</AutoTranslate>
+                  </label>
+                  <select
+                    value={shareTime}
+                    onChange={(e) => setShareTime(e.target.value)}
+                    disabled={!shareDate}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">--:--</option>
+                    {generateTimeOptions().map((time, index) => (
+                      <option
+                        key={index}
+                        value={time.value}
+                        disabled={time.disabled}
+                        className={time.disabled ? 'text-gray-400 bg-gray-100' : ''}
+                      >
+                        {time.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Display selected date-time */}
+              {shareDate && shareTime && (
+                <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200 mb-2">
+                  <AutoTranslate>Selected:</AutoTranslate> {shareDate} {shareTime}
+                  {(() => {
+                    const selectedDateTime = new Date(`${shareDate}T${shareTime}`);
+                    const now = new Date();
+                    if (selectedDateTime < now) {
+                      return (
+                        <span className="text-red-600 ml-2">
+                          <ExclamationTriangleIcon className="h-4 w-4 inline mr-1" />
+                          <AutoTranslate>(Past time!)</AutoTranslate>
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              )}
+
+              <div className="flex items-center mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    setShareDate(now.toISOString().split('T')[0]);
+                    const nextTime = getNextAvailableTime();
+                    setShareTime(`${nextTime.hour}:${nextTime.minute}`);
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                >
+                  <ClockIcon className="h-4 w-4 mr-1" />
+                  <AutoTranslate>Set to next available time</AutoTranslate>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShareDate("");
+                    setShareTime("");
+                  }}
+                  className="ml-4 text-sm text-gray-600 hover:text-gray-800 flex items-center"
+                >
+                  <XMarkIcon className="h-4 w-4 mr-1" />
+                  <AutoTranslate>Clear</AutoTranslate>
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-2">
+                <AutoTranslate>Leave empty for permanent access</AutoTranslate>
+              </p>
+            </div>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShareModalVisible(false);
+                  setDocumentToShare(null);
+                  setShareRecipients([]);
+                  setShareEndTime("");
+                  setSelectedFileIds([]);
+                }}
+                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+                disabled={sharingDocument}
+              >
+                <AutoTranslate>Cancel</AutoTranslate>
+              </button>
+              <button
+                onClick={handleShareSubmit}
+                disabled={sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0}
+                className={`px-4 py-2 rounded-md text-white ${(sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0)
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'} transition-colors flex items-center`}
+              >
+                {sharingDocument ? (
+                  <>
+                    <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                    <AutoTranslate>Sharing...</AutoTranslate>
+                  </>
+                ) : (
+                  <>
+                    <ShareIcon className="h-4 w-4 mr-2" />
+                    <AutoTranslate>Share {selectedFileIds.length} File(s)</AutoTranslate>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Share Document Modal */}
+      {bulkShareModalVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">
+              <AutoTranslate>Bulk Share Documents</AutoTranslate>
+            </h2>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                <AutoTranslate>Sharing all approved files from {selectedDocuments.length} document(s) with employees in your department.</AutoTranslate>
+              </p>
+
+              <div className="mb-3">
+                <p className="text-sm font-medium text-gray-700">
+                  <AutoTranslate>Selected Documents:</AutoTranslate>
                 </p>
-                <ul className="mb-4 max-h-40 overflow-y-auto">
+                <ul className="max-h-32 overflow-y-auto border rounded-lg p-2 mt-1">
                   {selectedDocuments.slice(0, 5).map((doc, index) => {
-                    const approvedFilesCount = doc.documentDetails?.filter(file =>
-                      !file.isDeleted && file.status === "APPROVED"
+                    const approvedFilesCount = doc.documentDetails?.filter(f =>
+                      f.status === "APPROVED" && !f.isDeleted
                     ).length || 0;
                     return (
-                      <li key={index} className="text-sm text-gray-600 truncate">
+                      <li key={doc.id} className="text-sm text-gray-600 truncate">
                         • {doc.title} ({approvedFilesCount} approved file{approvedFilesCount !== 1 ? 's' : ''})
                       </li>
                     );
@@ -2295,580 +2623,264 @@ const ApprovedDoc = () => {
                     </li>
                   )}
                 </ul>
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => setBulkDocDeleteModalVisible(false)}
-                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
-                    disabled={isBulkDocDeleting}
-                  >
-                    <AutoTranslate>Cancel</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={confirmBulkDocumentDelete}
-                    disabled={isBulkDocDeleting}
-                    className={`px-4 py-2 rounded-md text-white ${isBulkDocDeleting
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700'} transition-colors`}
-                  >
-                    {isBulkDocDeleting ? (
-                      <AutoTranslate>Processing...</AutoTranslate>
-                    ) : (
-                      <AutoTranslate>Move All to Trash</AutoTranslate>
-                    )}
-                  </button>
-                </div>
               </div>
+
+              <p className="text-sm text-blue-600">
+                <AutoTranslate>This will share ALL approved files from each selected document.</AutoTranslate>
+              </p>
             </div>
-          )}
 
-          {/* Share Document Modal (Single Document) */}
-          {shareModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Share Document</AutoTranslate>
-                </h2>
-
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <AutoTranslate>Document:</AutoTranslate> {documentToShare?.title}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <AutoTranslate>Selected {selectedFileIds.length} file(s) to share with employees in your department.</AutoTranslate>
-                  </p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    <AutoTranslate>You can change which files to share by checking/unchecking files in the document details.</AutoTranslate>
-                  </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <AutoTranslate>Select Employees</AutoTranslate>
+              </label>
+              {loadingEmployees ? (
+                <div className="flex items-center">
+                  <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                  <AutoTranslate>Loading employees...</AutoTranslate>
                 </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <AutoTranslate>Select Employees</AutoTranslate>
-                  </label>
-                  {loadingEmployees ? (
-                    <div className="flex items-center">
-                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                      <AutoTranslate>Loading employees...</AutoTranslate>
-                    </div>
-                  ) : (
-                    <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
-                      {availableEmployees.length === 0 ? (
-                        <p className="text-sm text-gray-500">
-                          <AutoTranslate>No other employees in this department</AutoTranslate>
-                        </p>
-                      ) : (
-                        availableEmployees.map(emp => (
-                          <div key={emp.id} className="flex items-center mb-2">
-                            <input
-                              type="checkbox"
-                              id={`emp-${emp.id}`}
-                              checked={shareRecipients.includes(emp.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setShareRecipients([...shareRecipients, emp.id]);
-                                } else {
-                                  setShareRecipients(shareRecipients.filter(id => id !== emp.id));
-                                }
-                              }}
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                            />
-                            <label htmlFor={`emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
-                              {emp.name} ({emp.email})
-                            </label>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <div className="flex items-center">
-                      <ClockIcon className="h-4 w-4 mr-1" />
-                      <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
-                    </div>
-                  </label>
-
-                  <div className="grid grid-cols-2 gap-3 mb-2">
-                    {/* Date Picker */}
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">
-                        <AutoTranslate>Date</AutoTranslate>
-                      </label>
-                      <input
-                        type="date"
-                        value={shareDate}
-                        onChange={(e) => {
-                          setShareDate(e.target.value);
-                          if (!e.target.value) {
-                            setShareTime("");
-                          } else if (e.target.value === new Date().toISOString().split('T')[0]) {
-                            // If selecting today, auto-select next available time
-                            const nextTime = getNextAvailableTime();
-                            setShareTime(`${nextTime.hour}:${nextTime.minute}`);
-                          }
-                        }}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    {/* Time Picker */}
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">
-                        <AutoTranslate>Time</AutoTranslate>
-                      </label>
-                      <select
-                        value={shareTime}
-                        onChange={(e) => setShareTime(e.target.value)}
-                        disabled={!shareDate}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">--:--</option>
-                        {generateTimeOptions().map((time, index) => (
-                          <option
-                            key={index}
-                            value={time.value}
-                            disabled={time.disabled}
-                            className={time.disabled ? 'text-gray-400 bg-gray-100' : ''}
-                          >
-                            {time.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Display selected date-time */}
-                  {shareDate && shareTime && (
-                    <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200 mb-2">
-                      <AutoTranslate>Selected:</AutoTranslate> {shareDate} {shareTime}
-                      {(() => {
-                        const selectedDateTime = new Date(`${shareDate}T${shareTime}`);
-                        const now = new Date();
-                        if (selectedDateTime < now) {
-                          return (
-                            <span className="text-red-600 ml-2">
-                              <ExclamationTriangleIcon className="h-4 w-4 inline mr-1" />
-                              <AutoTranslate>(Past time!)</AutoTranslate>
-                            </span>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-                  )}
-
-                  <div className="flex items-center mt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const now = new Date();
-                        setShareDate(now.toISOString().split('T')[0]);
-                        const nextTime = getNextAvailableTime();
-                        setShareTime(`${nextTime.hour}:${nextTime.minute}`);
-                      }}
-                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-                    >
-                      <ClockIcon className="h-4 w-4 mr-1" />
-                      <AutoTranslate>Set to next available time</AutoTranslate>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShareDate("");
-                        setShareTime("");
-                      }}
-                      className="ml-4 text-sm text-gray-600 hover:text-gray-800 flex items-center"
-                    >
-                      <XMarkIcon className="h-4 w-4 mr-1" />
-                      <AutoTranslate>Clear</AutoTranslate>
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-gray-500 mt-2">
-                    <AutoTranslate>Leave empty for permanent access</AutoTranslate>
-                  </p>
-                </div>
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => {
-                      setShareModalVisible(false);
-                      setDocumentToShare(null);
-                      setShareRecipients([]);
-                      setShareEndTime("");
-                      setSelectedFileIds([]);
-                    }}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
-                    disabled={sharingDocument}
-                  >
-                    <AutoTranslate>Cancel</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={handleShareSubmit}
-                    disabled={sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0}
-                    className={`px-4 py-2 rounded-md text-white ${(sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0)
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'} transition-colors flex items-center`}
-                  >
-                    {sharingDocument ? (
-                      <>
-                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
-                        <AutoTranslate>Sharing...</AutoTranslate>
-                      </>
-                    ) : (
-                      <>
-                        <ShareIcon className="h-4 w-4 mr-2" />
-                        <AutoTranslate>Share {selectedFileIds.length} File(s)</AutoTranslate>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Bulk Share Document Modal */}
-          {bulkShareModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Bulk Share Documents</AutoTranslate>
-                </h2>
-
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <AutoTranslate>Sharing all approved files from {selectedDocuments.length} document(s) with employees in your department.</AutoTranslate>
-                  </p>
-
-                  <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-700">
-                      <AutoTranslate>Selected Documents:</AutoTranslate>
+              ) : (
+                <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
+                  {availableEmployees.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      <AutoTranslate>No other employees in this department</AutoTranslate>
                     </p>
-                    <ul className="max-h-32 overflow-y-auto border rounded-lg p-2 mt-1">
-                      {selectedDocuments.slice(0, 5).map((doc, index) => {
-                        const approvedFilesCount = doc.documentDetails?.filter(f =>
-                          f.status === "APPROVED" && !f.isDeleted
-                        ).length || 0;
-                        return (
-                          <li key={doc.id} className="text-sm text-gray-600 truncate">
-                            • {doc.title} ({approvedFilesCount} approved file{approvedFilesCount !== 1 ? 's' : ''})
-                          </li>
-                        );
-                      })}
-                      {selectedDocuments.length > 5 && (
-                        <li className="text-sm text-gray-500">
-                          ... and {selectedDocuments.length - 5} more
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-
-                  <p className="text-sm text-blue-600">
-                    <AutoTranslate>This will share ALL approved files from each selected document.</AutoTranslate>
-                  </p>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <AutoTranslate>Select Employees</AutoTranslate>
-                  </label>
-                  {loadingEmployees ? (
-                    <div className="flex items-center">
-                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                      <AutoTranslate>Loading employees...</AutoTranslate>
-                    </div>
                   ) : (
-                    <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
-                      {availableEmployees.length === 0 ? (
-                        <p className="text-sm text-gray-500">
-                          <AutoTranslate>No other employees in this department</AutoTranslate>
-                        </p>
-                      ) : (
-                        availableEmployees.map(emp => (
-                          <div key={emp.id} className="flex items-center mb-2">
-                            <input
-                              type="checkbox"
-                              id={`bulk-emp-${emp.id}`}
-                              checked={shareRecipients.includes(emp.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setShareRecipients([...shareRecipients, emp.id]);
-                                } else {
-                                  setShareRecipients(shareRecipients.filter(id => id !== emp.id));
-                                }
-                              }}
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                            />
-                            <label htmlFor={`bulk-emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
-                              {emp.name} ({emp.email})
-                            </label>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                    availableEmployees.map(emp => (
+                      <div key={emp.id} className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          id={`bulk-emp-${emp.id}`}
+                          checked={shareRecipients.includes(emp.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setShareRecipients([...shareRecipients, emp.id]);
+                            } else {
+                              setShareRecipients(shareRecipients.filter(id => id !== emp.id));
+                            }
+                          }}
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <label htmlFor={`bulk-emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
+                          {emp.name} ({emp.email})
+                        </label>
+                      </div>
+                    ))
                   )}
                 </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <div className="flex items-center">
-                      <ClockIcon className="h-4 w-4 mr-1" />
-                      <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
-                    </div>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={shareEndTime}
-                    onChange={(e) => setShareEndTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min={getMinDateTime()} // FIXED: This prevents past dates/times
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    <AutoTranslate>Leave empty for permanent access</AutoTranslate>
-                  </p>
-                </div>
-
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => {
-                      setBulkShareModalVisible(false);
-                      setShareRecipients([]);
-                      setShareEndTime("");
-                    }}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
-                    disabled={isBulkSharing}
-                  >
-                    <AutoTranslate>Cancel</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={confirmBulkDocumentShare}
-                    disabled={isBulkSharing || shareRecipients.length === 0}
-                    className={`px-4 py-2 rounded-md text-white ${(isBulkSharing || shareRecipients.length === 0)
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-green-600 hover:bg-green-700'} transition-colors flex items-center`}
-                  >
-                    {isBulkSharing ? (
-                      <>
-                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
-                        <AutoTranslate>Sharing...</AutoTranslate>
-                      </>
-                    ) : (
-                      <>
-                        <ShareIcon className="h-4 w-4 mr-2" />
-                        <AutoTranslate>Share {selectedDocuments.length} Document(s)</AutoTranslate>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
-          )}
 
-          {/* View Shares Modal */}
-          {viewSharesModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">
-                    <AutoTranslate>Shared Access</AutoTranslate>
-                  </h2>
-                  <button
-                    onClick={() => setViewSharesModalVisible(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <XMarkIcon className="h-6 w-6" />
-                  </button>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="flex items-center">
+                  <ClockIcon className="h-4 w-4 mr-1" />
+                  <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
                 </div>
-
-                {selectedDocShares.length === 0 ? (
-                  <div className="text-center py-8">
-                    <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                    <p className="text-gray-500">
-                      <AutoTranslate>No shares found for this document</AutoTranslate>
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>SN</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Shared To</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Files Shared</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Shared Date</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Expiration Time</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Status</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Actions</AutoTranslate>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedDocShares.map((share, index) => (
-                          <tr key={share.id} className="hover:bg-gray-50">
-                            <td className="border p-2">{index + 1}</td>
-                            <td className="border p-2">{share.sharedToName}</td>
-                            <td className="border p-2">
-
-                              {share.sharedFileNames && share.sharedFileNames.length > 0 && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {share.sharedFileNames.slice(0, 2).map((name, i) => (
-                                    <div key={i}>{name}</div>
-                                  ))}
-                                  {share.sharedFileNames.length > 2 && (
-                                    <div>... and {share.sharedFileNames.length - 2} more</div>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-                            <td className="border p-2">{formatDateTime(share.sharedDate)}</td>
-                            <td className="border p-2">
-                              {share.endTime ? formatDateTime(share.endTime) : "Permanent"}
-                            </td>
-                            <td className="border p-2">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                }`}>
-                                {share.isExpired ? 'Expired' : 'Active'}
-                              </span>
-                            </td>
-                            <td className="border p-2">
-                              <button
-                                onClick={() => handleRevokeShare(share)}
-                                disabled={share.isExpired}
-                                className={`px-3 py-1 rounded text-sm ${share.isExpired
-                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                  : 'bg-red-100 text-red-700 hover:bg-red-200'
-                                  }`}
-                              >
-                                <AutoTranslate>Revoke</AutoTranslate>
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              </label>
+              <input
+                type="datetime-local"
+                value={shareEndTime}
+                onChange={(e) => setShareEndTime(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min={getMinDateTime()} // FIXED: This prevents past dates/times
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                <AutoTranslate>Leave empty for permanent access</AutoTranslate>
+              </p>
             </div>
-          )}
 
-          {/* Revoke Share Confirmation Modal */}
-          {revokeShareModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Revoke Share Access</AutoTranslate>
-                </h2>
-                <div className="mb-4">
-                  <p className="mb-2">
-                    <AutoTranslate>Are you sure you want to revoke access for:</AutoTranslate>
-                  </p>
-                  <p className="font-semibold">{shareToRevoke?.sharedToName}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    <AutoTranslate>Document:</AutoTranslate> {shareToRevoke?.documentName}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <AutoTranslate>Files shared:</AutoTranslate> {shareToRevoke?.totalFilesShared || 1}
-                  </p>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <AutoTranslate>Reason (Optional)</AutoTranslate>
-                  </label>
-                  <textarea
-                    value={revokeReason}
-                    onChange={(e) => setRevokeReason(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows="3"
-                    placeholder="Enter reason for revoking access..."
-                  />
-                </div>
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => {
-                      setRevokeShareModalVisible(false);
-                      setShareToRevoke(null);
-                      setRevokeReason("");
-                    }}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
-                  >
-                    <AutoTranslate>Cancel</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={confirmRevokeShare}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
-                  >
-                    <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                    <AutoTranslate>Revoke Access</AutoTranslate>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Pagination */}
-          <div className="flex items-center mt-4">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1 || totalPages === 0}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              <AutoTranslate>Previous</AutoTranslate>
-            </button>
-
-            {totalPages > 0 && getPageNumbers().map((page) => (
+            <div className="flex justify-end gap-4">
               <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                  }`}
+                onClick={() => {
+                  setBulkShareModalVisible(false);
+                  setShareRecipients([]);
+                  setShareEndTime("");
+                }}
+                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+                disabled={isBulkSharing}
               >
-                {page}
+                <AutoTranslate>Cancel</AutoTranslate>
               </button>
-            ))}
-
-            <span className="text-sm text-gray-700 mx-2">
-              <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-            </span>
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <AutoTranslate>Next</AutoTranslate>
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
-            <div className="ml-4">
-              <span className="text-sm text-gray-700">
-                <AutoTranslate>
-                  {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-                </AutoTranslate>
-              </span>
+              <button
+                onClick={confirmBulkDocumentShare}
+                disabled={isBulkSharing || shareRecipients.length === 0}
+                className={`px-4 py-2 rounded-md text-white ${(isBulkSharing || shareRecipients.length === 0)
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700'} transition-colors flex items-center`}
+              >
+                {isBulkSharing ? (
+                  <>
+                    <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                    <AutoTranslate>Sharing...</AutoTranslate>
+                  </>
+                ) : (
+                  <>
+                    <ShareIcon className="h-4 w-4 mr-2" />
+                    <AutoTranslate>Share {selectedDocuments.length} Document(s)</AutoTranslate>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* View Shares Modal */}
+      {viewSharesModalVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">
+                <AutoTranslate>Shared Access</AutoTranslate>
+              </h2>
+              <button
+                onClick={() => setViewSharesModalVisible(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            {selectedDocShares.length === 0 ? (
+              <div className="text-center py-8">
+                <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                <p className="text-gray-500">
+                  <AutoTranslate>No shares found for this document</AutoTranslate>
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border p-2 text-left">
+                        <AutoTranslate>SN</AutoTranslate>
+                      </th>
+                      <th className="border p-2 text-left">
+                        <AutoTranslate>Shared To</AutoTranslate>
+                      </th>
+                      <th className="border p-2 text-left">
+                        <AutoTranslate>Files Shared</AutoTranslate>
+                      </th>
+                      <th className="border p-2 text-left">
+                        <AutoTranslate>Shared Date</AutoTranslate>
+                      </th>
+                      <th className="border p-2 text-left">
+                        <AutoTranslate>Expiration Time</AutoTranslate>
+                      </th>
+                      <th className="border p-2 text-left">
+                        <AutoTranslate>Status</AutoTranslate>
+                      </th>
+                      <th className="border p-2 text-left">
+                        <AutoTranslate>Actions</AutoTranslate>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedDocShares.map((share, index) => (
+                      <tr key={share.id} className="hover:bg-gray-50">
+                        <td className="border p-2">{index + 1}</td>
+                        <td className="border p-2">{share.sharedToName}</td>
+                        <td className="border p-2">
+
+                          {share.sharedFileNames && share.sharedFileNames.length > 0 && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {share.sharedFileNames.slice(0, 2).map((name, i) => (
+                                <div key={i}>{name}</div>
+                              ))}
+                              {share.sharedFileNames.length > 2 && (
+                                <div>... and {share.sharedFileNames.length - 2} more</div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="border p-2">{formatDateTime(share.sharedDate)}</td>
+                        <td className="border p-2">
+                          {share.endTime ? formatDateTime(share.endTime) : "Permanent"}
+                        </td>
+                        <td className="border p-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                            {share.isExpired ? 'Expired' : 'Active'}
+                          </span>
+                        </td>
+                        <td className="border p-2">
+                          <button
+                            onClick={() => handleRevokeShare(share)}
+                            disabled={share.isExpired}
+                            className={`px-3 py-1 rounded text-sm ${share.isExpired
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              }`}
+                          >
+                            <AutoTranslate>Revoke</AutoTranslate>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Revoke Share Confirmation Modal */}
+      {revokeShareModalVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">
+              <AutoTranslate>Revoke Share Access</AutoTranslate>
+            </h2>
+            <div className="mb-4">
+              <p className="mb-2">
+                <AutoTranslate>Are you sure you want to revoke access for:</AutoTranslate>
+              </p>
+              <p className="font-semibold">{shareToRevoke?.sharedToName}</p>
+              <p className="text-sm text-gray-600 mt-1">
+                <AutoTranslate>Document:</AutoTranslate> {shareToRevoke?.documentName}
+              </p>
+              <p className="text-sm text-gray-600">
+                <AutoTranslate>Files shared:</AutoTranslate> {shareToRevoke?.totalFilesShared || 1}
+              </p>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <AutoTranslate>Reason (Optional)</AutoTranslate>
+              </label>
+              <textarea
+                value={revokeReason}
+                onChange={(e) => setRevokeReason(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="3"
+                placeholder="Enter reason for revoking access..."
+              />
+            </div>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setRevokeShareModalVisible(false);
+                  setShareToRevoke(null);
+                  setRevokeReason("");
+                }}
+                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+              >
+                <AutoTranslate>Cancel</AutoTranslate>
+              </button>
+              <button
+                onClick={confirmRevokeShare}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+              >
+                <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+                <AutoTranslate>Revoke Access</AutoTranslate>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
