@@ -336,7 +336,7 @@ const FileCompare = () => {
         try {
           const text = await error.response.data.text()
           console.error("Server error response:", text)
-        } catch (e) {}
+        } catch (e) { }
       }
       return null
     }
@@ -867,7 +867,7 @@ const FileCompare = () => {
 
     return (
       <div className="relative w-full" ref={dropdownRef}>
-        <div className="flex gap-2 mb-2">
+        <div className="grid grid-col-2 flex gap-2 mb-2">
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             <input
@@ -891,16 +891,17 @@ const FileCompare = () => {
             )}
           </div>
 
-          <select
-            value={selectedCategory}
-            onChange={handleCategoryChange}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 min-w-max"
-          >
-            <option value=""><AutoTranslate>All Categories</AutoTranslate></option>
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </select>
+
+          <div className="form-group">
+             <select
+              value={selectedCategory}
+              onChange={handleCategoryChange}>
+              <option value=""><AutoTranslate>All Categories</AutoTranslate></option>
+              {categoryOptions.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {selectedFileNo && (
@@ -977,24 +978,26 @@ const FileCompare = () => {
       </div>
     )
   }
+ 
 
   // ============================================================
   // RENDER
   // ============================================================
   return (
-    <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>File Compare</AutoTranslate>
-      </h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={popupMessage.onClose}
-          />
-        )}
+    <div className="px-2-">
+      <div className="title">
+        <h1><AutoTranslate>File Compare</AutoTranslate></h1>
+      </div>
 
+      {popupMessage && (
+        <Popup
+          message={popupMessage.message}
+          type={popupMessage.type}
+          onClose={popupMessage.onClose}
+        />
+      )}
+
+      <div className="card">
         {warningMessage && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start">
             <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />
@@ -1002,8 +1005,8 @@ const FileCompare = () => {
           </div>
         )}
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="mb-4 p-4 rounded-lg" style={{ background: "rgb(0 0 0/0.05)" }}>
+          <div className="grid-cols-1 lg:grid-cols-2 gap-8" style={{display:"grid"}}>
             {/* First File */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -1105,11 +1108,10 @@ const FileCompare = () => {
             <button
               onClick={compareFiles}
               disabled={isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2}
-              className={`bg-blue-900 text-white rounded-2xl px-6 py-3 text-sm flex items-center justify-center transition-all ${
-                isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2
+              className={`bg-blue-900 text-white rounded-2xl px-6 py-3 text-sm flex items-center justify-center transition-all ${isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:bg-blue-800 hover:scale-105"
-              }`}
+                }`}
             >
               {isComparing ? (
                 <>
@@ -1409,14 +1411,14 @@ function VisualDiffPanel({ leftUrl, rightUrl, leftName, rightName }) {
       for (let i = 0; i < aData.data.length; i += 4) {
         const r1 = aData.data[i], g1 = aData.data[i + 1], b1 = aData.data[i + 2]
         const r2 = bData.data[i], g2 = bData.data[i + 1], b2 = bData.data[i + 2]
-        const diff = Math.sqrt((r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2)
+        const diff = Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2)
         if (diff <= threshold) {
-          out.data[i] = r1; out.data[i+1] = g1; out.data[i+2] = b1; out.data[i+3] = 255
+          out.data[i] = r1; out.data[i + 1] = g1; out.data[i + 2] = b1; out.data[i + 3] = 255
         } else {
           out.data[i] = Math.min(255, r1 + (255 - r1) * 0.8)
-          out.data[i+1] = Math.max(0, g1 * 0.3)
-          out.data[i+2] = Math.max(0, b1 * 0.3)
-          out.data[i+3] = 255
+          out.data[i + 1] = Math.max(0, g1 * 0.3)
+          out.data[i + 2] = Math.max(0, b1 * 0.3)
+          out.data[i + 3] = 255
         }
       }
       ctx.putImageData(out, 0, 0)
@@ -1437,8 +1439,10 @@ function VisualDiffPanel({ leftUrl, rightUrl, leftName, rightName }) {
           <div style={{ display: 'flex', gap: '8px' }}>
             {['overlay', 'pixel'].map(m => (
               <button key={m} onClick={() => setMode(m)}
-                style={{ padding: '4px 12px', borderRadius: '4px', fontSize: '14px', border: 'none', cursor: 'pointer',
-                  background: mode === m ? '#2563eb' : '#f3f4f6', color: mode === m ? 'white' : '#374151' }}>
+                style={{
+                  padding: '4px 12px', borderRadius: '4px', fontSize: '14px', border: 'none', cursor: 'pointer',
+                  background: mode === m ? '#2563eb' : '#f3f4f6', color: mode === m ? 'white' : '#374151'
+                }}>
                 {m === 'overlay' ? 'Overlay' : 'Pixel Diff'}
               </button>
             ))}
@@ -1554,8 +1558,10 @@ function TextDiffPanel({ leftContent, rightContent, differences, leftName, right
           <div style={{ display: 'flex', gap: '8px' }}>
             {['full-document', 'differences-only'].map(mode => (
               <button key={mode} onClick={() => setViewMode(mode)}
-                style={{ padding: '4px 12px', borderRadius: '4px', fontSize: '12px', border: 'none', cursor: 'pointer',
-                  background: viewMode === mode ? '#2563eb' : '#f3f4f6', color: viewMode === mode ? 'white' : '#374151' }}>
+                style={{
+                  padding: '4px 12px', borderRadius: '4px', fontSize: '12px', border: 'none', cursor: 'pointer',
+                  background: viewMode === mode ? '#2563eb' : '#f3f4f6', color: viewMode === mode ? 'white' : '#374151'
+                }}>
                 {mode === 'full-document' ? 'Full Document' : 'Differences Only'}
               </button>
             ))}
@@ -1607,9 +1613,11 @@ function TextDiffPanel({ leftContent, rightContent, differences, leftName, right
                   background: diff.type === 'ADDED' ? '#f0fdf4' : diff.type === 'DELETED' ? '#fef2f2' : '#fffbeb'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 500,
+                    <span style={{
+                      padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 500,
                       background: diff.type === 'ADDED' ? '#dcfce7' : diff.type === 'DELETED' ? '#fee2e2' : '#fef9c3',
-                      color: diff.type === 'ADDED' ? '#166534' : diff.type === 'DELETED' ? '#991b1b' : '#854d0e' }}>
+                      color: diff.type === 'ADDED' ? '#166534' : diff.type === 'DELETED' ? '#991b1b' : '#854d0e'
+                    }}>
                       {diff.type}
                     </span>
                     <span style={{ fontSize: '12px', color: '#6b7280' }}>

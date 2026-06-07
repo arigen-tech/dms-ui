@@ -1453,7 +1453,6 @@ const ApprovedDoc = () => {
             </label>
             <select
               id="itemsPerPage"
-              className="dropIcon"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -1696,6 +1695,57 @@ const ApprovedDoc = () => {
             </tbody>
 
           </table>
+          {/* Pagination Controls */}
+          <div className="paginationWp">
+            <div className="items">
+              <div className="paginationText">
+                <span className="text-sm text-gray-700">
+                  <AutoTranslate>
+                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                  </AutoTranslate>
+                </span>
+                {/* Page Count Info */}
+                <span className="text-sm text-gray-700 mx-2">
+                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                </span>
+              </div>
+            </div>
+            <div className="items">
+              <div className="paginationBtn">
+                {/* Previous Button */}
+                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1 || totalPages === 0}
+                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                  {/* <AutoTranslate>Previous</AutoTranslate> */}
+                  <IoIosArrowBack />
+                </button>
+
+                {/* Page Number Buttons */}
+                {totalPages > 0 && getPageNumbers().map((page) => (
+                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                    {page}
+                  </button>
+                ))}
+
+                {/* Next Button */}
+                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  {/* <AutoTranslate>Next</AutoTranslate> */}
+                  {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                  <IoIosArrowForward />
+                </button>
+              </div>
+            </div>
+
+          </div>
+
         </div>
 
         <FilePreviewModal
@@ -1707,58 +1757,6 @@ const ApprovedDoc = () => {
           fileName={selectedDocFile?.docName}
           fileData={selectedDocFile}
         />
-
-
-        {/* Pagination Controls */}
-        <div className="paginationWp">
-          <div className="items">
-            <div className="paginationText">
-              <span className="text-sm text-gray-700">
-                <AutoTranslate>
-                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
-                </AutoTranslate>
-              </span>
-              {/* Page Count Info */}
-              <span className="text-sm text-gray-700 mx-2">
-                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
-              </span>
-            </div>
-          </div>
-          <div className="items">
-            <div className="paginationBtn">
-              {/* Previous Button */}
-              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1 || totalPages === 0}
-                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-              >
-                {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
-                {/* <AutoTranslate>Previous</AutoTranslate> */}
-                <IoIosArrowBack />
-              </button>
-
-              {/* Page Number Buttons */}
-              {totalPages > 0 && getPageNumbers().map((page) => (
-                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
-                  {page}
-                </button>
-              ))}
-
-              {/* Next Button */}
-              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-              >
-                {/* <AutoTranslate>Next</AutoTranslate> */}
-                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
-                <IoIosArrowForward />
-              </button>
-            </div>
-          </div>
-
-        </div>
 
       </div>
 
@@ -1793,20 +1791,7 @@ const ApprovedDoc = () => {
                   </p>
                 </div>
               )}
-
-
               <div className="headerRight">
-                {/* Print Button */}
-                {/* <button className="printBtn hover:text-gray-700- no-print-" onClick={printPage} title="Print">
-                <PrinterIcon className="h-6 w-6" />
-              </button> */}
-
-                {/* Close Button */}
-                {/* <button className="closeBtn hover:text-gray-700- no-print" onClick={closeModal} title="Close">
-                 <MdOutlineClose />
-              </button> */}
-
-
                 <button
                   onClick={() => handlePrintReport(selectedDoc?.id)}
                   className="printBtn"
@@ -1877,23 +1862,22 @@ const ApprovedDoc = () => {
                 </div>
 
                 {/* Attached Files Section */}
-                <div className="AAAAA border-t border-gray-200 pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <div className="attachedWp relative">
                     <h2 className="mb-0">
                       <AutoTranslate>Attached Files</AutoTranslate>
-                      <span className="ml-2 text-sm font-normal text-gray-600">
+                      <span className="text-sm font-normal text-gray-600">
                         ({selectedFiles.length} selected for trash, {selectedFileIds.length} selected for sharing)
                       </span>
                     </h2>
                     <div className="flex items-center gap-4">
-                      <div className="relative w-full sm:w-64">
-                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <div className="form-group">
                         <input
                           type="text"
                           placeholder="Search files..."
                           value={searchFileTerm}
                           onChange={(e) => setSearchFileTerm(e.target.value)}
-                          className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="searchIcon"
                         />
                       </div>
 
@@ -2325,294 +2309,40 @@ const ApprovedDoc = () => {
 
       {/* Confirmation Modal for Bulk Document Deletion (main table) */}
       {bulkDocDeleteModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">
-              <AutoTranslate>Bulk Move to Trash</AutoTranslate>
-            </h2>
-            <p className="mb-4">
-              <AutoTranslate>Are you sure you want to move all approved files from {selectedDocuments.length} document(s) to trash?</AutoTranslate>
-              <br />
-              <small className="text-gray-600">
-                <AutoTranslate>This will move only APPROVED files from the selected documents to trash.</AutoTranslate>
-              </small>
-            </p>
-            <ul className="mb-4 max-h-40 overflow-y-auto">
-              {selectedDocuments.slice(0, 5).map((doc, index) => {
-                const approvedFilesCount = doc.documentDetails?.filter(file =>
-                  !file.isDeleted && file.status === "APPROVED"
-                ).length || 0;
-                return (
-                  <li key={index} className="text-sm text-gray-600 truncate">
-                    • {doc.title} ({approvedFilesCount} approved file{approvedFilesCount !== 1 ? 's' : ''})
-                  </li>
-                );
-              })}
-              {selectedDocuments.length > 5 && (
-                <li className="text-sm text-gray-500">
-                  ... and {selectedDocuments.length - 5} more
-                </li>
-              )}
-            </ul>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setBulkDocDeleteModalVisible(false)}
-                className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
-                disabled={isBulkDocDeleting}
-              >
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
-              <button
-                onClick={confirmBulkDocumentDelete}
-                disabled={isBulkDocDeleting}
-                className={`px-4 py-2 rounded-md text-white ${isBulkDocDeleting
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700'} transition-colors`}
-              >
-                {isBulkDocDeleting ? (
-                  <AutoTranslate>Processing...</AutoTranslate>
-                ) : (
-                  <AutoTranslate>Move All to Trash</AutoTranslate>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
 
-      {/* Share Document Modal (Single Document) */}
-      {shareModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">
-              <AutoTranslate>Share Document</AutoTranslate>
-            </h2>
-
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">
-                <AutoTranslate>Document:</AutoTranslate> {documentToShare?.title}
-              </p>
-              <p className="text-sm text-gray-600">
-                <AutoTranslate>Selected {selectedFileIds.length} file(s) to share with employees in your department.</AutoTranslate>
-              </p>
-              <p className="text-sm text-blue-600 mt-1">
-                <AutoTranslate>You can change which files to share by checking/unchecking files in the document details.</AutoTranslate>
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <AutoTranslate>Select Employees</AutoTranslate>
-              </label>
-              {loadingEmployees ? (
-                <div className="flex items-center">
-                  <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                  <AutoTranslate>Loading employees...</AutoTranslate>
-                </div>
-              ) : (
-                <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
-                  {availableEmployees.length === 0 ? (
-                    <p className="text-sm text-gray-500">
-                      <AutoTranslate>No other employees in this department</AutoTranslate>
-                    </p>
-                  ) : (
-                    availableEmployees.map(emp => (
-                      <div key={emp.id} className="flex items-center mb-2">
-                        <input
-                          type="checkbox"
-                          id={`emp-${emp.id}`}
-                          checked={shareRecipients.includes(emp.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setShareRecipients([...shareRecipients, emp.id]);
-                            } else {
-                              setShareRecipients(shareRecipients.filter(id => id !== emp.id));
-                            }
-                          }}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        />
-                        <label htmlFor={`emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
-                          {emp.name} ({emp.email})
-                        </label>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center">
-                  <ClockIcon className="h-4 w-4 mr-1" />
-                  <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
-                </div>
-              </label>
-
-              <div className="grid grid-cols-2 gap-3 mb-2">
-                {/* Date Picker */}
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    <AutoTranslate>Date</AutoTranslate>
-                  </label>
-                  <input
-                    type="date"
-                    value={shareDate}
-                    onChange={(e) => {
-                      setShareDate(e.target.value);
-                      if (!e.target.value) {
-                        setShareTime("");
-                      } else if (e.target.value === new Date().toISOString().split('T')[0]) {
-                        // If selecting today, auto-select next available time
-                        const nextTime = getNextAvailableTime();
-                        setShareTime(`${nextTime.hour}:${nextTime.minute}`);
-                      }
-                    }}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Time Picker */}
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    <AutoTranslate>Time</AutoTranslate>
-                  </label>
-                  <select
-                    value={shareTime}
-                    onChange={(e) => setShareTime(e.target.value)}
-                    disabled={!shareDate}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">--:--</option>
-                    {generateTimeOptions().map((time, index) => (
-                      <option
-                        key={index}
-                        value={time.value}
-                        disabled={time.disabled}
-                        className={time.disabled ? 'text-gray-400 bg-gray-100' : ''}
-                      >
-                        {time.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Bulk Move to Trash</AutoTranslate></h2>
               </div>
-
-              {/* Display selected date-time */}
-              {shareDate && shareTime && (
-                <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200 mb-2">
-                  <AutoTranslate>Selected:</AutoTranslate> {shareDate} {shareTime}
-                  {(() => {
-                    const selectedDateTime = new Date(`${shareDate}T${shareTime}`);
-                    const now = new Date();
-                    if (selectedDateTime < now) {
-                      return (
-                        <span className="text-red-600 ml-2">
-                          <ExclamationTriangleIcon className="h-4 w-4 inline mr-1" />
-                          <AutoTranslate>(Past time!)</AutoTranslate>
-                        </span>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              )}
-
-              <div className="flex items-center mt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const now = new Date();
-                    setShareDate(now.toISOString().split('T')[0]);
-                    const nextTime = getNextAvailableTime();
-                    setShareTime(`${nextTime.hour}:${nextTime.minute}`);
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-                >
-                  <ClockIcon className="h-4 w-4 mr-1" />
-                  <AutoTranslate>Set to next available time</AutoTranslate>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShareDate("");
-                    setShareTime("");
-                  }}
-                  className="ml-4 text-sm text-gray-600 hover:text-gray-800 flex items-center"
-                >
-                  <XMarkIcon className="h-4 w-4 mr-1" />
-                  <AutoTranslate>Clear</AutoTranslate>
+              <div className="headerRight">
+                {/* Close Button */}
+                <button className="closeBtn" onClick={() => setBulkDocDeleteModalVisible(false)} disabled={isBulkDocDeleting} title="Close">
+                  <MdOutlineClose />
                 </button>
               </div>
 
-              <p className="text-xs text-gray-500 mt-2">
-                <AutoTranslate>Leave empty for permanent access</AutoTranslate>
-              </p>
             </div>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => {
-                  setShareModalVisible(false);
-                  setDocumentToShare(null);
-                  setShareRecipients([]);
-                  setShareEndTime("");
-                  setSelectedFileIds([]);
-                }}
-                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
-                disabled={sharingDocument}
-              >
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
-              <button
-                onClick={handleShareSubmit}
-                disabled={sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0}
-                className={`px-4 py-2 rounded-md text-white ${(sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0)
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'} transition-colors flex items-center`}
-              >
-                {sharingDocument ? (
-                  <>
-                    <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
-                    <AutoTranslate>Sharing...</AutoTranslate>
-                  </>
-                ) : (
-                  <>
-                    <ShareIcon className="h-4 w-4 mr-2" />
-                    <AutoTranslate>Share {selectedFileIds.length} File(s)</AutoTranslate>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Bulk Share Document Modal */}
-      {bulkShareModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">
-              <AutoTranslate>Bulk Share Documents</AutoTranslate>
-            </h2>
-
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">
-                <AutoTranslate>Sharing all approved files from {selectedDocuments.length} document(s) with employees in your department.</AutoTranslate>
-              </p>
-
-              <div className="mb-3">
-                <p className="text-sm font-medium text-gray-700">
-                  <AutoTranslate>Selected Documents:</AutoTranslate>
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <p className="mb-4">
+                  <AutoTranslate>Are you sure you want to move all approved files from {selectedDocuments.length} document(s) to trash?</AutoTranslate>
+                  <br />
+                  <small className="text-gray-600">
+                    <AutoTranslate>This will move only APPROVED files from the selected documents to trash.</AutoTranslate>
+                  </small>
                 </p>
-                <ul className="max-h-32 overflow-y-auto border rounded-lg p-2 mt-1">
+                <ul className="mb-4 max-h-40 overflow-y-auto">
                   {selectedDocuments.slice(0, 5).map((doc, index) => {
-                    const approvedFilesCount = doc.documentDetails?.filter(f =>
-                      f.status === "APPROVED" && !f.isDeleted
+                    const approvedFilesCount = doc.documentDetails?.filter(file =>
+                      !file.isDeleted && file.status === "APPROVED"
                     ).length || 0;
                     return (
-                      <li key={doc.id} className="text-sm text-gray-600 truncate">
+                      <li key={index} className="text-sm text-gray-600 truncate">
                         • {doc.title} ({approvedFilesCount} approved file{approvedFilesCount !== 1 ? 's' : ''})
                       </li>
                     );
@@ -2623,206 +2353,527 @@ const ApprovedDoc = () => {
                     </li>
                   )}
                 </ul>
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => setBulkDocDeleteModalVisible(false)}
+                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                    disabled={isBulkDocDeleting}
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={confirmBulkDocumentDelete}
+                    disabled={isBulkDocDeleting}
+                    className={`px-4 py-2 rounded-md text-white ${isBulkDocDeleting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700'} transition-colors`}
+                  >
+                    {isBulkDocDeleting ? (
+                      <AutoTranslate>Processing...</AutoTranslate>
+                    ) : (
+                      <AutoTranslate>Move All to Trash</AutoTranslate>
+                    )}
+                  </button>
+                </div>
               </div>
-
-              <p className="text-sm text-blue-600">
-                <AutoTranslate>This will share ALL approved files from each selected document.</AutoTranslate>
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <AutoTranslate>Select Employees</AutoTranslate>
-              </label>
-              {loadingEmployees ? (
-                <div className="flex items-center">
-                  <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                  <AutoTranslate>Loading employees...</AutoTranslate>
-                </div>
-              ) : (
-                <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
-                  {availableEmployees.length === 0 ? (
-                    <p className="text-sm text-gray-500">
-                      <AutoTranslate>No other employees in this department</AutoTranslate>
-                    </p>
-                  ) : (
-                    availableEmployees.map(emp => (
-                      <div key={emp.id} className="flex items-center mb-2">
-                        <input
-                          type="checkbox"
-                          id={`bulk-emp-${emp.id}`}
-                          checked={shareRecipients.includes(emp.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setShareRecipients([...shareRecipients, emp.id]);
-                            } else {
-                              setShareRecipients(shareRecipients.filter(id => id !== emp.id));
-                            }
-                          }}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        />
-                        <label htmlFor={`bulk-emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
-                          {emp.name} ({emp.email})
-                        </label>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center">
-                  <ClockIcon className="h-4 w-4 mr-1" />
-                  <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
-                </div>
-              </label>
-              <input
-                type="datetime-local"
-                value={shareEndTime}
-                onChange={(e) => setShareEndTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min={getMinDateTime()} // FIXED: This prevents past dates/times
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                <AutoTranslate>Leave empty for permanent access</AutoTranslate>
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => {
-                  setBulkShareModalVisible(false);
-                  setShareRecipients([]);
-                  setShareEndTime("");
-                }}
-                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
-                disabled={isBulkSharing}
-              >
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
-              <button
-                onClick={confirmBulkDocumentShare}
-                disabled={isBulkSharing || shareRecipients.length === 0}
-                className={`px-4 py-2 rounded-md text-white ${(isBulkSharing || shareRecipients.length === 0)
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700'} transition-colors flex items-center`}
-              >
-                {isBulkSharing ? (
-                  <>
-                    <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
-                    <AutoTranslate>Sharing...</AutoTranslate>
-                  </>
-                ) : (
-                  <>
-                    <ShareIcon className="h-4 w-4 mr-2" />
-                    <AutoTranslate>Share {selectedDocuments.length} Document(s)</AutoTranslate>
-                  </>
-                )}
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* View Shares Modal */}
-      {viewSharesModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">
-                <AutoTranslate>Shared Access</AutoTranslate>
-              </h2>
-              <button
-                onClick={() => setViewSharesModalVisible(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <XMarkIcon className="h-6 w-6" />
-              </button>
+      {/* Share Document Modal (Single Document) */}
+      {shareModalVisible && (
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
+
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Share Document</AutoTranslate></h2>
+              </div>
+              <div className="headerRight">
+                {/* Close Button */}
+                <button className="closeBtn" onClick={() => {
+                  setShareModalVisible(false);
+                  setDocumentToShare(null);
+                  setShareRecipients([]);
+                  setShareEndTime("");
+                  setSelectedFileIds([]);
+                }} disabled={sharingDocument} title="Close">
+                  <MdOutlineClose />
+                </button>
+              </div>
+
             </div>
 
-            {selectedDocShares.length === 0 ? (
-              <div className="text-center py-8">
-                <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-500">
-                  <AutoTranslate>No shares found for this document</AutoTranslate>
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="border p-2 text-left">
-                        <AutoTranslate>SN</AutoTranslate>
-                      </th>
-                      <th className="border p-2 text-left">
-                        <AutoTranslate>Shared To</AutoTranslate>
-                      </th>
-                      <th className="border p-2 text-left">
-                        <AutoTranslate>Files Shared</AutoTranslate>
-                      </th>
-                      <th className="border p-2 text-left">
-                        <AutoTranslate>Shared Date</AutoTranslate>
-                      </th>
-                      <th className="border p-2 text-left">
-                        <AutoTranslate>Expiration Time</AutoTranslate>
-                      </th>
-                      <th className="border p-2 text-left">
-                        <AutoTranslate>Status</AutoTranslate>
-                      </th>
-                      <th className="border p-2 text-left">
-                        <AutoTranslate>Actions</AutoTranslate>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedDocShares.map((share, index) => (
-                      <tr key={share.id} className="hover:bg-gray-50">
-                        <td className="border p-2">{index + 1}</td>
-                        <td className="border p-2">{share.sharedToName}</td>
-                        <td className="border p-2">
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <AutoTranslate>Document:</AutoTranslate> {documentToShare?.title}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <AutoTranslate>Selected {selectedFileIds.length} file(s) to share with employees in your department.</AutoTranslate>
+                  </p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    <AutoTranslate>You can change which files to share by checking/unchecking files in the document details.</AutoTranslate>
+                  </p>
+                </div>
 
-                          {share.sharedFileNames && share.sharedFileNames.length > 0 && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {share.sharedFileNames.slice(0, 2).map((name, i) => (
-                                <div key={i}>{name}</div>
-                              ))}
-                              {share.sharedFileNames.length > 2 && (
-                                <div>... and {share.sharedFileNames.length - 2} more</div>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="border p-2">{formatDateTime(share.sharedDate)}</td>
-                        <td className="border p-2">
-                          {share.endTime ? formatDateTime(share.endTime) : "Permanent"}
-                        </td>
-                        <td className="border p-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                            }`}>
-                            {share.isExpired ? 'Expired' : 'Active'}
-                          </span>
-                        </td>
-                        <td className="border p-2">
-                          <button
-                            onClick={() => handleRevokeShare(share)}
-                            disabled={share.isExpired}
-                            className={`px-3 py-1 rounded text-sm ${share.isExpired
-                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                              : 'bg-red-100 text-red-700 hover:bg-red-200'
-                              }`}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <AutoTranslate>Select Employees</AutoTranslate>
+                  </label>
+                  {loadingEmployees ? (
+                    <div className="flex items-center">
+                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                      <AutoTranslate>Loading employees...</AutoTranslate>
+                    </div>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
+                      {availableEmployees.length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          <AutoTranslate>No other employees in this department</AutoTranslate>
+                        </p>
+                      ) : (
+                        availableEmployees.map(emp => (
+                          <div key={emp.id} className="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              id={`emp-${emp.id}`}
+                              checked={shareRecipients.includes(emp.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setShareRecipients([...shareRecipients, emp.id]);
+                                } else {
+                                  setShareRecipients(shareRecipients.filter(id => id !== emp.id));
+                                }
+                              }}
+                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                            />
+                            <label htmlFor={`emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
+                              {emp.name} ({emp.email})
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="flex items-center">
+                      <ClockIcon className="h-4 w-4 mr-1" />
+                      <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
+                    </div>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3 mb-2">
+                    {/* Date Picker */}
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        <AutoTranslate>Date</AutoTranslate>
+                      </label>
+                      <input
+                        type="date"
+                        value={shareDate}
+                        onChange={(e) => {
+                          setShareDate(e.target.value);
+                          if (!e.target.value) {
+                            setShareTime("");
+                          } else if (e.target.value === new Date().toISOString().split('T')[0]) {
+                            // If selecting today, auto-select next available time
+                            const nextTime = getNextAvailableTime();
+                            setShareTime(`${nextTime.hour}:${nextTime.minute}`);
+                          }
+                        }}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Time Picker */}
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        <AutoTranslate>Time</AutoTranslate>
+                      </label>
+                      <select
+                        value={shareTime}
+                        onChange={(e) => setShareTime(e.target.value)}
+                        disabled={!shareDate}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">--:--</option>
+                        {generateTimeOptions().map((time, index) => (
+                          <option
+                            key={index}
+                            value={time.value}
+                            disabled={time.disabled}
+                            className={time.disabled ? 'text-gray-400 bg-gray-100' : ''}
                           >
-                            <AutoTranslate>Revoke</AutoTranslate>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            {time.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Display selected date-time */}
+                  {shareDate && shareTime && (
+                    <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200 mb-2">
+                      <AutoTranslate>Selected:</AutoTranslate> {shareDate} {shareTime}
+                      {(() => {
+                        const selectedDateTime = new Date(`${shareDate}T${shareTime}`);
+                        const now = new Date();
+                        if (selectedDateTime < now) {
+                          return (
+                            <span className="text-red-600 ml-2">
+                              <ExclamationTriangleIcon className="h-4 w-4 inline mr-1" />
+                              <AutoTranslate>(Past time!)</AutoTranslate>
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  )}
+
+                  <div className="flex items-center mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        setShareDate(now.toISOString().split('T')[0]);
+                        const nextTime = getNextAvailableTime();
+                        setShareTime(`${nextTime.hour}:${nextTime.minute}`);
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                    >
+                      <ClockIcon className="h-4 w-4 mr-1" />
+                      <AutoTranslate>Set to next available time</AutoTranslate>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShareDate("");
+                        setShareTime("");
+                      }}
+                      className="ml-4 text-sm text-gray-600 hover:text-gray-800 flex items-center"
+                    >
+                      <XMarkIcon className="h-4 w-4 mr-1" />
+                      <AutoTranslate>Clear</AutoTranslate>
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-2">
+                    <AutoTranslate>Leave empty for permanent access</AutoTranslate>
+                  </p>
+                </div>
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => {
+                      setShareModalVisible(false);
+                      setDocumentToShare(null);
+                      setShareRecipients([]);
+                      setShareEndTime("");
+                      setSelectedFileIds([]);
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+                    disabled={sharingDocument}
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={handleShareSubmit}
+                    disabled={sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0}
+                    className={`px-4 py-2 rounded-md text-white ${(sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0)
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'} transition-colors flex items-center`}
+                  >
+                    {sharingDocument ? (
+                      <>
+                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                        <AutoTranslate>Sharing...</AutoTranslate>
+                      </>
+                    ) : (
+                      <>
+                        <ShareIcon className="h-4 w-4 mr-2" />
+                        <AutoTranslate>Share {selectedFileIds.length} File(s)</AutoTranslate>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Share Document Modal */}
+      {bulkShareModalVisible && (
+          <div className="overlayModal">
+            <div className="document-modal modal-md">
+
+              {/* Header */}
+              <div className="modal-header">
+                <div className="modal-title">
+                  <h2><AutoTranslate>Bulk Share Documents</AutoTranslate></h2>
+                </div>
+                <div className="headerRight">
+                  {/* Close Button */}
+                  <button className="closeBtn" onClick={() => {
+                    setBulkShareModalVisible(false);
+                    setShareRecipients([]);
+                    setShareEndTime("");
+                  }} disabled={isBulkSharing} title="Close">
+                    <MdOutlineClose />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal body Content */}
+              <div className="modal-body">
+                <div className="bodyScroller print:overflow-visible print:max-h-none">
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-2">
+                      <AutoTranslate>Sharing all approved files from {selectedDocuments.length} document(s) with employees in your department.</AutoTranslate>
+                    </p>
+
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-700">
+                        <AutoTranslate>Selected Documents:</AutoTranslate>
+                      </p>
+                      <ul className="max-h-32 overflow-y-auto border rounded-lg p-2 mt-1">
+                        {selectedDocuments.slice(0, 5).map((doc, index) => {
+                          const approvedFilesCount = doc.documentDetails?.filter(f =>
+                            f.status === "APPROVED" && !f.isDeleted
+                          ).length || 0;
+                          return (
+                            <li key={doc.id} className="text-sm text-gray-600 truncate">
+                              • {doc.title} ({approvedFilesCount} approved file{approvedFilesCount !== 1 ? 's' : ''})
+                            </li>
+                          );
+                        })}
+                        {selectedDocuments.length > 5 && (
+                          <li className="text-sm text-gray-500">
+                            ... and {selectedDocuments.length - 5} more
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+
+                    <p className="text-sm text-blue-600">
+                      <AutoTranslate>This will share ALL approved files from each selected document.</AutoTranslate>
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <AutoTranslate>Select Employees</AutoTranslate>
+                    </label>
+                    {loadingEmployees ? (
+                      <div className="flex items-center">
+                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                        <AutoTranslate>Loading employees...</AutoTranslate>
+                      </div>
+                    ) : (
+                      <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
+                        {availableEmployees.length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            <AutoTranslate>No other employees in this department</AutoTranslate>
+                          </p>
+                        ) : (
+                          availableEmployees.map(emp => (
+                            <div key={emp.id} className="flex items-center mb-2">
+                              <input
+                                type="checkbox"
+                                id={`bulk-emp-${emp.id}`}
+                                checked={shareRecipients.includes(emp.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setShareRecipients([...shareRecipients, emp.id]);
+                                  } else {
+                                    setShareRecipients(shareRecipients.filter(id => id !== emp.id));
+                                  }
+                                }}
+                                className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                              />
+                              <label htmlFor={`bulk-emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
+                                {emp.name} ({emp.email})
+                              </label>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="flex items-center">
+                        <ClockIcon className="h-4 w-4 mr-1" />
+                        <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
+                      </div>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={shareEndTime}
+                      onChange={(e) => setShareEndTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min={getMinDateTime()} // FIXED: This prevents past dates/times
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      <AutoTranslate>Leave empty for permanent access</AutoTranslate>
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => {
+                        setBulkShareModalVisible(false);
+                        setShareRecipients([]);
+                        setShareEndTime("");
+                      }}
+                      className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+                      disabled={isBulkSharing}
+                    >
+                      <AutoTranslate>Cancel</AutoTranslate>
+                    </button>
+                    <button
+                      onClick={confirmBulkDocumentShare}
+                      disabled={isBulkSharing || shareRecipients.length === 0}
+                      className={`px-4 py-2 rounded-md text-white ${(isBulkSharing || shareRecipients.length === 0)
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-green-600 hover:bg-green-700'} transition-colors flex items-center`}
+                    >
+                      {isBulkSharing ? (
+                        <>
+                          <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                          <AutoTranslate>Sharing...</AutoTranslate>
+                        </>
+                      ) : (
+                        <>
+                          <ShareIcon className="h-4 w-4 mr-2" />
+                          <AutoTranslate>Share {selectedDocuments.length} Document(s)</AutoTranslate>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+      )}
+
+      {/* View Shares Modal */}
+      {viewSharesModalVisible && (
+        <div className="overlayModal">
+          <div className="document-modal">
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2>
+                  <AutoTranslate>Shared Access</AutoTranslate>
+                </h2>
+              </div>
+              <div className="headerRight">
+                {/* Close Button */}
+                <button
+                  onClick={() => setViewSharesModalVisible(false)}
+                  className="closeBtn"
+                >
+                  <MdOutlineClose />
+                </button>
+              </div>
+            </div>
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                {selectedDocShares.length === 0 ? (
+                  <div className="text-center py-8">
+                    <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                    <p className="text-gray-500">
+                      <AutoTranslate>No shares found for this document</AutoTranslate>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="table-wrapper">
+                    <table className="">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="text-center">
+                            <AutoTranslate>SN</AutoTranslate>
+                          </th>
+                          <th>
+                            <AutoTranslate>Shared To</AutoTranslate>
+                          </th>
+                          <th>
+                            <AutoTranslate>Files Shared</AutoTranslate>
+                          </th>
+                          <th>
+                            <AutoTranslate>Shared Date</AutoTranslate>
+                          </th>
+                          <th>
+                            <AutoTranslate>Expiration Time</AutoTranslate>
+                          </th>
+                          <th>
+                            <AutoTranslate>Status</AutoTranslate>
+                          </th>
+                          <th className="text-center">
+                            <AutoTranslate>Actions</AutoTranslate>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedDocShares.map((share, index) => (
+                          <tr key={share.id} className="hover:bg-gray-50">
+                            <td className="text-center">{index + 1}</td>
+                            <td>{share.sharedToName}</td>
+                            <td>
+
+                              {share.sharedFileNames && share.sharedFileNames.length > 0 && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {share.sharedFileNames.slice(0, 2).map((name, i) => (
+                                    <div key={i}>{name}</div>
+                                  ))}
+                                  {share.sharedFileNames.length > 2 && (
+                                    <div>... and {share.sharedFileNames.length - 2} more</div>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td>{formatDateTime(share.sharedDate)}</td>
+                            <td>
+                              {share.endTime ? formatDateTime(share.endTime) : "Permanent"}
+                            </td>
+                            <td>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                }`}>
+                                {share.isExpired ? 'Expired' : 'Active'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="btn-center">
+                                <button
+                                  onClick={() => handleRevokeShare(share)}
+                                  disabled={share.isExpired}
+                                  className={`delBtn ${share.isExpired ? 'cursor-not-allowed' : ''}`}>
+                                  <TrashIcon />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+            </div>
           </div>
         </div>
       )}

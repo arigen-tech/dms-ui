@@ -104,13 +104,17 @@ body {
     position: relative;
 
     & label {
-        display: inline-block;
+        display: block;
         font-size: 16px;
         color: var(--black-color-80);
         line-height: 1.5;
         font-weight: 400;
         margin-bottom: 5px;
+        & .required{
+            color: var(--close-color);
+        }
     }
+    
 
     & input,
     & select,
@@ -132,7 +136,7 @@ body {
         height: 40px;
     }
 
-    & select.dropIcon {
+    & select {
         background: var(--white-color) url(../src/Assets/icons/arrow-down-icon.svg) no-repeat right center;
         -webkit-appearance: none;
         -moz-appearance: none;
@@ -164,8 +168,8 @@ body {
     & select:disabled,
     & select[disabled] {
         background-color: rgb(0 0 0/0.08);
+        /* pointer-events: none; */
         cursor: not-allowed;
-        pointer-events: none;
         opacity: 0.60;
     }
 }
@@ -218,11 +222,18 @@ header {
         }
     }
 
-    & .mainHeading {
-        font-size: 16px;
-        color: var(--black-color-80);
-        font-weight: 600;
+    & .itemToggleBtn {
+        display: flex;
+        align-items: center;
+
+        & .mainHeading {
+            font-size: 16px;
+            color: var(--black-color-80);
+            font-weight: 600;
+        }
     }
+
+
 
     & .topRightMenu {
         display: flex;
@@ -691,6 +702,14 @@ footer {
 main {
     padding-top: 15px !important;
 
+    h1 {
+        font-size: 20px;
+        color: var(--black-color-80);
+        font-weight: 600;
+        line-height: 1.75rem;
+        margin-bottom: 15px;
+    }
+
     h2 {
         font-size: 20px;
         color: var(--black-color-80);
@@ -1022,6 +1041,7 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 15px;
 
     & .paginationBtn {
         display: flex;
@@ -1143,7 +1163,7 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 30;
+    z-index: 9999;
     position: fixed;
     /* left: 0;
     top: 0;
@@ -1165,11 +1185,12 @@ main {
         padding: 12px 20px;
         border-radius: 8px 8px 0px 0px;
 
-        & .modal-title{
+        & .modal-title {
             display: flex;
             align-items: center;
             gap: 15px;
-            & h2{
+
+            & h2 {
                 margin-bottom: 0;
             }
         }
@@ -1211,7 +1232,7 @@ main {
     }
 
 
-    
+
 
     & .modal-body {
         padding: 12px;
@@ -1289,8 +1310,17 @@ main {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+
+            & h2 {
+                display: flex;
+                flex-direction: column;
+            }
         }
     }
+}
+
+.modal-md {
+    width: 30rem;
 }
 
 .pendingStyle {

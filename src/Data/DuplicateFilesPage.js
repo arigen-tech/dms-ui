@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
   DocumentDuplicateIcon,
   TrashIcon,
@@ -26,7 +27,7 @@ import { DOCUMENTHEADER_API, API_HOST } from "../API/apiConfig"
 import LoadingComponent from '../Components/LoadingComponent'
 import Popup from '../Components/Popup'
 import AutoTranslate from '../i18n/AutoTranslate'
-import exportDuplicateReport from "./exportDuplicateReport" 
+import exportDuplicateReport from "./exportDuplicateReport"
 
 const tokenKey = "tokenKey"
 
@@ -571,64 +572,68 @@ const DuplicateFilesPage = () => {
   // RENDER
   // ============================================================
   return (
-    <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>Duplicate File</AutoTranslate>
-      </h1>
+    <div className="px-2-">
+      <div className="title">
+        <h1><AutoTranslate>Duplicate File</AutoTranslate></h1>
+      </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        {popupMessage && (
-          <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
-        )}
+      {popupMessage && (
+        <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
+      )}
+
+      <div className="card">
 
         {/* Search and Pagination Controls */}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="grid grid-col-4 mb-4">
 
-  {/* Show items */}
-  <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/3">
-    <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
-      <AutoTranslate>Show:</AutoTranslate>
-    </label>
-    <select
-      id="itemsPerPage"
-      className="border rounded-r-lg p-1.5 outline-none w-full"
-      value={itemsPerPage}
-      onChange={(e) => {
-        setItemsPerPage(Number(e.target.value))
-        setCurrentPage(1)
-      }}
-    >
-      {[5, 10, 15, 20].map((num) => (
-        <option key={num} value={num}>
-          {num}
-        </option>
-      ))}
-    </select>
-  </div>
+          {/* Show items */}
+          <div className="form-group ">
+            <label htmlFor="itemsPerPage">
+              <AutoTranslate>Show:</AutoTranslate>
+            </label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value))
+                setCurrentPage(1)
+              }}
+            >
+              {[5, 10, 15, 20].map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
+              ))}
+            </select>
+          </div>
 
-  {/* Search */}
-  <div className="flex items-center w-full md:w-1/3 flex-1">
-    <input
-      type="text"
-      placeholder="Search duplicate files..."
-      className="border rounded-l-md p-1 outline-none w-full"
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-    />
-    <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
-  </div>
+          {/* Search */}
+          <div className="form-group ">
+            <label htmlFor="searchId">
+              <AutoTranslate>Search</AutoTranslate>
+            </label>
+            <input
+              type="text"
+              id="searchId"
+              placeholder="Search duplicate files..."
+              className="searchIcon"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-  {/* Export Button */}
-  <div className="w-full md:w-auto flex justify-end">
-    <button
-      onClick={() => exportDuplicateReport(duplicateGroups)}
-      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow transition"
-    >
-      Export Report
-    </button>
-  </div>
+          {/* Export Button */}
+          <div className="form-group">
+            <label htmlFor="searchId">
+              &nbsp;
+            </label>
+            <button className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow transition"
+              onClick={() => exportDuplicateReport(duplicateGroups)}>
+              Export Report
+            </button>
+          </div>
 
-</div>
+        </div>
 
         {/* Duplicate Groups List */}
         <div className="space-y-4">
@@ -765,47 +770,53 @@ const DuplicateFilesPage = () => {
           )}
         </div>
 
-        {/* Pagination */}
+
+        {/* Pagination Controls */}
         {totalPages > 0 && (
-          <div className="flex items-center mt-4">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1 || totalPages === 0}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              <AutoTranslate>Previous</AutoTranslate>
-            </button>
-
-            {getPageNumbers().map(page => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"}`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <span className="text-sm text-gray-700 mx-2">
-              <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-            </span>
-
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
-            >
-              <AutoTranslate>Next</AutoTranslate>
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
-
-            <div className="ml-4">
-              <span className="text-sm text-gray-700">
-                {totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, totalItems)} / {totalItems}
-              </span>
+            <div className="paginationWp">
+            <div className="items">
+              <div className="paginationText">
+                <span className="text-sm text-gray-700">
+                  <AutoTranslate>
+                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                  </AutoTranslate>
+                </span>
+                {/* Page Count Info */}
+                <span className="text-sm text-gray-700 mx-2">
+                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                </span>
+              </div>
             </div>
-          </div>
+            <div className="items">
+              <div className="paginationBtn">
+                {/* Previous Button */}
+                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1 || totalPages === 0}
+                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  <IoIosArrowBack />
+                </button>
+
+                {/* Page Number Buttons */}
+                {totalPages > 0 && getPageNumbers().map((page) => (
+                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                    {page}
+                  </button>
+                ))}
+
+                {/* Next Button */}
+                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  <IoIosArrowForward />
+                </button>
+              </div>
+            </div>
+          </div> 
         )}
 
         {/* Bulk Actions Bar */}

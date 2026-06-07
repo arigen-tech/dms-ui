@@ -554,11 +554,8 @@ const Approve = () => {
   return (
     <div className="">
       <div className="title">
-        <h2>
-          <AutoTranslate>Pending Documents</AutoTranslate>
-        </h2>
+        <h1><AutoTranslate>Pending Documents</AutoTranslate></h1>
       </div>
-
 
       {popupMessage && (
         <Popup
@@ -567,6 +564,7 @@ const Approve = () => {
           onClose={popupMessage.onClose}
         />
       )}
+
       <div className="card">
         <div className="grid grid-col-4 mb-4">
           {/* Items Per Page (50%) */}
@@ -576,7 +574,6 @@ const Approve = () => {
             </label>
             <select
               id="itemsPerPage"
-              className="dropIcon"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -598,7 +595,6 @@ const Approve = () => {
             </label>
             <select
               id="branchFilter"
-              className="dropIcon"
               value={branchFilter}
               onChange={(e) => {
                 setBranchFilter(e.target.value);
@@ -622,7 +618,6 @@ const Approve = () => {
             </label>
             <select
               id="departmentFilter"
-              className="dropIcon"
               value={departmentFilter}
               onChange={(e) => {
                 setDepartmentFilter(e.target.value);
@@ -650,7 +645,6 @@ const Approve = () => {
               type="text"
               id="searchId"
               placeholder="Search..."
-              className="searchIcon"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -757,244 +751,292 @@ const Approve = () => {
             </tbody>
           </table>
 
+          {/* Pagination Controls */}
+          <div className="paginationWp">
+            <div className="items">
+              <div className="paginationText">
+                <span className="text-sm text-gray-700">
+                  <AutoTranslate>
+                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                  </AutoTranslate>
+                </span>
+                {/* Page Count Info */}
+                <span className="text-sm text-gray-700 mx-2">
+                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                </span>
+              </div>
+            </div>
+            <div className="items">
+              <div className="paginationBtn">
+                {/* Previous Button */}
+                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1 || totalPages === 0}
+                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                  {/* <AutoTranslate>Previous</AutoTranslate> */}
+                  <IoIosArrowBack />
+                </button>
 
+                {/* Page Number Buttons */}
+                {totalPages > 0 && getPageNumbers().map((page) => (
+                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                    {page}
+                  </button>
+                ))}
 
-          <>
-            {isOpen && selectedDoc && (
-              <div className="overlayModal">
-                <div className="document-modal">
+                {/* Next Button */}
+                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  {/* <AutoTranslate>Next</AutoTranslate> */}
+                  {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                  <IoIosArrowForward />
+                </button>
+              </div>
+            </div>
 
-                  {/* Header */}
-                  <div className="modal-header">
-                    <div className="modal-title">
-                      <div className="flex items-center space-x-2">
-                        <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
-                        <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
-                      </div>
-                        <h2><AutoTranslate>Document Information</AutoTranslate></h2>
+          </div>
+        </div>
+
+        <>
+          {isOpen && selectedDoc && (
+            <div className="overlayModal">
+              <div className="document-modal">
+                {/* Header */}
+                <div className="modal-header">
+                  <div className="modal-title">
+                    <div className="flex items-center space-x-2">
+                      <p className="text-lg font-extrabold text-indigo-600 border-b-4 border-indigo-600">D</p>
+                      <p className="text-lg font-extrabold text-indigo-600 border-t-4 border-indigo-600">MS</p>
                     </div>
-                    <div className="headerRight">
-                      <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-                        <strong><AutoTranslate>Uploaded Date:</AutoTranslate></strong> {formatDate(selectedDoc?.createdOn)}
-                      </p>
-                      {/* Print Button */}
-                      <button className="printBtn" onClick={printPage} title="Print">
-                        <PrinterIcon className="h-6 w-6" />
-                      </button>
-
-                      {/* Close Button */}
-                      <button className="closeBtn" onClick={closeModal} title="Close">
-                        <MdOutlineClose />
-                      </button>
-                    </div>
-
+                    <h2><AutoTranslate>Document Information</AutoTranslate></h2>
                   </div>
+                  <div className="headerRight">
+                    <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+                      <strong><AutoTranslate>Uploaded Date:</AutoTranslate></strong> {formatDate(selectedDoc?.createdOn)}
+                    </p>
+                    {/* Print Button */}
+                    <button className="printBtn" onClick={printPage} title="Print">
+                      <PrinterIcon className="h-6 w-6" />
+                    </button>
 
-                  {/* Modal body Content */}
-                  <div className="modal-body">
-                    <div className="bodyScroller print:overflow-visible print:max-h-none">
-                      {/* Document Details */}
-                      <div className="top-section">
-                        <div className="info-card">
-                          <div class="info-grid">
-                            {[
-                              { label: "Branch", value: selectedDoc?.employee?.branch?.name },
-                              { label: "Department", value: selectedDoc?.employee?.department?.name },
-                              { label: "File No.", value: selectedDoc?.fileNo },
-                              { label: "Title", value: selectedDoc?.title },
-                              { label: "Subject", value: selectedDoc?.subject },
-                              {
-                                label: "Category",
-                                value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>,
-                              },
-                              // { label: "Status", value: selectedDoc?.approvalStatus },
-                              { label: "Upload By", value: selectedDoc?.employee?.name },
-                            ].map((item, idx) => (
-                              <p key={idx} className="text-md text-gray-700">
-                                <AutoTranslate>{item.label}</AutoTranslate> <AutoTranslate>{item.value || "N/A"}</AutoTranslate>
-                              </p>
-                            ))}
+                    {/* Close Button */}
+                    <button className="closeBtn" onClick={closeModal} title="Close">
+                      <MdOutlineClose />
+                    </button>
+                  </div>
+                </div>
 
-                          </div>
-
-                        </div>
-                        {/* QR Code */}
-                        <div className="qr-card">
-                          <h2 className="mb-4"><AutoTranslate>QR Code:</AutoTranslate></h2>
-
-                          {selectedDoc?.qrPath ? (
-                            <>
-                              <div className="imgWp">
-                                <img src={qrCodeUrl} alt="QR Code" />
-                              </div>
-                              <button
-                                onClick={downloadQRCode}
-                                className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
-                              >
-                                <AutoTranslate>Download</AutoTranslate>
-                              </button>
-                            </>
-                          ) : (
-                            <p className="text-gray-500">
-                              <AutoTranslate>No QR code available</AutoTranslate>
+                {/* Modal body Content */}
+                <div className="modal-body">
+                  <div className="bodyScroller print:overflow-visible print:max-h-none">
+                    {/* Document Details */}
+                    <div className="top-section">
+                      <div className="info-card">
+                        <div class="info-grid">
+                          {[
+                            { label: "Branch", value: selectedDoc?.employee?.branch?.name },
+                            { label: "Department", value: selectedDoc?.employee?.department?.name },
+                            { label: "File No.", value: selectedDoc?.fileNo },
+                            { label: "Title", value: selectedDoc?.title },
+                            { label: "Subject", value: selectedDoc?.subject },
+                            {
+                              label: "Category",
+                              value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate>,
+                            },
+                            // { label: "Status", value: selectedDoc?.approvalStatus },
+                            { label: "Upload By", value: selectedDoc?.employee?.name },
+                          ].map((item, idx) => (
+                            <p key={idx} className="text-md text-gray-700">
+                              <AutoTranslate>{item.label}</AutoTranslate> <AutoTranslate>{item.value || "N/A"}</AutoTranslate>
                             </p>
-                          )}
+                          ))}
+
                         </div>
                       </div>
+                      {/* QR Code */}
+                      <div className="qr-card">
+                        <h2 className="mb-4"><AutoTranslate>QR Code:</AutoTranslate></h2>
+                        {selectedDoc?.qrPath ? (
+                          <>
+                            <div className="imgWp">
+                              <img src={qrCodeUrl} alt="QR Code" />
+                            </div>
+                            <button
+                              onClick={downloadQRCode}
+                              className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 no-print"
+                            >
+                              <AutoTranslate>Download</AutoTranslate>
+                            </button>
+                          </>
+                        ) : (
+                          <p className="text-gray-500">
+                            <AutoTranslate>No QR code available</AutoTranslate>
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-                      {/* Attached Files */}
-                      <div className="mt-8">
-                        <div className="attachedWp relative">
-                          <h2 className="mb-0">
-                            <AutoTranslate>Attached Files</AutoTranslate>
-                          </h2>
+                    {/* Attached Files */}
+                    <div className="mt-8">
+                      <div className="attachedWp relative">
+                        <h2 className="mb-0">
+                          <AutoTranslate>Attached Files</AutoTranslate>
+                        </h2>
+                        <div className="form-group">
                           <input
                             type="text"
                             placeholder="Search Files..."
                             value={searchFileTerm}
                             onChange={(e) => setSearchFileTerm(e.target.value)}
                             maxLength={20}
-                            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
+                            className="searchIcon"
                           />
                         </div>
 
-                        {loadingFiles ? (
-                          <div className="flex justify-center items-center py-6">
-                            <div className="w-6 h-6 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
-                            <span className="ml-2 text-gray-600">
-                              <AutoTranslate>Loading files...</AutoTranslate>
+                      </div>
+
+                      {loadingFiles ? (
+                        <div className="flex justify-center items-center py-6">
+                          <div className="w-6 h-6 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+                          <span className="ml-2 text-gray-600">
+                            <AutoTranslate>Loading files...</AutoTranslate>
+                          </span>
+                        </div>
+                      ) : selectedDoc && filteredDocFiles.length > 0 ? (
+                        <div className="border border-gray-200 rounded-lg shadow-sm">
+                          {/* Table Header */}
+                          <div className="grid grid-cols-8 bg-gray-100 text-gray-700 font-semibold text-sm px-4 py-2 sticky top-0">
+                            <span className="col-span-3 text-left">
+                              <AutoTranslate>File Name</AutoTranslate>
+                            </span>
+                            <span className="text-center">
+                              <AutoTranslate>Year</AutoTranslate>
+                            </span>
+                            <span className="text-center">
+                              <AutoTranslate>Version</AutoTranslate>
+                            </span>
+                            <span className="text-center">
+                              <AutoTranslate>Status</AutoTranslate>
+                            </span>
+                            <span className="text-center no-print">
+                              <AutoTranslate>Action</AutoTranslate>
+                            </span>
+                            <span className="text-center no-print">
+                              <AutoTranslate>Open</AutoTranslate>
                             </span>
                           </div>
-                        ) : selectedDoc && filteredDocFiles.length > 0 ? (
-                          <div className="border border-gray-200 rounded-lg shadow-sm">
-                            {/* Table Header */}
-                            <div className="grid grid-cols-8 bg-gray-100 text-gray-700 font-semibold text-sm px-4 py-2 sticky top-0">
-                              <span className="col-span-3 text-left">
-                                <AutoTranslate>File Name</AutoTranslate>
-                              </span>
-                              <span className="text-center">
-                                <AutoTranslate>Year</AutoTranslate>
-                              </span>
-                              <span className="text-center">
-                                <AutoTranslate>Version</AutoTranslate>
-                              </span>
-                              <span className="text-center">
-                                <AutoTranslate>Status</AutoTranslate>
-                              </span>
-                              <span className="text-center no-print">
-                                <AutoTranslate>Action</AutoTranslate>
-                              </span>
-                              <span className="text-center no-print">
-                                <AutoTranslate>Open</AutoTranslate>
-                              </span>
-                            </div>
 
-                            {/* File List */}
-                            <ul
-                              className={`divide-y divide-gray-200 ${printTrue === false && filteredDocFiles.length > 5
-                                ? "max-h-72 overflow-y-auto print:max-h-none print:overflow-visible"
-                                : ""
-                                }`}
-                            >
-                              {filteredDocFiles.map((file, index) => (
-                                <li
-                                  key={index}
-                                  className="grid grid-cols-8 items-center px-4 py-3 hover:bg-indigo-50 transition duration-200"
-                                >
-                                  {/* File Name */}
-                                  <div className="col-span-3 text-left text-gray-800 flex items-center">
-                                    <strong className="mr-2">{index + 1}.</strong>
-                                    <span className="truncate">{file.docName}</span>
-                                  </div>
+                          {/* File List */}
+                          <ul
+                            className={`divide-y divide-gray-200 ${printTrue === false && filteredDocFiles.length > 5
+                              ? "max-h-72 overflow-y-auto print:max-h-none print:overflow-visible"
+                              : ""
+                              }`}
+                          >
+                            {filteredDocFiles.map((file, index) => (
+                              <li
+                                key={index}
+                                className="grid grid-cols-8 items-center px-4 py-3 hover:bg-indigo-50 transition duration-200"
+                              >
+                                {/* File Name */}
+                                <div className="col-span-3 text-left text-gray-800 flex items-center">
+                                  <strong className="mr-2">{index + 1}.</strong>
+                                  <span className="truncate">{file.docName}</span>
+                                </div>
 
-                                  {/* Year */}
-                                  <div className="text-center text-gray-700">{file.year}</div>
+                                {/* Year */}
+                                <div className="text-center text-gray-700">{file.year}</div>
 
-                                  {/* Version */}
-                                  <div className="text-center text-gray-700">{file.version}</div>
+                                {/* Version */}
+                                <div className="text-center text-gray-700">{file.version}</div>
 
-                                  {/* Status */}
-                                  <div className="text-center">
-                                    <span
-                                      className={`px-2 py-1 text-xs rounded-full font-medium
+                                {/* Status */}
+                                <div className="text-center">
+                                  <span
+                                    className={`px-2 py-1 text-xs rounded-full font-medium
                             ${file.status === "APPROVED"
-                                          ? "bg-green-100 text-green-700"
-                                          : file.status === "REJECTED"
-                                            ? "bg-red-100 text-red-700"
-                                            : "bg-yellow-100 text-yellow-700"
-                                        }`}
-                                    >
-                                      {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                    </span>
-                                  </div>
+                                        ? "bg-green-100 text-green-700"
+                                        : file.status === "REJECTED"
+                                          ? "bg-red-100 text-red-700"
+                                          : "bg-yellow-100 text-yellow-700"
+                                      }`}
+                                  >
+                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                                  </span>
+                                </div>
 
-                                  {/* Select Dropdown */}
-                                  <div className="text-center no-print">
-                                    <select
-                                      className="border px-2 py-1 rounded-md"
-                                      onChange={(e) => handleStatusChange(file, e.target.value)}
-                                      disabled={file.status === "APPROVED" || file.status === "REJECTED"}
-                                    >
-                                      <option value=""><AutoTranslate>Select</AutoTranslate></option>
-                                      <option value="APPROVED"><AutoTranslate>APPROVED</AutoTranslate></option>
-                                      <option value="REJECTED"><AutoTranslate>REJECTED</AutoTranslate></option>
-                                    </select>
-                                  </div>
+                                {/* Select Dropdown */}
+                                <div className="text-center no-print">
+                                  <select
+                                    className="border px-2 py-1 rounded-md"
+                                    onChange={(e) => handleStatusChange(file, e.target.value)}
+                                    disabled={file.status === "APPROVED" || file.status === "REJECTED"}
+                                  >
+                                    <option value=""><AutoTranslate>Select</AutoTranslate></option>
+                                    <option value="APPROVED"><AutoTranslate>APPROVED</AutoTranslate></option>
+                                    <option value="REJECTED"><AutoTranslate>REJECTED</AutoTranslate></option>
+                                  </select>
+                                </div>
 
 
-                                  {/* Open Button */}
-                                  <div className="flex justify-center no-print">
-                                    <button
-                                      onClick={() => {
-                                        setOpeningFileIndex(index);
-                                        setSelectedDocFiles(file);
-                                        openFile(file).finally(() => setOpeningFileIndex(null));
-                                        // Use handleDownload with "view" action for opening
-                                        // handleDownload(file, "view").finally(() => setOpeningFileIndex(null));
-                                      }}
-                                      disabled={openingFileIndex !== null}
-                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                                {/* Open Button */}
+                                <div className="flex justify-center no-print">
+                                  <button
+                                    onClick={() => {
+                                      setOpeningFileIndex(index);
+                                      setSelectedDocFiles(file);
+                                      openFile(file).finally(() => setOpeningFileIndex(null));
+                                      // Use handleDownload with "view" action for opening
+                                      // handleDownload(file, "view").finally(() => setOpeningFileIndex(null));
+                                    }}
+                                    disabled={openingFileIndex !== null}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
       ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                    >
-                                      {openingFileIndex === index ? (
-                                        <>
-                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                          <AutoTranslate>
-                                            {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-                                          </AutoTranslate>
-                                        </>
-                                      ) : (
-                                        <>
-                                          {file.ltoArchived && !file.restored ? (
-                                            <ArrowPathIcon className="h-3 w-3" />
-                                          ) : (
-                                            <EyeIcon className="h-3 w-3" />
-                                          )}
-                                          <AutoTranslate>
-                                            {file.ltoArchived && !file.restored ? "Restore" : "View"}
-                                          </AutoTranslate>
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 mt-4 text-center">
-                            <AutoTranslate>No attached files available.</AutoTranslate>
-                          </p>
-                        )}
-                      </div>
+                                  >
+                                    {openingFileIndex === index ? (
+                                      <>
+                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                        </AutoTranslate>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {file.ltoArchived && !file.restored ? (
+                                          <ArrowPathIcon className="h-3 w-3" />
+                                        ) : (
+                                          <EyeIcon className="h-3 w-3" />
+                                        )}
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+                                        </AutoTranslate>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 mt-4 text-center">
+                          <AutoTranslate>No attached files available.</AutoTranslate>
+                        </p>
+                      )}
                     </div>
-
                   </div>
+
                 </div>
               </div>
-            )}
-          </>
-        </div>
+            </div>
+          )}
+        </>
 
         <FilePreviewModal
           isOpen={isModalOpen}
@@ -1005,56 +1047,7 @@ const Approve = () => {
           fileName={selectedDocFile?.docName}
           fileData={selectedDocFile}
         />
-        {/* Pagination Controls */}
-        <div className="paginationWp">
-          <div className="items">
-            <div className="paginationText">
-              <span className="text-sm text-gray-700">
-                <AutoTranslate>
-                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
-                </AutoTranslate>
-              </span>
-              {/* Page Count Info */}
-              <span className="text-sm text-gray-700 mx-2">
-                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
-              </span>
-            </div>
-          </div>
-          <div className="items">
-            <div className="paginationBtn">
-              {/* Previous Button */}
-              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1 || totalPages === 0}
-                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-              >
-                {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
-                {/* <AutoTranslate>Previous</AutoTranslate> */}
-                <IoIosArrowBack />
-              </button>
 
-              {/* Page Number Buttons */}
-              {totalPages > 0 && getPageNumbers().map((page) => (
-                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
-                  {page}
-                </button>
-              ))}
-
-              {/* Next Button */}
-              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-              >
-                {/* <AutoTranslate>Next</AutoTranslate> */}
-                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
-                <IoIosArrowForward />
-              </button>
-            </div>
-          </div>
-
-        </div>
       </div>
 
       {isConfirmModalOpen && (

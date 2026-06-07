@@ -262,13 +262,13 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
           onClose={handleClose}
         />
       )}
-      <div className="flex items-center w-full- justify-between- md:justify-start-">
+      <div className="itemToggleBtn">
         <button onClick={toggleSidebar} className="menuBtn" >
           <CgMenuRight />
         </button>
-        <h1 className="mainHeading font-bold- text-lg- mb-1.5-">
+        <div className="mainHeading">
           <AutoTranslate>Document Management System</AutoTranslate>
-        </h1>
+        </div>
       </div>
 
       <div className="topRightMenu">

@@ -541,11 +541,7 @@ function Dashboard() {
     <Layout>
       <div className="flex flex-col min-h-full w-full bg-slate-100">
         <div className="title">
-          <h2>
-            <AutoTranslate>Dashboard</AutoTranslate>
-            {/* <Icon icon="gravity-ui:branches-down" />
-            <Icon icon="charm:organisation" /> */}
-          </h2>
+          <h1><AutoTranslate>Dashboard</AutoTranslate></h1>
         </div>
 
         <div className="dashboardGrid">
