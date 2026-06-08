@@ -358,7 +358,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
         {/* Profile Dropdown */}
         <div className="dropdown-toggle" ref={dropdownRef}>
           <button className="dropDownIcon" onClick={() => setDropdownOpen(!dropdownOpen)}>
-            <span>{UserName}</span>
+            {UserName && <span>{UserName}</span>}
             <img
               src={imageSrc || adminPhoto}
               onError={(e) => (e.currentTarget.src = adminPhoto)}

@@ -110,11 +110,12 @@ body {
         line-height: 1.5;
         font-weight: 400;
         margin-bottom: 5px;
-        & .required{
+
+        & .required {
             color: var(--close-color);
         }
     }
-    
+
 
     & input,
     & select,
@@ -350,6 +351,14 @@ header {
                 top: 50%;
                 margin-top: -4px;
                 background: url("../src/Assets/icons/dropdown-icon.svg");
+                transform: rotate(-90deg);
+                transition: all .35s ease-in-out;
+            }
+            &:hover{
+                &::after{
+                    transform: rotate(-0deg);
+
+                }
             }
         }
 
