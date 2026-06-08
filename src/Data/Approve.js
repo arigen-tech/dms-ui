@@ -749,9 +749,9 @@ const Approve = () => {
               )}
 
             </tbody>
-          </table>
-
-          {/* Pagination Controls */}
+          </table>          
+        </div>
+        {/* Pagination Controls */}
           <div className="paginationWp">
             <div className="items">
               <div className="paginationText">
@@ -799,9 +799,7 @@ const Approve = () => {
                 </button>
               </div>
             </div>
-
           </div>
-        </div>
 
         <>
           {isOpen && selectedDoc && (
@@ -831,14 +829,13 @@ const Approve = () => {
                     </button>
                   </div>
                 </div>
-
                 {/* Modal body Content */}
                 <div className="modal-body">
                   <div className="bodyScroller print:overflow-visible print:max-h-none">
                     {/* Document Details */}
                     <div className="top-section">
                       <div className="info-card">
-                        <div class="info-grid">
+                        <div className="info-grid">
                           {[
                             { label: "Branch", value: selectedDoc?.employee?.branch?.name },
                             { label: "Department", value: selectedDoc?.employee?.department?.name },

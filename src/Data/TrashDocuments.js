@@ -830,7 +830,6 @@ const TrashDoc = () => {
             </div>
           </div>
         )}
-
         <div className="table-wrapper">
           <table className="">
             <thead>
@@ -953,9 +952,9 @@ const TrashDoc = () => {
                 </tr>
               )}
             </tbody>
-          </table>
-
-          {/* Pagination Controls */}
+          </table>          
+        </div>
+        {/* Pagination Controls */}
           <div className="paginationWp">
             <div className="items">
               <div className="paginationText">
@@ -1005,7 +1004,6 @@ const TrashDoc = () => {
             </div>
 
           </div>
-        </div>
 
         <FilePreviewModal
           isOpen={isModalOpen}
@@ -1052,7 +1050,7 @@ const TrashDoc = () => {
                 {/* Document Details */}
                 <div className="top-section">
                   <div className="info-card">
-                    <div class="info-grid">
+                    <div className="info-grid">
                       {[
                         { label: "Branch", value: selectedDoc?.employee?.branch?.name },
                         { label: "Department", value: selectedDoc?.employee?.department?.name },

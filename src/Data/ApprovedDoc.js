@@ -1694,8 +1694,9 @@ const ApprovedDoc = () => {
               )}
             </tbody>
 
-          </table>
-          {/* Pagination Controls */}
+          </table>   
+        </div>
+        {/* Pagination Controls */}
           <div className="paginationWp">
             <div className="items">
               <div className="paginationText">
@@ -1745,8 +1746,6 @@ const ApprovedDoc = () => {
             </div>
 
           </div>
-
-        </div>
 
         <FilePreviewModal
           isOpen={isModalOpen}
@@ -1806,7 +1805,6 @@ const ApprovedDoc = () => {
                   <XMarkIcon className="h-5 w-5" />
                 </button>
               </div>
-
             </div>
 
             {/* Modal body Content */}
@@ -1815,7 +1813,7 @@ const ApprovedDoc = () => {
 
                 <div className="top-section">
                   <div className="info-card">
-                    <div class="info-grid">
+                    <div className="info-grid">
                       {[
                         { label: "Branch", value: selectedDoc?.branchMaster?.name },
                         { label: "Department", value: selectedDoc?.departmentMaster?.name },

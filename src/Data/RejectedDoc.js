@@ -597,7 +597,7 @@ function RejectedDoc() {
   return (
     <div className="">
       <div className="title">
-        <h1><AutoTranslate>RejectedDocuments</AutoTranslate></h1>
+        <h1><AutoTranslate>Rejected Documents</AutoTranslate></h1>
       </div>
 
       {popupMessage && (
@@ -782,56 +782,56 @@ function RejectedDoc() {
               )}
             </tbody>
           </table>
-          {/* Pagination Controls */}
-          <div className="paginationWp">
-            <div className="items">
-              <div className="paginationText">
-                <span className="text-sm text-gray-700">
-                  <AutoTranslate>
-                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
-                  </AutoTranslate>
-                </span>
-                {/* Page Count Info */}
-                <span className="text-sm text-gray-700 mx-2">
-                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
-                </span>
-              </div>
+        </div>
+        {/* Pagination Controls */}
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
             </div>
-            <div className="items">
-              <div className="paginationBtn">
-                {/* Previous Button */}
-                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1 || totalPages === 0}
-                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-                >
-                  {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
-                  {/* <AutoTranslate>Previous</AutoTranslate> */}
-                  <IoIosArrowBack />
-                </button>
-
-                {/* Page Number Buttons */}
-                {totalPages > 0 && getPageNumbers().map((page) => (
-                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
-                    {page}
-                  </button>
-                ))}
-
-                {/* Next Button */}
-                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-                >
-                  {/* <AutoTranslate>Next</AutoTranslate> */}
-                  {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
-                  <IoIosArrowForward />
-                </button>
-              </div>
-            </div>
-
           </div>
+          <div className="items">
+            <div className="paginationBtn">
+              {/* Previous Button */}
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                {/* <AutoTranslate>Previous</AutoTranslate> */}
+                <IoIosArrowBack />
+              </button>
+
+              {/* Page Number Buttons */}
+              {totalPages > 0 && getPageNumbers().map((page) => (
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                  {page}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <AutoTranslate>Next</AutoTranslate> */}
+                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+
         </div>
 
         <FilePreviewModal
@@ -881,7 +881,7 @@ function RejectedDoc() {
                   <div className="top-section">
                     {/* Information Column */}
                     <div className="info-card">
-                      <div class="info-grid">
+                      <div className="info-grid">
                         {[
                           { label: "Branch", value: selectedDoc?.branchMaster?.name },
                           { label: "Department", value: selectedDoc?.departmentMaster?.name },

@@ -1502,7 +1502,7 @@ function TextDiffPanel({ leftContent, rightContent, differences, leftName, right
       </div>
     )
 
-    if (typeof content === 'string' && content.includes('<span class="diff-')) {
+    if (typeof content === 'string' && content.includes('<span className="diff-')) {
       return <div className="highlighted-content" dangerouslySetInnerHTML={{ __html: content }} />
     }
 
