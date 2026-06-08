@@ -354,16 +354,14 @@ header {
                 transform: rotate(-90deg);
                 transition: all .35s ease-in-out;
             }
-            &:hover{
-                &::after{
-                    transform: rotate(-0deg);
-
-                }
-            }
         }
 
         & .dropdown-toggle:hover .dropDownMenu {
             display: block;
+        }
+
+        & .dropdown-toggle:hover .dropDownIcon::after {
+            transform: rotate(-0deg);
         }
     }
 }
