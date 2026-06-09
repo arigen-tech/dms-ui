@@ -15,6 +15,7 @@
     --black-bg-2: #1a1a1a;
 
     --lightBg: #f5f5f5;
+    --lightBg2: #f8fafc;
 
     --border-color-15: rgb(0 0 0/0.15);
     --bg-color-8: rgb(0 0 0/0.08);
@@ -99,6 +100,19 @@ body {
     border: solid 1px rgb(0 0 0/0.1);
 }
 
+.btn-primary{
+    background-color: var(--secondary-color);
+    border-radius: 6px;
+    font-size: 16px;
+    color: var(--white-color);
+    padding: 8px 15px;
+    border: 0;
+    transition: all 0.35s ease-in-out;
+    &:hover{
+        background-color: var(--secondary-color-hover);
+    }
+}
+
 .form-group {
     margin: 0;
     padding: 0;
@@ -174,14 +188,24 @@ body {
         cursor: not-allowed;
         opacity: 0.60;
     }
+
+    & .react-datepicker-wrapper {
+        width: 100%;
+        & .react-datepicker__close-icon::after {
+            background-color: rgb(0 0 0/ 0.05);
+            width: 30px;
+            height: 30px;
+            font-size: 20px;
+            color: var(--close-color);
+            display: flex;
+            justify-content: center;
+        }
+        & .react-datepicker__close-icon:hover::after{
+            background-color: var(--close-color);
+            color: var(--white-color);
+        }
+    }
 }
-
-
-
-
-
-
-
 
 
 /* global Css end */
@@ -574,6 +598,9 @@ footer {
         justify-content: center;
         align-items: center;
     }
+    /* .pending{
+        background-color: pink;
+    } */
 }
 
 
@@ -1032,8 +1059,16 @@ main {
             /* background-color: #f2f2f2; */
             background-color: rgb(0 0 0/0.06)
         }
+
         & .text-center {
             text-align: center !important;
+        }
+
+        & .form-group select {
+            width: auto;
+            height: 30px;
+            font-size: 14px;
+            padding: 4px 30px 4px 8px;
         }
     }
 }
@@ -1106,6 +1141,7 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     & .paginationBtn {
         display: flex;
         align-items: center;
@@ -1132,6 +1168,7 @@ main {
         & button:last-child {
             font-size: 20px;
         }
+
         & .active {
             background-color: var(--secondary-color);
             color: var(--white-color);
@@ -1140,6 +1177,7 @@ main {
                 background-color: #1C80D8;
             }
         }
+
         & button:disabled,
         & button[disabled] {
             background-color: rgb(0 0 0/0.10);
@@ -1324,14 +1362,12 @@ main {
 }
 
 .metaDataCard {
-    background: #f8fafc;
-    /* background-color: rgb(248 250 252 / 1); */
+    background: var(--lightBg2);
     padding: 15px;
     border-radius: 8px;
     border: solid 1px var(--border-color-15);
     margin-bottom: 15px;
 
-    /* & .card-wp{} */
     & .card {
         padding: 12px;
         margin-bottom: 12px;
@@ -1362,7 +1398,8 @@ main {
     align-items: center;
     gap: 5px;
     border: 0;
-    &:hover{
+
+    &:hover {
         background-color: var(--secondary-color-hover);
     }
 }
@@ -1391,15 +1428,117 @@ main {
 }
 
 
+.role-wrapper {
+    display: flex;
+    /* align-items: center; */
+    gap: 25px;
+
+    & label {
+        display: block;
+        font-weight: 600;
+        color: var(--black-color-80);
+        border-bottom: solid 1px rgb(0 0 0/ 0.10);
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+    }
+
+    & select {
+        padding-right: 4px;
+        margin-right: -4px;
+
+        & option {
+            border: solid 1px var(--border-color-15);
+            background: var(--lightBg2);
+            border: 1px solid rgb(0 0 0/ 0.10);
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: .3s;
+
+            &:hover {
+                background: #eff6ff;
+                border-color: #3b82f6;
+                transform: translateX(4px);
+            }
+        }
+
+        & option:not(:last-child) {
+            margin-bottom: 8px;
+        }
+    }
+
+    & .role-card {
+        flex: 1;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
+        border: solid 1px var(--border-color-15);
+        padding: 12px 15px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    & .listAssigned select option {
+        background: #ecfdf5;
+        border-color: #86efac;
+
+        &:hover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            transform: translateX(4px);
+        }
+    }
+
+    & .action-buttons {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 12px;
+    }
+}
+
+.cardLight {
+    background: var(--lightBg2);
+    padding: 15px;
+    border-radius: 8px;
+    border: solid 1px var(--border-color-15);
+    margin-bottom: 15px;
+}
+
+.contactNo {
+    display: flex;
+
+    & span {
+        background-color: rgb(0 0 0/0.2);
+        border-radius: 5px 0px 0px 5px;
+        padding: 5px 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    & input {
+        border-radius: 0px 5px 5px 0px;
+    }
+}
+
+
+
+
+
+
 
 
 /* aanand */
 /* transition: all .35s ease-in-out; */
 
 
-.itemEnd{
+.itemEnd {
     align-items: self-end;
     align-items: end;
+}
+
+.mb-0{
+    margin-bottom: 0 !important;
 }
 
 

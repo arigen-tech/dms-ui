@@ -5,7 +5,7 @@ import { IoDocumentText, IoArchiveSharp } from "react-icons/io5";
 import { HiUsers } from "react-icons/hi2";
 import { GoOrganization } from "react-icons/go";
 import { GrDocumentConfig } from "react-icons/gr";
-import { TbReportSearch } from "react-icons/tb";
+import { TbReportSearch, TbReport } from "react-icons/tb";
 import { MdEditDocument } from "react-icons/md";
 import { HiDocumentSearch } from "react-icons/hi";
 import { RiUserSettingsFill } from "react-icons/ri";
@@ -478,6 +478,7 @@ function Sidebar({ roleChanged }) {
       "Control And Workflow" : GrDocumentConfig, 
       Access : IoDocumentLock, 
       Rights : RiUserSettingsFill, 
+      "User Reports" : TbReport, 
     };
     
     return iconMap[name] || null; // Return null if icon not found

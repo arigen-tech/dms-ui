@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
   DOCUMENTHEADER_API,
   YEAR_API,
@@ -97,7 +98,7 @@ const DpAdminOCR = () => {
       if (userBranch && userDepartment) {
         // Store department ID for fetching documents
         setFixedDepartmentId(userDepartment.id);
-        
+
         // Fetch documents for this department
         fetchDocuments(userDepartment.id);
 
@@ -279,48 +280,51 @@ const DpAdminOCR = () => {
   }
 
   return (
-    <div className="px-4 py-6">
-     <h1 className="text-2xl font-semibold text-gray-800 mb-6">
-  <AutoTranslate>
-    {currentUserRole === DEPARTMENT_ADMIN
-      ? "Department wise (OCR) Search"
-      : "User (OCR) Search"}
-  </AutoTranslate>
-</h1>
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-lg font-medium text-gray-700 mb-4">
+    <div className="">
+      <div className="title">
+        <h1>
+          <AutoTranslate>
+            {currentUserRole === DEPARTMENT_ADMIN
+              ? "Department wise (OCR) Search"
+              : "User (OCR) Search"}
+          </AutoTranslate>
+        </h1>
+      </div>
+
+      <div className="card mb-4">
+        <h2>
           <AutoTranslate>Search Documents</AutoTranslate>
         </h2>
 
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="grid grid-col-4 mb-8">
+            <div className="form-group">
+              <label>
                 <AutoTranslate>Branch</AutoTranslate>
               </label>
-              <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100">
+              <input type="text" value={fixedBranchName || "Not assigned"} disabled />
+              {/* <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100">
                 {fixedBranchName || <AutoTranslate>Not assigned</AutoTranslate>}
-              </div>
+              </div> */}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group">
+              <label>
                 <AutoTranslate>Department</AutoTranslate>
               </label>
-              <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100">
+              <input type="text" value={fixedBranchName || "Not assigned"} disabled />
+              {/* <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100">
                 {fixedDepartmentName || <AutoTranslate>Not assigned</AutoTranslate>}
-              </div>
+              </div> */}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group">
+              <label>
                 <AutoTranslate>File Year</AutoTranslate>
               </label>
               <select
                 value={filters.year}
-                onChange={(e) => handleFilterChange("year", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
+                onChange={(e) => handleFilterChange("year", e.target.value)} >
                 <option value=""><AutoTranslate>All Years</AutoTranslate></option>
                 {years.map((year) => (
                   <option key={year.name} value={year.name}>
@@ -329,18 +333,13 @@ const DpAdminOCR = () => {
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group">
+              <label>
                 <AutoTranslate>Category</AutoTranslate>
               </label>
               <select
                 value={filters.category}
-                onChange={(e) => handleFilterChange("category", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
+                onChange={(e) => handleFilterChange("category", e.target.value)}>
                 <option value=""><AutoTranslate>All Categories</AutoTranslate></option>
                 {categories.map((category) => (
                   <option key={category.name} value={category.name}>
@@ -350,15 +349,13 @@ const DpAdminOCR = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="form-group">
+              <label>
                 <AutoTranslate>Status</AutoTranslate>
               </label>
               <select
                 value={filters.approvalStatus}
-                onChange={(e) => handleFilterChange("approvalStatus", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
+                onChange={(e) => handleFilterChange("approvalStatus", e.target.value)}>
                 <option value=""><AutoTranslate>All Statuses</AutoTranslate></option>
                 <option value="PENDING"><AutoTranslate>Pending</AutoTranslate></option>
                 <option value="APPROVED"><AutoTranslate>Approved</AutoTranslate></option>
@@ -367,35 +364,33 @@ const DpAdminOCR = () => {
             </div>
           </div>
 
-          <div className="border-t pt-4">
-            <h3 className="text-md font-medium text-gray-700 mb-3">
+          <div className="mb-4">
+            <h2 className="mb-2">
               <AutoTranslate>OCR Text Search</AutoTranslate>
-            </h3>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            </h2>
+            <div className="grid grid-col-4 itemEnd mb-4">
+              <div className="form-group">
+                <label>
                   <AutoTranslate>Search Query</AutoTranslate> <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder={getFallbackTranslation(
                     'Enter exact text to search in documents',
                     currentLanguage
                   )}
                 />
               </div>
-              <div className="flex items-end">
+              <div className="form-group">
                 <button
                   type="submit"
                   disabled={!query || !fixedDepartmentId || filteredDocuments.length === 0}
-                  className={`px-4 py-2 rounded-md text-white font-medium ${
-                    !query || !fixedDepartmentId || filteredDocuments.length === 0
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  }`}
+                  className={`w-full px-4 py-2 rounded-md text-white font-medium ${!query || !fixedDepartmentId || filteredDocuments.length === 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                    }`}
                 >
                   <AutoTranslate>Search in Documents</AutoTranslate>
                 </button>
@@ -414,9 +409,9 @@ const DpAdminOCR = () => {
       </div>
 
       {/* Documents Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-lg font-medium text-gray-700">
+      <div className="card">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="mb-0">
             <AutoTranslate>Documents</AutoTranslate> {filteredDocuments.length > 0 && `(${filteredDocuments.length})`}
           </h2>
           <div className="flex items-center">
@@ -443,47 +438,47 @@ const DpAdminOCR = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="table-wrapper">
+              <table className="">
+                <thead>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="text-center">#</th>
+                    <th>
                       <AutoTranslate>Title</AutoTranslate>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th>
                       <AutoTranslate>File No</AutoTranslate>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th>
                       <AutoTranslate>Subject</AutoTranslate>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th>
                       <AutoTranslate>Upload Date</AutoTranslate>
                     </th>
-                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {/* <th>
                       <AutoTranslate>Status</AutoTranslate>
                     </th> */}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {paginatedDocuments.map((doc, index) => (
                     <tr key={doc.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td>
                         {doc.title}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td>
                         {doc.fileNo}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {doc.subject}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td>
                         {formatDate(doc.createdOn)}
                       </td>
-                      {/* <td className="px-6 py-4 whitespace-nowrap">
+                      {/* <td>
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           doc.approvalStatus === "APPROVED"
                             ? "bg-green-100 text-green-800"
@@ -500,62 +495,49 @@ const DpAdminOCR = () => {
               </table>
             </div>
 
-            {/* Pagination */}
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    <span className="text-sm text-gray-700">
-                      <AutoTranslate>
-                        {`Here are items ${
-                          totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                        } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-                      </AutoTranslate>
-                    </span>
-                  </p>
+            {/* Pagination Controls */}
+            <div className="paginationWp">
+
+              <div className="items">
+                <div className="paginationText">
+                  <span className="text-sm text-gray-700">
+                    <AutoTranslate>
+                      {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                        } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                    </AutoTranslate>
+                  </span>
+                  {/* Page Count Info */}
+                  <span className="text-sm text-gray-700 mx-2">
+                    (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                  </span>
                 </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <button
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className="sr-only">
-                        <AutoTranslate>Previous</AutoTranslate>
-                      </span>
-                      <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="items">
+                <div className="paginationBtn">
+                  {/* Previous Button */}
+                  <button title={`${currentPage === 1 ? "End" : "Previous"}`}
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={`${currentPage === 1 ? "cursor-not-allowed" : ""}`}
+                  >
+                    <IoIosArrowBack />
+                  </button>
+                  {/* Page Number Buttons */}
+                  {getPageNumbers().map((page) => (
+                    <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                      {page}
                     </button>
+                  ))}
 
-                    {getPageNumbers().map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === page
-                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                  {/* Next Button */}
+                  <button title={`${currentPage === totalPages ? "End" : "Next"}`}
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className={`${currentPage === totalPages ? "cursor-not-allowed" : ""}`}
+                  >
+                    <IoIosArrowForward />
+                  </button>
 
-                    <button
-                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className="sr-only">
-                        <AutoTranslate>Next</AutoTranslate>
-                      </span>
-                      <ArrowRightIcon className="h-5 w-5" aria-hidden="true" />
-                    </button>
-                  </nav>
                 </div>
               </div>
             </div>

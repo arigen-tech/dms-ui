@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API_HOST } from "../../API/apiConfig";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { MdRemoveRedEye, MdOutlineClose } from "react-icons/md";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -333,24 +335,21 @@ const EmployeeRole = () => {
   }
 
   return (
-    <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>Pending Users</AutoTranslate>
-      </h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+    <div className="px-2-">
+      <div className="title">
+        <h1><AutoTranslate>Pending Users</AutoTranslate></h1>
+      </div>
+
+      <div className="card">
         {/* Header Controls */}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="grid grid-col-4 mb-6">
           {/* Items Per Page (50%) */}
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label
-              htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
-            >
+          <div className="form-group ">
+            <label htmlFor="itemsPerPage">
               <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -366,13 +365,12 @@ const EmployeeRole = () => {
           </div>
 
           {/* Branch Filter */}
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
-            <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+          <div className="form-group ">
+            <label htmlFor="branchFilter">
               <AutoTranslate>Branch</AutoTranslate>
             </label>
             <select
               id="branchFilter"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={selectedBranch}
               onChange={(e) => {
                 setSelectedBranch(e.target.value);
@@ -391,13 +389,12 @@ const EmployeeRole = () => {
 
 
           {/* Department Filter */}
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
-            <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+          <div className="form-group ">
+            <label htmlFor="departmentFilter" >
               <AutoTranslate>Department</AutoTranslate>
             </label>
             <select
               id="departmentFilter"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={selectedDepartment}
               onChange={(e) => {
                 setSelectedDepartment(e.target.value);
@@ -414,36 +411,37 @@ const EmployeeRole = () => {
             </select>
           </div>
 
-
-
           {/* Search */}
-          <div className="flex items-center w-full md:w-1/4 flex-1">
+          <div className="form-group ">
+            <label htmlFor="searchTeamId">
+              <AutoTranslate>Search</AutoTranslate>
+            </label>
             <input
               type="text"
+              id="searchTeamId"
               placeholder={translatedPlaceholders.search}
-              className="border rounded-l-md p-1 outline-none w-full"
+              className="searchIcon"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border">
+        <div className="table-wrapper">
+          <table className="">
             <thead>
-              <tr className="bg-slate-100">
-                <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Name</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Email</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Mobile No.</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Branch</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Department</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Created Date</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>CreatedBy</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Role</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Assign Role</AutoTranslate></th>
+              <tr>
+                <th className="text-center"><AutoTranslate>SN</AutoTranslate></th>
+                <th><AutoTranslate>Name</AutoTranslate></th>
+                <th><AutoTranslate>Email</AutoTranslate></th>
+                <th><AutoTranslate>Mobile No.</AutoTranslate></th>
+                <th><AutoTranslate>Branch</AutoTranslate></th>
+                <th><AutoTranslate>Department</AutoTranslate></th>
+                <th><AutoTranslate>Created Date</AutoTranslate></th>
+                <th><AutoTranslate>CreatedBy</AutoTranslate></th>
+                <th><AutoTranslate>Role</AutoTranslate></th>
+                <th className="text-center"><AutoTranslate>Assign Role</AutoTranslate></th>
               </tr>
             </thead>
             <tbody>
@@ -453,28 +451,26 @@ const EmployeeRole = () => {
                     key={user.id}
                     className={`${user.id === highlightedUserId ? 'bg-yellow-100' : ''}`}
                   >
-                    <td className="border p-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                    <td className="border p-2">{user.name}</td>
-                    <td className="border p-2">{user.email}</td>
-                    <td className="border p-2">{user.mobile}</td>
-                    <td className="border p-2">{user.branch?.name || "N/A"}</td>
-                    <td className="border p-2">{user.department?.name || "N/A"}</td>
-                    <td className="border p-2">{formatDate(user.createdOn)}</td>
-                    <td className="border p-2">{user.createdBy.name}</td>
-                    <td className="border p-2">{user.employeeType || <AutoTranslate>No Role</AutoTranslate>}</td>
-                    <td className="border p-2">
-                      <select
-                        value={selectedUser === user.id ? selectedRole : ""}
-                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                        className="w-full p-1 border rounded"
-                      >
-                        <option value="" disabled><AutoTranslate>Select Role</AutoTranslate></option>
-                        {roles.map((role) => (
-                          <option key={role.id} value={role.role}>
-                            {role.role}
-                          </option>
-                        ))}
-                      </select>
+                    <td className="text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.mobile}</td>
+                    <td>{user.branch?.name || "N/A"}</td>
+                    <td>{user.department?.name || "N/A"}</td>
+                    <td>{formatDate(user.createdOn)}</td>
+                    <td>{user.createdBy.name}</td>
+                    <td>{user.employeeType || <AutoTranslate>No Role</AutoTranslate>}</td>
+                    <td>
+                      <div className="form-group flex justify-center">
+                        <select value={selectedUser === user.id ? selectedRole : ""} onChange={(e) => handleRoleChange(user.id, e.target.value)}>
+                          <option value="" disabled><AutoTranslate>Select Role</AutoTranslate></option>
+                          {roles.map((role) => (
+                            <option key={role.id} value={role.role}>
+                              {role.role}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -489,87 +485,99 @@ const EmployeeRole = () => {
           </table>
         </div>
 
-
         {/* Pagination Controls */}
-        <div className="flex items-center mt-4">
-          {/* Previous Button */}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1 || totalPages === 0}
-            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
-          >
-            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            <AutoTranslate>Previous</AutoTranslate>
-          </button>
-
-          {/* Page Number Buttons */}
-          {totalPages > 0 && getPageNumbers().map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                }`}
-            >
-              {page}
-            </button>
-          ))}
-
-          {/* Page Count Info */}
-          <span className="text-sm text-gray-700 mx-2">
-            <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-          </span>
-
-          {/* Next Button */}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-              }`}
-          >
-            <AutoTranslate>Next</AutoTranslate>
-            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-          </button>
-          <div className="ml-4">
-            <span className="text-sm text-gray-700">
-              <AutoTranslate>
-                {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries`}
-              </AutoTranslate>
-            </span>
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
+            </div>
+          </div>
+          <div className="items">
+            <div className="paginationBtn">
+              {/* Previous Button */}
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                <IoIosArrowBack />
+              </button>
+              {/* Page Number Buttons */}
+              {totalPages > 0 && getPageNumbers().map((page) => (
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                  {page}
+                </button>
+              ))}
+              {/* Next Button */}
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <AutoTranslate>Next</AutoTranslate> */}
+                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                <IoIosArrowForward />
+              </button>
+            </div>
           </div>
         </div>
 
+
         {/* Confirmation Modal */}
         {modalVisible && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">
-                <AutoTranslate>Confirm Role Assignment</AutoTranslate>
-              </h2>
-              <p className="mb-4">
-                <AutoTranslate>
-                  Are you sure you want to assign the role {selectedRole} to {users.find((user) => user.id === selectedUser)?.name}?
-                </AutoTranslate>
-              </p>
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={() => setModalVisible(false)}
-                  className="bg-gray-300 p-2 rounded-lg hover:bg-gray-400"
-                  disabled={isSubmitting}
-                >
-                  <AutoTranslate>Cancel</AutoTranslate>
-                </button>
-                <button
-                  onClick={confirmRoleAssignment}
-                  className={`${isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
-                    } text-white p-2 rounded-lg`}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
-                </button>
+          <div className="overlayModal">
+            <div className="document-modal modal-md">
+
+              {/* Header */}
+              <div className="modal-header">
+                <div className="modal-title">
+                  <h2><AutoTranslate>Confirm Role Assignment</AutoTranslate></h2>
+                </div>
+                <div className="headerRight">
+                  {/* Close Button */}
+                  <button className="closeBtn" onClick={() => setModalVisible(false)} disabled={isSubmitting} title="Close">
+                    <MdOutlineClose />
+                  </button>
+                </div>
+              </div>
+              <div className="modal-body">
+                <div className="bodyScroller print:overflow-visible print:max-h-none">
+                  <p className="mb-4">
+                    <AutoTranslate>
+                      Are you sure you want to assign the role {selectedRole} to {users.find((user) => user.id === selectedUser)?.name}?
+                    </AutoTranslate>
+                  </p>
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => setModalVisible(false)}
+                      className="bg-gray-300 p-2 rounded-lg hover:bg-gray-400"
+                      disabled={isSubmitting}
+                    >
+                      <AutoTranslate>Cancel</AutoTranslate>
+                    </button>
+                    <button
+                      onClick={confirmRoleAssignment}
+                      className={`${isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
+                        } text-white p-2 rounded-lg`}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
         )}
 
         {popupMessage && (

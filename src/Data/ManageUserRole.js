@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API_HOST, ROLE_API, BRANCH_ADMIN } from "../API/apiConfig";
+import { MdEdit } from "react-icons/md";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -443,30 +445,30 @@ const ManageUserRole = () => {
   }
 
   return (
-    <div className="px-2 ">
-      <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>Mange Users Roles</AutoTranslate>
-      </h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        {popupMessage && (
-          <Popup
-            message={popupMessage.message}
-            type={popupMessage.type}
-            onClose={popupMessage.onClose}
-          />
-        )}
+    <div className="px-2-">
+      <div className="title">
+        <h1><AutoTranslate>Mange Users Roles</AutoTranslate></h1>
+      </div>
 
+      {popupMessage && (
+        <Popup
+          message={popupMessage.message}
+          type={popupMessage.type}
+          onClose={popupMessage.onClose}
+        />
+      )}
+
+      <div className="card">
         {/* Top Controls */}
         {!showForm && (
-          <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="grid grid-col-4 mb-6">
             {/* Items Per Page */}
-            <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
-              <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
+            <div className="form-group ">
+              <label htmlFor="itemsPerPage">
                 <AutoTranslate>Show:</AutoTranslate>
               </label>
               <select
                 id="itemsPerPage"
-                className="border rounded-r-lg p-1.5 outline-none w-full"
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
@@ -482,13 +484,12 @@ const ManageUserRole = () => {
             </div>
 
             {/* Branch Filter */}
-            <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
-              <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+            <div className="form-group ">
+              <label htmlFor="branchFilter">
                 <AutoTranslate>Branch</AutoTranslate>
               </label>
               <select
                 id="branchFilter"
-                className="border rounded-r-lg p-1.5 outline-none w-full"
                 value={selectedBranch}
                 onChange={(e) => {
                   setSelectedBranch(e.target.value);
@@ -498,7 +499,7 @@ const ManageUserRole = () => {
               >
                 <option value="">
                   <AutoTranslate>
-                  All
+                    All
                   </AutoTranslate>
                 </option>
                 {branchData.map((branch) => (
@@ -509,15 +510,13 @@ const ManageUserRole = () => {
               </select>
             </div>
 
-
             {/* Department Filter */}
-            <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
-              <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+            <div className="form-group ">
+              <label htmlFor="departmentFilter">
                 <AutoTranslate>Department</AutoTranslate>
               </label>
               <select
                 id="departmentFilter"
-                className="border rounded-r-lg p-1.5 outline-none w-full"
                 value={selectedDepartment}
                 onChange={(e) => {
                   setSelectedDepartment(e.target.value);
@@ -536,143 +535,138 @@ const ManageUserRole = () => {
               </select>
             </div>
 
-
-
             {/* Search */}
-            <div className="flex items-center w-full md:w-1/4 flex-1">
+            <div className="form-group ">
+              <label htmlFor="searchTerm">
+                <AutoTranslate>Search</AutoTranslate>
+              </label>
               <input
                 type="text"
+                id="searchTerm"
                 placeholder={translatedPlaceholders.search}
-                className="border rounded-l-md p-1 outline-none w-full"
+                className="searchIcon"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
             </div>
           </div>
         )}
 
-
         {/* List or Inline Form */}
         {!showForm ? (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Name</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Email</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Mobile No.</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Branch</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Department</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>CreatedBy</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>UpdatedBy</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Created Date</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Updated Date</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Role</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Manage Role</AutoTranslate></th>
-                </tr>
-
-              </thead>
-              <tbody>
-                {paginatedUsers.length > 0 ? (
-                  paginatedUsers.map((user, index) => (
-                    <tr key={user.id}>
-                      <td className="border p-2">
-                        {(currentPage - 1) * itemsPerPage + index + 1}
-                      </td>
-                      <td className="border p-2">{user?.name || "N/A"}</td>
-                      <td className="border p-2">{user?.email || "N/A"}</td>
-                      <td className="border p-2">{user?.mobile || "N/A"}</td>
-                      <td className="border p-2">{user.branchName || "N/A"}</td>
-                      <td className="border p-2">{user.departmentName || "N/A"}</td>
-                      <td className="border p-2">{user.createdByName || "N/A"}</td>
-                      <td className="border p-2">{user.updatedByName || "N/A"}</td>
-                      <td className="border p-2">
-                        {user?.createdOn ? formatDate(user.createdOn) : "N/A"}
-                      </td>
-                      <td className="border p-2">
-                        {user?.updatedOn ? formatDate(user.updatedOn) : "N/A"}
-                      </td>
-                      <td className="border p-2">{user.roleName || "No Role"}</td>
-                      <td className="border p-2">
-                        <button onClick={() => HandleEditRole(user)}>
-                          <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
-                        </button>
+          <>
+            <div className="table-wrapper">
+              <table className="">
+                <thead>
+                  <tr>
+                    <th className="text-center"><AutoTranslate>SN</AutoTranslate></th>
+                    <th><AutoTranslate>Name</AutoTranslate></th>
+                    <th><AutoTranslate>Email</AutoTranslate></th>
+                    <th><AutoTranslate>Mobile No.</AutoTranslate></th>
+                    <th><AutoTranslate>Branch</AutoTranslate></th>
+                    <th><AutoTranslate>Department</AutoTranslate></th>
+                    <th><AutoTranslate>CreatedBy</AutoTranslate></th>
+                    <th><AutoTranslate>UpdatedBy</AutoTranslate></th>
+                    <th><AutoTranslate>Created Date</AutoTranslate></th>
+                    <th><AutoTranslate>Updated Date</AutoTranslate></th>
+                    <th><AutoTranslate>Role</AutoTranslate></th>
+                    <th><AutoTranslate>Manage Role</AutoTranslate></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedUsers.length > 0 ? (
+                    paginatedUsers.map((user, index) => (
+                      <tr key={user.id}>
+                        <td className="text-center">
+                          {(currentPage - 1) * itemsPerPage + index + 1}
+                        </td>
+                        <td>{user?.name || "N/A"}</td>
+                        <td>{user?.email || "N/A"}</td>
+                        <td>{user?.mobile || "N/A"}</td>
+                        <td>{user.branchName || "N/A"}</td>
+                        <td>{user.departmentName || "N/A"}</td>
+                        <td>{user.createdByName || "N/A"}</td>
+                        <td>{user.updatedByName || "N/A"}</td>
+                        <td>
+                          {user?.createdOn ? formatDate(user.createdOn) : "N/A"}
+                        </td>
+                        <td>
+                          {user?.updatedOn ? formatDate(user.updatedOn) : "N/A"}
+                        </td>
+                        <td>{user.roleName || "No Role"}</td>
+                        <td>
+                          <div className="btn-center">
+                            <button className="viewBtn" onClick={() => HandleEditRole(user)}>
+                              <MdEdit />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={12} className="border p-2 text-center">
+                        No users found.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={12} className="border p-2 text-center">
-                      No users found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-            {/* Pagination */}
-            <div className="flex items-center mt-4">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1 || totalPages === 0}
-                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-slate-200 hover:bg-slate-300"
-                  }`}
-              >
-                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-
-                <AutoTranslate>Previous</AutoTranslate>
-
-              </button>
-
-              {totalPages > 0 &&
-                Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded mx-1 ${currentPage === page
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-200 hover:bg-blue-100"
-                      }`}
+            {/* Pagination Controls */}
+            <div className="paginationWp">
+              <div className="items">
+                <div className="paginationText">
+                  <span className="text-sm text-gray-700">
+                    <AutoTranslate>
+                      {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                        } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                    </AutoTranslate>
+                  </span>
+                  {/* Page Count Info */}
+                  <span className="text-sm text-gray-700 mx-2">
+                    (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                  </span>
+                </div>
+              </div>
+              <div className="items">
+                <div className="paginationBtn">
+                  {/* Previous Button */}
+                  <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1 || totalPages === 0}
+                    className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
                   >
-                    {page}
+                    <IoIosArrowBack />
                   </button>
-                ))}
+                  {/* Page Number Buttons */}
+                  {totalPages > 0 &&
+                    Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`${currentPage === page ? "active" : ""}`}>
+                        {page}
+                      </button>
+                    ))}
+                  {/* Next Button */}
+                  <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                  >
+                    <IoIosArrowForward />
+                  </button>
 
-              
-                <span className="text-sm text-gray-700 mx-2">
-                <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-              </span>
-              
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-slate-200 hover:bg-slate-300"
-                  }`}
-              >
-                <AutoTranslate>Next</AutoTranslate>
-
-                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-              </button>
-              <div className="ml-4">
-                <span className="text-sm text-gray-700">
-                  <AutoTranslate>
-                    {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}`}
-                  </AutoTranslate>
-                </span>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         ) : (
           <form className="space-y-4">
             <div className="flex items-center justify-between">
-
-              <h2 className="text-xl font-semibold">
+              <h2 className="mb-0">
                 <AutoTranslate>
                   {selectedUser ? `Edit Roles for ${selectedUser.name || "User"}` : "Edit User"}
                 </AutoTranslate>
@@ -703,37 +697,30 @@ const ManageUserRole = () => {
             </div>
 
             {/* Read-only identity fields */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-
-                <label className="text-sm text-gray-700">
+            <div className="grid grid-col-4 mb-4">
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Name</AutoTranslate>
                 </label>
                 <input
-                  className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={selectedUser?.name || "N/A"}
                   readOnly
                 />
               </div>
-              <div>
-
-                <label className="text-sm text-gray-700">
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Email</AutoTranslate>
                 </label>
                 <input
-                  className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={selectedUser?.email || "N/A"}
                   readOnly
                 />
               </div>
-              <div>
-
-                <label className="text-sm text-gray-700">
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Mobile</AutoTranslate>
                 </label>
-
                 <input
-                  className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={
                     selectedUser?.mobile
                       ? `+91 ${selectedUser.mobile}`
@@ -742,39 +729,32 @@ const ManageUserRole = () => {
                   readOnly
                 />
               </div>
+              <div className="form-group ">
 
-              <div>
-
-                <label className="text-sm text-gray-700">
+                <label>
                   <AutoTranslate>Branch</AutoTranslate>
                 </label>
 
                 <input
-                  className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={selectedUser?.branchName || "N/A"}
                   readOnly
                 />
               </div>
-              <div>
-
-                <label className="text-sm text-gray-700">
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Department</AutoTranslate>
                 </label>
 
                 <input
-                  className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={selectedUser?.departmentName || "N/A"}
                   readOnly
                 />
               </div>
-              <div>
-
-                <label className="text-sm text-gray-700">
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Status</AutoTranslate>
                 </label>
-
                 <input
-                  className="mt-1 w-full border rounded px-3 py-2 bg-gray-100"
                   value={selectedUser?.status || "N/A"}
                   readOnly
                 />
@@ -784,23 +764,20 @@ const ManageUserRole = () => {
             {/* Dual list for roles */}
             <div className="mt-2">
 
-              <label className="block font-semibold mb-2">
+              <h2>
                 <AutoTranslate>Role Assigned</AutoTranslate>
-              </label>
+              </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+
+
+              <div className="role-wrapper">
                 {/* All Roles */}
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium mb-1 block">
+                <div className="role-card">
+                  <label>
                     <AutoTranslate>All Roles</AutoTranslate>
                   </label>
 
-                  <select
-                    multiple
-                    size={8}
-                    className="w-full border rounded px-2 py-2"
-                    onChange={onChangeAvailableSelect}
-                  >
+                  <select multiple size={8} onChange={onChangeAvailableSelect}>
                     {availableRoles.map((role) => (
                       <option key={role.id} value={role.id}>
                         {role.role}
@@ -810,7 +787,7 @@ const ManageUserRole = () => {
                 </div>
 
                 {/* Arrows */}
-                <div className="flex flex-row md:flex-col items-center justify-center gap-2">
+                <div className="action-buttons">
                   <button
                     type="button"
                     onClick={moveToAssigned}
@@ -830,17 +807,11 @@ const ManageUserRole = () => {
                 </div>
 
                 {/* Assigned Roles */}
-                <div className="md:col-span-2">
-
-                  <label className="text-sm font-medium mb-1 block">
+                <div className="role-card listAssigned">
+                  <label>
                     <AutoTranslate>Assigned Roles</AutoTranslate>
                   </label>
-                  <select
-                    multiple
-                    size={8}
-                    className="w-full border rounded px-2 py-2"
-                    onChange={onChangeAssignedSelect}
-                  >
+                  <select multiple size={8} onChange={onChangeAssignedSelect}>
                     {assignedRoles.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.label}
@@ -852,6 +823,7 @@ const ManageUserRole = () => {
             </div>
           </form>
         )}
+
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import apiClient from "../API/apiClient";
 import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN } from "../API/apiConfig";
 import Layout from '../Components/Layout';
 import axios from "axios";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
     MagnifyingGlassIcon,
     ArrowLeftIcon,
@@ -426,9 +427,10 @@ const IDCardGenerator = () => {
 
     return (
         <Layout>
-            <div className="p-4 max-w-7xl mx-auto">
-                <h1 className="text-2xl font-bold text-gray-800 mb-6">ID Card Generator</h1>
-
+            <div className="">
+                <div className="title">
+                    <h1>ID Card Generator</h1>
+                </div>
                 {popupMessage && (
                     <Popup
                         message={popupMessage.message}
@@ -438,7 +440,7 @@ const IDCardGenerator = () => {
                 )}
 
                 {/* Main Card */}
-                <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                <div className="card">
                     {/* Search and Pagination Controls */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                         <div className="flex items-center space-x-4">
@@ -476,11 +478,11 @@ const IDCardGenerator = () => {
                     </div>
 
                     {/* Employees Table */}
-                    <div className="overflow-x-auto rounded-lg border border-gray-200">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                    <div className="table-wrapper">
+                        <table className="">
+                            <thead>
                                 <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th>
                                         <input
                                             type="checkbox"
                                             onChange={handleSelectAll}
@@ -488,18 +490,18 @@ const IDCardGenerator = () => {
                                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                         />
                                     </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created On</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile Pic</th>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Created On</th>
+                                    <th>Status</th>
+                                    <th>Profile Pic</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 {currentPageUsers.map((emp, index) => (
                                     <tr key={emp.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td>
                                             <input
                                                 type="checkbox"
                                                 checked={selectedUsers.some(u => u.id === emp.id)}
@@ -507,18 +509,18 @@ const IDCardGenerator = () => {
                                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                             />
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td>
                                             {index + 1 + (currentPage - 1) * itemsPerPage}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td>
                                             <div className="text-sm font-medium text-gray-900">{emp.name}</div>
                                             <div className="text-sm text-gray-500">{emp.employeeId}</div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.email}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td>{emp.email}</td>
+                                        <td>
                                             {formatDate(emp.createdOn)}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td>
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${emp.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                                 }`}>
                                                 {emp.active ? 'Active' : 'Inactive'}
@@ -542,65 +544,41 @@ const IDCardGenerator = () => {
                         </table>
                     </div>
 
-                    {/* Pagination */}
-                    <div className="flex items-center justify-between mt-4">
-                        <div className="flex-1 flex justify-between sm:hidden">
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                disabled={currentPage === 1}
-                                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
-                                    }`}
-                            >
-                                Previous
-                            </button>
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                disabled={currentPage === totalPages}
-                                className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
-                                    }`}
-                            >
-                                Next
-                            </button>
-                        </div>
-                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
+                    {/* Pagination Controls */}
+                    <div className="paginationWp">
+                        <div className="items">
+                            <div className="paginationText">
                                 <p className="text-sm text-gray-700">
                                     Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
                                 </p>
                             </div>
-                            <div>
-                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                    <button
-                                        onClick={() => setCurrentPage(1)}
-                                        disabled={currentPage === 1}
-                                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        <span className="sr-only">First</span>
-                                        <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
+                        </div>
+                        <div className="items">
+                            <div className="paginationBtn">
+                                {/* Previous Button */}
+                                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1 || totalPages === 0}
+                                    className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                                >
+                                    <IoIosArrowBack />
+                                </button>
+
+                                {/* Page Number Buttons */}
+                                {totalPages > 0 && getPageNumbers().map((page) => (
+                                    <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                                        {page}
                                     </button>
-                                    {getPageNumbers().map((page) => (
-                                        <button
-                                            key={page}
-                                            onClick={() => setCurrentPage(page)}
-                                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
-                                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                                }`}
-                                        >
-                                            {page}
-                                        </button>
-                                    ))}
-                                    <button
-                                        onClick={() => setCurrentPage(totalPages)}
-                                        disabled={currentPage === totalPages}
-                                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        <span className="sr-only">Last</span>
-                                        <ArrowRightIcon className="h-5 w-5" aria-hidden="true" />
-                                    </button>
-                                </nav>
+                                ))}
+
+                                {/* Next Button */}
+                                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages || totalPages === 0}
+                                    className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                                >
+                                    <IoIosArrowForward />
+                                </button>
                             </div>
                         </div>
                     </div>

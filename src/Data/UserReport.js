@@ -293,11 +293,12 @@ const UserReport = () => {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">
-        <AutoTranslate>User Reports</AutoTranslate>
-      </h1>
-      <div className="bg-white p-4 rounded-lg shadow-md">
+    <div className="p-4-">
+      <div className="title">
+        <h1><AutoTranslate>User Reports</AutoTranslate></h1>
+      </div>
+
+      <div className="card">
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -306,184 +307,187 @@ const UserReport = () => {
           />
         )}
         <form onSubmit={handleDownload}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
-            {role === BRANCH_ADMIN ? (
-              <>
-                <div className="flex flex-col">
-                  <label className="mb-1" htmlFor="branch">
-                    <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
-                  </label>
-                  <select
-                    id="branch"
-                    name="branch"
-                    value={formData.branch}
-                    onChange={handleInputChange}
-                    className="p-2 border rounded-md outline-none"
-                    disabled={true}
-                  >
-                    <option value={userBranch?.id}>{userBranch?.name}</option>
-                  </select>
-                </div>
+          <div className="cardLight">
+            <div className="grid grid-col-4 mb-4">
+              {role === BRANCH_ADMIN ? (
+                <>
+                  <div className="form-group ">
+                    <label htmlFor="branch">
+                      <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
+                    </label>
+                    <select
+                      id="branch"
+                      name="branch"
+                      value={formData.branch}
+                      onChange={handleInputChange}
+                      className="p-2 border rounded-md outline-none"
+                      disabled={true}
+                    >
+                      <option value={userBranch?.id}>{userBranch?.name}</option>
+                    </select>
+                  </div>
 
-                <div className="flex flex-col">
-                  <label className="mb-1" htmlFor="department">
-                    <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
-                  </label>
-                  <select
-                    id="department"
-                    name="department"
-                    onChange={handleInputChange}
-                    className="p-2 border rounded-md outline-none"
-                  >
-                    <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
-                    {departmentOptions.map((department) => (
-                      <option key={department.id} value={department.id}>
-                        {department.name}
+                  <div className="form-group ">
+                    <label htmlFor="department">
+                      <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
+                    </label>
+                    <select
+                      id="department"
+                      name="department"
+                      onChange={handleInputChange}
+                      className="p-2 border rounded-md outline-none"
+                    >
+                      <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
+                      {departmentOptions.map((department) => (
+                        <option key={department.id} value={department.id}>
+                          {department.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              ) : role === DEPARTMENT_ADMIN || role === USER ? (
+                <>
+                  <div className="form-group ">
+                    <label htmlFor="branch">
+                      <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
+                    </label>
+                    <select
+                      id="branch"
+                      name="branch"
+                      value={formData.branch}
+                      onChange={handleInputChange}
+                      className="p-2 border rounded-md outline-none"
+                      disabled={true}
+                    >
+                      <option value={userBranch?.id}>{userBranch?.name}</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group ">
+                    <label htmlFor="department">
+                      <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
+                    </label>
+                    <select
+                      id="department"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleInputChange}
+                      className="p-2 border rounded-md outline-none"
+                      disabled={true}
+                    >
+                      <option value={userDepartment?.id}>
+                        {userDepartment?.name}
                       </option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            ) : role === DEPARTMENT_ADMIN || role === USER ? (
-              <>
-                <div className="flex flex-col">
-                  <label className="mb-1" htmlFor="branch">
-                    <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
-                  </label>
-                  <select
-                    id="branch"
-                    name="branch"
-                    value={formData.branch}
-                    onChange={handleInputChange}
-                    className="p-2 border rounded-md outline-none"
-                    disabled={true}
-                  >
-                    <option value={userBranch?.id}>{userBranch?.name}</option>
-                  </select>
-                </div>
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="form-group ">
+                    <label htmlFor="branch">
+                      <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
+                    </label>
+                    <select
+                      id="branch"
+                      name="branch"
+                      value={formData.branch}
+                      onChange={handleInputChange}
+                      className="p-2 border rounded-md outline-none"
+                    >
+                      <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
+                      {branchOptions.map((branch) => (
+                        <option key={branch.id} value={branch.id}>
+                          {branch.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="flex flex-col">
-                  <label className="mb-1" htmlFor="department">
-                    <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
-                  </label>
-                  <select
-                    id="department"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleInputChange}
-                    className="p-2 border rounded-md outline-none"
-                    disabled={true}
-                  >
-                    <option value={userDepartment?.id}>
-                      {userDepartment?.name}
-                    </option>
-                  </select>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex flex-col">
-                  <label className="mb-1" htmlFor="branch">
-                    <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
-                  </label>
-                  <select
-                    id="branch"
-                    name="branch"
-                    value={formData.branch}
-                    onChange={handleInputChange}
-                    className="p-2 border rounded-md outline-none"
-                  >
-                    <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
-                    {branchOptions.map((branch) => (
-                      <option key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="form-group ">
+                    <label htmlFor="department">
+                      <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
+                    </label>
+                    <select
+                      id="department"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleInputChange}
+                      className="p-2 border rounded-md outline-none"
+                      disabled={!formData.branch}
+                    >
+                      <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
+                      {departmentOptions.map((department) => (
+                        <option key={department.id} value={department.id}>
+                          {department.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
 
-                <div className="flex flex-col">
-                  <label className="mb-1" htmlFor="department">
-                    <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
-                  </label>
-                  <select
-                    id="department"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleInputChange}
-                    className="p-2 border rounded-md outline-none"
-                    disabled={!formData.branch}
-                  >
-                    <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
-                    {departmentOptions.map((department) => (
-                      <option key={department.id} value={department.id}>
-                        {department.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
+              {/* Status Dropdown */}
+              <div className="form-group ">
+                <label htmlFor="status">
+                  <AutoTranslate>Status</AutoTranslate>
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="p-2 border rounded-md outline-none"
+                >
+                  <option value=""><AutoTranslate>All</AutoTranslate></option>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
 
-            {/* Status Dropdown */}
-            <div className="flex flex-col">
-              <label className="mb-1" htmlFor="status">
-                <AutoTranslate>Status</AutoTranslate>
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="p-2 border rounded-md outline-none"
-              >
-                <option value=""><AutoTranslate>All</AutoTranslate></option>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
-            </div>
+              {/* From Date Picker */}
+              <div className="flex flex-col">
+                <label htmlFor="fromDate">
+                  <AutoTranslate>From Date</AutoTranslate> <span className="text-red-700">*</span>
+                </label>
+                <DatePicker
+                  id="fromDate"
+                  selected={fromDate}
+                  onChange={(date) => setFromDate(date)}
+                  selectsStart
+                  startDate={fromDate}
+                  endDate={toDate}
+                  maxDate={new Date()}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText={getFallbackTranslation('Select Start Date', currentLanguage)}
+                  className="w-full px-3 py-2 border rounded-md focus:ring-2"
+                />
 
-            {/* From Date Picker */}
-            <div className="flex flex-col">
-              <label className="mb-1" htmlFor="fromDate">
-                <AutoTranslate>From Date</AutoTranslate> <span className="text-red-700">*</span>
-              </label>
-              <DatePicker
-                id="fromDate"
-                selected={fromDate}
-                onChange={(date) => setFromDate(date)}
-                selectsStart
-                startDate={fromDate}
-                endDate={toDate}
-                maxDate={new Date()}
-                dateFormat="dd/MM/yyyy"
-                placeholderText={getFallbackTranslation('Select Start Date', currentLanguage)}
-                className="w-full px-3 py-2 border rounded-md focus:ring-2"
-              />
+              </div>
 
-            </div>
+              {/* To Date Picker */}
+              <div className="flex flex-col">
+                <label htmlFor="toDate">
+                  <AutoTranslate>To Date</AutoTranslate> <span className="text-red-700">*</span>
+                </label>
+                <DatePicker
+                  id="toDate"
+                  selected={toDate}
+                  onChange={(date) => setToDate(date)}
+                  selectsEnd
+                  startDate={fromDate}
+                  endDate={toDate}
+                  minDate={fromDate}
+                  maxDate={new Date()}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText={getFallbackTranslation('Select End Date', currentLanguage)}
+                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                />
 
-            {/* To Date Picker */}
-            <div className="flex flex-col">
-              <label className="mb-1" htmlFor="toDate">
-                <AutoTranslate>To Date</AutoTranslate> <span className="text-red-700">*</span>
-              </label>
-              <DatePicker
-                id="toDate"
-                selected={toDate}
-                onChange={(date) => setToDate(date)}
-                selectsEnd
-                startDate={fromDate}
-                endDate={toDate}
-                minDate={fromDate}
-                maxDate={new Date()}
-                dateFormat="dd/MM/yyyy"
-                placeholderText={getFallbackTranslation('Select End Date', currentLanguage)}
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-              />
-
+              </div>
             </div>
           </div>
+
 
           <div className="format-selection space-y-4 grid grid-cols-12 mb-4">
             <label className="flex items-center space-x-2 mt-4">

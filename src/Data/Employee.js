@@ -1,5 +1,7 @@
 import Popup from "../Components/Popup";
 import LoadingComponent from '../Components/LoadingComponent';
+import { MdEdit } from "react-icons/md";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -823,12 +825,12 @@ const UserAddEmployee = () => {
   }
 
   return (
-    <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>User</AutoTranslate>
-      </h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        {error && <p className="text-red-500">{error}</p>}
+    <div className="px-2-">
+      <div className="title">
+        <h1><AutoTranslate>User</AutoTranslate></h1>
+      </div>
+
+      <div className="card">
         {showPopup && (
           <Popup
             message={popupConfig.message}
@@ -837,10 +839,13 @@ const UserAddEmployee = () => {
           />
         )}
 
-        <div ref={formRef} className="mb-4 bg-slate-100 p-6 rounded-lg shadow-md">
+        <div ref={formRef} className="cardLight mb-8">
+          {error && <p className="text-red-500">{error}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
+            <div className="form-group">
+              <label>
+                <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 placeholder={translatedPlaceholders.enterName}
@@ -848,13 +853,15 @@ const UserAddEmployee = () => {
                 value={formData.name || ""}
                 onChange={handleInputChange}
                 maxLength={30}
-                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
-            </label>
 
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
+            </div>
+
+            <div className="form-group">
+              <label>
+                <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
+              </label>
               <input
                 type="email"
                 placeholder={getFallbackTranslation('Enter Email', currentLanguage) || 'Enter Email'}
@@ -862,46 +869,46 @@ const UserAddEmployee = () => {
                 value={formData.email || ""}
                 onChange={handleInputChange}
                 maxLength={30}
-                className={`mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 ${emailError ? "border-red-500" : ""}`}
+                className={`${emailError ? "border-red-500" : ""}`}
                 required
               />
               {emailError && (
                 <p className="text-red-500 text-sm mt-1">{emailError}</p>
               )}
-            </label>
+            </div>
 
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Mobile Number</AutoTranslate> <span className="text-red-500">*</span>
-              <div className="flex mt-1">
-                <span className="w-20 p-2 border rounded-l-md bg-gray-100 text-center text-gray-700">
-                  +91
-                </span>
+            <div className="form-group">
+              <label>
+                <AutoTranslate>Mobile Number</AutoTranslate> <span className="text-red-500">*</span>
+              </label>
+              <div className="contactNo">
+                <span>+91</span>
                 <input
                   type="tel"
                   placeholder={getFallbackTranslation('Enter Mobile Number', currentLanguage) || 'Enter Mobile Number'}
-
                   name="mobile"
                   value={formData.mobile || ""}
                   onChange={handleInputChange}
                   maxLength={10}
                   minLength={10}
-                  className={`flex-1 p-2 border rounded-r-md outline-none focus:ring-2 focus:ring-blue-500 ${mobileError ? "border-red-500" : ""}`}
+                  className={`${mobileError ? "border-red-500" : ""}`}
                   required
                 />
               </div>
               {mobileError && (
                 <p className="text-red-500 text-sm mt-1">{mobileError}</p>
               )}
-            </label>
+            </div>
 
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
+            <div className="form-group">
+              <label>
+                <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
+              </label>
               {role === SYSTEM_ADMIN ? (
                 <select
                   name="branch"
                   value={formData.branch?.id || ""}
                   onChange={(e) => handleSelectChange(e, "branch")}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
@@ -915,21 +922,21 @@ const UserAddEmployee = () => {
                 <input
                   type="text"
                   value={formData.branch?.name || ""}
-                  className="mt-1 block w-full p-2 border rounded-md bg-gray-100 cursor-not-allowed"
                   disabled
                   readOnly
                 />
               )}
-            </label>
+            </div>
 
-            <label className="block text-md font-medium text-gray-700">
-              <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
+            <div className="form-group">
+              <label>
+                <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
+              </label>
               {role === SYSTEM_ADMIN ? (
                 <select
                   name="department"
                   value={formData.department?.id || ""}
                   onChange={(e) => handleSelectChange(e, "department")}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
@@ -944,7 +951,8 @@ const UserAddEmployee = () => {
                   {formData.department?.name || "No Department Selected"}
                 </div>
               )}
-            </label>
+            </div>
+
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4">
@@ -978,8 +986,8 @@ const UserAddEmployee = () => {
 
         {(role === SYSTEM_ADMIN || role === USER) && (
           <>
-            <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/5">
+            <div className="grid grid-col-4 mb-4">
+              <div className="form-group ">
                 <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
                   <AutoTranslate>Show:</AutoTranslate>
                 </label>
@@ -1000,7 +1008,7 @@ const UserAddEmployee = () => {
                 </select>
               </div>
 
-              <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
+              <div className="form-group ">
                 <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
                   <AutoTranslate>Branch</AutoTranslate>
                 </label>
@@ -1023,7 +1031,7 @@ const UserAddEmployee = () => {
                 </select>
               </div>
 
-              <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
+              <div className="form-group ">
                 <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
                   <AutoTranslate>Department</AutoTranslate>
                 </label>
@@ -1046,100 +1054,105 @@ const UserAddEmployee = () => {
                 </select>
               </div>
 
-              <div className="flex items-center w-full md:w-1/4 flex-1">
+              <div className="form-group ">
+                <label htmlFor="idSearchTeam">
+                  <AutoTranslate>Department</AutoTranslate>
+                </label>
                 <input
                   type="text"
+                  id="idSearchTeam"
                   placeholder={translatedPlaceholders.search}
-                  className="border rounded-l-md p-1 outline-none w-full"
+                  className="searchIcon"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border">
-                <thead className="bg-gray-100">
+            <div className="table-wrapper">
+              <table className="">
+                <thead>
                   <tr>
-                    <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>Name</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>Email</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>Mobile Number</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>Branch</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>Department</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>Role</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>Created Date</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>Updated Date</AutoTranslate></th>
-                    <th className="border p-2 text-left"><AutoTranslate>CreatedBy</AutoTranslate></th>
+                    <th className="text-center"><AutoTranslate>SN</AutoTranslate></th>
+                    <th><AutoTranslate>Name</AutoTranslate></th>
+                    <th><AutoTranslate>Email</AutoTranslate></th>
+                    <th><AutoTranslate>Mobile Number</AutoTranslate></th>
+                    <th><AutoTranslate>Branch</AutoTranslate></th>
+                    <th><AutoTranslate>Department</AutoTranslate></th>
+                    <th><AutoTranslate>Role</AutoTranslate></th>
+                    <th><AutoTranslate>Created Date</AutoTranslate></th>
+                    <th><AutoTranslate>Updated Date</AutoTranslate></th>
+                    <th><AutoTranslate>CreatedBy</AutoTranslate></th>
                     {role === SYSTEM_ADMIN && (
                       <>
-                        <th className="border p-2 text-left"><AutoTranslate>UpdatedBy</AutoTranslate></th>
-                        <th className="border p-2 text-left"><AutoTranslate>Status</AutoTranslate></th>
+                        <th><AutoTranslate>UpdatedBy</AutoTranslate></th>
+                        <th><AutoTranslate>Status</AutoTranslate></th>
                       </>
                     )}
-                    <th className="border p-2 text-left"><AutoTranslate>Edit</AutoTranslate></th>
+                    <th className="text-center"><AutoTranslate>Edit</AutoTranslate></th>
                     {role === SYSTEM_ADMIN && (
-                      <th className="border p-2 text-left"><AutoTranslate>Action</AutoTranslate></th>
+                      <th className="text-center"><AutoTranslate>Action</AutoTranslate></th>
                     )}
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedEmployees.map((employee, index) => (
                     <tr key={employee.id}>
-                      <td className="border p-2">
+                      <td className="text-center">
                         {index + 1 + (currentPage - 1) * itemsPerPage}
                       </td>
-                      <td className="border p-2">{employee.name}</td>
-                      <td className="border p-2">{employee.email}</td>
-                      <td className="border p-2">{formatMobileNumber(employee.mobile)}</td>
-                      <td className="border p-2">
+                      <td>{employee.name}</td>
+                      <td>{employee.email}</td>
+                      <td>{formatMobileNumber(employee.mobile)}</td>
+                      <td>
                         {employee.branch?.name || "N/A"}
                       </td>
-                      <td className="border p-2">
+                      <td>
                         {employee.department?.name || "N/A"}
                       </td>
-                      <td className="border p-2">
+                      <td>
                         {employee.role?.role || "No Role"}
                       </td>
-                      <td className="border p-2">
+                      <td>
                         {formatDate(employee.createdOn)}
                       </td>
-                      <td className="border p-2">
+                      <td>
                         {formatDate(employee.updatedOn)}
                       </td>
 
                       {role === USER && (
-                        <td className="border p-2">{userName || "Unknown"}</td>
+                        <td>{userName || "Unknown"}</td>
                       )}
                       {role === SYSTEM_ADMIN && (
                         <>
-                          <td className="border p-2">
+                          <td>
                             {employee.createdBy?.name || "Unknown"}
                           </td>
 
-                          <td className="border p-2">
+                          <td>
                             {employee.updatedBy?.name || "Unknown"}
                           </td>
-                          <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
+                          <td>{employee.active ? "Active" : "Inactive"}</td>
 
                         </>
                       )}
 
-                      <td className="border p-2">
-                        <button
-                          onClick={() => handleEditEmployee(employee.id)}
-                          disabled={employee.active === false}
-                          className={`${employee.active === false
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                            }`}
-                        >
-                          <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
-                        </button>
+                      <td className="text-center">
+                        <div className="btn-center">
+                          <button
+                            onClick={() => handleEditEmployee(employee.id)}
+                            disabled={employee.active === false}
+                            className={`viewBtn ${employee.active === false
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                              }`}
+                          >
+                            <MdEdit />
+                          </button>
+                        </div>
                       </td>
                       {role === SYSTEM_ADMIN && (
-                        <td className="border p-2">
+                        <td className="text-center">
                           <button
                             onClick={() => handleToggleActive(employee)}
                             className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"
@@ -1159,58 +1172,57 @@ const UserAddEmployee = () => {
               </table>
             </div>
 
-            <div className="flex items-center mt-4">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1 || totalPages === 0}
-                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-slate-200 hover:bg-slate-300"
-                  }`}
-              >
-                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                <AutoTranslate>Previous</AutoTranslate>
-              </button>
+            {/* Pagination Controls */}
+          <div className="paginationWp">
+            <div className="items">
+              <div className="paginationText">
+                <span className="text-sm text-gray-700">
+                  <AutoTranslate>
+                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                  </AutoTranslate>
+                </span>
+                {/* Page Count Info */}
+                <span className="text-sm text-gray-700 mx-2">
+                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                </span>
+              </div>
+            </div>
+            <div className="items">
+              <div className="paginationBtn">
+                {/* Previous Button */}
+                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1 || totalPages === 0}
+                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  <IoIosArrowBack />
+                </button>
 
-              {totalPages > 0 &&
-                getPageNumbers().map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded mx-1 ${currentPage === page
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-200 hover:bg-blue-100"
-                      }`}
-                  >
+
+                {/* Page Number Buttons */}
+                {totalPages > 0 && getPageNumbers().map((page) => (
+                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
                     {page}
                   </button>
                 ))}
 
-              <span className="text-sm text-gray-700 mx-2">
-                <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-              </span>
+      
+                {/* Next Button */}
+                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  {/* <AutoTranslate>Next</AutoTranslate> */}
+                  {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                  <IoIosArrowForward />
+                </button>
 
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages || totalPages === 0}
-                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-slate-200 hover:bg-slate-300"
-                  }`}
-              >
-                <AutoTranslate>Next</AutoTranslate>
-                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-              </button>
-              <div className="ml-4">
-                <span className="text-sm text-gray-700">
-                  <AutoTranslate>
-                    {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}`}
-                  </AutoTranslate>
-                </span>
               </div>
             </div>
+          </div>
+
           </>
         )}
       </div>

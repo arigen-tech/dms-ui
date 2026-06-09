@@ -310,6 +310,7 @@ const BrAdminOCR = () => {
       <div className="title">
         <h1><AutoTranslate>Branch wise (OCR) Search</AutoTranslate></h1>
       </div>
+      
       <div className="card mb-4">
         <h2>
           <AutoTranslate>Search Documents</AutoTranslate>
@@ -485,7 +486,7 @@ const BrAdminOCR = () => {
               <table className="">
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th className="text-center">#</th>
                     <th>
                       <AutoTranslate>Title</AutoTranslate>
                     </th>
@@ -506,7 +507,7 @@ const BrAdminOCR = () => {
                 <tbody>
                   {paginatedDocuments.map((doc, index) => (
                     <tr key={doc.id}>
-                      <td>
+                      <td className="text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td>

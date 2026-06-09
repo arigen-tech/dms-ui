@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API_HOST , DOCUMENTHEADER_API} from "../API/apiConfig";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -248,20 +249,20 @@ const AuditForm = () => {
   if (isLoading) return <LoadingComponent />;
 
   return (
-    <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>Audit Forms</AutoTranslate>
-      </h1>
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+    <div className="px-2-">
+    <div className="title">
+        <h1><AutoTranslate>Audit Forms</AutoTranslate></h1>
+      </div>
+
+      <div className="card">
         {/* Filters */}
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row gap-4">
+        <div className="grid grid-col-4 mb-4">
           {/* Items Per Page */}
-          <div className="flex items-center bg-blue-500 rounded-lg flex-1 md:w-1/4">
-            <label className="mr-2 ml-2 text-white text-sm">
+          <div className="form-group ">
+            <label>
               <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
-              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -277,12 +278,11 @@ const AuditForm = () => {
           </div>
 
           {/* Branch Filter */}
-          <div className="flex items-center bg-blue-500 rounded-lg flex-1 md:w-1/4">
-            <label className="mr-2 ml-2 text-white text-sm">
+          <div className="form-group ">
+            <label>
               <AutoTranslate>Branch</AutoTranslate>
             </label>
             <select
-              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={selectedBranch}
               onChange={(e) => {
                 setSelectedBranch(e.target.value);
@@ -300,12 +300,11 @@ const AuditForm = () => {
           </div>
 
           {/* Department Filter */}
-          <div className="flex items-center bg-blue-500 rounded-lg flex-1 md:w-1/4">
-            <label className="mr-2 ml-2 text-white text-sm">
+          <div className="form-group ">
+            <label>
               <AutoTranslate>Department</AutoTranslate>
             </label>
             <select
-              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={selectedDepartment}
               onChange={(e) => {
                 setSelectedDepartment(e.target.value);
@@ -323,42 +322,44 @@ const AuditForm = () => {
           </div>
 
           {/* Search */}
-          <div className="flex items-center flex-1 md:w-1/4">
+          <div className="form-group ">
+          <label>
+              <AutoTranslate>Search</AutoTranslate>
+            </label>
             <input
               type="text"
               placeholder={translatedPlaceholders.search}
-              className="border rounded-l-md p-1 outline-none w-full"
+              className="searchIcon"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border">
+        <div className="table-wrapper">
+          <table className="">
             <thead>
-              <tr className="bg-slate-100">
-                <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Form Name</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Action Name</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Action Date & Time</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Employee</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Status</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>IP Address</AutoTranslate></th>
+              <tr>
+                <th><AutoTranslate>SN</AutoTranslate></th>
+                <th><AutoTranslate>Form Name</AutoTranslate></th>
+                <th><AutoTranslate>Action Name</AutoTranslate></th>
+                <th><AutoTranslate>Action Date & Time</AutoTranslate></th>
+                <th><AutoTranslate>Employee</AutoTranslate></th>
+                <th><AutoTranslate>Status</AutoTranslate></th>
+                <th><AutoTranslate>IP Address</AutoTranslate></th>
               </tr>
             </thead>
             <tbody>
               {paginatedForms.length > 0 ? (
                 paginatedForms.map((form, i) => (
                   <tr key={form.id}>
-                    <td className="border p-2">{i + 1 + (currentPage - 1) * itemsPerPage}</td>
-                    <td className="border p-2" title={form.name}>{form.name}</td>
-                    <td className="border p-2">{form.type}</td>
-                    <td className="border p-2">{formatDate(form.createdOn)}</td>
-                    <td className="border p-2">{form.createdBy?.name}</td>
-                    <td className="border p-2">
+                    <td>{i + 1 + (currentPage - 1) * itemsPerPage}</td>
+                    <td title={form.name}>{form.name}</td>
+                    <td>{form.type}</td>
+                    <td>{formatDate(form.createdOn)}</td>
+                    <td>{form.createdBy?.name}</td>
+                    <td>
                       <span className={`px-2 py-1 rounded text-xs ${
                         form.status === 'Success' ? 'bg-green-100 text-green-800' : 
                         form.status === 'Failure' ? 'bg-red-100 text-red-800' : 
@@ -367,7 +368,7 @@ const AuditForm = () => {
                         <AutoTranslate>{form.status}</AutoTranslate>
                       </span>
                     </td>
-                    <td className="border p-2">{form.originalData?.ipAddress}</td>
+                    <td>{form.originalData?.ipAddress}</td>
                   </tr>
                 ))
               ) : (
@@ -381,61 +382,55 @@ const AuditForm = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center mt-4">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1 || totalPages === 0}
-            className={`px-3 py-1 rounded mr-3 ${
-              currentPage === 1 || totalPages === 0
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-            }`}
-          >
-            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            <AutoTranslate>Previous</AutoTranslate>
-          </button>
+        {/* Pagination Controls */}
+          <div className="paginationWp">
+            <div className="items">
+              <div className="paginationText">
+                <span className="text-sm text-gray-700">
+                  <AutoTranslate>
+                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                  </AutoTranslate>
+                </span>
+                {/* Page Count Info */}
+                <span className="text-sm text-gray-700 mx-2">
+                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                </span>
+              </div>
+            </div>
+            <div className="items">
+              <div className="paginationBtn">
+                {/* Previous Button */}
+                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1 || totalPages === 0}
+                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                  {/* <AutoTranslate>Previous</AutoTranslate> */}
+                  <IoIosArrowBack />
+                </button>
 
-          {totalPages > 0 &&
-            getPageNumbers().map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${
-                  currentPage === page
-                    ? "bg-blue-500 text-white"
-                    : "bg-slate-200 hover:bg-blue-100"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
+                {/* Page Number Buttons */}
+                {totalPages > 0 && getPageNumbers().map((page) => (
+                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                    {page}
+                  </button>
+                ))}
 
-          <span className="text-sm text-gray-700 mx-2">
-            <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-          </span>
-
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className={`px-3 py-1 rounded ml-3 ${
-              currentPage === totalPages || totalPages === 0
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-slate-200 hover:bg-slate-300"
-            }`}
-          >
-            <AutoTranslate>Next</AutoTranslate>
-            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-          </button>
-
-          <div className="ml-4">
-            <span className="text-sm text-gray-700">
-              <AutoTranslate>
-                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-              </AutoTranslate>
-            </span>
+                {/* Next Button */}
+                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                >
+                  {/* <AutoTranslate>Next</AutoTranslate> */}
+                  {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                  <IoIosArrowForward />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
 
         {/* Modal */}
         {modalVisible && (
