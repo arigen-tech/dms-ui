@@ -24,9 +24,9 @@
     --body-color: #f3f0ec;
     --menu-text-color: #cbd5e1;
 
-    --pending-color: #f59e0b;
-    --approved-color: #39b54a;
-    --rejected-color: #f34235;
+    --pending-color: #cd8100;
+    --approved-color: #16a34a;
+    --rejected-color: #dc2626;
 
     --pending-gb: #FEF3C7;
     --approved-bg: #D1FAE5;
@@ -100,7 +100,7 @@ body {
     border: solid 1px rgb(0 0 0/0.1);
 }
 
-.btn-primary{
+.btn-primary {
     background-color: var(--secondary-color);
     border-radius: 6px;
     font-size: 16px;
@@ -108,9 +108,20 @@ body {
     padding: 8px 15px;
     border: 0;
     transition: all 0.35s ease-in-out;
-    &:hover{
+
+    &:hover {
         background-color: var(--secondary-color-hover);
     }
+}
+
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+a:focus {
+    border-color: var(--blue-light);
+    outline: 0;
+    box-shadow: 0 0 0 .2rem rgba(0, 123, 255, .40);
 }
 
 .form-group {
@@ -165,6 +176,11 @@ body {
         color: rgba(15, 27, 33, 0.40);
     }
 
+    & input:read-only,
+    & input[readonly] {
+        background-color: rgb(0 0 0/ 0.05);
+    }
+
     & input.searchIcon {
         background: var(--white-color) url(../src/Assets/icons/searchIcon.svg) no-repeat right center;
         padding-right: 38px;
@@ -191,6 +207,7 @@ body {
 
     & .react-datepicker-wrapper {
         width: 100%;
+
         & .react-datepicker__close-icon::after {
             background-color: rgb(0 0 0/ 0.05);
             width: 30px;
@@ -200,7 +217,8 @@ body {
             display: flex;
             justify-content: center;
         }
-        & .react-datepicker__close-icon:hover::after{
+
+        & .react-datepicker__close-icon:hover::after {
             background-color: var(--close-color);
             color: var(--white-color);
         }
@@ -418,6 +436,9 @@ footer {
         align-items: center;
         border-bottom: solid 1px rgb(255 255 255 /0.20);
         padding: 10px;
+        background-color: var(--primary-color);
+        position: sticky;
+        top: 0;
     }
 
     & .main-navbar {
@@ -591,21 +612,35 @@ footer {
         width: 24px;
         height: 24px;
         border-radius: 30px;
-        font-size: 12px;
+        font-size: 14px;
         color: var(--white-color);
         font-weight: 600;
         display: flex;
         justify-content: center;
         align-items: center;
     }
-    /* .pending{
-        background-color: pink;
-    } */
+
+    .pendingBg {
+        background-color: var(--pending-gb) !important;
+        /* color: var(--pending-color); */
+        color: #b66a00 !important;
+    }
+
+    .approvedBg {
+        background-color: var(--approved-bg) !important;
+        /* color: var(--approved-color); */
+        color: #0a7b19 !important;
+    }
+
+    .rejectedBg,
+    .trashBg {
+        background-color: var(--rejected-bg) !important;
+        /* color: var(--rejected-color); */
+        color: #af0c00 !important;
+    }
 }
 
-
 /* Dashboard css beginning here */
-
 .dashboardGrid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -639,7 +674,6 @@ footer {
     & .rejected svg {
         color: var(--rejected-color) !important;
     }
-
 
     & .card {
         border-radius: 5px;
@@ -889,6 +923,7 @@ main {
         align-items: center;
         padding: 10px;
         background-color: rgb(0 0 0/0.06);
+        font-weight: 600;
     }
 
     &>div:first-child {
@@ -1057,7 +1092,7 @@ main {
 
         & tbody tr:nth-child(even) {
             /* background-color: #f2f2f2; */
-            background-color: rgb(0 0 0/0.06)
+            background-color: rgb(0 0 0/0.04)
         }
 
         & .text-center {
@@ -1070,6 +1105,22 @@ main {
             font-size: 14px;
             padding: 4px 30px 4px 8px;
         }
+    }
+
+    & .status {
+        background-color: rgb(0 0 0/ 0.10);
+        border-radius: 30px;
+        padding: 5px 15px;
+    }
+
+    & .allowed {
+        background: var(--approved-bg);
+        color: var(--approved-color);
+    }
+
+    & .denied {
+        background: var(--rejected-bg);
+        color: var(--rejected-color);
     }
 }
 
@@ -1521,6 +1572,12 @@ main {
     }
 }
 
+.data-search-wrapper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
 
 
 
@@ -1537,7 +1594,7 @@ main {
     align-items: end;
 }
 
-.mb-0{
+.mb-0 {
     margin-bottom: 0 !important;
 }
 

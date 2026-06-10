@@ -444,233 +444,226 @@ const Addformreports = () => {
     }
 
     return (
-        <div className="px-2">
-            <h3 className="text-2xl font-semibold text-gray-800 mb-2">
-                <AutoTranslate>{isEditMode ? "Edit" : "Add"}</AutoTranslate> <AutoTranslate>Forms</AutoTranslate>/<AutoTranslate>Reports</AutoTranslate>
-            </h3>
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-                <div className="mb-4 bg-slate-100 p-4 rounded-lg">
-                    <div className="p-6">
-                        {isLoading ? (
-                            <LoadingComponent />
-                        ) : (
-                            <form className="space-y-6" onSubmit={handleSubmit}>
-                                {isEditMode && (
-                                    <div className="grid grid-cols-1 gap-4 mb-4">
-                                        <div className="relative">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                <AutoTranslate>APP</AutoTranslate><AutoTranslate> Name</AutoTranslate> <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                id="appName"
-                                                placeholder={translatedPlaceholders.searchApplicationName}
-                                                value={selectedAppName}
-                                                onChange={handleAppNameChange}
-                                                autoComplete="off"
-                                                required
-                                                disabled={isEditDataLoaded}
-                                            />
-                                            {isAppNameDropdownVisible && selectedAppName && (
-                                                <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
-                                                    {appNameOptions
-                                                        .filter((app) =>
-                                                            app.name.toLowerCase().includes(selectedAppName.toLowerCase()) ||
-                                                            String(app.parentId).toLowerCase().includes(selectedAppName.toLowerCase())
-                                                        )
-                                                        .map((app) => (
-                                                            <li
-                                                                key={app.id}
-                                                                className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
-                                                                onClick={() => handleAppNameSelect(app)}
-                                                            >
-                                                                {app.name} (<AutoTranslate>Parent</AutoTranslate>: {app.parentId})
-                                                            </li>
-                                                        ))}
-                                                </ul>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+        <div className="px-2-">
+            <div className="title">
+                <h1><AutoTranslate>{isEditMode ? "Edit" : "Add"}</AutoTranslate> <AutoTranslate>Forms Reports</AutoTranslate></h1>
+            </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="relative">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <AutoTranslate>Menu Name</AutoTranslate> <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                            id="menuName"
-                                            placeholder={translatedPlaceholders.searchMenuName}
-                                            value={formData.menuName}
-                                            onChange={handleMenuNameChange}
-                                            autoComplete="off"
-                                            required
-                                            disabled={isEditMode && !isEditDataLoaded}
-                                        />
-                                        {isMenuNameDropdownVisible && formData.menuName && (
-                                            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
-                                                {menuNameOptions
-                                                    .filter((menu) => menu.name.toLowerCase().includes(formData.menuName.toLowerCase()))
-                                                    .map((menu) => (
-                                                        <li
-                                                            key={menu.id}
-                                                            className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
-                                                            onClick={() => handleMenuNameSelect(menu)}
-                                                        >
-                                                            {menu.name}
-                                                        </li>
-                                                    ))}
-                                            </ul>
-                                        )}
-                                    </div>
+            <div className="card">
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <AutoTranslate>Menu ID</AutoTranslate> <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
-                                            id="menuId"
-                                            placeholder={translatedPlaceholders.menuId}
-                                            value={formData.menuId}
-                                            onChange={handleInputChange}
-                                            required
-                                            readOnly
-                                            disabled={isEditMode}
-                                        />
-                                    </div>
-
-                                    <div className="relative">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <AutoTranslate>Parent ID</AutoTranslate>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                            id="parentName"
-                                            placeholder={translatedPlaceholders.searchParentId}
-                                            value={
-                                                isEditMode
-                                                    ? (formData.parentId ? `${formData.parentId} - ${formData.parentName}` : formData.parentName)
-                                                    : formData.parentName
-                                            }
-                                            onChange={handleParentIdChange}
-                                            autoComplete="off"
-                                            disabled={isEditMode}
-                                        />
-                                        {isParentIdDropdownVisible && formData.parentName && !isEditMode && (
-                                            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
-                                                {parentIdOptions
-                                                    .filter((parent) => parent.name.toLowerCase().includes(formData.parentName.toLowerCase()))
-                                                    .map((parent) => (
-                                                        <li
-                                                            key={parent.id}
-                                                            className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
-                                                            onClick={() => handleParentIdSelect(parent)}
-                                                        >
-                                                            {parent.name} (<AutoTranslate>ID</AutoTranslate>: {parent.id})
-                                                        </li>
-                                                    ))}
-                                            </ul>
-                                        )}
-                                        <input type="hidden" id="parentId" value={formData.parentId} />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <AutoTranslate>URL</AutoTranslate> <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
-                                            id="url"
-                                            placeholder={translatedPlaceholders.url}
-                                            value={formData.url}
-                                            onChange={handleInputChange}
-                                            required
-                                            disabled={isEditMode && !isEditDataLoaded}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <AutoTranslate>Serial Number</AutoTranslate> <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="w-full p-2 border border-gray-300 rounded-md"
-                                            id="sn"
-                                            placeholder={translatedPlaceholders.serialNo}
-                                            value={formData.sn}
-                                            onChange={handleInputChange}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end space-x-2 mt-6">
-                                    {isEditMode ? (
-                                        <>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setIsEditMode(false)
-                                                    setIsEditDataLoaded(false)
-                                                    setSelectedAppName("")
-                                                    setOriginalParentId("")
-                                                    setFormData({
-                                                        menuId: "",
-                                                        menuName: "",
-                                                        parentId: "",
-                                                        parentName: "",
-                                                        url: "",
-                                                        sn: "",
-                                                        status: "active",
-                                                    })
-                                                }}
-                                                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                                            >
-                                                <AutoTranslate>Back</AutoTranslate>
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700"
-                                                disabled={!isEditDataLoaded}
-                                            >
-                                                <AutoTranslate>Update</AutoTranslate>
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button
-                                                type="submit"
-                                                className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700"
-                                            >
-                                                <AutoTranslate>Add</AutoTranslate>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsEditMode(true)}
-                                                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                                            >
-                                                <AutoTranslate>Edit</AutoTranslate>
-                                            </button>
-                                        </>
+                {isLoading ? (
+                    <LoadingComponent />
+                ) : (
+                    <form className="space-y-6" onSubmit={handleSubmit}>
+                        {isEditMode && (
+                            <div className="grid grid-col-4">
+                                <div className="form-group ">
+                                    <label>
+                                        <AutoTranslate>APP</AutoTranslate><AutoTranslate> Name</AutoTranslate> <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="appName"
+                                        placeholder={translatedPlaceholders.searchApplicationName}
+                                        value={selectedAppName}
+                                        onChange={handleAppNameChange}
+                                        autoComplete="off"
+                                        required
+                                        disabled={isEditDataLoaded}
+                                    />
+                                    {isAppNameDropdownVisible && selectedAppName && (
+                                        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                                            {appNameOptions
+                                                .filter((app) =>
+                                                    app.name.toLowerCase().includes(selectedAppName.toLowerCase()) ||
+                                                    String(app.parentId).toLowerCase().includes(selectedAppName.toLowerCase())
+                                                )
+                                                .map((app) => (
+                                                    <li
+                                                        key={app.id}
+                                                        className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
+                                                        onClick={() => handleAppNameSelect(app)}
+                                                    >
+                                                        {app.name} (<AutoTranslate>Parent</AutoTranslate>: {app.parentId})
+                                                    </li>
+                                                ))}
+                                        </ul>
                                     )}
                                 </div>
-                            </form>
+                            </div>
                         )}
 
-                        {/* Popup Component */}
-                        {showModal && popupMessage && (
-                            <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
-                        )}
-                    </div>
-                </div>
+                        <div className="grid grid-col-4">
+                            <div className="form-group ">
+                                <label>
+                                    <AutoTranslate>Menu Name</AutoTranslate> <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="menuName"
+                                    placeholder={translatedPlaceholders.searchMenuName}
+                                    value={formData.menuName}
+                                    onChange={handleMenuNameChange}
+                                    autoComplete="off"
+                                    required
+                                    disabled={isEditMode && !isEditDataLoaded}
+                                />
+                                {isMenuNameDropdownVisible && formData.menuName && (
+                                    <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                                        {menuNameOptions
+                                            .filter((menu) => menu.name.toLowerCase().includes(formData.menuName.toLowerCase()))
+                                            .map((menu) => (
+                                                <li
+                                                    key={menu.id}
+                                                    className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
+                                                    onClick={() => handleMenuNameSelect(menu)}
+                                                >
+                                                    {menu.name}
+                                                </li>
+                                            ))}
+                                    </ul>
+                                )}
+                            </div>
+
+                            <div className="form-group ">
+                                <label>
+                                    <AutoTranslate>Menu ID</AutoTranslate> <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="menuId"
+                                    placeholder={translatedPlaceholders.menuId}
+                                    value={formData.menuId}
+                                    onChange={handleInputChange}
+                                    required
+                                    readOnly
+                                    disabled={isEditMode}
+                                />
+                            </div>
+
+                            <div className="form-group ">
+                                <label>
+                                    <AutoTranslate>Parent ID</AutoTranslate>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="parentName"
+                                    placeholder={translatedPlaceholders.searchParentId}
+                                    value={
+                                        isEditMode
+                                            ? (formData.parentId ? `${formData.parentId} - ${formData.parentName}` : formData.parentName)
+                                            : formData.parentName
+                                    }
+                                    onChange={handleParentIdChange}
+                                    autoComplete="off"
+                                    disabled={isEditMode}
+                                />
+                                {isParentIdDropdownVisible && formData.parentName && !isEditMode && (
+                                    <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                                        {parentIdOptions
+                                            .filter((parent) => parent.name.toLowerCase().includes(formData.parentName.toLowerCase()))
+                                            .map((parent) => (
+                                                <li
+                                                    key={parent.id}
+                                                    className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
+                                                    onClick={() => handleParentIdSelect(parent)}
+                                                >
+                                                    {parent.name} (<AutoTranslate>ID</AutoTranslate>: {parent.id})
+                                                </li>
+                                            ))}
+                                    </ul>
+                                )}
+                                <input type="hidden" id="parentId" value={formData.parentId} />
+                            </div>
+
+                            <div className="form-group ">
+                                <label>
+                                    <AutoTranslate>URL</AutoTranslate> <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="url"
+                                    placeholder={translatedPlaceholders.url}
+                                    value={formData.url}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={isEditMode && !isEditDataLoaded}
+                                />
+                            </div>
+
+                            <div className="form-group ">
+                                <label>
+                                    <AutoTranslate>Serial Number</AutoTranslate> <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="sn"
+                                    placeholder={translatedPlaceholders.serialNo}
+                                    value={formData.sn}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end- space-x-2">
+                            {isEditMode ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsEditMode(false)
+                                            setIsEditDataLoaded(false)
+                                            setSelectedAppName("")
+                                            setOriginalParentId("")
+                                            setFormData({
+                                                menuId: "",
+                                                menuName: "",
+                                                parentId: "",
+                                                parentName: "",
+                                                url: "",
+                                                sn: "",
+                                                status: "active",
+                                            })
+                                        }}
+                                        className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                    >
+                                        <AutoTranslate>Back</AutoTranslate>
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn-primary"
+                                        disabled={!isEditDataLoaded}
+                                    >
+                                        <AutoTranslate>Update</AutoTranslate>
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        type="submit"
+                                        className="btn-primary"
+                                    >
+                                        <AutoTranslate>Add</AutoTranslate>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditMode(true)}
+                                        className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                    >
+                                        <AutoTranslate>Edit</AutoTranslate>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </form>
+                )}
+
+                {/* Popup Component */}
+                {showModal && popupMessage && (
+                    <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
+                )}
+
             </div>
         </div>
     )

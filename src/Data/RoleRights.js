@@ -304,12 +304,12 @@ const Rolesrights = () => {
     }
 
     return (
-        <div className="px-2">
-            <h4 className="text-2xl mb-1 font-semibold">
-                <AutoTranslate>Role Rights</AutoTranslate>
-            </h4>
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-                <div className="mb-4 bg-slate-100 p-2 rounded-lg">
+        <div className="">
+      <div className="title">
+        <h1><AutoTranslate>Role Rights</AutoTranslate></h1>
+      </div>
+
+            <div className="card">
                     {isLoading ? (
                         <LoadingComponent />
                     ) : error ? (
@@ -318,13 +318,12 @@ const Rolesrights = () => {
                         </div>
                     ) : (
                         <form className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <div className="relative">
-                                    <label className="block text-lg font-medium text-gray-700 mb-1">
+                            <div className="grid grid-col-4 mb-8">
+                                <div className="form-group ">
+                                    <label>
                                         <AutoTranslate>Select Role</AutoTranslate>
                                     </label>
                                     <select
-                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                         id="roleSelect"
                                         value={selectedRole}
                                         onChange={handleRoleChange}
@@ -345,11 +344,14 @@ const Rolesrights = () => {
                                 </div>
                             </div>
 
-                            <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
-                                <table className="min-w-full border border-gray-200">
+           
+          
+
+                            <div className="table-wrapper" style={{ maxHeight: '400px' }}>
+                                <table className="">
                                     <thead className="bg-gray-100">
                                         <tr>
-                                            <th colSpan="2" className="py-3 px-4 text-left font-semibold text-gra-700 border-b border-gray-200">
+                                            <th colSpan="2">
                                                 <AutoTranslate>Templates</AutoTranslate>
                                             </th>
                                         </tr>
@@ -358,7 +360,7 @@ const Rolesrights = () => {
                                         {templates.length > 0 ? (
                                             templates.map((template, index) => (
                                                 <tr key={template.id} className="hover:bg-gray-50">
-                                                    <td className="py-3 px-4 border-b border-gray-200">
+                                                    <td>
                                                         {template.name || <AutoTranslate>No Name</AutoTranslate>}
                                                     </td>
                                                     <td className="py-3 px-4 border-b border-gray-200 text-center w-24">
@@ -394,7 +396,7 @@ const Rolesrights = () => {
                             <div className="flex justify-end space-x-2 mt-6">
                                 <button
                                     type="button"
-                                    className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700 flex items-center"
+                                    className="btn-primary flex items-center"
                                     onClick={handleSave}
                                 >
                                     <AutoTranslate>Save</AutoTranslate>
@@ -421,7 +423,6 @@ const Rolesrights = () => {
                             }}
                         />
                     )}
-                </div>
             </div>
         </div>
     );

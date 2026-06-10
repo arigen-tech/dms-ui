@@ -27,7 +27,7 @@ const AssignApplication = () => {
 
     // State for tracking data loading
     const [isLoading, setIsLoading] = useState(false);
-    
+
     // State for translated placeholders
     const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
         selectTemplate: 'Select Template',
@@ -100,7 +100,7 @@ const AssignApplication = () => {
                 selectAll: selectAllPlaceholder,
             });
         };
-        
+
         updatePlaceholders();
     }, [currentLanguage, translatePlaceholder, isTranslationNeeded]);
 
@@ -620,195 +620,189 @@ const AssignApplication = () => {
     }
 
     return (
-        <div className="px-2">
-            <h1 className="text-2xl font-semibold mb-6 text-gray-800">
-                <AutoTranslate>Assign Application To Template</AutoTranslate>
-            </h1>
+        <div className="px-2-">
+            <div className="title">
+                <h1><AutoTranslate>Assign Application To Template</AutoTranslate></h1>
+            </div>
 
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-                <div className="mb-4 bg-slate-100 p-4 rounded-lg">
+            <div className="card">
+                {popupMessage && (
+                    <Popup
+                        message={popupMessage.message}
+                        type={popupMessage.type}
+                        onClose={popupMessage.onClose}
+                    />
+                )}
+                <div className="grid grid-col-4 itemEnd mb-8">
+                    <div className="form-group ">
+                        <label>
+                            <AutoTranslate>Template</AutoTranslate><AutoTranslate> Name</AutoTranslate> <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            required
+                            onChange={handleTemplateSelect}
+                            value={selectedTemplate}
+                        >
+                            <option value="" disabled>
+                                <AutoTranslate>{translatedPlaceholders.selectTemplate}</AutoTranslate>
+                            </option>
+                            {templates.map((template) => (
+                                <option key={template.id} value={template.id}>
+                                    {template.templateName}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                    {popupMessage && (
-                        <Popup
-                            message={popupMessage.message}
-                            type={popupMessage.type}
-                            onClose={popupMessage.onClose}
-                        />
-                    )}
+                    <div className="form-group ">
+                        <button
+                            type="button"
+                            className="btn-primary flex items-center justify-center w-full"
+                            onClick={handleAddClick}>
+                            <PlusCircleIcon className="h-5 w-5 mr-2" />
+                            <AutoTranslate>Application</AutoTranslate>
+                        </button>
+                    </div>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
-                        <div className="md:col-span-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <AutoTranslate>Template</AutoTranslate><AutoTranslate> Name</AutoTranslate> <span className="text-red-500">*</span>
+                {showModuleSection && (
+                    <div className="grid grid-col-4 itemEnd mb-8">
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Module Name</AutoTranslate>
                             </label>
                             <select
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
-                                onChange={handleTemplateSelect}
-                                value={selectedTemplate}
+                                onChange={handleParentApplicationSelect}
+                                value={selectedParentApp}
                             >
                                 <option value="" disabled>
-                                    <AutoTranslate>{translatedPlaceholders.selectTemplate}</AutoTranslate>
+                                    <AutoTranslate>{translatedPlaceholders.selectParentApplication}</AutoTranslate>
                                 </option>
-                                {templates.map((template) => (
-                                    <option key={template.id} value={template.id}>
-                                        {template.templateName}
+                                {parentApplications.map((app) => (
+                                    <option key={app.id} value={app.id}>
+                                        {app.applicationName}
                                     </option>
                                 ))}
                             </select>
                         </div>
+                    </div>
+                )}
 
-                        <div className="md:col-span-3">
+                {selectedTemplate && (
+                    <div className="mb-6">
+                        <h2>
+                            <AutoTranslate>Template Modules</AutoTranslate>
+                        </h2>
+                        <div className="table-wrapper">
+                            <table className="">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <AutoTranslate>Sr No</AutoTranslate>
+                                        </th>
+                                        <th>
+                                            <AutoTranslate>Assigned Module</AutoTranslate>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {templateModules.length > 0 ? (
+                                        templateModules.map((item) => (
+                                            <tr key={item.srNo} className="hover:bg-gray-50">
+                                                <td>{item.srNo}</td>
+                                                <td>{item.module}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="2" className="p-3 text-center">
+                                                <AutoTranslate>No modules assigned to this template</AutoTranslate>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {showModuleSection && showModuleTable && (
+                    <div>
+                        <h2>
+                            <AutoTranslate>Child Applications</AutoTranslate>
+                        </h2>
+                        <div className="table-wrapper">
+                            <table className="">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <AutoTranslate>Sr No</AutoTranslate>
+                                        </th>
+                                        <th>
+                                            <AutoTranslate>Assigned Module</AutoTranslate>
+                                        </th>
+                                        <th>
+                                            <div className="flex justify-center">
+                                                <label className="flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-2"
+                                                    checked={childApplications.length > 0 && childApplications.every(item => item.checked)}
+                                                    onChange={handleSelectAllFeatures}
+                                                />
+                                                <AutoTranslate>{translatedPlaceholders.selectAll}</AutoTranslate>
+                                            </label>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {childApplications.length > 0 ? (
+                                        childApplications
+                                            .filter(item => {
+                                                if (!item.parentHierarchy) return true;
+                                                const parentChain = item.parentHierarchy.split(" -> ");
+                                                let currentPath = "";
+
+                                                for (let i = 0; i < parentChain.length; i++) {
+                                                    if (i > 0) currentPath += " -> ";
+                                                    currentPath += parentChain[i];
+
+                                                    const ancestor = childApplications.find(
+                                                        app => app.displayName === currentPath
+                                                    );
+
+                                                    if (ancestor && !ancestor.expanded) {
+                                                        return false;
+                                                    }
+                                                }
+
+                                                return true;
+                                            })
+                                            .map(item => renderNestedItem(item))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="3" className="text-center">
+                                                <AutoTranslate>No child applications found</AutoTranslate>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="flex justify-end mt-6">
                             <button
                                 type="button"
-                                className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg hover:bg-blue-800 transition-colors flex items-center justify-center"
-                                onClick={handleAddClick}
+                                className="btn-primary flex items-center"
+                                onClick={handleSave}
                             >
-                                <PlusCircleIcon className="h-5 w-5 mr-2" />
-                                <AutoTranslate>Application</AutoTranslate>
+                                <CheckCircleIcon className="h-5 w-5 mr-2" />
+                                <AutoTranslate>Save</AutoTranslate>
                             </button>
                         </div>
                     </div>
-
-                    {showModuleSection && (
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
-                            <div className="md:col-span-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    <AutoTranslate>Module Name</AutoTranslate>
-                                </label>
-                                <select
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    required
-                                    onChange={handleParentApplicationSelect}
-                                    value={selectedParentApp}
-                                >
-                                    <option value="" disabled>
-                                        <AutoTranslate>{translatedPlaceholders.selectParentApplication}</AutoTranslate>
-                                    </option>
-                                    {parentApplications.map((app) => (
-                                        <option key={app.id} value={app.id}>
-                                            {app.applicationName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    )}
-
-                    {selectedTemplate && (
-                        <div className="mb-6">
-                            <h6 className="text-lg font-semibold mb-4 text-gray-700">
-                                <AutoTranslate>Template Modules</AutoTranslate>
-                            </h6>
-                            <div className="overflow-x-auto">
-                                <table className="w-full border-collapse border border-gray-200 rounded-lg">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">
-                                                <AutoTranslate>Sr No</AutoTranslate>
-                                            </th>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">
-                                                <AutoTranslate>Assigned Module</AutoTranslate>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {templateModules.length > 0 ? (
-                                            templateModules.map((item) => (
-                                                <tr key={item.srNo} className="hover:bg-gray-50">
-                                                    <td className="p-3 border border-gray-200">{item.srNo}</td>
-                                                    <td className="p-3 border border-gray-200">{item.module}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="2" className="p-3 border border-gray-200 text-center text-gray-500">
-                                                    <AutoTranslate>No modules assigned to this template</AutoTranslate>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {showModuleSection && showModuleTable && (
-                        <div>
-                            <h6 className="text-lg font-semibold mb-4 text-gray-700">
-                                <AutoTranslate>Child Applications</AutoTranslate>
-                            </h6>
-                            <div className="overflow-x-auto">
-                                <table className="w-full border-collapse border border-gray-200 rounded-lg">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">
-                                                <AutoTranslate>Sr No</AutoTranslate>
-                                            </th>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">
-                                                <AutoTranslate>Assigned Module</AutoTranslate>
-                                            </th>
-                                            <th className="p-3 border border-gray-200 text-left font-semibold">
-                                                <label className="flex items-center cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-2"
-                                                        checked={childApplications.length > 0 && childApplications.every(item => item.checked)}
-                                                        onChange={handleSelectAllFeatures}
-                                                    />
-                                                    <AutoTranslate>{translatedPlaceholders.selectAll}</AutoTranslate>
-                                                </label>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {childApplications.length > 0 ? (
-                                            childApplications
-                                                .filter(item => {
-                                                    if (!item.parentHierarchy) return true;
-                                                    const parentChain = item.parentHierarchy.split(" -> ");
-                                                    let currentPath = "";
-
-                                                    for (let i = 0; i < parentChain.length; i++) {
-                                                        if (i > 0) currentPath += " -> ";
-                                                        currentPath += parentChain[i];
-
-                                                        const ancestor = childApplications.find(
-                                                            app => app.displayName === currentPath
-                                                        );
-
-                                                        if (ancestor && !ancestor.expanded) {
-                                                            return false;
-                                                        }
-                                                    }
-
-                                                    return true;
-                                                })
-                                                .map(item => renderNestedItem(item))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="3" className="p-3 border border-gray-200 text-center text-gray-500">
-                                                    <AutoTranslate>No child applications found</AutoTranslate>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="flex justify-end mt-6">
-                                <button
-                                    type="button"
-                                    className="bg-blue-900 text-white py-2.5 px-6 rounded-lg hover:bg-blue-800 transition-colors flex items-center"
-                                    onClick={handleSave}
-                                >
-                                    <CheckCircleIcon className="h-5 w-5 mr-2" />
-                                    <AutoTranslate>Save</AutoTranslate>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                </div>
+                )}
             </div>
         </div>
     );

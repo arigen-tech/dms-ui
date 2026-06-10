@@ -474,13 +474,13 @@ function Sidebar({ roleChanged }) {
       Archival: IoArchiveSharp,
       "Audit & Reports": TbReportSearch,
       "OCR & Search": HiDocumentSearch,
-      "Document Reports" : MdEditDocument, 
-      "Control And Workflow" : GrDocumentConfig, 
-      Access : IoDocumentLock, 
-      Rights : RiUserSettingsFill, 
-      "User Reports" : TbReport, 
+      "Document Reports": MdEditDocument,
+      "Control And Workflow": GrDocumentConfig,
+      Access: IoDocumentLock,
+      Rights: RiUserSettingsFill,
+      "User Reports": TbReport,
     };
-    
+
     return iconMap[name] || null; // Return null if icon not found
   };
 
@@ -546,9 +546,17 @@ function Sidebar({ roleChanged }) {
     return countMap[url] || 0;
   };
 
+  
+
   // Sidebar Link component with null check
   const SidebarLink = ({ to, icon: Icon, text, count }) => {
     // If Icon is null or undefined, render without icon
+    const bgClass = {
+      Pending: "pendingBg",
+      Approved: "approvedBg",
+      Rejected: "rejectedBg",
+      Trash: "trashBg",
+    }[text] || "";
     if (!Icon) {
       return (
         <NavLink
@@ -565,7 +573,8 @@ function Sidebar({ roleChanged }) {
               <AutoTranslate>{text}</AutoTranslate>
             </span>
           </div>
-          {count > 0 && (<span className="count">{count}</span>)}
+          {/* {count > 0 && (<span className="count">{count}</span>)} */}
+          {count > 0 && (<span className={`count ${bgClass}`}>{count}</span>)}
         </NavLink>
       );
     }
@@ -662,7 +671,7 @@ function Sidebar({ roleChanged }) {
       className="max-h-[100%] overflow-y-auto print:max-h-none print:overflow-auto h-screen flex flex-col justify-between bg-blue-verticle text-white transition-all duration-300 overflow-hidden hover:overflow-y-auto custom-scrollbar hover-scrollbar"
     >
       <div className="sideBarMenu">
-        <div className="logo flex items-center justify-center">
+        <div className="logo">
           <img src={logo} alt="DMS" />
         </div>
         <div className="main-navbar">

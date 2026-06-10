@@ -1,5 +1,6 @@
 import { ROLE_API } from "../API/apiConfig";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -35,7 +36,7 @@ const Role = () => {
 
   // State for tracking data loading only
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // State for translated placeholders
   const [translatedPlaceholders, setTranslatedPlaceholders] = useState({
     search: 'Search...',
@@ -109,7 +110,7 @@ const Role = () => {
         enterRoleCode: enterRoleCodePlaceholder,
       });
     };
-    
+
     updatePlaceholders();
   }, [currentLanguage, translatePlaceholder, isTranslationNeeded]);
 
@@ -157,7 +158,7 @@ const Role = () => {
   const handleInputsChange = (e) => {
     const { name, value } = e.target;
     const numericValue = value.replace(/[^0-9]/g, "").slice(0, 3); // Limit to 3 digits
-    
+
     setFormData(prev => ({ ...prev, [name]: numericValue }));
   };
 
@@ -165,10 +166,10 @@ const Role = () => {
     return roles.some(r => {
       // Check if we're editing an existing role (exclude it from duplicate check)
       const isEditingCurrent = editingRoleId && r.id === editingRoleId;
-      
+
       // Check for duplicate name (case-insensitive) or duplicate code
       return !isEditingCurrent && (
-        (r.role.toLowerCase() === role.toLowerCase()) || 
+        (r.role.toLowerCase() === role.toLowerCase()) ||
         (r.roleCode.toString() === roleCode.toString())
       );
     });
@@ -195,7 +196,7 @@ const Role = () => {
 
   const handleAddRole = async () => {
     if (!validateForm() || isSubmitting) return;
-    
+
     setIsSubmitting(true); // Disable button during submission
 
     try {
@@ -228,7 +229,7 @@ const Role = () => {
         role: roleToEdit.role,
         roleCode: roleToEdit.roleCode,
       });
-      
+
       // Scroll to form section
       if (formSectionRef.current) {
         formSectionRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -238,7 +239,7 @@ const Role = () => {
 
   const handleSaveEdit = async () => {
     if (!validateForm() || isSubmitting) return;
-    
+
     setIsSubmitting(true); // Disable button during submission
 
     try {
@@ -370,13 +371,11 @@ const Role = () => {
   }
 
   return (
-    <div className="px-2">
-      <h1 className="text-2xl mb-1 font-semibold">
-        <AutoTranslate>Roles</AutoTranslate>
-      </h1>
-
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-
+    <div className="px-2-">
+      <div className="title">
+        <h1><AutoTranslate>Roles</AutoTranslate></h1>
+      </div>
+      <div className="card">
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -386,11 +385,13 @@ const Role = () => {
         )}
 
         {/* Form Section with ref */}
-        <div ref={formSectionRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
-          <div className="flex gap-6">
-            <div className="w-4/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <label className="block text-md font-medium text-gray-700">
-                <AutoTranslate>Role</AutoTranslate> <span className="text-red-500">*</span>
+        <div className='mb-8'>
+          <div ref={formSectionRef} className="cardLight">
+            <div className="grid grid-col-4 itemEnd">
+              <div className="form-group ">
+                <label>
+                  <AutoTranslate>Role</AutoTranslate> <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   name="role"
@@ -398,12 +399,16 @@ const Role = () => {
                   value={formData.role}
                   onChange={handleInputChange}
                   maxLength={30}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </label>
+              </div>
 
-              <label className="block text-md font-medium text-gray-700">
-                <AutoTranslate>Role Code</AutoTranslate> <span className="text-red-500 text-sm ml-2 align-middle"><AutoTranslate>(Unique)</AutoTranslate></span>
+              <div className="form-group ">
+                <label>
+                  <AutoTranslate>Role Code</AutoTranslate>
+                  <span className="text-red-500 text-sm ml-2 align-middle">
+                    <AutoTranslate>(Unique)</AutoTranslate>
+                  </span>
+                </label>
                 <input
                   type="text"
                   name="roleCode"
@@ -412,57 +417,54 @@ const Role = () => {
                   onChange={handleInputsChange}
                   maxLength={3}
                   minLength={3}
-                  className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </label>
-            </div>
+              </div>
 
-            <div className="w-1/5 flex items-end">
-              {editingRoleId === null ? (
-                <button
-                  onClick={handleAddRole}
-                  disabled={isSubmitting}
-                  className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${
-                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <AutoTranslate>Adding...</AutoTranslate>
-                  ) : (
-                    <>
-                      <PlusCircleIcon className="h-5 w-5 mr-1" /> <AutoTranslate>Add Role</AutoTranslate>
-                    </>
-                  )}
-                </button>
-              ) : (
-                <button
-                  onClick={handleSaveEdit}
-                  disabled={isSubmitting}
-                  className={`bg-blue-900 text-white rounded-2xl p-2 w-full text-sm flex items-center justify-center ${
-                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <AutoTranslate>Updating...</AutoTranslate>
-                  ) : (
-                    <>
-                      <CheckCircleIcon className="h-5 w-5 mr-1" /> <AutoTranslate>Update</AutoTranslate>
-                    </>
-                  )}
-                </button>
-              )}
+              <div className="form-group ">
+                {editingRoleId === null ? (
+                  <button
+                    onClick={handleAddRole}
+                    disabled={isSubmitting}
+                    className={`btn-primary flex items-center justify-center w-full ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                  >
+                    {isSubmitting ? (
+                      <AutoTranslate>Adding...</AutoTranslate>
+                    ) : (
+                      <>
+                        <PlusCircleIcon className="h-5 w-5 mr-1" /> <AutoTranslate>Add Role</AutoTranslate>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={isSubmitting}
+                    className={`btn-primary flex items-center justify-center w-full ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                  >
+                    {isSubmitting ? (
+                      <AutoTranslate>Updating...</AutoTranslate>
+                    ) : (
+                      <>
+                        <CheckCircleIcon className="h-5 w-5 mr-1" /> <AutoTranslate>Update</AutoTranslate>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-            <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
+
+        <div className="data-search-wrapper">
+          <div className="form-group flex items-center gap-4">
+            <label htmlFor="itemsPerPage">
               <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -477,53 +479,55 @@ const Role = () => {
             </select>
           </div>
 
-          <div className="flex items-center w-full md:w-auto flex-1">
+          <div className="form-group">
             <input
               type="text"
               placeholder={translatedPlaceholders.search}
-              className="border rounded-l-md p-1 outline-none w-full"
+              className="searchIcon"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border">
+
+
+        <div className="table-wrapper">
+          <table className="">
             <thead>
-              <tr className="bg-slate-100">
-                <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Role</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Role Code</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Created Date</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Updated Date</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Status</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Edit</AutoTranslate></th>
-                <th className="border p-2 text-left"><AutoTranslate>Action</AutoTranslate></th>
+              <tr>
+                <th className="text-center"><AutoTranslate>SN</AutoTranslate></th>
+                <th><AutoTranslate>Role</AutoTranslate></th>
+                <th className="text-center"><AutoTranslate>Role Code</AutoTranslate></th>
+                <th><AutoTranslate>Created Date</AutoTranslate></th>
+                <th><AutoTranslate>Updated Date</AutoTranslate></th>
+                <th><AutoTranslate>Status</AutoTranslate></th>
+                <th className="text-center"><AutoTranslate>Edit</AutoTranslate></th>
+                <th className="text-center"><AutoTranslate>Action</AutoTranslate></th>
               </tr>
             </thead>
             <tbody>
               {paginatedRoles.map((role, index) => (
                 <tr key={role.id}>
-                  <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
-                  <td className="border p-2">{role.role}</td>
-                  <td className="border p-2">{role.roleCode}</td>
-                  <td className="border p-2">{formatDate(role.createdOn)}</td>
-                  <td className="border p-2">{formatDate(role.updatedOn)}</td>
-                  <td className="border p-2">
+                  <td className="text-center">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
+                  <td>{role.role}</td>
+                  <td className="text-center">{role.roleCode}</td>
+                  <td>{formatDate(role.createdOn)}</td>
+                  <td>{formatDate(role.updatedOn)}</td>
+                  <td>
                     {role.isActive ? 'Active' : 'Inactive'}
                   </td>
-                  <td className="border p-2 text-center">
-                    <button 
-                      onClick={() => handleEditRole(role.id)} 
-                      disabled={!role.isActive}
-                      className={`${!role.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
-                    </button>
+                  <td>
+                    <div className="btn-center">
+                      <button
+                        onClick={() => handleEditRole(role.id)}
+                        disabled={!role.isActive}
+                        className={`viewBtn ${!role.isActive ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        <PencilIcon />
+                      </button>
+                    </div>
                   </td>
-                  <td className="border p-2 text-center">
+                  <td className="text-center">
                     <button
                       onClick={() => handleToggleActiveStatus(role)}
                       className={`p-1 rounded-full ${role.isActive ? "bg-green-500" : "bg-red-500"}`}
@@ -541,70 +545,89 @@ const Role = () => {
           </table>
         </div>
 
-        <div className="flex items-center mt-4">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1 || totalPages === 0}
-            className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
-          >
-            <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-            <AutoTranslate>Previous</AutoTranslate>
-          </button>
+        {/* Pagination Controls */}
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
+            </div>
+          </div>
+          <div className="items">
+            <div className="paginationBtn">
+              {/* Previous Button */}
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                {/* <AutoTranslate>Previous</AutoTranslate> */}
+                <IoIosArrowBack />
+              </button>
 
-          {totalPages > 0 && getPageNumbers().map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"}`}
-            >
-              {page}
-            </button>
-          ))}
+              {/* Page Number Buttons */}
+              {totalPages > 0 && getPageNumbers().map((page) => (
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                  {page}
+                </button>
+              ))}
 
-          <span className="text-sm text-gray-700 mx-2">
-            <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-          </span>
-
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"}`}
-          >
-            <AutoTranslate>Next</AutoTranslate>
-            <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-          </button>
-          <div className="ml-4">
-            <span className="text-sm text-gray-700">
-              <AutoTranslate>
-                {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-              </AutoTranslate>
-            </span>
+              {/* Next Button */}
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <AutoTranslate>Next</AutoTranslate> */}
+                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                <IoIosArrowForward />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {modalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">
-              <AutoTranslate>Confirm Status Change</AutoTranslate>
-            </h2>
-            <p className="mb-4">
-              <AutoTranslate>Are you sure you want to</AutoTranslate> {roleToToggle?.isActive ?
-                <AutoTranslate>deactivate</AutoTranslate> :
-                <AutoTranslate>activate</AutoTranslate>} <AutoTranslate>this role</AutoTranslate> <strong>{roleToToggle?.role}</strong>?
-            </p>
-            <div className="flex justify-end gap-4">
-              <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
-              <button
-                onClick={confirmToggleActiveStatus}
-                disabled={isConfirmDisabled}
-                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
-              </button>
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
+
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Confirm Status Change</AutoTranslate></h2>
+              </div>
+            </div>
+
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <p className="mb-4">
+                  <AutoTranslate>Are you sure you want to</AutoTranslate> {roleToToggle?.isActive ?
+                    <AutoTranslate>deactivate</AutoTranslate> :
+                    <AutoTranslate>activate</AutoTranslate>} <AutoTranslate>this role</AutoTranslate> <strong>{roleToToggle?.role}</strong>?
+                </p>
+                <div className="flex justify-end gap-4">
+                  <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={confirmToggleActiveStatus}
+                    disabled={isConfirmDisabled}
+                    className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
