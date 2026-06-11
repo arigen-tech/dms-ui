@@ -312,7 +312,7 @@ const DocumentUploadReport = () => {
 
 
             <div className="card mb-6">
-                <div className="cardLight">
+                <div className="">
                     <div className="grid grid-col-4 mb-4">
 
                         {/* Branch */}

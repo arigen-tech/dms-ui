@@ -154,7 +154,7 @@ const DocumentReport = () => {
   const fetchUserDetails = async () => {
     try {
       const userId = localStorage.getItem("id");
-      const response = await apiClient.get( `${API_HOST}/employee/findById/${userId}`);
+      const response = await apiClient.get(`${API_HOST}/employee/findById/${userId}`);
 
       setUserBranch(response.data.branch);
       setUserDepartment(response.data.department);
@@ -282,11 +282,12 @@ const DocumentReport = () => {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4 font-semibold">
-        <AutoTranslate>Document Reports</AutoTranslate>
-      </h1>
-      <div className="bg-white p-4 rounded-lg shadow-md">
+    <div className="px-2-">
+      <div className="title">
+        <h1><AutoTranslate>Document Reports</AutoTranslate></h1>
+      </div>
+
+      <div className="card">
         {popupMessage && (
           <Popup
             message={popupMessage.message}
@@ -294,11 +295,11 @@ const DocumentReport = () => {
             onClose={popupMessage.onClose}
           />
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-slate-100 p-4 rounded-lg">
+        <div className="grid grid-col-4">
           {role === BRANCH_ADMIN ? (
             <>
-              <div className="flex flex-col">
-                <label className="mb-1" htmlFor="branch">
+              <div className="form-group">
+                <label htmlFor="branch">
                   <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
                 </label>
                 <select
@@ -306,22 +307,20 @@ const DocumentReport = () => {
                   name="branch"
                   value={searchCriteria.branch}
                   onChange={handleInputChange}
-                  className="p-2 border rounded-md outline-none"
                   disabled={true}
                 >
                   <option value={userBranch?.id}>{userBranch?.name}</option>
                 </select>
               </div>
 
-              <div className="flex flex-col">
-                <label className="mb-1" htmlFor="department">
+              <div className="form-group">
+                <label htmlFor="department">
                   <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
                 </label>
                 <select
                   id="department"
                   name="department"
                   onChange={handleInputChange}
-                  className="p-2 border rounded-md outline-none"
                 >
                   <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
                   {departmentOptions.map((department) => (
@@ -334,8 +333,8 @@ const DocumentReport = () => {
             </>
           ) : role === DEPARTMENT_ADMIN || role === USER ? (
             <>
-              <div className="flex flex-col">
-                <label className="mb-1" htmlFor="branch">
+              <div className="form-group">
+                <label htmlFor="branch">
                   <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
                 </label>
                 <select
@@ -343,15 +342,14 @@ const DocumentReport = () => {
                   name="branch"
                   value={searchCriteria.branch}
                   onChange={handleInputChange}
-                  className="p-2 border rounded-md outline-none"
                   disabled={true}
                 >
                   <option value={userBranch?.id}>{userBranch?.name}</option>
                 </select>
               </div>
 
-              <div className="flex flex-col">
-                <label className="mb-1" htmlFor="department">
+              <div className="form-group">
+                <label htmlFor="department">
                   <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
                 </label>
                 <select
@@ -359,7 +357,6 @@ const DocumentReport = () => {
                   name="department"
                   value={searchCriteria.department}
                   onChange={handleInputChange}
-                  className="p-2 border rounded-md outline-none"
                   disabled={true}
                 >
                   <option value={userDepartment?.id}>
@@ -370,8 +367,8 @@ const DocumentReport = () => {
             </>
           ) : (
             <>
-              <div className="flex flex-col">
-                <label className="mb-1" htmlFor="branch">
+              <div className="form-group">
+                <label htmlFor="branch">
                   <AutoTranslate>Branch</AutoTranslate> <span className="text-red-700">*</span>
                 </label>
                 <select
@@ -379,7 +376,6 @@ const DocumentReport = () => {
                   name="branch"
                   value={searchCriteria.branch}
                   onChange={handleInputChange}
-                  className="p-2 border rounded-md outline-none"
                 >
                   <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
                   {branchOptions.map((branch) => (
@@ -390,8 +386,8 @@ const DocumentReport = () => {
                 </select>
               </div>
 
-              <div className="flex flex-col">
-                <label className="mb-1" htmlFor="department">
+              <div className="form-group">
+                <label htmlFor="department">
                   <AutoTranslate>Department</AutoTranslate> <span className="text-red-700">*</span>
                 </label>
                 <select
@@ -399,7 +395,6 @@ const DocumentReport = () => {
                   name="department"
                   value={searchCriteria.department}
                   onChange={handleInputChange}
-                  className="p-2 border rounded-md outline-none"
                   disabled={!searchCriteria.branch}
                 >
                   <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
@@ -413,8 +408,8 @@ const DocumentReport = () => {
             </>
           )}
 
-          <div className="flex flex-col">
-            <label className="mb-1" htmlFor="category">
+          <div className="form-group">
+            <label htmlFor="category">
               <AutoTranslate>Category</AutoTranslate>
             </label>
             <select
@@ -422,7 +417,6 @@ const DocumentReport = () => {
               name="category"
               value={searchCriteria.category}
               onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
             >
               <option value=""><AutoTranslate>All Category</AutoTranslate></option>
               {categoryOptions.map((category) => (
@@ -433,8 +427,8 @@ const DocumentReport = () => {
             </select>
           </div>
 
-          <div className="flex flex-col">
-            <label className="mb-1" htmlFor="status">
+          <div className="form-group">
+            <label htmlFor="status">
               <AutoTranslate>Status</AutoTranslate>
             </label>
             <select
@@ -442,7 +436,6 @@ const DocumentReport = () => {
               name="status"
               value={searchCriteria.status}
               onChange={handleInputChange}
-              className="p-2 border rounded-md outline-none"
             >
               <option value=""><AutoTranslate>All Status</AutoTranslate></option>
               <option value="PENDING"><AutoTranslate>PENDING</AutoTranslate></option>
@@ -451,8 +444,8 @@ const DocumentReport = () => {
             </select>
           </div>
 
-          <div className="flex flex-col">
-            <label className="mb-1" htmlFor="fromDate">
+          <div className="form-group">
+            <label htmlFor="fromDate">
               <AutoTranslate>From Date</AutoTranslate> <span className="text-red-700">*</span>
             </label>
             <DatePicker
@@ -471,8 +464,8 @@ const DocumentReport = () => {
           </div>
 
           {/* To Date Picker */}
-          <div className="flex flex-col">
-            <label className="mb-1" htmlFor="toDate">
+          <div className="form-group">
+            <label htmlFor="toDate">
               <AutoTranslate>To Date</AutoTranslate> <span className="text-red-700">*</span>
             </label>
             <DatePicker
@@ -490,6 +483,7 @@ const DocumentReport = () => {
             />
 
           </div>
+          
 
         </div>
 
@@ -520,7 +514,7 @@ const DocumentReport = () => {
             />
             <FaFileExcel className="h-5 w-5 text-gray-700" />
             <span className="text-gray-700">
-             Excel
+              Excel
             </span>
           </label>
         </div>
@@ -528,34 +522,39 @@ const DocumentReport = () => {
         <button
           onClick={handleDownload}
           disabled={isProcessing}
-          className={`px-4 py-2 rounded ${isProcessing
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-500 hover:bg-blue-600"
-            } text-white`}
-        >
+          className={`btn-primary ${isProcessing ? "bg-gray-400 cursor-not-allowed" : "" }`}>
           {isProcessing ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Download</AutoTranslate>}
         </button>
       </div>
       {showModal && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50 z-50">
-          <div
-            className={`w-96 p-6 rounded-lg ${modalType === "success" ? "bg-white" : "bg-white"
-              } text-gray-900 shadow-lg`}
-          >
-            <h2 className="text-xl font-semibold mb-4">
-              {modalType === "success" ? <AutoTranslate>Success!</AutoTranslate> : <AutoTranslate>Error</AutoTranslate>}
-            </h2>
-            <p>{modalMessage}</p>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 bg-green-400 text-white p-2 rounded-md"
-              >
-                <AutoTranslate>OK</AutoTranslate>
-              </button>
+        <>
+          <div className="overlayModal">
+            <div className="document-modal modal-md">
+              {/* Header */}
+              <div className="modal-header">
+                <div className="modal-title">
+                  <h2>{modalType === "success" ? <AutoTranslate>Success!</AutoTranslate> : <AutoTranslate>Error</AutoTranslate>}</h2>
+                </div>
+              </div>
+
+              {/* Modal body Content */}
+              <div className="modal-body">
+                <div className="bodyScroller print:overflow-visible print:max-h-none">
+                  <p>{modalMessage}</p>
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={closeModal}
+                      className="px-4 py-2 bg-green-400 text-white p-2 rounded-md"
+                    >
+                      <AutoTranslate>OK</AutoTranslate>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+
+        </>
       )}
     </div>
   );

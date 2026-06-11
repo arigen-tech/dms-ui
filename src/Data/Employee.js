@@ -839,148 +839,150 @@ const UserAddEmployee = () => {
           />
         )}
 
-        <div ref={formRef} className="cardLight mb-8">
-          {error && <p className="text-red-500">{error}</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="form-group">
-              <label>
-                <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder={translatedPlaceholders.enterName}
-                name="name"
-                value={formData.name || ""}
-                onChange={handleInputChange}
-                maxLength={30}
-                required
-              />
-
-            </div>
-
-            <div className="form-group">
-              <label>
-                <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                placeholder={getFallbackTranslation('Enter Email', currentLanguage) || 'Enter Email'}
-                name="email"
-                value={formData.email || ""}
-                onChange={handleInputChange}
-                maxLength={30}
-                className={`${emailError ? "border-red-500" : ""}`}
-                required
-              />
-              {emailError && (
-                <p className="text-red-500 text-sm mt-1">{emailError}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>
-                <AutoTranslate>Mobile Number</AutoTranslate> <span className="text-red-500">*</span>
-              </label>
-              <div className="contactNo">
-                <span>+91</span>
-                <input
-                  type="tel"
-                  placeholder={getFallbackTranslation('Enter Mobile Number', currentLanguage) || 'Enter Mobile Number'}
-                  name="mobile"
-                  value={formData.mobile || ""}
-                  onChange={handleInputChange}
-                  maxLength={10}
-                  minLength={10}
-                  className={`${mobileError ? "border-red-500" : ""}`}
-                  required
-                />
-              </div>
-              {mobileError && (
-                <p className="text-red-500 text-sm mt-1">{mobileError}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>
-                <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
-              </label>
-              {role === SYSTEM_ADMIN ? (
-                <select
-                  name="branch"
-                  value={formData.branch?.id || ""}
-                  onChange={(e) => handleSelectChange(e, "branch")}
-                  required
-                >
-                  <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
-                  {branchOptions.map((branch) => (
-                    <option key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
+        <div className='mb-8'>
+          <div ref={formRef} className="cardLight">
+            {error && <p className="text-red-500">{error}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="form-group">
+                <label>
+                  <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  value={formData.branch?.name || ""}
-                  disabled
-                  readOnly
-                />
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>
-                <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
-              </label>
-              {role === SYSTEM_ADMIN ? (
-                <select
-                  name="department"
-                  value={formData.department?.id || ""}
-                  onChange={(e) => handleSelectChange(e, "department")}
+                  placeholder={translatedPlaceholders.enterName}
+                  name="name"
+                  value={formData.name || ""}
+                  onChange={handleInputChange}
+                  maxLength={30}
                   required
-                >
-                  <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
-                  {departmentOptions.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="mt-1 block w-full p-2 border rounded-md bg-gray-100">
-                  {formData.department?.name || "No Department Selected"}
+                />
+
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder={getFallbackTranslation('Enter Email', currentLanguage) || 'Enter Email'}
+                  name="email"
+                  value={formData.email || ""}
+                  onChange={handleInputChange}
+                  maxLength={30}
+                  className={`${emailError ? "border-red-500" : ""}`}
+                  required
+                />
+                {emailError && (
+                  <p className="text-red-500 text-sm mt-1">{emailError}</p>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <AutoTranslate>Mobile Number</AutoTranslate> <span className="text-red-500">*</span>
+                </label>
+                <div className="contactNo">
+                  <span>+91</span>
+                  <input
+                    type="tel"
+                    placeholder={getFallbackTranslation('Enter Mobile Number', currentLanguage) || 'Enter Mobile Number'}
+                    name="mobile"
+                    value={formData.mobile || ""}
+                    onChange={handleInputChange}
+                    maxLength={10}
+                    minLength={10}
+                    className={`${mobileError ? "border-red-500" : ""}`}
+                    required
+                  />
                 </div>
-              )}
+                {mobileError && (
+                  <p className="text-red-500 text-sm mt-1">{mobileError}</p>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
+                </label>
+                {role === SYSTEM_ADMIN ? (
+                  <select
+                    name="branch"
+                    value={formData.branch?.id || ""}
+                    onChange={(e) => handleSelectChange(e, "branch")}
+                    required
+                  >
+                    <option value=""><AutoTranslate>Select Branch</AutoTranslate></option>
+                    {branchOptions.map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={formData.branch?.name || ""}
+                    disabled
+                    readOnly
+                  />
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
+                </label>
+                {role === SYSTEM_ADMIN ? (
+                  <select
+                    name="department"
+                    value={formData.department?.id || ""}
+                    onChange={(e) => handleSelectChange(e, "department")}
+                    required
+                  >
+                    <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
+                    {departmentOptions.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="mt-1 block w-full p-2 border rounded-md bg-gray-100">
+                    {formData.department?.name || "No Department Selected"}
+                  </div>
+                )}
+              </div>
+
             </div>
 
-          </div>
-
-          <div className="mt-6 flex flex-wrap gap-4">
-            {editingIndex === null ? (
-              <button
-                onClick={handleAddEmployee}
-                disabled={isButtonDisabled || isSubmitting || emailError || mobileError}
-                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting || emailError || mobileError
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-                  }`}
-              >
-                <PlusCircleIcon className="h-5 w-5 mr-2" />
-                {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Add User</AutoTranslate>}
-              </button>
-            ) : (
-              <button
-                onClick={handleSaveEdit}
-                disabled={isButtonDisabled || isSubmitting || emailError || mobileError}
-                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting || emailError || mobileError
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-                  }`}
-              >
-                <CheckCircleIcon className="h-5 w-5 mr-2" />
-                {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Update</AutoTranslate>}
-              </button>
-            )}
+            <div className="mt-6 flex flex-wrap gap-4">
+              {editingIndex === null ? (
+                <button
+                  onClick={handleAddEmployee}
+                  disabled={isButtonDisabled || isSubmitting || emailError || mobileError}
+                  className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting || emailError || mobileError
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                    }`}
+                >
+                  <PlusCircleIcon className="h-5 w-5 mr-2" />
+                  {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Add User</AutoTranslate>}
+                </button>
+              ) : (
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={isButtonDisabled || isSubmitting || emailError || mobileError}
+                  className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting || emailError || mobileError
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                    }`}
+                >
+                  <CheckCircleIcon className="h-5 w-5 mr-2" />
+                  {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Update</AutoTranslate>}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -988,12 +990,11 @@ const UserAddEmployee = () => {
           <>
             <div className="grid grid-col-4 mb-4">
               <div className="form-group ">
-                <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm">
+                <label htmlFor="itemsPerPage">
                   <AutoTranslate>Show:</AutoTranslate>
                 </label>
                 <select
                   id="itemsPerPage"
-                  className="border rounded-r-lg p-1.5 outline-none w-full"
                   value={itemsPerPage}
                   onChange={(e) => {
                     setItemsPerPage(Number(e.target.value));
@@ -1009,12 +1010,11 @@ const UserAddEmployee = () => {
               </div>
 
               <div className="form-group ">
-                <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+                <label htmlFor="branchFilter">
                   <AutoTranslate>Branch</AutoTranslate>
                 </label>
                 <select
                   id="branchFilter"
-                  className="border rounded-r-lg p-1.5 outline-none w-full"
                   value={selectedBranch}
                   onChange={(e) => {
                     setSelectedBranch(e.target.value);
@@ -1032,12 +1032,11 @@ const UserAddEmployee = () => {
               </div>
 
               <div className="form-group ">
-                <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+                <label htmlFor="departmentFilter">
                   <AutoTranslate>Department</AutoTranslate>
                 </label>
                 <select
                   id="departmentFilter"
-                  className="border rounded-r-lg p-1.5 outline-none w-full"
                   value={selectedDepartment}
                   onChange={(e) => {
                     setSelectedDepartment(e.target.value);
@@ -1056,7 +1055,7 @@ const UserAddEmployee = () => {
 
               <div className="form-group ">
                 <label htmlFor="idSearchTeam">
-                  <AutoTranslate>Department</AutoTranslate>
+                  <AutoTranslate>Search</AutoTranslate>
                 </label>
                 <input
                   type="text"
@@ -1173,91 +1172,103 @@ const UserAddEmployee = () => {
             </div>
 
             {/* Pagination Controls */}
-          <div className="paginationWp">
-            <div className="items">
-              <div className="paginationText">
-                <span className="text-sm text-gray-700">
-                  <AutoTranslate>
-                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
-                  </AutoTranslate>
-                </span>
-                {/* Page Count Info */}
-                <span className="text-sm text-gray-700 mx-2">
-                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
-                </span>
+            <div className="paginationWp">
+              <div className="items">
+                <div className="paginationText">
+                  <span className="text-sm text-gray-700">
+                    <AutoTranslate>
+                      {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                        } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                    </AutoTranslate>
+                  </span>
+                  {/* Page Count Info */}
+                  <span className="text-sm text-gray-700 mx-2">
+                    (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className="items">
-              <div className="paginationBtn">
-                {/* Previous Button */}
-                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1 || totalPages === 0}
-                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-                >
-                  <IoIosArrowBack />
-                </button>
-
-
-                {/* Page Number Buttons */}
-                {totalPages > 0 && getPageNumbers().map((page) => (
-                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
-                    {page}
+              <div className="items">
+                <div className="paginationBtn">
+                  {/* Previous Button */}
+                  <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1 || totalPages === 0}
+                    className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                  >
+                    <IoIosArrowBack />
                   </button>
-                ))}
 
-      
-                {/* Next Button */}
-                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-                >
-                  {/* <AutoTranslate>Next</AutoTranslate> */}
-                  {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
-                  <IoIosArrowForward />
-                </button>
 
+                  {/* Page Number Buttons */}
+                  {totalPages > 0 && getPageNumbers().map((page) => (
+                    <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                      {page}
+                    </button>
+                  ))}
+
+
+                  {/* Next Button */}
+                  <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                  >
+                    {/* <AutoTranslate>Next</AutoTranslate> */}
+                    {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                    <IoIosArrowForward />
+                  </button>
+
+                </div>
               </div>
             </div>
-          </div>
 
           </>
         )}
       </div>
 
       {modalVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-            <h2 className="text-lg font-semibold mb-4">
-              <AutoTranslate>Confirm Status Change</AutoTranslate>
-            </h2>
-            <p>
-              <AutoTranslate>Are you sure you want to</AutoTranslate>{" "}
-              <strong>
-                {employeeToToggle?.active === true ? <AutoTranslate>deactivate</AutoTranslate> : <AutoTranslate>activate</AutoTranslate>}
-              </strong>{" "}
-              <AutoTranslate>the employee</AutoTranslate> <strong>{employeeToToggle?.name}</strong>?
-            </p>
-            <div className="flex justify-end space-x-4 mt-4">
-              <button
-                onClick={() => setModalVisible(false)}
-                className="btn-cancel"
-              >
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
-              <button
-                onClick={confirmToggleActive}
-                disabled={isConfirmDisabled}
-                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-              >
-                {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
-              </button>
+
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Confirm Status Change</AutoTranslate></h2>
+              </div>
+            </div>
+
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <p>
+                  <AutoTranslate>Are you sure you want to</AutoTranslate>{" "}
+                  <strong>
+                    {employeeToToggle?.active === true ? <AutoTranslate>deactivate</AutoTranslate> : <AutoTranslate>activate</AutoTranslate>}
+                  </strong>{" "}
+                  <AutoTranslate>the employee</AutoTranslate> <strong>{employeeToToggle?.name}</strong>?
+                </p>
+                <div className="flex justify-end space-x-4 mt-4">
+                  <button
+                    onClick={() => setModalVisible(false)}
+                    className="btn-cancel"
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={confirmToggleActive}
+                    disabled={isConfirmDisabled}
+                    className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                  >
+                    {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+
       )}
     </div>
   );

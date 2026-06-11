@@ -5,6 +5,7 @@ import { API_HOST, SYSTEM_ADMIN, BRANCH_ADMIN, DEPARTMENT_ADMIN } from "../API/a
 import Layout from '../Components/Layout';
 import axios from "axios";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { MdRemoveRedEye, MdOutlineClose } from "react-icons/md";
 import {
     MagnifyingGlassIcon,
     ArrowLeftIcon,
@@ -440,7 +441,7 @@ const IDCardGenerator = () => {
                 )}
 
                 {/* Main Card */}
-                <div className="card">
+                <div className="card mb-4">
                     {/* Search and Pagination Controls */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                         <div className="flex items-center space-x-4">
@@ -585,10 +586,10 @@ const IDCardGenerator = () => {
                 </div>
 
                 {/* ID Card Controls */}
-                <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                <div className="card">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex items-center space-x-4">
-                            <h2 className="text-lg font-semibold text-gray-800">ID Card Options</h2>
+                            <h2 className="mb-0">ID Card Options</h2>
 
                             <div className="flex items-center space-x-2">
                                 <button
@@ -716,58 +717,67 @@ const IDCardGenerator = () => {
 
             {/* Profile Picture Upload Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Update Profile Picture</h3>
-                            <button
-                                onClick={handleCancelUpload}
-                                className="text-gray-400 hover:text-gray-500"
-                            >
-                                <XMarkIcon className="h-6 w-6" />
-                            </button>
-                        </div>
+                <div className="overlayModal">
+                    <div className="document-modal modal-md">
+                        {/* Header */}
+                        <div className="modal-header">
+                            <div className="modal-title">
+                                <h2>Update Profile Picture</h2>
+                            </div>
+                            <div className="headerRight">
 
-                        <div className="mb-6">
-                            <p className="text-sm text-gray-600 mb-4">
-                                Updating profile picture for <span className="font-semibold">{selectedEmployeeName}</span>
-                            </p>
-
-                            <div className="flex flex-col items-center">
-                                {previewImage ? (
-                                    <img
-                                        src={previewImage}
-                                        alt="Preview"
-                                        className="h-32 w-32 rounded-full object-cover border-4 border-gray-200 mb-4"
-                                    />
-                                ) : (
-                                    <div className="h-32 w-32 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                                        <PhotoIcon className="h-16 w-16 text-gray-400" />
-                                    </div>
-                                )}
-
-                                <div className="text-xs text-gray-500">
-                                    {selectedFile?.name || "No file selected"}
-                                </div>
+                                {/* Close Button */}
+                                <button className="closeBtn" onClick={handleCancelUpload} title="Close">
+                                    <MdOutlineClose />
+                                </button>
                             </div>
                         </div>
 
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                onClick={handleCancelUpload}
-                                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleConfirmUpload}
-                                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                                <CheckIcon className="h-4 w-4 mr-1 inline" />
-                                Confirm
-                            </button>
+                        {/* Modal body Content */}
+                        <div className="modal-body">
+                            <div className="bodyScroller print:overflow-visible print:max-h-none">
+                                <div className="mb-6">
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        Updating profile picture for <span className="font-semibold">{selectedEmployeeName}</span>
+                                    </p>
+
+                                    <div className="flex flex-col items-center">
+                                        {previewImage ? (
+                                            <img
+                                                src={previewImage}
+                                                alt="Preview"
+                                                className="h-32 w-32 rounded-full object-cover border-4 border-gray-200 mb-4"
+                                            />
+                                        ) : (
+                                            <div className="h-32 w-32 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                                <PhotoIcon className="h-16 w-16 text-gray-400" />
+                                            </div>
+                                        )}
+
+                                        <div className="text-xs text-gray-500">
+                                            {selectedFile?.name || "No file selected"}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={handleCancelUpload}
+                                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleConfirmUpload}
+                                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                                    >
+                                        <CheckIcon className="h-4 w-4 mr-1 inline" />
+                                        Confirm
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
