@@ -1,6 +1,6 @@
-// frontend/i18n/AutoTranslate.jsx - FIXED VERSION WITH AUTO-SAVE
+// frontend/i18n/AutoTranslate.jsx - FIXED: MyMemory warning never rendered
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { translateText, getFallbackTranslation, loadAllTranslations } from '../i18n/autoTranslator';
+import { translateText, getFallbackTranslation, loadAllTranslations, isWarningText } from '../i18n/autoTranslator';
 import { useLanguage } from '../i18n/LanguageContext';
 import apiClient from '../API/apiClient';
 import { API_HOST } from '../API/apiConfig';
@@ -25,6 +25,20 @@ const AutoTranslate = ({
   const getCacheKey = useCallback((text, lang) => `${text}_${lang}`, []);
 
   // ─────────────────────────────────────────────
+  // FIX: Safe setter — never display warning text
+  // All setTranslatedText calls go through this
+  // ─────────────────────────────────────────────
+  const safeSetTranslated = useCallback((result, fallbackText) => {
+    if (!isMounted.current) return;
+    if (!result || isWarningText(result)) {
+      // Warning detected — silently fall back to original text
+      setTranslatedText(fallbackText || '');
+    } else {
+      setTranslatedText(result);
+    }
+  }, []);
+
+  // ─────────────────────────────────────────────
   // Core: translate text with fallback → DB → API → save
   // ─────────────────────────────────────────────
   const resolveTranslation = useCallback(async (text) => {
@@ -35,14 +49,19 @@ const AutoTranslate = ({
 
     // 1. Check local component cache
     if (translationCache.has(cacheKey)) {
-      return translationCache.get(cacheKey);
+      const cached = translationCache.get(cacheKey);
+      // FIX: Evict any warning text that got cached previously
+      if (isWarningText(cached)) {
+        translationCache.delete(cacheKey);
+      } else {
+        return cached;
+      }
     }
 
     // 2. Try fallback translations (synchronous, instant)
     const fallback = getFallbackTranslation(text, currentLanguage);
-    if (fallback && fallback !== text) {
+    if (fallback && fallback !== text && !isWarningText(fallback)) {
       translationCache.set(cacheKey, fallback);
-      // Save fallback to DB in background
       saveToDatabase(text, fallback, currentLanguage);
       return fallback;
     }
@@ -50,7 +69,8 @@ const AutoTranslate = ({
     // 3. Try DB via translateText (loads all translations if not loaded)
     try {
       const dbResult = await translateText(text, currentLanguage);
-      if (dbResult && dbResult !== text) {
+      // FIX: Validate result before caching/returning
+      if (dbResult && dbResult !== text && !isWarningText(dbResult)) {
         translationCache.set(cacheKey, dbResult);
         return dbResult;
       }
@@ -62,24 +82,37 @@ const AutoTranslate = ({
       try {
         const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${currentLanguage}`;
         const res = await fetch(url);
-        const json = await res.json();
+        const responseText = await res.text();
+
+        // FIX: Reject warning response before parsing
+        if (isWarningText(responseText)) {
+          console.debug('MyMemory daily limit reached, using original text');
+          pendingTranslations.delete(cacheKey);
+          return text;
+        }
+
+        const json = JSON.parse(responseText);
         const apiResult = json?.responseData?.translatedText;
 
+        // FIX: Also reject warning in the translated field itself
         if (apiResult
           && apiResult.trim() !== ''
-          && apiResult.toLowerCase() !== text.toLowerCase()) {
+          && apiResult.toLowerCase() !== text.toLowerCase()
+          && !isWarningText(apiResult)) {  // ← NEW guard
 
           let clean = apiResult;
           try { clean = decodeURIComponent(apiResult); } catch (e) {}
 
-          translationCache.set(cacheKey, clean);
-          // Save to DB so next time it comes from DB
-          saveToDatabase(text, clean, currentLanguage);
-          pendingTranslations.delete(cacheKey);
-          return clean;
+          // FIX: Check once more after decode
+          if (!isWarningText(clean)) {
+            translationCache.set(cacheKey, clean);
+            saveToDatabase(text, clean, currentLanguage);
+            pendingTranslations.delete(cacheKey);
+            return clean;
+          }
         }
       } catch (e) {
-        // Silent fail
+        console.debug('Translation API error (silent):', e.message);
       }
       pendingTranslations.delete(cacheKey);
     }
@@ -89,9 +122,11 @@ const AutoTranslate = ({
   }, [currentLanguage, isTranslationNeeded, skipTranslation, getCacheKey]);
 
   // ─────────────────────────────────────────────
-  // Save to DB (silent, background)
+  // Save to DB (silent, background) — never saves warning text
   // ─────────────────────────────────────────────
   const saveToDatabase = async (sourceText, translatedText, languageCode) => {
+    // FIX: Guard before saving
+    if (isWarningText(translatedText) || isWarningText(sourceText)) return;
     try {
       await apiClient.post(`${API_HOST}/translate/saveFallback`, {
         sourceText,
@@ -129,15 +164,20 @@ const AutoTranslate = ({
       // Check component cache for instant display
       const cacheKey = getCacheKey(text, currentLanguage);
       if (translationCache.has(cacheKey)) {
-        if (isMounted.current) setTranslatedText(translationCache.get(cacheKey));
-        return;
+        const cached = translationCache.get(cacheKey);
+        if (!isWarningText(cached)) {
+          if (isMounted.current) setTranslatedText(cached);
+          return;
+        } else {
+          // Evict stale warning from cache
+          translationCache.delete(cacheKey);
+        }
       }
 
       // Resolve translation (fallback → DB → API → save)
       const result = await resolveTranslation(text);
-      if (isMounted.current && result) {
-        setTranslatedText(result);
-      }
+      // FIX: Use safeSetTranslated so warning can never slip through
+      safeSetTranslated(result, text);
     };
 
     processTranslation();
@@ -145,7 +185,7 @@ const AutoTranslate = ({
     return () => {
       isMounted.current = false;
     };
-  }, [children, currentLanguage, isTranslationNeeded, skipTranslation, resolveTranslation, getCacheKey]);
+  }, [children, currentLanguage, isTranslationNeeded, skipTranslation, resolveTranslation, getCacheKey, safeSetTranslated]);
 
   // ─────────────────────────────────────────────
   // Language change effect
@@ -166,21 +206,30 @@ const AutoTranslate = ({
 
       // Show instantly from cache if available
       if (translationCache.has(cacheKey)) {
-        if (isMounted.current) setTranslatedText(translationCache.get(cacheKey));
-        return;
+        const cached = translationCache.get(cacheKey);
+        if (!isWarningText(cached)) {
+          if (isMounted.current) setTranslatedText(cached);
+          return;
+        } else {
+          translationCache.delete(cacheKey);
+        }
       }
 
       // Otherwise resolve fresh
       const resolve = async () => {
         const result = await resolveTranslation(text);
-        if (isMounted.current && result) setTranslatedText(result);
+        safeSetTranslated(result, text);
       };
       resolve();
     }
-  }, [currentLanguage, children, isTranslationNeeded, resolveTranslation, getCacheKey]);
+  }, [currentLanguage, children, isTranslationNeeded, resolveTranslation, getCacheKey, safeSetTranslated]);
 
-  const textToDisplay = translatedText || (typeof children === 'string' ? children : String(children || ''));
   const originalText = typeof children === 'string' ? children : String(children || '');
+
+  // FIX: Final safety net — if translatedText is somehow a warning, show original
+  const textToDisplay = (translatedText && !isWarningText(translatedText))
+    ? translatedText
+    : originalText;
 
   if (showOriginalOnHover && textToDisplay !== originalText) {
     return (

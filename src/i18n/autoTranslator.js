@@ -1,4 +1,4 @@
-// frontend/i18n/autoTranslator.js - BULK LOAD VERSION
+// frontend/i18n/autoTranslator.js - FIXED: MyMemory warning never stored or displayed
 import { API_HOST } from '../API/apiConfig';
 import apiClient from "../API/apiClient";
 
@@ -6,6 +6,23 @@ import apiClient from "../API/apiClient";
 const dbTranslations = {};
 const loadedLanguages = new Set();
 let supportedLanguages = null;
+
+// ─────────────────────────────────────────────
+// FIX: Central helper — detects ANY MyMemory warning/error string
+// Used everywhere before storing or returning a translation result
+// ─────────────────────────────────────────────
+const isWarningText = (text) => {
+  if (!text || typeof text !== 'string') return false;
+  const upper = text.toUpperCase();
+  return (
+    upper.includes('MYMEMORY WARNING') ||
+    upper.includes('YOU USED ALL AVAILABLE FREE TRANSLATIONS') ||
+    upper.includes('NEXT AVAILABLE IN') ||
+    upper.includes('MYMEMORY.TRANSLATED.NET/DOC/USAGELIMITS') ||
+    upper.includes('QUOTA EXCEEDED') ||
+    upper.includes('TOO MANY REQUESTS')
+  );
+};
 
 // COMPLETE Fallback translations for Hindi, Odia, and Marathi (UI ONLY)
 const fallbackTranslations = {
@@ -72,31 +89,6 @@ const fallbackTranslations = {
     'Enter Department Name': 'विभाग का नाम दर्ज करें',
     '(optional)': '(वैकल्पिक)',
     'DASHBOARD': 'डैशबोर्ड',
-    // 'Confirm Password': 'पासवर्ड पुष्टि करें',
-    // 'New Password': 'नया पासवर्ड',
-    // 'Current Password': 'वर्तमान पासवर्ड',
-    // 'Employee Profile': 'कर्मचारी प्रोफ़ाइल',
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
     'Drag & drop ,files, here, or choose from your device.': 'फाइलें यहाँ ड्रैग और ड्रॉप करें, या अपने डिवाइस से चुनें।',
     'Upload ,Files': 'फाइलें अपलोड करें',
     'Enter Mobile Number': 'मोबाइल नंबर दर्ज करें',
@@ -168,7 +160,7 @@ const fallbackTranslations = {
 };
 
 // ─────────────────────────────────────────────
-// NEW: Load ALL translations in one API call
+// Load ALL translations in one API call
 // ─────────────────────────────────────────────
 export const loadAllTranslations = async (languageCode) => {
   if (!languageCode || languageCode === 'en') return;
@@ -183,11 +175,17 @@ export const loadAllTranslations = async (languageCode) => {
     const data = response?.data || response;
 
     if (data && typeof data === 'object') {
-      dbTranslations[languageCode] = data;
+      // FIX: Filter out any warning strings that may have been saved to DB previously
+      const cleaned = {};
+      for (const [key, value] of Object.entries(data)) {
+        if (!isWarningText(value) && !isWarningText(key)) {
+          cleaned[key] = value;
+        }
+      }
+      dbTranslations[languageCode] = cleaned;
       loadedLanguages.add(languageCode);
-      // Also clear old localStorage cache so stale data is gone
       localStorage.removeItem('translationCache');
-      console.log(`✅ Loaded ${Object.keys(data).length} translations for ${languageCode}`);
+      console.log(`✅ Loaded ${Object.keys(cleaned).length} translations for ${languageCode}`);
     }
   } catch (error) {
     console.error(`❌ Failed to load translations for ${languageCode}:`, error.message);
@@ -197,52 +195,61 @@ export const loadAllTranslations = async (languageCode) => {
 };
 
 // ─────────────────────────────────────────────
-// NEW: Auto-translate missing words and save to DB (when online)
+// Auto-translate missing words and save to DB (when online)
 // ─────────────────────────────────────────────
 const autoSaveTranslation = async (text, languageCode) => {
   if (!text || !languageCode || languageCode === 'en') return;
   if (!navigator.onLine) return;
 
-  // Don't call API if already in DB
   const langData = dbTranslations[languageCode] || {};
   if (langData[text]) return;
 
   try {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${languageCode}`;
     const res = await fetch(url);
-    const json = await res.json();
-    const translated = json?.responseData?.translatedText;
+    const responseText = await res.text();
 
-    if (!translated
-      || translated.trim() === ''
-      || translated.toLowerCase() === text.toLowerCase()) {
+    // FIX: Reject warning responses before any parsing
+    if (isWarningText(responseText)) {
+      console.debug('MyMemory daily limit reached, skipping auto-save');
       return;
     }
 
-    // Decode any URL encoding
+    const json = JSON.parse(responseText);
+    const translated = json?.responseData?.translatedText;
+
+    // FIX: Also check the parsed translated field for warning text
+    if (!translated
+      || translated.trim() === ''
+      || translated.toLowerCase() === text.toLowerCase()
+      || isWarningText(translated)) {  // ← NEW: reject warning in translated field
+      return;
+    }
+
     let cleanTranslated = translated;
     try { cleanTranslated = decodeURIComponent(translated); } catch (e) {}
 
-    // Save to backend DB
+    // FIX: Final check after decode
+    if (isWarningText(cleanTranslated)) return;
+
     await apiClient.post(`${API_HOST}/translate/saveFallback`, {
       sourceText: text,
       translatedText: cleanTranslated,
       languageCode: languageCode
     });
 
-    // Also update in-memory so it shows on next render
     if (!dbTranslations[languageCode]) dbTranslations[languageCode] = {};
     dbTranslations[languageCode][text] = cleanTranslated;
 
     console.log(`💾 [AUTO-SAVED] "${text}" → "${cleanTranslated}" (${languageCode})`);
 
   } catch (error) {
-    // Silent fail — don't break the UI
+    console.debug('Auto-save error (silent):', error.message);
   }
 };
 
 // ─────────────────────────────────────────────
-// Get fallback translation IMMEDIATELY (synchronous) — UNCHANGED
+// Get fallback translation IMMEDIATELY (synchronous)
 // ─────────────────────────────────────────────
 export const getFallbackTranslation = (text, targetLanguageCode) => {
   if (!text || !targetLanguageCode || targetLanguageCode === 'en') {
@@ -270,7 +277,7 @@ export const getFallbackTranslation = (text, targetLanguageCode) => {
 };
 
 // ─────────────────────────────────────────────
-// Fetch supported languages — UNCHANGED
+// Fetch supported languages
 // ─────────────────────────────────────────────
 export const fetchSupportedLanguages = async () => {
   if (supportedLanguages) {
@@ -316,28 +323,28 @@ export const fetchSupportedLanguages = async () => {
 };
 
 // ─────────────────────────────────────────────
-// CHANGED: translateText now uses in-memory DB data + autoSaveTranslation
+// translateText — uses in-memory DB data + autoSaveTranslation
 // ─────────────────────────────────────────────
 export const translateText = async (text, targetLanguageCode = 'en') => {
   if (!text || typeof text !== 'string' || text.trim() === '' || targetLanguageCode === 'en') {
     return text;
   }
 
-  // Load all translations for this language if not loaded yet
   if (!loadedLanguages.has(targetLanguageCode)) {
     await loadAllTranslations(targetLanguageCode);
   }
 
   // STEP 1: Check in-memory DB translations
   const langData = dbTranslations[targetLanguageCode] || {};
-  if (langData[text] && langData[text] !== text) {
-    return langData[text];
+  const dbResult = langData[text];
+  // FIX: Validate DB result is not a warning (defensive, in case old data exists in DB)
+  if (dbResult && dbResult !== text && !isWarningText(dbResult)) {
+    return dbResult;
   }
 
   // STEP 2: Fallback
   const fallbackResult = getFallbackTranslation(text, targetLanguageCode);
   if (fallbackResult) {
-    // Save fallback to DB in background if online (so DB grows over time)
     autoSaveTranslation(text, targetLanguageCode);
     return fallbackResult;
   }
@@ -347,12 +354,11 @@ export const translateText = async (text, targetLanguageCode = 'en') => {
     autoSaveTranslation(text, targetLanguageCode);
   }
 
-  // Return original while auto-save happens in background
   return text;
 };
 
 // ─────────────────────────────────────────────
-// CHANGED: translateBatch uses in-memory data (no per-word API calls)
+// translateBatch — uses in-memory data
 // ─────────────────────────────────────────────
 export const translateBatch = async (texts, targetLanguageCode = 'en') => {
   if (!Array.isArray(texts) || texts.length === 0 || targetLanguageCode === 'en') {
@@ -365,13 +371,15 @@ export const translateBatch = async (texts, targetLanguageCode = 'en') => {
 
   return texts.map(text => {
     const langData = dbTranslations[targetLanguageCode] || {};
-    if (langData[text] && langData[text] !== text) return langData[text];
+    const dbResult = langData[text];
+    // FIX: Guard warning text here too
+    if (dbResult && dbResult !== text && !isWarningText(dbResult)) return dbResult;
     return getFallbackTranslation(text, targetLanguageCode) || text;
   });
 };
 
 // ─────────────────────────────────────────────
-// All below functions UNCHANGED
+// All below functions unchanged
 // ─────────────────────────────────────────────
 export const getSupportedLanguages = async () => {
   if (!supportedLanguages) {
@@ -400,14 +408,12 @@ export const addFallbackTranslations = (languageCode, translations) => {
   console.log(`✓ Added fallback translations for ${languageCode}`);
 };
 
-// CHANGED: clearLanguageCache now clears in-memory store
 export const clearLanguageCache = (languageCode) => {
   delete dbTranslations[languageCode];
   loadedLanguages.delete(languageCode);
   console.log(`🗑️ Cleared translations for language: ${languageCode}`);
 };
 
-// CHANGED: clearTranslationCache now clears in-memory store
 export const clearTranslationCache = () => {
   Object.keys(dbTranslations).forEach(k => delete dbTranslations[k]);
   loadedLanguages.clear();
@@ -429,19 +435,18 @@ export const getCacheInfo = () => {
   };
 };
 
-// CHANGED: translateInstant also checks in-memory DB data
 export const translateInstant = (text, targetLanguageCode = 'en') => {
   if (!text || targetLanguageCode === 'en') {
     return text;
   }
 
-  // Check in-memory DB translations first
   const langData = dbTranslations[targetLanguageCode] || {};
-  if (langData[text] && langData[text] !== text) {
-    return langData[text];
+  const dbResult = langData[text];
+  // FIX: Guard warning text
+  if (dbResult && dbResult !== text && !isWarningText(dbResult)) {
+    return dbResult;
   }
 
-  // Then fallback
   const fallback = getFallbackTranslation(text, targetLanguageCode);
   if (fallback) {
     return fallback;
@@ -466,7 +471,6 @@ export const translateObject = async (obj, targetLanguageCode = 'en') => {
   return translatedObj;
 };
 
-// CHANGED: preloadTranslations now just calls loadAllTranslations
 export const preloadTranslations = async (terms, languageCode) => {
   if (languageCode === 'en' || !languageCode) return;
   await loadAllTranslations(languageCode);
@@ -474,6 +478,8 @@ export const preloadTranslations = async (terms, languageCode) => {
 
 export const saveTranslationToDatabase = async (sourceText, translatedText, languageCode) => {
   if (!sourceText || !translatedText || !languageCode) return;
+  // FIX: Never save warning text to DB
+  if (isWarningText(translatedText)) return;
   try {
     await apiClient.post("/translate/saveFallback", {
       sourceText: sourceText,
@@ -485,3 +491,6 @@ export const saveTranslationToDatabase = async (sourceText, translatedText, lang
     console.error('Error saving to database:', error);
   }
 };
+
+// Export isWarningText so AutoTranslate.jsx can use the same helper
+export { isWarningText };

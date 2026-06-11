@@ -1091,13 +1091,13 @@ const ApprovedDoc = () => {
       const qrCodeBlob = response.data;
 
       if (!qrCodeBlob.type.includes("image/png")) {
-        throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
+        throw new Error("Received data is not a valid image");
       }
 
       const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
       setQrCodeUrl(qrCodeUrl);
     } catch (error) {
-      setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
+      setError("Error displaying QR Code: " + error.message);
     }
   };
 
