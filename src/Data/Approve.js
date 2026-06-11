@@ -749,57 +749,57 @@ const Approve = () => {
               )}
 
             </tbody>
-          </table>          
+          </table>
         </div>
         {/* Pagination Controls */}
-          <div className="paginationWp">
-            <div className="items">
-              <div className="paginationText">
-                <span className="text-sm text-gray-700">
-                  <AutoTranslate>
-                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
-                  </AutoTranslate>
-                </span>
-                {/* Page Count Info */}
-                <span className="text-sm text-gray-700 mx-2">
-                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
-                </span>
-              </div>
-            </div>
-            <div className="items">
-              <div className="paginationBtn">
-                {/* Previous Button */}
-                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1 || totalPages === 0}
-                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-                >
-                  {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
-                  {/* <AutoTranslate>Previous</AutoTranslate> */}
-                  <IoIosArrowBack />
-                </button>
-
-                {/* Page Number Buttons */}
-                {totalPages > 0 && getPageNumbers().map((page) => (
-                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
-                    {page}
-                  </button>
-                ))}
-
-                {/* Next Button */}
-                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-                >
-                  {/* <AutoTranslate>Next</AutoTranslate> */}
-                  {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
-                  <IoIosArrowForward />
-                </button>
-              </div>
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
             </div>
           </div>
+          <div className="items">
+            <div className="paginationBtn">
+              {/* Previous Button */}
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                {/* <AutoTranslate>Previous</AutoTranslate> */}
+                <IoIosArrowBack />
+              </button>
+
+              {/* Page Number Buttons */}
+              {totalPages > 0 && getPageNumbers().map((page) => (
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                  {page}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <AutoTranslate>Next</AutoTranslate> */}
+                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
 
         <>
           {isOpen && selectedDoc && (
@@ -1048,75 +1048,95 @@ const Approve = () => {
       </div>
 
       {isConfirmModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-4 rounded-md w-1/3 relative">
-            <h3 className="text-lg font-bold mb-2">
-              <AutoTranslate>Confirm Approval</AutoTranslate>
-            </h3>
-            <p><AutoTranslate>Are you sure you want to approve this document?</AutoTranslate></p>
-            <div className="flex justify-end mt-4">
-              <button
-                className="bg-green-500 text-white p-2 rounded-md mr-2"
-                onClick={approveDocument}
-              >
-                <AutoTranslate>Yes, Approve</AutoTranslate>
-              </button>
-              <button className="btn-cancel" onClick={() => setIsConfirmModalOpen(false)}>
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Confirm Approval</AutoTranslate></h2>
+              </div>
+            </div>
+
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <p><AutoTranslate>Are you sure you want to approve this document?</AutoTranslate></p>
+                <div className="flex justify-end mt-4">
+                  <button
+                    className="bg-green-500 text-white p-2 rounded-md mr-2"
+                    onClick={approveDocument}
+                  >
+                    <AutoTranslate>Yes, Approve</AutoTranslate>
+                  </button>
+                  <button className="btn-cancel" onClick={() => setIsConfirmModalOpen(false)}>
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
       )}
 
       {/* Reject Reason Modal */}
       {isRejectReasonModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-4 rounded-md w-1/3 relative">
-            <h3 className="text-lg font-bold mb-2">
-              <AutoTranslate>Reason for Rejection</AutoTranslate>
-            </h3>
-            <textarea
-              className="w-full border p-2 mb-2"
-              rows="4"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Enter rejection reason"
-              required
-            ></textarea>
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Reason for Rejection</AutoTranslate></h2>
+              </div>
+            </div>
 
-            {rejectReasonError && (
-              <p className="text-red-500 text-sm">
-                <AutoTranslate>Please enter a rejection reason with at least 10 characters.</AutoTranslate>
-              </p>
-            )}
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <textarea
+                  className="w-full border p-2 mb-2"
+                  rows="4"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Enter rejection reason"
+                  required
+                ></textarea>
 
-            <div className="flex justify-end">
-              <button
-                className="bg-red-500 text-white p-2 rounded-md mr-2"
-                onClick={() => {
-                  if (rejectReason.trim().length < 10) {
-                    setRejectReasonError(true);
-                  } else {
-                    setRejectReasonError(false);
-                    handleRejectDocument();
-                  }
-                }}
-              >
-                <AutoTranslate>Submit</AutoTranslate>
-              </button>
-              <button
-                className="btn-cancel"
-                onClick={() => {
-                  setRejectReasonError(false);
-                  setIsRejectReasonModalOpen(false);
-                }}
-              >
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
+                {rejectReasonError && (
+                  <p className="text-red-500 text-sm">
+                    <AutoTranslate>Please enter a rejection reason with at least 10 characters.</AutoTranslate>
+                  </p>
+                )}
+
+                <div className="flex justify-end">
+                  <button
+                    className="bg-red-500 text-white p-2 rounded-md mr-2"
+                    onClick={() => {
+                      if (rejectReason.trim().length < 10) {
+                        setRejectReasonError(true);
+                      } else {
+                        setRejectReasonError(false);
+                        handleRejectDocument();
+                      }
+                    }}
+                  >
+                    <AutoTranslate>Submit</AutoTranslate>
+                  </button>
+                  <button
+                    className="btn-cancel"
+                    onClick={() => {
+                      setRejectReasonError(false);
+                      setIsRejectReasonModalOpen(false);
+                    }}
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
       )}
 
       {/* Success Modal */}

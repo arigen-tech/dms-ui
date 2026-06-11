@@ -628,7 +628,7 @@ function Sidebar({ roleChanged }) {
                 {IconComponent ? (
                   <IconComponent className="h-5 w-5 mr-3" />
                 ) : (
-                  <div className="w-5 h-5 mr-3" /> // Empty placeholder for spacing
+                  <div className="w-5 h-5 mr-2 aaa" /> // Empty placeholder for spacing
                 )}
                 <AutoTranslate>{item.name}</AutoTranslate>
               </div>

@@ -594,7 +594,7 @@ footer {
 
             /* class 2222 */
             & .commonNavLink {
-                background: url(../src/Assets/icons/arrow-right.svg) no-repeat left center;
+                /* background: url(../src/Assets/icons/arrow-right.svg) no-repeat left center; */
                 background-size: 11px;
                 height: 36px;
                 padding-left: 20px;
