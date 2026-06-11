@@ -8,6 +8,8 @@ import LoadingComponent from '../Components/LoadingComponent';
 import { Tooltip } from "react-tooltip";
 import WaitingRoom from '../Data/WaitingRoom';
 import { postRequest } from "../API/apiHelper"; // adjust path if needed
+import { FiPlus } from "react-icons/fi";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 
 
 // Import AutoTranslate components
@@ -16,6 +18,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { getFallbackTranslation } from '../i18n/autoTranslator';
 
 import {
+  TrashIcon,
   PencilIcon,
   PlusCircleIcon,
   CheckCircleIcon,
@@ -1432,616 +1435,614 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   console.log("Has Approved File:", hasApprovedFile);
 
   return (
-    <div className="p-2">
-      <div className="p-0">
-        <h1 className="text-xl mb-2 font-semibold">
-          <AutoTranslate>Upload Document</AutoTranslate>
-        </h1>
-        <div className="bg-white p-3 rounded-lg shadow-sm">
-          {popupMessage && (
-            <Popup
-              message={popupMessage.message}
-              type={popupMessage.type}
-              onClose={() => setPopupMessage(null)}
-            />
-          )}
-          <div ref={formSectionRef} className="mb-2 bg-slate-100 p-4 rounded-lg">
-            <div className={`bg-slate-50 p-3 rounded-lg border shadow-sm mb-2 
-  ${hasApprovedFile ? "opacity-60 pointer-events-none" : ""}`}>
-              <h2 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
-                📁 <AutoTranslate>Document Metadata</AutoTranslate> <span className="text-red-500">*</span>
-              </h2>
-              <div className="grid grid-cols-3 gap-4">
-                {/* File No Input */}
-                <label className="block text-md font-medium text-gray-700">
+    <div className="">
+      <div className="title">
+        <h1><AutoTranslate>Upload Document</AutoTranslate></h1>
+      </div>
+
+      <div className="card">
+        {popupMessage && (
+          <Popup
+            message={popupMessage.message}
+            type={popupMessage.type}
+            onClose={() => setPopupMessage(null)}
+          />
+        )}
+        <div ref={formSectionRef} className="">
+          <div className={`cardLight ${hasApprovedFile ? "opacity-60 pointer-events-none" : ""}`}>
+            <h2 className="flex align-center gap-2">
+              📁 <AutoTranslate>Document Metadata</AutoTranslate> <span className="text-red-500">*</span>
+            </h2>
+            <div className="grid grid-col-4 mb-4">
+              {/* File No Input */}
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>File No.</AutoTranslate>
-                  <input
-                    type="text"
-                    placeholder={getFallbackTranslation(
-                      'Enter File No.',
-                      currentLanguage
-                    ) || 'Enter File No.'}
-                    name="fileNo"
-                    value={formData.fileNo}
-                    onChange={(e) => setFormData({ ...formData, fileNo: e.target.value })}
-                    disabled={formData.uploadedFilePaths?.length > 0}
-                    maxLength={20}
-                    minLength={3}
-                    required
-                    className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
                 </label>
-
-                {/* Title Input */}
-                <label className="block text-md font-medium text-gray-700">
+                <input
+                  type="text"
+                  placeholder={getFallbackTranslation(
+                    'Enter File No.',
+                    currentLanguage
+                  ) || 'Enter File No.'}
+                  name="fileNo"
+                  value={formData.fileNo}
+                  onChange={(e) => setFormData({ ...formData, fileNo: e.target.value })}
+                  disabled={formData.uploadedFilePaths?.length > 0}
+                  maxLength={20}
+                  minLength={3}
+                  required
+                />
+              </div>
+              {/* Title Input */}
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Title</AutoTranslate>
-                  <input
-                    type="text"
-                    placeholder={getFallbackTranslation(
-                      'Enter Title',
-                      currentLanguage
-                    ) || 'Enter Title'}
-                    name="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    disabled={formData.uploadedFilePaths?.length > 0}
-                    maxLength={20}
-                    minLength={3}
-                    required
-                    className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
                 </label>
+                <input
+                  type="text"
+                  placeholder={getFallbackTranslation(
+                    'Enter Title',
+                    currentLanguage
+                  ) || 'Enter Title'}
+                  name="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  disabled={formData.uploadedFilePaths?.length > 0}
+                  maxLength={20}
+                  minLength={3}
+                  required
+                />
+              </div>
 
-                {/* Subject Input */}
-                <label className="block text-md font-medium text-gray-700">
+              {/* Subject Input */}
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Subject</AutoTranslate>
-                  <input
-                    type="text"
-                    placeholder={getFallbackTranslation(
-                      'Enter Subject',
-                      currentLanguage
-                    ) || 'Enter Subject'}
-                    name="subject"
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    disabled={formData.uploadedFilePaths?.length > 0}
-                    maxLength={20}
-                    minLength={3}
-                    required
-                    className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
                 </label>
+                <input
+                  type="text"
+                  placeholder={getFallbackTranslation(
+                    'Enter Subject',
+                    currentLanguage
+                  ) || 'Enter Subject'}
+                  name="subject"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  disabled={formData.uploadedFilePaths?.length > 0}
+                  maxLength={20}
+                  minLength={3}
+                  required
+                />
+              </div>
 
-                {/* Category Select */}
-                <label className="block text-md font-medium text-gray-700">
+              {/* Category Select */}
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Category</AutoTranslate>
-                  <select
-                    name="category"
-                    value={formData.category?.id || ""}
-                    onChange={handleCategoryChange}
-                    disabled={formData.uploadedFilePaths?.length > 0}
-                    className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value=""><AutoTranslate>Select category</AutoTranslate></option>
-                    {categoryOptions.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
                 </label>
+                <select
+                  name="category"
+                  value={formData.category?.id || ""}
+                  onChange={handleCategoryChange}
+                  disabled={formData.uploadedFilePaths?.length > 0}>
+                  <option value=""><AutoTranslate>Select category</AutoTranslate></option>
+                  {categoryOptions.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-            <div className={`bg-slate-50 p-3 rounded-lg border shadow-sm mb-2`}>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                  🧩 <AutoTranslate>Document Additional Metadata</AutoTranslate>{" "}
-                  <span className="text-gray-500">(optional)</span>
-                </h2>
+          </div>
 
-                {/* Duplicate warning message on the right */}
-                {(() => {
-                  const keys = dynamicMetadata
-                    .map(item => item.key.trim())
-                    .filter(Boolean);
-                  const duplicates = keys.filter(
-                    (key, index) => keys.indexOf(key) !== index
+          <div className="metaDataCard">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="flex align-center gap-2 mb-0">
+                🧩 <AutoTranslate>Document Additional Metadata</AutoTranslate>{" "}
+                <span className="text-gray-500">(optional)</span>
+              </h2>
+
+              {/* Duplicate warning message on the right */}
+              {(() => {
+                const keys = dynamicMetadata
+                  .map(item => item.key.trim())
+                  .filter(Boolean);
+                const duplicates = keys.filter(
+                  (key, index) => keys.indexOf(key) !== index
+                );
+                if (duplicates.length > 0) {
+                  return (
+                    <span className="text-red-500 text-sm ml-4 whitespace-nowrap">
+                      ⚠ Duplicate key: {duplicates.join(", ")}
+                    </span>
                   );
-                  if (duplicates.length > 0) {
-                    return (
-                      <span className="text-red-500 text-sm ml-4 whitespace-nowrap">
-                        ⚠ Duplicate key: {duplicates.join(", ")}
-                      </span>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
+                }
+                return null;
+              })()}
+            </div>
 
+            <div className='card-wp'>
               {dynamicMetadata.map((item, index) => (
-                <div key={index} className="grid grid-cols-10 gap-3 mb-2 items-center">
-                  <input
-                    type="text"
-                    placeholder="Key"
-                    value={item.key}
-                    disabled={hasApprovedFile && !!item.id}
-                    onChange={(e) => {
-                      const updated = [...dynamicMetadata];
-                      updated[index].key = e.target.value;
-                      setDynamicMetadata(updated);
-                    }}
-                    className="col-span-4 p-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Value"
-                    value={item.value}
-                    disabled={hasApprovedFile && !!item.id}
-                    onChange={(e) => {
-                      const updated = [...dynamicMetadata];
-                      updated[index].value = e.target.value;
-                      setDynamicMetadata(updated);
-                    }}
-                    className="col-span-4 p-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  />
+                <div key={index} className="card">
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      placeholder="Key"
+                      value={item.key}
+                      disabled={hasApprovedFile && !!item.id}
+                      onChange={(e) => {
+                        const updated = [...dynamicMetadata];
+                        updated[index].key = e.target.value;
+                        setDynamicMetadata(updated);
+                      }}
+                      className="disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      placeholder="Value"
+                      value={item.value}
+                      disabled={hasApprovedFile && !!item.id}
+                      onChange={(e) => {
+                        const updated = [...dynamicMetadata];
+                        updated[index].value = e.target.value;
+                        setDynamicMetadata(updated);
+                      }}
+                      className="disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    />
+                  </div>
 
                   <button
                     type="button"
                     disabled={hasApprovedFile && !!item.id}
                     onClick={() => {
                       const itemToDelete = dynamicMetadata[index];
-
                       if (itemToDelete.id) {
                         setDeletedMetaDataIds(prev => [...prev, itemToDelete.id]);
                       }
                       setDynamicMetadata(dynamicMetadata.filter((_, i) => i !== index));
                     }}
-                    className={`col-span-1 px-1 py-2.5 rounded text-sm 
-    ${hasApprovedFile && !!item.id
-                        ? "bg-gray-400 text-white cursor-not-allowed"
-                        : "bg-red-500 text-white"}`}
-                  >
-                    ✕
+                    className={`btn-del ${hasApprovedFile && !!item.id ? "bg-gray-400 cursor-not-allowed" : ""}`}>
+                    <TrashIcon />
                   </button>
-
                 </div>
               ))}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setDynamicMetadata([...dynamicMetadata, { id: "", key: "", value: "" }])
-                }
-                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                + Add Metadata
-              </button>
             </div>
 
 
 
-            <div className="bg-slate-50 p-3 rounded-lg border shadow-sm mb-2">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">
-                📄 <AutoTranslate>File Metadata</AutoTranslate> <span className="text-red-500">*</span>
-              </h2>
+            <button type="button" onClick={() => setDynamicMetadata([...dynamicMetadata, { id: "", key: "", value: "" }])}
+              className="btn-add"><FiPlus /> <AutoTranslate>Add Metadata</AutoTranslate></button>
+          </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                {/* Year */}
-                <label className="block text-md font-medium text-gray-700">
+
+
+          <div className="cardLight">
+            <h2 className="flex align-center gap-2">
+              📄 <AutoTranslate>File Metadata</AutoTranslate> <span className="text-red-500">*</span>
+            </h2>
+            <div className="grid grid-col-4">
+              {/* Year */}
+              <div className="form-group ">
+                <label>
                   <AutoTranslate>Year</AutoTranslate>
-                  <select
-                    name="year"
-                    value={formData.year?.id || ""}
-                    onChange={(e) => {
-                      const selectedYearId = e.target.value;
-                      const selectedYear = yearOptions.find((y) => y.id === parseInt(selectedYearId));
-
-                      handleYearChange(e);
-
-                      if (selectedYear) {
-                        setCurrYear(selectedYear);
-                      } else {
-                        setCurrYear(null);
-                      }
-                    }}
-                    className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value=""><AutoTranslate>Select Year</AutoTranslate></option>
-                    {yearOptions.map((year) => (
-                      <option key={year.id} value={year.id}>
-                        {year.name}
-                      </option>
-                    ))}
-                  </select>
                 </label>
+                <select
+                  name="year"
+                  value={formData.year?.id || ""}
+                  onChange={(e) => {
+                    const selectedYearId = e.target.value;
+                    const selectedYear = yearOptions.find((y) => y.id === parseInt(selectedYearId));
 
-                {/* Version */}
-                <label className="block text-md font-medium text-gray-700">
-                  <AutoTranslate>Version</AutoTranslate>
-                  <input
-                    type="text"
-                    placeholder={getFallbackTranslation(
-                      'Enter Version',
-                      currentLanguage
-                    ) || 'Enter Version'}
-                    name="version"
-                    value={formData.version}
-                    onChange={(e) =>
-                      setFormData({ ...formData, version: e.target.value })
+                    handleYearChange(e);
+
+                    if (selectedYear) {
+                      setCurrYear(selectedYear);
+                    } else {
+                      setCurrYear(null);
                     }
-                    disabled={fieldsDisabled}
-                    maxLength={20}
-                    minLength={3}
-                    required
-                    className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  }}>
+                  <option value=""><AutoTranslate>Select Year</AutoTranslate></option>
+                  {yearOptions.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Version */}
+              <div className="form-group ">
+                <label>
+                  <AutoTranslate>Version</AutoTranslate>
                 </label>
-
-                {/* Show Supported File Types */}
-                {unsportFile === true && (
+                <input
+                  type="text"
+                  placeholder={getFallbackTranslation(
+                    'Enter Version',
+                    currentLanguage
+                  ) || 'Enter Version'}
+                  name="version"
+                  value={formData.version}
+                  onChange={(e) =>
+                    setFormData({ ...formData, version: e.target.value })
+                  }
+                  disabled={fieldsDisabled}
+                  maxLength={20}
+                  minLength={3}
+                  required
+                />
+              </div>
+              {/* Show Supported File Types */}
+              {unsportFile === true && (
+                <div className="form-group selfEnd">
                   <button
                     onClick={viewfiletype}
-                    className="bg-blue-600 text-white h-12 px-2 mt-7 rounded-md"
+                    className="btn-primary w-full"
                   >
                     <AutoTranslate>Show Supported File Types</AutoTranslate>
                   </button>
-                )}
+                </div>
+              )}
 
-                {/* Folder Upload Enable */}
+              {/* Folder Upload Enable */}
+              <div className="form-group">
                 <label className="block text-md font-medium text-gray-700">
                   <AutoTranslate>Folder Upload Enable</AutoTranslate>
-                  <div className="flex mt-4">
-                    <input
-                      type="checkbox"
-                      checked={folderUpload}
-                      onChange={() => setFolderUpload(!folderUpload)}
-                      className="mt-1 block w-5 h-5 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="ml-3">
-                      {folderUpload ? <AutoTranslate>Enable</AutoTranslate> : <AutoTranslate>Disable</AutoTranslate>}
-                    </span>
-                  </div>
                 </label>
+                <div className="checkBox mt-2">
+                  <input
+                    type="checkbox"
+                    checked={folderUpload}
+                    onChange={() => setFolderUpload(!folderUpload)}
+                    className="mt-1 block w-5 h-5 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="ml-3">
+                    {folderUpload ? <AutoTranslate>Enable</AutoTranslate> : <AutoTranslate>Disable</AutoTranslate>}
+                  </span>
+                </div>
+
               </div>
 
-              {/* File/Folder Upload Section - Full Width */}
-              <div className="col-span-full mt-4">
-                <div
-                  {...getRootProps()}
-                  className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition
+            </div>
+
+            {/* File/Folder Upload Section - Full Width */}
+            <div className="col-span-full mt-4">
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition
             ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-100"}`}
-                >
-                  <input {...getInputProps()} />
+              >
+                <input {...getInputProps()} />
 
-                  <label className="block text-md font-medium text-gray-700">
-                    <AutoTranslate>Upload {folderUpload ? "Folders" : "Files"}</AutoTranslate>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      multiple={!folderUpload}
-                      onChange={handleFileSelect}
-                      webkitdirectory={folderUpload ? "true" : undefined}
-                      className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </label>
+                <label className="block text-md font-medium text-gray-700">
+                  <AutoTranslate>Upload {folderUpload ? "Folders" : "Files"}</AutoTranslate>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    multiple={!folderUpload}
+                    onChange={handleFileSelect}
+                    webkitdirectory={folderUpload ? "true" : undefined}
+                    className="bg-white mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </label>
 
-                  <p className="text-sm text-gray-500 mt-2">
-                    <AutoTranslate>Drag & drop {folderUpload ? "folders" : "files"} here, or choose from your device.</AutoTranslate>
-                  </p>
-                </div>
-              </div>
-
-              {/* Buttons Section */}
-              <div className="col-span-full mt-6">
-                <div className="flex flex-wrap items-end gap-4">
-
-                  {/* Waiting Room Button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsWaitingRoomModalOpen(true)}
-                    disabled={!isMetadataComplete || selectedFiles.length > 0}
-                    className={`px-6 h-14 rounded-xl transition-all ${(!isMetadataComplete || selectedFiles.length > 0)
-                      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      : "bg-blue-500 text-white"
-                      }`}
-                  >
-                    <AutoTranslate>Choose From Waiting Room</AutoTranslate>
-                  </button>
-
-                  {/* Scaling Dropdown */}
-                  <div className="flex flex-col">
-                    <label
-                      htmlFor="scaleSelect"
-                      className="text-sm font-medium mb-1"
-                    >
-                      Scaling
-                    </label>
-                    <select
-                      id="scaleSelect"
-                      value={scaleValue}
-                      onChange={handleChangeScale}
-                      className="h-14 px-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="1">Scale Up</option>
-                      <option value="0">Scale Down</option>
-                      <option value="2">None</option>
-                    </select>
-                  </div>
-
-                  {/* Upload Button */}
-                  <button
-                    onClick={handleUploadDocument}
-                    disabled={isUploading || selectedFiles.length === 0 || !formData.version}
-                    className={`flex-1 min-w-[200px] text-white rounded-xl h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
-                      ? "bg-blue-600 cursor-not-allowed"
-                      : "bg-blue-900"
-                      }`}
-                  >
-                    {isUploading ? (
-                      <>
-                        <svg
-                          className="animate-spin h-5 w-5 mr-2 text-white"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                          />
-                        </svg>
-                        <AutoTranslate>Uploading... {uploadProgress}%</AutoTranslate>
-                      </>
-                    ) : (
-                      <AutoTranslate>Add File</AutoTranslate>
-                    )}
-
-                    {isUploading && (
-                      <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
-                        <div
-                          className="h-full bg-green-500 transition-all"
-                          style={{ width: `${uploadProgress}%` }}
-                        />
-                      </div>
-                    )}
-                  </button>
-
-                  {/* Cancel Button */}
-                  {isUploading && (
-                    <button
-                      onClick={handleCancelUpload}
-                      className="bg-red-500 text-white h-14 px-6 rounded-xl"
-                    >
-                      <AutoTranslate>Cancel Add Files</AutoTranslate>
-                    </button>
-                  )}
-
-                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  <AutoTranslate>Drag & drop {folderUpload ? "folders" : "files"} here, or choose from your device.</AutoTranslate>
+                </p>
               </div>
             </div>
 
-            {editingDoc === null ? (
-              formData?.uploadedFilePaths?.map((file, index) => {
-                const displayName = file.displayName || uploadedFileNames[index];
-                const version = file.version;
-                const status = file?.status;
-                const rejectionReason = file?.rejectionReason || null;
-                const isWaitingRoomFile = file?.isWaitingRoomFile;
+            {/* Buttons Section */}
+            <div className="col-span-full mt-6">
+              <div className="flex flex-wrap items-end gap-4">
 
-                return (
-                  <li
-                    key={index}
-                    className="grid grid-cols-[40%_1fr_1fr_1fr_1fr] items-center gap-2 p-3 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
+                {/* Waiting Room Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsWaitingRoomModalOpen(true)}
+                  disabled={!isMetadataComplete || selectedFiles.length > 0}
+                  className={`px-6 h-14 rounded-xl transition-all ${(!isMetadataComplete || selectedFiles.length > 0)
+                    ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                    : "bg-blue-500 text-white"
+                    }`}
+                >
+                  <AutoTranslate>Choose From Waiting Room</AutoTranslate>
+                </button>
+
+                {/* Scaling Dropdown */}
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="scaleSelect"
+                    className="text-sm font-medium mb-1"
                   >
-                    {/* File Name */}
-                    <div className="overflow-hidden whitespace-nowrap text-ellipsis">
-                      <span className="font-medium text-gray-800">{displayName}</span>
-                      {isWaitingRoomFile && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                          <AutoTranslate>From Waiting Room</AutoTranslate>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Year - Show actual year value */}
-                    <div className="text-center">
-                      <label className="flex justify-center items-center gap-1">
-                        <span className="text-sm font-medium text-gray-600"><AutoTranslate>Year:</AutoTranslate></span>
-                        <span className="border rounded-lg px-2 py-1 text-sm w-24 text-center bg-gray-50">
-                          {file?.yearMaster?.name || file?.year || formData.year?.name || "--"}
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Version - Show version value */}
-                    <div className="text-center">
-                      <label className="flex justify-center items-center gap-2">
-                        <span className="text-sm font-medium text-gray-600"><AutoTranslate>Version</AutoTranslate>:</span>
-                        <span className="border rounded-lg px-2 py-1 text-sm w-20 text-center bg-gray-50">
-                          {version || "--"}
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Status */}
-                    <div className="text-center">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium
-          ${status === "APPROVED" ? "bg-green-100 text-green-700" :
-                          status === "REJECTED" ? "bg-red-100 text-red-700" :
-                            "bg-yellow-100 text-yellow-700"}`}
-                      >
-                        {status || <AutoTranslate>PENDING</AutoTranslate>}
-                      </span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (isWaitingRoomFile) {
-                            openWaitingRoomFile(file, index);
-                          } else {
-                            openFileBeforeSubmit(file?.path, index);
-                          }
-                        }}
-                        disabled={openingFiles === index}
-                        className={`rounded-lg px-3 py-1 text-sm transition ${openingFiles === index
-                          ? "bg-gray-400 text-white cursor-not-allowed"
-                          : "bg-indigo-500 text-white hover:bg-indigo-600"
-                          }`}
-                      >
-                        {openingFiles === index ? <AutoTranslate>Opening...</AutoTranslate> : <AutoTranslate>Open</AutoTranslate>}
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const updatedFiles = formData.uploadedFilePaths.filter((_, i) => i !== index);
-                          setFormData((prev) => ({
-                            ...prev,
-                            uploadedFilePaths: updatedFiles,
-                          }));
-                        }}
-                        className="rounded-lg px-3 py-1 text-sm bg-red-500 text-white hover:bg-red-600 transition"
-                      >
-                        <AutoTranslate>Delete</AutoTranslate>
-                      </button>
-                    </div>
-                  </li>
-                );
-              })
-            ) : (
-              uploadedFilePath?.map((file, index) => {
-                const displayName = uploadedFileNames[index];
-                const version = file.version;
-                const rejectionReason = file?.rejectionReason || null;
-                const status = file?.status;
-
-                const isDisabled = formData?.uploadedFilePaths?.some(
-                  (uploaded) => uploaded.path === file.path
-                );
-
-                return (
-                  <li
-                    key={index}
-                    className="grid grid-cols-[40%_1fr_1fr_1fr_1fr] items-center gap-2 p-3 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
+                    Scaling
+                  </label>
+                  <select
+                    id="scaleSelect"
+                    value={scaleValue}
+                    onChange={handleChangeScale}
+                    className="h-14 px-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    {/* File Name */}
-                    <div className="overflow-hidden whitespace-nowrap text-ellipsis">
-                      <span className="font-medium text-gray-800">{displayName}</span>
-                    </div>
+                    <option value="1">Scale Up</option>
+                    <option value="0">Scale Down</option>
+                    <option value="2">None</option>
+                  </select>
+                </div>
 
-                    {/* Year */}
-                    <div className="text-center">
-                      <label className="flex justify-center items-center gap-2">
-                        <span className="text-sm font-medium text-gray-600"><AutoTranslate>Year:</AutoTranslate></span>
-                        <select
-                          value={file?.yearMaster?.id || ""}
-                          onChange={(e) => handleYearChangeForFile(index, e.target.value)}
-                          disabled={!handleEditDocumentActive || isDisabled || status === "APPROVED"}
-                          className="border rounded-lg px-2 py-1 text-sm w-24 text-center bg-gray-50"
-                        >
-                          <option value=""><AutoTranslate>Select</AutoTranslate></option>
-                          {yearOptions?.map((year) => (
-                            <option key={year.id} value={year.id}>
-                              {year.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-
-                    {/* Version */}
-                    <div className="text-center">
-                      <label className="flex justify-center items-center gap-2">
-                        <span className="text-sm font-medium text-gray-600"><AutoTranslate>Ver:</AutoTranslate></span>
-                        <input
-                          type="text"
-                          value={version}
-                          onChange={(e) => handleVersionChange(index, e.target.value.trim())}
-                          className="border rounded-lg px-2 py-1 text-sm w-20 text-center"
-                          disabled={!handleEditDocumentActive || isDisabled || status === "APPROVED"}
-                          placeholder="v1"
-                          maxLength={10}
-                          readOnly
+                {/* Upload Button */}
+                <button
+                  onClick={handleUploadDocument}
+                  disabled={isUploading || selectedFiles.length === 0 || !formData.version}
+                  className={`flex-1- min-w-[200px] text-white rounded-xl h-14 flex items-center justify-center relative transition-all duration-300 ${isUploading
+                    ? "bg-blue-600 cursor-not-allowed"
+                    : "bg-blue-900"
+                    }`}
+                >
+                  {isUploading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2 text-white"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
                         />
-                      </label>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      <AutoTranslate>Uploading... {uploadProgress}%</AutoTranslate>
+                    </>
+                  ) : (
+                    <AutoTranslate>Add File</AutoTranslate>
+                  )}
+
+                  {isUploading && (
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300">
+                      <div
+                        className="h-full bg-green-500 transition-all"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
                     </div>
-                    <div className="text-center">
-                      <label className="flex justify-center items-center gap-2">
-                        <span className="text-sm font-medium text-gray-600"><AutoTranslate>Status:</AutoTranslate></span>
-                        <span
-                          data-tooltip-id="status-tooltip"
-                          data-tooltip-html={
-                            status === "REJECTED"
-                              ? `<strong style="color:#dc2626;">Rejected Reason:</strong> ${rejectionReason || <AutoTranslate>No reason provided</AutoTranslate>}`
-                              : ""
-                          }
-                          className={`px-2 py-1 text-xs rounded-full font-medium
-        ${status === "APPROVED"
-                              ? "bg-green-100 text-green-700"
-                              : status === "REJECTED"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}
+                  )}
+                </button>
+
+                {/* Cancel Button */}
+                {isUploading && (
+                  <button
+                    onClick={handleCancelUpload}
+                    className="bg-red-500 text-white h-14 px-6 rounded-xl"
+                  >
+                    <AutoTranslate>Cancel Add Files</AutoTranslate>
+                  </button>
+                )}
+
+              </div>
+            </div>
+          </div>
+
+          <div className="edit-doc-wrapper mt-6">
+            <ul>
+              {editingDoc === null ? (
+                formData?.uploadedFilePaths?.map((file, index) => {
+                  const displayName = file.displayName || uploadedFileNames[index];
+                  const version = file.version;
+                  const status = file?.status;
+                  const rejectionReason = file?.rejectionReason || null;
+                  const isWaitingRoomFile = file?.isWaitingRoomFile;
+
+                  return (
+                    <li key={index}>
+                      {/* File Name */}
+                      <div className="overflow-hidden whitespace-nowrap text-ellipsis">
+                        <span className="font-medium text-gray-800">{displayName}</span>
+                        {isWaitingRoomFile && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                            <AutoTranslate>From Waiting Room</AutoTranslate>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Year - Show actual year value */}
+                      <div className="text-center">
+                        <label className="flex justify-center items-center gap-1">
+                          <span className="text-sm font-medium text-gray-600"><AutoTranslate>Year:</AutoTranslate></span>
+                          <span className="border rounded-lg px-2 py-1 text-sm w-24 text-center bg-gray-50">
+                            {file?.yearMaster?.name || file?.year || formData.year?.name || "--"}
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Version - Show version value */}
+                      <div className="text-center">
+                        <label className="flex justify-center items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600"><AutoTranslate>Version</AutoTranslate>:</span>
+                          <span className="border rounded-lg px-2 py-1 text-sm w-20 text-center bg-gray-50">
+                            {version || "--"}
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Status */}
+                      <div className="text-center">
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium
+          ${status === "APPROVED" ? "bg-green-100 text-green-700" :
+                            status === "REJECTED" ? "bg-red-100 text-red-700" :
+                              "bg-yellow-100 text-yellow-700"}`}
                         >
                           {status || <AutoTranslate>PENDING</AutoTranslate>}
                         </span>
-                      </label>
+                      </div>
 
-                      {/* Custom Tooltip */}
-                      <Tooltip
-                        id="status-tooltip"
-                        place="top"
-                        className="!bg-white !text-gray-800 !p-3 !rounded-lg !shadow-lg !max-w-xs !whitespace-pre-wrap border border-gray-300"
-                        style={{ fontSize: "0.85rem" }}
-                      />
-                    </div>
+                      {/* Actions */}
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (isWaitingRoomFile) {
+                              openWaitingRoomFile(file, index);
+                            } else {
+                              openFileBeforeSubmit(file?.path, index);
+                            }
+                          }}
+                          disabled={openingFiles === index}
+                          className={`rounded-lg px-3 py-1 text-sm transition ${openingFiles === index
+                            ? "bg-gray-400 text-white cursor-not-allowed"
+                            : "bg-indigo-500 text-white hover:bg-indigo-600"
+                            }`}
+                        >
+                          {openingFiles === index ? <AutoTranslate>Opening...</AutoTranslate> : <AutoTranslate>Open</AutoTranslate>}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const updatedFiles = formData.uploadedFilePaths.filter((_, i) => i !== index);
+                            setFormData((prev) => ({
+                              ...prev,
+                              uploadedFilePaths: updatedFiles,
+                            }));
+                          }}
+                          className="rounded-lg px-3 py-1 text-sm bg-red-500 text-white hover:bg-red-600 transition"
+                        >
+                          <AutoTranslate>Delete</AutoTranslate>
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })
+              ) : (
+                uploadedFilePath?.map((file, index) => {
+                  const displayName = uploadedFileNames[index];
+                  const version = file.version;
+                  const rejectionReason = file?.rejectionReason || null;
+                  const status = file?.status;
 
-                    {/* Actions */}
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          openFileBeforeSubmit(file?.path, index);
-                        }}
-                        disabled={openingFiles === index}
-                        className={`rounded-lg px-3 py-1 text-sm transition ${openingFiles === index
-                          ? "bg-gray-400 text-white cursor-not-allowed"
-                          : "bg-indigo-500 text-white hover:bg-indigo-600"
-                          }`}
-                      >
-                        {openingFiles === index ? <AutoTranslate>Opening...</AutoTranslate> : <AutoTranslate>Open</AutoTranslate>}
-                      </button>
+                  const isDisabled = formData?.uploadedFilePaths?.some(
+                    (uploaded) => uploaded.path === file.path
+                  );
 
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (deletingFiles !== index && status !== "APPROVED") {
-                            handleDiscardFile(index);
-                          }
-                        }}
-                        disabled={deletingFiles === index || status === "APPROVED"}
-                        className={`rounded-lg px-3 py-1 text-sm transition ${deletingFiles === index || status === "APPROVED"
-                          ? "bg-gray-400 text-white cursor-not-allowed"
-                          : "bg-red-500 text-white hover:bg-red-600"
-                          }`}
-                      >
-                        {deletingFiles === index ? <AutoTranslate>Deleting...</AutoTranslate> : <AutoTranslate>Delete</AutoTranslate>}
-                      </button>
-                    </div>
-                  </li>
-                );
-              })
-            )}
+                  return (
+                    <li key={index}>
+                      {/* File Name */}
+                      <div className="overflow-hidden whitespace-nowrap text-ellipsis">
+                        <span className="font-medium text-gray-800">{displayName}</span>
+                      </div>
+
+                      {/* Year */}
+                      <div className="text-center">
+                        <label className="flex justify-center items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600"><AutoTranslate>Year:</AutoTranslate></span>
+                          <select
+                            value={file?.yearMaster?.id || ""}
+                            onChange={(e) => handleYearChangeForFile(index, e.target.value)}
+                            disabled={!handleEditDocumentActive || isDisabled || status === "APPROVED"}
+                            className="border rounded-lg px-2 py-1 text-sm w-24 text-center bg-gray-50"
+                          >
+                            <option value=""><AutoTranslate>Select</AutoTranslate></option>
+                            {yearOptions?.map((year) => (
+                              <option key={year.id} value={year.id}>
+                                {year.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      {/* Version */}
+                      <div className="text-center">
+                        <label className="flex justify-center items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600"><AutoTranslate>Ver:</AutoTranslate></span>
+                          <input
+                            type="text"
+                            value={version}
+                            onChange={(e) => handleVersionChange(index, e.target.value.trim())}
+                            className="border rounded-lg px-2 py-1 text-sm w-20 text-center"
+                            disabled={!handleEditDocumentActive || isDisabled || status === "APPROVED"}
+                            placeholder="v1"
+                            maxLength={10}
+                            readOnly
+                          />
+                        </label>
+                      </div>
+                      <div className="text-center">
+                        <label className="flex justify-center items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600"><AutoTranslate>Status:</AutoTranslate></span>
+                          <span
+                            data-tooltip-id="status-tooltip"
+                            data-tooltip-html={
+                              status === "REJECTED"
+                                ? `<strong style="color:#dc2626;">Rejected Reason:</strong> ${rejectionReason || <AutoTranslate>No reason provided</AutoTranslate>}`
+                                : ""
+                            }
+                            className={`px-2 py-1 text-xs rounded-full font-medium
+        ${status === "APPROVED"
+                                ? "bg-green-100 text-green-700"
+                                : status === "REJECTED"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                              }`}
+                          >
+                            {status || <AutoTranslate>PENDING</AutoTranslate>}
+                          </span>
+                        </label>
+
+                        {/* Custom Tooltip */}
+                        <Tooltip
+                          id="status-tooltip"
+                          place="top"
+                          className="!bg-white !text-gray-800 !p-3 !rounded-lg !shadow-lg !max-w-xs !whitespace-pre-wrap border border-gray-300"
+                          style={{ fontSize: "0.85rem" }}
+                        />
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            openFileBeforeSubmit(file?.path, index);
+                          }}
+                          disabled={openingFiles === index}
+                          className={`rounded-lg px-3 py-1 text-sm transition ${openingFiles === index
+                            ? "bg-gray-400 text-white cursor-not-allowed"
+                            : "bg-indigo-500 text-white hover:bg-indigo-600"
+                            }`}
+                        >
+                          {openingFiles === index ? <AutoTranslate>Opening...</AutoTranslate> : <AutoTranslate>Open</AutoTranslate>}
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (deletingFiles !== index && status !== "APPROVED") {
+                              handleDiscardFile(index);
+                            }
+                          }}
+                          disabled={deletingFiles === index || status === "APPROVED"}
+                          className={`rounded-lg px-3 py-1 text-sm transition ${deletingFiles === index || status === "APPROVED"
+                            ? "bg-gray-400 text-white cursor-not-allowed"
+                            : "bg-red-500 text-white hover:bg-red-600"
+                            }`}
+                        >
+                          {deletingFiles === index ? <AutoTranslate>Deleting...</AutoTranslate> : <AutoTranslate>Delete</AutoTranslate>}
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })
+              )}
+
+            </ul>
 
             <FilePreviewModal
               isOpen={isModalOpen}
@@ -2064,533 +2065,526 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                 </div>
               )}
 
-              <div className="mt-3">
+              <div className="itemBtns">
                 {location.state?.fromWaitingRoom ? (
                   <button
                     type="button"
                     onClick={handleAddDocument}
-                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"}
-      text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
-                  >
+                    className={`btn-primary ${bProcess ? "bg-gray-400 cursor-not-allowed" : ""}`}>
                     <AutoTranslate>Upload Document</AutoTranslate>
                   </button>
                 ) : editingDoc ? (
                   <button
                     onClick={handleSaveEdit}
                     disabled={bProcess}
-                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"}
-      text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
-                  >
+                    className={`btn-primary ${bProcess ? "bg-gray-400 cursor-not-allowed" : ""}`}>
                     {bProcess ? <AutoTranslate>Updating...</AutoTranslate> : <AutoTranslate>Update Document</AutoTranslate>}
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={handleAddDocument}
-                    className={`${bProcess ? "bg-gray-400 cursor-not-allowed" : "bg-blue-900 hover:bg-blue-700"}
-      text-white focus:ring-2 focus:ring-blue-500 rounded-2xl p-2 flex items-center text-sm`}
-                  >
+                    className={`btn-primary ${bProcess ? "bg-gray-400 cursor-not-allowed" : ""}`}>
                     <AutoTranslate>Upload Document</AutoTranslate>
                   </button>
                 )}
               </div>
             </div>
+
           </div>
 
-          <div className="mb-4 bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-            <div className="flex items-center bg-blue-500 rounded-lg">
-              <label
-                htmlFor="itemsPerPage"
-                className="mr-2 ml-2 text-white text-sm"
-              >
-                <AutoTranslate>Show:</AutoTranslate>
-              </label>
-              <select
-                id="itemsPerPage"
-                className="border rounded-r-lg p-1.5 outline-none"
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-              >
-                {[5, 10, 15, 20].map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center mb-4">
-              <input
-                type="text"
-                placeholder={getFallbackTranslation(
-                  'Search by title, subject, or file no',
-                  currentLanguage
-                )}
-                className="border rounded-l-md p-1 outline-none"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                maxLength={20}
-              />
-              <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
-            </div>
-          </div>
 
-          <div className="overflow-x-auto bg-white">
-            <table className="w-full border-collapse border">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border p-2 text-left"><AutoTranslate>SR.</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>File No</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Title</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Subject</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Category</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>No. Of Attached Files </AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Uploaded Date</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>Edit</AutoTranslate></th>
-                  <th className="border p-2 text-left"><AutoTranslate>View</AutoTranslate></th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedDocuments.map((doc, index) => (
-                  <tr key={doc.id}>
-                    <td className="border p-2">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </td>
-                    <td className="border p-2">{doc.fileNo}</td>
-                    <td className="border p-2">{doc.title}</td>
-                    <td className="border p-2">{doc.subject}</td>
-                    <td className="border p-2">
-                      {doc.categoryMaster
-                        ? doc.categoryMaster.name
-                        : <AutoTranslate>No Category</AutoTranslate>}
-                    </td>
-                    <td className="border p-2">{doc?.documentDetails?.length}</td>
-                    <td className="border p-2">{formatDate(doc.createdOn)}</td>
-                    <td className="border p-2">
+        </div>
+
+        <div className="data-search-wrapper">
+          <div className="form-group flex items-center gap-4">
+            <label htmlFor="itemsPerPage">
+              <AutoTranslate>Show:</AutoTranslate>
+            </label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              {[5, 10, 15, 20].map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder={getFallbackTranslation(
+                'Search by title, subject, or file no',
+                currentLanguage
+              )}
+              className="searchIcon"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              maxLength={20}
+            />
+          </div>
+        </div>
+
+        <div className="table-wrapper">
+          <table className="">
+            <thead>
+              <tr>
+                <th className="text-center"><AutoTranslate>SR.</AutoTranslate></th>
+                <th><AutoTranslate>File No</AutoTranslate></th>
+                <th><AutoTranslate>Title</AutoTranslate></th>
+                <th><AutoTranslate>Subject</AutoTranslate></th>
+                <th><AutoTranslate>Category</AutoTranslate></th>
+                <th><AutoTranslate>No. Of Attached Files </AutoTranslate></th>
+                <th><AutoTranslate>Uploaded Date</AutoTranslate></th>
+                <th className="text-center"><AutoTranslate>Edit</AutoTranslate></th>
+                <th className="text-center"><AutoTranslate>View</AutoTranslate></th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedDocuments.map((doc, index) => (
+                <tr key={doc.id}>
+                  <td className="text-center">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
+                  <td>{doc.fileNo}</td>
+                  <td>{doc.title}</td>
+                  <td>{doc.subject}</td>
+                  <td>
+                    {doc.categoryMaster
+                      ? doc.categoryMaster.name
+                      : <AutoTranslate>No Category</AutoTranslate>}
+                  </td>
+                  <td>{doc?.documentDetails?.length}</td>
+                  <td>{formatDate(doc.createdOn)}</td>
+                  <td>
+                    <div className="btn-center">
                       <button onClick={() => handleEditDocument(doc)} disabled={doc.isActive === 0}
-                        className={`${doc.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                        <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1 sm:text-blue-50" />
+                        className={`viewBtn ${doc.isActive === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        <PencilIcon />
                       </button>
-                    </td>
-                    <td className="border p-2">
-                      <button onClick={() => openModal(doc)}>
-                        <EyeIcon className="h-6 w-6 bg-green-400 rounded-xl p-1 text-white" />
+                    </div>
+                  </td>
+                  <td>
+                    <div className="btn-center">
+                      <button onClick={() => openModal(doc)} className="viewBtn">
+                        <EyeIcon />
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {/* Pagination Controls */}
-            <div className="flex items-center mt-4">
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Pagination Controls */}
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
+            </div>
+          </div>
+          <div className="items">
+            <div className="paginationBtn">
               {/* Previous Button */}
-              <button
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1 || totalPages === 0}
-                className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                  }`}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
               >
-                <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                <AutoTranslate>Previous</AutoTranslate>
+                <IoIosArrowBack />
               </button>
 
               {/* Page Number Buttons */}
               {totalPages > 0 && getPageNumbers().map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                    }`}
-                >
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
                   {page}
                 </button>
               ))}
 
-              {/* Page Count Info */}
-              <span className="text-sm text-gray-700 mx-2">
-                <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-              </span>
-
               {/* Next Button */}
-              <button
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                  }`}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
               >
-                <AutoTranslate>Next</AutoTranslate>
-                <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
+                <IoIosArrowForward />
               </button>
-              <div className="ml-4">
-                <span className="text-sm text-gray-700">
-                  <AutoTranslate>
-                    {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-                  </AutoTranslate>
-                </span>
-              </div>
             </div>
-
-            {/* Document Details Code */}
-            <>
-              {isOpen && selectedDoc && (
-                <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900/80 backdrop-blur-sm print:bg-white overflow-y-auto p-4">
-                  <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl p-6 my-8 mx-auto">
-                    <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
-
-                      {/* Header Actions */}
-                      <div className="flex justify-between items-center mb-6 no-print">
-                        <div className="flex items-center space-x-2">
-                          <div className="bg-indigo-600 text-white rounded-lg p-2">
-                            <span className="text-lg font-bold">D</span>
-                            <span className="text-lg font-bold">MS</span>
-                          </div>
-                          <h1 className="text-2xl font-bold text-gray-800">
-                            <AutoTranslate>Document Details</AutoTranslate>
-                          </h1>
-                        </div>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => handlePrintReport(selectedDoc?.id)}
-                            className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
-                            title="Print document"
-                          >
-                            <PrinterIcon className="h-5 w-5" />
-                            <span><AutoTranslate>Print</AutoTranslate></span>
-                          </button>
-                          <button
-                            onClick={closeModal}
-                            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 transition-colors duration-200 bg-gray-100 hover:bg-gray-200 rounded-lg"
-                            title="Close modal"
-                          >
-                            <XMarkIcon className="h-5 w-5" />
-                            <span><AutoTranslate>Close</AutoTranslate></span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Document Details */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                        {/* Information Column */}
-                        <div className="lg:col-span-2 space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {[
-                              { label: "Branch", value: selectedDoc?.branchMaster?.name },
-                              { label: "Department", value: selectedDoc?.departmentMaster?.name },
-                              { label: "File No.", value: selectedDoc?.fileNo },
-                              { label: "Title", value: selectedDoc?.title },
-                              { label: "Subject", value: selectedDoc?.subject },
-                              { label: "Category", value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate> },
-                              // { label: "Status", value: selectedDoc?.approvalStatus },
-                              { label: "Upload By", value: selectedDoc?.employee?.name },
-                            ].map((item, idx) => (
-                              <div key={idx} className="space-y-1">
-                                <p className="text-sm font-medium text-gray-500"><AutoTranslate>{item.label}</AutoTranslate></p>
-                                <p className="text-gray-900 font-medium">
-                                  {item.value || <span className="text-gray-400"><AutoTranslate>N/A</AutoTranslate></span>}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* QR Code Column */}
-                        <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                          <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                            <AutoTranslate>QR Code</AutoTranslate>
-                          </h3>
-                          {selectedDoc?.qrPath ? (
-                            <>
-                              <div className="p-3 bg-white rounded-lg border border-gray-300">
-                                <img
-                                  src={qrCodeUrl}
-                                  alt="QR Code"
-                                  className="w-32 h-32 object-contain"
-                                />
-                              </div>
-                              <button
-                                onClick={downloadQRCode}
-                                className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
-                              >
-                                <ArrowDownTrayIcon className="h-4 w-4" />
-                                <AutoTranslate>Download QR</AutoTranslate>
-                              </button>
-                            </>
-                          ) : (
-                            <div className="text-center text-gray-500 py-8">
-                              <QrCodeIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                              <p><AutoTranslate>No QR code available</AutoTranslate></p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Attached Files Section */}
-                      <div className="border-t border-gray-200 pt-6">
-                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-                          <h2 className="text-xl font-semibold text-gray-800">
-                            <AutoTranslate>Attached Files</AutoTranslate>
-                          </h2>
-                          <div className="relative w-full sm:w-64">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <input
-                              type="text"
-                              placeholder={getFallbackTranslation(
-                                'Search files...',
-                                currentLanguage
-                              )}
-                              value={searchFileTerm}
-                              onChange={(e) => setSearchFileTerm(e.target.value)}
-                              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                          </div>
-                        </div>
-
-                        {loadingFiles ? (
-                          <div className="flex justify-center items-center py-12">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                            <span className="ml-3 text-gray-600">
-                              <AutoTranslate>Loading files...</AutoTranslate>
-                            </span>
-                          </div>
-                        ) : selectedDoc && filteredDocFiles.length > 0 ? (
-                          <div className="border border-gray-200 rounded-lg overflow-hidden">
-                            {/* Table Header - Hidden on mobile */}
-                            <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
-                              <span className="text-left"><AutoTranslate>File Name</AutoTranslate></span>
-                              <span className="text-center"><AutoTranslate>Year</AutoTranslate></span>
-                              <span className="text-center"><AutoTranslate>Version</AutoTranslate></span>
-                              <span className="text-center"><AutoTranslate>Status</AutoTranslate></span>
-                              <span className="text-center"><AutoTranslate>Action By</AutoTranslate></span>
-                              <span className="text-center"><AutoTranslate>Action Date</AutoTranslate></span>
-                              <span className="text-center"><AutoTranslate>Reason</AutoTranslate></span>
-                              <span className="text-center no-print"><AutoTranslate>View</AutoTranslate></span>
-                            </div>
-
-                            {/* File List */}
-                            <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                              {filteredDocFiles.map((file, index) => (
-                                <div key={index} className="hover:bg-gray-50 transition-colors duration-150">
-                                  {/* Desktop View */}
-                                  <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] items-center px-6 py-4 text-sm">
-                                    <div className="text-left text-gray-800 break-words">
-                                      <strong>{index + 1}.</strong> {file.docName}
-                                    </div>
-                                    <div className="text-center text-gray-700">{file.year}</div>
-                                    <div className="text-center text-gray-700">{file.version}</div>
-                                    <div className="text-center">
-                                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                          file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                            "bg-yellow-100 text-yellow-800"}`}
-                                      >
-                                        {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                      </span>
-                                    </div>
-                                    <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
-                                    <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
-                                    <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
-                                    <div className="flex justify-center no-print">
-                                      <button
-                                        onClick={() => {
-                                          setOpeningFileIndex(index);
-                                          setSelectedDocFiles(file);
-                                          openFile(file).finally(() => setOpeningFileIndex(null));
-                                        }}
-                                        disabled={openingFileIndex !== null}
-                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-      ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                      >
-                                        {openingFileIndex === index ? (
-                                          <>
-                                            <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                            <AutoTranslate>
-                                              {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-                                            </AutoTranslate>
-                                          </>
-                                        ) : (
-                                          <>
-                                            {file.ltoArchived && !file.restored ? (
-                                              <ArrowPathIcon className="h-3 w-3" />
-                                            ) : (
-                                              <EyeIcon className="h-3 w-3" />
-                                            )}
-                                            <AutoTranslate>
-                                              {file.ltoArchived && !file.restored ? "Restore" : "View"}
-
-                                            </AutoTranslate>
-                                          </>
-                                        )}
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Mobile View */}
-                                  <div className="md:hidden p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div className="text-left text-gray-800 break-words flex-1">
-                                        <strong>{index + 1}.</strong> {file.docName}
-                                      </div>
-                                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
-                          ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                          file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                            "bg-yellow-100 text-yellow-800"}`}
-                                      >
-                                        {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                      </span>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2 text-sm mt-3">
-                                      <div>
-                                        <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
-                                        <p className="text-gray-700">{file.year}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
-                                        <p className="text-gray-700">{file.version}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
-                                        <p className="text-gray-700">{file.approvedBy || "--"}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
-                                        <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
-                                      </div>
-                                      <div className="col-span-2">
-                                        <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
-                                        <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
-                                      </div>
-                                    </div>
-
-                                    <div className="mt-3 flex justify-end">
-                                      <button
-                                        onClick={() => {
-                                          setOpeningFileIndex(index);
-                                          setSelectedDocFiles(file);
-                                          openFile(file).finally(() => setOpeningFileIndex(null));
-                                        }}
-                                        disabled={openingFileIndex !== null}
-                                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                            ${openingFileIndex === index ?
-                                            "bg-indigo-400 cursor-not-allowed" :
-                                            "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                      >
-                                        {openingFileIndex === index ? (
-                                          <>
-                                            <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                            <AutoTranslate>Opening...</AutoTranslate>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <EyeIcon className="h-3 w-3" />
-                                            <AutoTranslate>View File</AutoTranslate>
-                                          </>
-                                        )}
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
-                            <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                            <p className="text-gray-500">
-                              <AutoTranslate>No attached files found</AutoTranslate>
-                            </p>
-                            {searchFileTerm && (
-                              <p className="text-sm text-gray-400 mt-1">
-                                <AutoTranslate>Try adjusting your search term</AutoTranslate>
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {viewFileTypeModel && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-                  <div className="w-80 sm:w-96 bg-white rounded-xl shadow-xl p-5 border border-gray-200 max-h-[80vh] overflow-y-auto transition-all">
-
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl font-semibold text-gray-800">
-                        <AutoTranslate>Supported File Types</AutoTranslate>
-                      </h2>
-                      <button
-                        onClick={handlecloseFileType}
-                        className="text-gray-400 hover:text-red-500 text-xl focus:outline-none"
-                        aria-label="Close"
-                      >
-                        &times;
-                      </button>
-                    </div>
-
-                    {/* Search Input */}
-                    <input
-                      type="text"
-                      placeholder={getFallbackTranslation(
-                        'Search file type...',
-                        currentLanguage
-                      )}
-                      value={searchTerm}
-                      onChange={(e) => setSearchFileTerm(e.target.value)}
-                      maxLength={20}
-                      className="w-full p-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-
-                    {/* List */}
-                    <ul className="space-y-2">
-                      {filteredFiles.length > 0 ? (
-                        filteredFiles.map((file) => (
-                          <li
-                            key={file.id}
-                            className="flex justify-between items-center px-3 py-2 bg-gray-50 rounded-md hover:bg-blue-50 transition text-sm"
-                          >
-                            <span className="text-gray-800 font-medium">{file.filetype}</span>
-                            <span className="text-gray-500">{file.extension}</span>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="text-center text-gray-500 text-sm">
-                          <AutoTranslate>No matching file types found</AutoTranslate>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {/* Waiting Room Modal */}
-              <WaitingRoom
-                isOpen={isWaitingRoomModalOpen}
-                onClose={() => setIsWaitingRoomModalOpen(false)}
-                onSelectDocuments={handleSelectFromWaitingRoom}
-                metadata={{
-                  branch: userBranch,
-                  department: userDep,
-                  year: formData.year?.name,
-                  yearMas: formData.year,
-                  category: formData.category?.name,
-                  version: formData.version,
-                  fileNo: formData.fileNo,
-                  title: formData.title,
-                  subject: formData.subject,
-                }}
-                token={token}
-                showPopup={showPopup}
-              />
-            </>
           </div>
         </div>
+
+        {/* Document Details Code */}
+        <>
+          {isOpen && selectedDoc && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900/80 backdrop-blur-sm print:bg-white overflow-y-auto p-4">
+              <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl p-6 my-8 mx-auto">
+                <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
+
+                  {/* Header Actions */}
+                  <div className="flex justify-between items-center mb-6 no-print">
+                    <div className="flex items-center space-x-2">
+                      <div className="bg-indigo-600 text-white rounded-lg p-2">
+                        <span className="text-lg font-bold">D</span>
+                        <span className="text-lg font-bold">MS</span>
+                      </div>
+                      <h1 className="text-2xl font-bold text-gray-800">
+                        <AutoTranslate>Document Details</AutoTranslate>
+                      </h1>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handlePrintReport(selectedDoc?.id)}
+                        className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
+                        title="Print document"
+                      >
+                        <PrinterIcon className="h-5 w-5" />
+                        <span><AutoTranslate>Print</AutoTranslate></span>
+                      </button>
+                      <button
+                        onClick={closeModal}
+                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 transition-colors duration-200 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                        title="Close modal"
+                      >
+                        <XMarkIcon className="h-5 w-5" />
+                        <span><AutoTranslate>Close</AutoTranslate></span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Document Details */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    {/* Information Column */}
+                    <div className="lg:col-span-2 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                          { label: "Branch", value: selectedDoc?.branchMaster?.name },
+                          { label: "Department", value: selectedDoc?.departmentMaster?.name },
+                          { label: "File No.", value: selectedDoc?.fileNo },
+                          { label: "Title", value: selectedDoc?.title },
+                          { label: "Subject", value: selectedDoc?.subject },
+                          { label: "Category", value: selectedDoc?.categoryMaster?.name || <AutoTranslate>No Category</AutoTranslate> },
+                          // { label: "Status", value: selectedDoc?.approvalStatus },
+                          { label: "Upload By", value: selectedDoc?.employee?.name },
+                        ].map((item, idx) => (
+                          <div key={idx} className="space-y-1">
+                            <p className="text-sm font-medium text-gray-500"><AutoTranslate>{item.label}</AutoTranslate></p>
+                            <p className="text-gray-900 font-medium">
+                              {item.value || <span className="text-gray-400"><AutoTranslate>N/A</AutoTranslate></span>}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* QR Code Column */}
+                    <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">
+                        <AutoTranslate>QR Code</AutoTranslate>
+                      </h3>
+                      {selectedDoc?.qrPath ? (
+                        <>
+                          <div className="p-3 bg-white rounded-lg border border-gray-300">
+                            <img
+                              src={qrCodeUrl}
+                              alt="QR Code"
+                              className="w-32 h-32 object-contain"
+                            />
+                          </div>
+                          <button
+                            onClick={downloadQRCode}
+                            className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+                          >
+                            <ArrowDownTrayIcon className="h-4 w-4" />
+                            <AutoTranslate>Download QR</AutoTranslate>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="text-center text-gray-500 py-8">
+                          <QrCodeIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                          <p><AutoTranslate>No QR code available</AutoTranslate></p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Attached Files Section */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        <AutoTranslate>Attached Files</AutoTranslate>
+                      </h2>
+                      <div className="relative w-full sm:w-64">
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder={getFallbackTranslation(
+                            'Search files...',
+                            currentLanguage
+                          )}
+                          value={searchFileTerm}
+                          onChange={(e) => setSearchFileTerm(e.target.value)}
+                          className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+
+                    {loadingFiles ? (
+                      <div className="flex justify-center items-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        <span className="ml-3 text-gray-600">
+                          <AutoTranslate>Loading files...</AutoTranslate>
+                        </span>
+                      </div>
+                    ) : selectedDoc && filteredDocFiles.length > 0 ? (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        {/* Table Header - Hidden on mobile */}
+                        <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
+                          <span className="text-left"><AutoTranslate>File Name</AutoTranslate></span>
+                          <span className="text-center"><AutoTranslate>Year</AutoTranslate></span>
+                          <span className="text-center"><AutoTranslate>Version</AutoTranslate></span>
+                          <span className="text-center"><AutoTranslate>Status</AutoTranslate></span>
+                          <span className="text-center"><AutoTranslate>Action By</AutoTranslate></span>
+                          <span className="text-center"><AutoTranslate>Action Date</AutoTranslate></span>
+                          <span className="text-center"><AutoTranslate>Reason</AutoTranslate></span>
+                          <span className="text-center no-print"><AutoTranslate>View</AutoTranslate></span>
+                        </div>
+
+                        {/* File List */}
+                        <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                          {filteredDocFiles.map((file, index) => (
+                            <div key={index} className="hover:bg-gray-50 transition-colors duration-150">
+                              {/* Desktop View */}
+                              <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] items-center px-6 py-4 text-sm">
+                                <div className="text-left text-gray-800 break-words">
+                                  <strong>{index + 1}.</strong> {file.docName}
+                                </div>
+                                <div className="text-center text-gray-700">{file.year}</div>
+                                <div className="text-center text-gray-700">{file.version}</div>
+                                <div className="text-center">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                        "bg-yellow-100 text-yellow-800"}`}
+                                  >
+                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                                  </span>
+                                </div>
+                                <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
+                                <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
+                                <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
+                                <div className="flex justify-center no-print">
+                                  <button
+                                    onClick={() => {
+                                      setOpeningFileIndex(index);
+                                      setSelectedDocFiles(file);
+                                      openFile(file).finally(() => setOpeningFileIndex(null));
+                                    }}
+                                    disabled={openingFileIndex !== null}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+      ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                  >
+                                    {openingFileIndex === index ? (
+                                      <>
+                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                                        </AutoTranslate>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {file.ltoArchived && !file.restored ? (
+                                          <ArrowPathIcon className="h-3 w-3" />
+                                        ) : (
+                                          <EyeIcon className="h-3 w-3" />
+                                        )}
+                                        <AutoTranslate>
+                                          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+
+                                        </AutoTranslate>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Mobile View */}
+                              <div className="md:hidden p-4">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="text-left text-gray-800 break-words flex-1">
+                                    <strong>{index + 1}.</strong> {file.docName}
+                                  </div>
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
+                          ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                        "bg-yellow-100 text-yellow-800"}`}
+                                  >
+                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                                  <div>
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
+                                    <p className="text-gray-700">{file.year}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
+                                    <p className="text-gray-700">{file.version}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
+                                    <p className="text-gray-700">{file.approvedBy || "--"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
+                                    <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
+                                    <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 flex justify-end">
+                                  <button
+                                    onClick={() => {
+                                      setOpeningFileIndex(index);
+                                      setSelectedDocFiles(file);
+                                      openFile(file).finally(() => setOpeningFileIndex(null));
+                                    }}
+                                    disabled={openingFileIndex !== null}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                            ${openingFileIndex === index ?
+                                        "bg-indigo-400 cursor-not-allowed" :
+                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                                  >
+                                    {openingFileIndex === index ? (
+                                      <>
+                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                        <AutoTranslate>Opening...</AutoTranslate>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <EyeIcon className="h-3 w-3" />
+                                        <AutoTranslate>View File</AutoTranslate>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
+                        <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                        <p className="text-gray-500">
+                          <AutoTranslate>No attached files found</AutoTranslate>
+                        </p>
+                        {searchFileTerm && (
+                          <p className="text-sm text-gray-400 mt-1">
+                            <AutoTranslate>Try adjusting your search term</AutoTranslate>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {viewFileTypeModel && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+              <div className="w-80 sm:w-96 bg-white rounded-xl shadow-xl p-5 border border-gray-200 max-h-[80vh] overflow-y-auto transition-all">
+
+                {/* Header */}
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    <AutoTranslate>Supported File Types</AutoTranslate>
+                  </h2>
+                  <button
+                    onClick={handlecloseFileType}
+                    className="text-gray-400 hover:text-red-500 text-xl focus:outline-none"
+                    aria-label="Close"
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                {/* Search Input */}
+                <input
+                  type="text"
+                  placeholder={getFallbackTranslation(
+                    'Search file type...',
+                    currentLanguage
+                  )}
+                  value={searchTerm}
+                  onChange={(e) => setSearchFileTerm(e.target.value)}
+                  maxLength={20}
+                  className="w-full p-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+
+                {/* List */}
+                <ul className="space-y-2">
+                  {filteredFiles.length > 0 ? (
+                    filteredFiles.map((file) => (
+                      <li
+                        key={file.id}
+                        className="flex justify-between items-center px-3 py-2 bg-gray-50 rounded-md hover:bg-blue-50 transition text-sm"
+                      >
+                        <span className="text-gray-800 font-medium">{file.filetype}</span>
+                        <span className="text-gray-500">{file.extension}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-center text-gray-500 text-sm">
+                      <AutoTranslate>No matching file types found</AutoTranslate>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Waiting Room Modal */}
+          <WaitingRoom
+            isOpen={isWaitingRoomModalOpen}
+            onClose={() => setIsWaitingRoomModalOpen(false)}
+            onSelectDocuments={handleSelectFromWaitingRoom}
+            metadata={{
+              branch: userBranch,
+              department: userDep,
+              year: formData.year?.name,
+              yearMas: formData.year,
+              category: formData.category?.name,
+              version: formData.version,
+              fileNo: formData.fileNo,
+              title: formData.title,
+              subject: formData.subject,
+            }}
+            token={token}
+            showPopup={showPopup}
+          />
+        </>
       </div>
+
     </div>
   );
 };

@@ -960,22 +960,22 @@ const Search = () => {
               <table className="">
                 <thead>
                   <tr>
-                    <th className="btn-center"><AutoTranslate>SN</AutoTranslate></th>
+                    <th className="text-center"><AutoTranslate>SN</AutoTranslate></th>
                     <th><AutoTranslate>File No</AutoTranslate></th>
                     <th><AutoTranslate>Title</AutoTranslate></th>
                     <th><AutoTranslate>Subject</AutoTranslate></th>
                     <th><AutoTranslate>Category</AutoTranslate></th>
                     <th><AutoTranslate>Branch</AutoTranslate></th>
                     <th><AutoTranslate>Department</AutoTranslate></th>
-                    <th className="btn-center"><AutoTranslate>No. Of Attached Files</AutoTranslate></th>
+                    <th className="text-center"><AutoTranslate>No. Of Attached Files</AutoTranslate></th>
                     <th><AutoTranslate>Uploaded Date</AutoTranslate></th>
-                    <th className="btn-center"><AutoTranslate>View</AutoTranslate></th>
+                    <th className="text-center"><AutoTranslate>View</AutoTranslate></th>
                   </tr>
                 </thead>
                 <tbody>
                   {getPaginatedResults().map((document, index) => (
                     <tr key={document.id}>
-                      <td className="btn-center">
+                      <td className="text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td>{document.fileNo}</td>
@@ -990,7 +990,7 @@ const Search = () => {
                       <td>
                         {document.departmentMaster?.name || 'No Department'}
                       </td>
-                      <td className="btn-center">{document.documentDetails.length}</td>
+                      <td className="text-center">{document.documentDetails.length}</td>
                       <td>{formatDate(document.createdOn)}</td>
                       <td className="text-center">
                         <div className="btn-center">

@@ -118,31 +118,31 @@ const ArchiveDashboardP5 = () => {
 
 
 
-useEffect(() => {
-    const fetchJobs = async () => {
-        try {
-            const res = await apiClient.get(
-                `${API_HOST}/retention-policy/findAllByFilter`,
-                {
-                   
-                    params: {
-                        branchId: selectedBranch !== "All" ? selectedBranch : null,
-                        departmentId: selectedDepartment !== "All" ? selectedDepartment : null,
-                        status: selectedStatus !== "All" ? selectedStatus : null,
-                        search: searchTerm || null,
-                    },
-                }
-            );
-            setArchiveJobs(res.data);
-        } catch (err) {
-            console.error("Error fetching retention policies:", err);
-        }
-    };
+    useEffect(() => {
+        const fetchJobs = async () => {
+            try {
+                const res = await apiClient.get(
+                    `${API_HOST}/retention-policy/findAllByFilter`,
+                    {
 
-    if (token) {
-        fetchJobs();
-    }
-}, [token, selectedBranch, selectedDepartment, selectedStatus, searchTerm]);
+                        params: {
+                            branchId: selectedBranch !== "All" ? selectedBranch : null,
+                            departmentId: selectedDepartment !== "All" ? selectedDepartment : null,
+                            status: selectedStatus !== "All" ? selectedStatus : null,
+                            search: searchTerm || null,
+                        },
+                    }
+                );
+                setArchiveJobs(res.data);
+            } catch (err) {
+                console.error("Error fetching retention policies:", err);
+            }
+        };
+
+        if (token) {
+            fetchJobs();
+        }
+    }, [token, selectedBranch, selectedDepartment, selectedStatus, searchTerm]);
 
 
 
@@ -169,32 +169,32 @@ useEffect(() => {
         return date.toLocaleString("en-GB", options).replace(",", " at")
     }
 
-const filteredAndSortedData = archiveJobs
-    .filter((item) => {
-        const search = searchTerm.toLowerCase();
+    const filteredAndSortedData = archiveJobs
+        .filter((item) => {
+            const search = searchTerm.toLowerCase();
 
-        const matchSearch =
-            item.archiveName?.toLowerCase().includes(search) ||
-            item.branchName?.toLowerCase().includes(search) ||
-            item.departmentName?.toLowerCase().includes(search) ||
-            item.archiveStatus?.toLowerCase().includes(search);
+            const matchSearch =
+                item.archiveName?.toLowerCase().includes(search) ||
+                item.branchName?.toLowerCase().includes(search) ||
+                item.departmentName?.toLowerCase().includes(search) ||
+                item.archiveStatus?.toLowerCase().includes(search);
 
-        const matchBranch =
-            selectedBranch === "All" || item.branchId === Number(selectedBranch);
+            const matchBranch =
+                selectedBranch === "All" || item.branchId === Number(selectedBranch);
 
-        const matchDepartment =
-            selectedDepartment === "All" || item.departmentId === Number(selectedDepartment);
+            const matchDepartment =
+                selectedDepartment === "All" || item.departmentId === Number(selectedDepartment);
 
-        const matchStatus =
-            selectedStatus === "All" || item.archiveStatus === selectedStatus;
+            const matchStatus =
+                selectedStatus === "All" || item.archiveStatus === selectedStatus;
 
-        return matchSearch && matchBranch && matchDepartment && matchStatus;
-    })
-    .sort((a, b) => {
-        const priorityA = statusPriority[a.archiveStatus] || 99;
-        const priorityB = statusPriority[b.archiveStatus] || 99;
-        return priorityA - priorityB;
-    });
+            return matchSearch && matchBranch && matchDepartment && matchStatus;
+        })
+        .sort((a, b) => {
+            const priorityA = statusPriority[a.archiveStatus] || 99;
+            const priorityB = statusPriority[b.archiveStatus] || 99;
+            return priorityA - priorityB;
+        });
 
 
     const totalItems = filteredAndSortedData.length
@@ -220,35 +220,35 @@ const filteredAndSortedData = archiveJobs
         }
     }
 
-const handleRestore = async (e, job) => {
-    e.preventDefault();
-    e.stopPropagation(); 
+    const handleRestore = async (e, job) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-    try {
-        setRestoringJobId(job.id);
+        try {
+            setRestoringJobId(job.id);
 
-        const res = await apiClient.post(
-            `${API_HOST}${P5_APIS}/restoreBulk/${job.id}`,
-            null,
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                validateStatus: (status) => status === 202,
+            const res = await apiClient.post(
+                `${API_HOST}${P5_APIS}/restoreBulk/${job.id}`,
+                null,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    validateStatus: (status) => status === 202,
+                }
+            );
+
+            if (res.status === 202) {
+                notifySuccess("Your Policy Restore Request is Accepted");
             }
-        );
 
-        if (res.status === 202) {
-            notifySuccess("Your Policy Restore Request is Accepted");
+        } catch (error) {
+            console.error("Error restoring job:", error);
+            notifyError("Failed to submit restore request");
+        } finally {
+            setRestoringJobId(null);
         }
-
-    } catch (error) {
-        console.error("Error restoring job:", error);
-        notifyError("Failed to submit restore request");
-    } finally {
-        setRestoringJobId(null);
-    }
-};
+    };
 
 
     // 🟩 Handle Retry (POST)
@@ -454,189 +454,196 @@ const handleRestore = async (e, job) => {
 
     return (
         <Layout>
-            <div className="p-2">
-                <h1 className="text-lg mb-2 font-semibold text-gray-900">
-                    <AutoTranslate>ARCHIVAL DASHBOARD P5</AutoTranslate>
-                </h1>
+            <div className="px-2-">
+                <div className="title">
+                    <h1><AutoTranslate>ARCHIVAL DASHBOARD P5</AutoTranslate></h1>
+                </div>
 
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                        <StatCard
-                            label="Total Policy"
-                            value={stats.totalJobs}
-                            bg="bg-sky-50"
-                            border="border-sky-200"
-                            chipBg="bg-sky-100"
-                            chipText="text-sky-700"
-                            useImage
-                        />
-                        <StatCard
-                            label="Archived Policy"
-                            value={stats.archived}
-                            bg="bg-emerald-50"
-                            border="border-emerald-200"
-                            chipBg="bg-emerald-100"
-                            chipText="text-emerald-700"
-                            useImage
-                        />
-                        <StatCard
-                            label="Failed Policy"
-                            value={stats.failed}
-                            bg="bg-rose-50"
-                            border="border-rose-200"
-                            chipBg="bg-rose-100"
-                            chipText="text-rose-700"
-                            useImage
-                        />
-                        <StatCard
-                            label="In-Progress Policy"
-                            value={stats.processing}
-                            bg="bg-indigo-50"
-                            border="border-indigo-200"
-                            chipBg="bg-indigo-100"
-                            chipText="text-indigo-700"
-                            useImage
-                        />
-                        <StatCard
-                            label="Waiting Policy"
-                            value={stats.waiting}
-                            bg="bg-amber-50"
-                            border="border-amber-200"
-                            chipBg="bg-amber-100"
-                            chipText="text-amber-700"
-                            useImage
-                        />
-                        <StatCard
-                            label="Total Files"
-                            value={stats.totalFiles}
-                            bg="bg-slate-50"
-                            border="border-slate-200"
-                            chipBg="bg-slate-100"
-                            chipText="text-slate-700"
-                            useImage={false}
-                            iconColor="text-slate-600"
-                        />
-                        <StatCard
-                            label="Archived Files"
-                            value={stats.archivedFiles}
-                            bg="bg-emerald-50"
-                            border="border-emerald-200"
-                            chipBg="bg-emerald-100"
-                            chipText="text-emerald-700"
-                            useImage={false}
-                            iconColor="text-emerald-600"
-                        />
-                        <StatCard
-                            label="Failed Files"
-                            value={stats.failedFiles}
-                            bg="bg-rose-50"
-                            border="border-rose-200"
-                            chipBg="bg-rose-100"
-                            chipText="text-rose-700"
-                            useImage={false}
-                            iconColor="text-rose-600"
-                        />
-                        <StatCard
-                            label="In-Progress Files"
-                            value={stats.pendingFiles}
-                            bg="bg-amber-50"
-                            border="border-amber-200"
-                            chipBg="bg-amber-100"
-                            chipText="text-amber-700"
-                            useImage={false}
-                            iconColor="text-amber-600"
-                        />
-                        <div className="p-5 rounded-xl shadow-sm hover:shadow-md transition border border-violet-200 bg-violet-50">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-600">
-                                        <AutoTranslate>Archived Percentage</AutoTranslate>
-                                    </p>
-                                    <p className="mt-1 text-3xl font-bold text-violet-700">
-                                        {stats.totalJobs > 0 ? `${((stats.archived / stats.totalJobs) * 100).toFixed(1)}%` : "0%"}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        {stats.archived} <AutoTranslate>of</AutoTranslate> {stats.totalJobs} <AutoTranslate>policies</AutoTranslate>
-                                    </p>
-                                </div>
-                                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-violet-100 text-violet-700 ring-1 ring-inset ring-white/30">
-                                    <FileText className="h-7 w-7" />
-                                </div>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                    <StatCard
+                        label="Total Policy"
+                        value={stats.totalJobs}
+                        bg="bg-sky-50"
+                        border="border-sky-200"
+                        chipBg="bg-sky-100"
+                        chipText="text-sky-700"
+                        useImage
+                    />
+                    <StatCard
+                        label="Archived Policy"
+                        value={stats.archived}
+                        bg="bg-emerald-50"
+                        border="border-emerald-200"
+                        chipBg="bg-emerald-100"
+                        chipText="text-emerald-700"
+                        useImage
+                    />
+                    <StatCard
+                        label="Failed Policy"
+                        value={stats.failed}
+                        bg="bg-rose-50"
+                        border="border-rose-200"
+                        chipBg="bg-rose-100"
+                        chipText="text-rose-700"
+                        useImage
+                    />
+                    <StatCard
+                        label="In-Progress Policy"
+                        value={stats.processing}
+                        bg="bg-indigo-50"
+                        border="border-indigo-200"
+                        chipBg="bg-indigo-100"
+                        chipText="text-indigo-700"
+                        useImage
+                    />
+                    <StatCard
+                        label="Waiting Policy"
+                        value={stats.waiting}
+                        bg="bg-amber-50"
+                        border="border-amber-200"
+                        chipBg="bg-amber-100"
+                        chipText="text-amber-700"
+                        useImage
+                    />
+                    <StatCard
+                        label="Total Files"
+                        value={stats.totalFiles}
+                        bg="bg-slate-50"
+                        border="border-slate-200"
+                        chipBg="bg-slate-100"
+                        chipText="text-slate-700"
+                        useImage={false}
+                        iconColor="text-slate-600"
+                    />
+                    <StatCard
+                        label="Archived Files"
+                        value={stats.archivedFiles}
+                        bg="bg-emerald-50"
+                        border="border-emerald-200"
+                        chipBg="bg-emerald-100"
+                        chipText="text-emerald-700"
+                        useImage={false}
+                        iconColor="text-emerald-600"
+                    />
+                    <StatCard
+                        label="Failed Files"
+                        value={stats.failedFiles}
+                        bg="bg-rose-50"
+                        border="border-rose-200"
+                        chipBg="bg-rose-100"
+                        chipText="text-rose-700"
+                        useImage={false}
+                        iconColor="text-rose-600"
+                    />
+                    <StatCard
+                        label="In-Progress Files"
+                        value={stats.pendingFiles}
+                        bg="bg-amber-50"
+                        border="border-amber-200"
+                        chipBg="bg-amber-100"
+                        chipText="text-amber-700"
+                        useImage={false}
+                        iconColor="text-amber-600"
+                    />
+                    <div className="p-5 rounded-xl shadow-sm hover:shadow-md transition border border-violet-200 bg-violet-50">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-medium text-gray-600">
+                                    <AutoTranslate>Archived Percentage</AutoTranslate>
+                                </p>
+                                <p className="mt-1 text-3xl font-bold text-violet-700">
+                                    {stats.totalJobs > 0 ? `${((stats.archived / stats.totalJobs) * 100).toFixed(1)}%` : "0%"}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {stats.archived} <AutoTranslate>of</AutoTranslate> {stats.totalJobs} <AutoTranslate>policies</AutoTranslate>
+                                </p>
+                            </div>
+                            <div className="h-12 w-12 rounded-full flex items-center justify-center bg-violet-100 text-violet-700 ring-1 ring-inset ring-white/30">
+                                <FileText className="h-7 w-7" />
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div className="card">
 
                     {/* Filters */}
                     {drillDownLevel === 0 && (
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                            <div className="flex flex-wrap gap-4 items-center">
-                                <div className="flex-1 min-w-64">
-                                    <div className="relative">
-                                        <Search className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <input
-  type="text"
-  placeholder="Search archive jobs..."
-  value={searchTerm}
-  onChange={(e) => setSearchTerm(e.target.value)}
-  className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-/>
+                        <div className="grid grid-col-4 gap-4 mb-4">
+                            <div className="form-group ">
+                                <div className="relative">
+                                    <label>
+                                        <AutoTranslate>Search</AutoTranslate>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Search archive jobs..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="searchIcon"
+                                    />
 
-                                    </div>
                                 </div>
+                            </div>
 
-                                <div className="flex items-center gap-2">
-                                    <Building className="h-4 w-4 text-gray-500" />
-                                    <select
-                                        value={selectedBranch}
-                                        onChange={(e) => setSelectedBranch(e.target.value)}
-                                        className="border border-gray-300 rounded-md px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="All">
-                                            <AutoTranslate>All Branches</AutoTranslate>
+                            <div className="form-group ">
+                                {/* <Building className="h-4 w-4 text-gray-500" /> */}
+                                <label>
+                                    <AutoTranslate>Branches</AutoTranslate>
+                                </label>
+                                <select
+                                    value={selectedBranch}
+                                    onChange={(e) => setSelectedBranch(e.target.value)}
+                                >
+                                    <option value="All">
+                                        <AutoTranslate>All Branches</AutoTranslate>
+                                    </option>
+                                    {branches.map((b) => (
+                                        <option key={b.id} value={b.id}>
+                                            {b.name}
                                         </option>
-                                        {branches.map((b) => (
-                                            <option key={b.id} value={b.id}>
-                                                {b.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                    ))}
+                                </select>
+                            </div>
 
-                                <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4 text-gray-500" />
-                                    <select
-                                        value={selectedDepartment}
-                                        onChange={(e) => setSelectedDepartment(e.target.value)}
-                                        className="border border-gray-300 rounded-md px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="All">
-                                            <AutoTranslate>All Departments</AutoTranslate>
+                            <div className="form-group ">
+                                {/* <Users className="h-4 w-4 text-gray-500" /> */}
+                                <label>
+                                    <AutoTranslate>Departments</AutoTranslate>
+                                </label>
+                                <select
+                                    value={selectedDepartment}
+                                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                                >
+                                    <option value="All">
+                                        <AutoTranslate>All Departments</AutoTranslate>
+                                    </option>
+                                    {departments.map((d) => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.name}
                                         </option>
-                                        {departments.map((d) => (
-                                            <option key={d.id} value={d.id}>
-                                                {d.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                    ))}
+                                </select>
+                            </div>
 
-                                <div className="flex items-center gap-2">
-                                    <Filter className="h-4 w-4 text-gray-500" />
-                                    <select
-                                        value={selectedStatus}
-                                        onChange={(e) => setSelectedStatus(e.target.value)}
-                                        className="border border-gray-300 rounded-md px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="All">
-                                            <AutoTranslate>All Status</AutoTranslate>
+                            <div className="form-group ">
+                                {/* <Filter className="h-4 w-4 text-gray-500" /> */}
+                                <label>
+                                    <AutoTranslate>Status</AutoTranslate>
+                                </label>
+                                <select
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                >
+                                    <option value="All">
+                                        <AutoTranslate>All Status</AutoTranslate>
+                                    </option>
+                                    {statuses.map((s) => (
+                                        <option key={s} value={s}>
+                                            {s}
                                         </option>
-                                        {statuses.map((s) => (
-                                            <option key={s} value={s}>
-                                                {s}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     )}

@@ -1061,10 +1061,7 @@ const Approve = () => {
               >
                 <AutoTranslate>Yes, Approve</AutoTranslate>
               </button>
-              <button
-                className="bg-gray-500 text-white p-2 rounded-md"
-                onClick={() => setIsConfirmModalOpen(false)}
-              >
+              <button className="btn-cancel" onClick={() => setIsConfirmModalOpen(false)}>
                 <AutoTranslate>Cancel</AutoTranslate>
               </button>
             </div>
@@ -1109,7 +1106,7 @@ const Approve = () => {
                 <AutoTranslate>Submit</AutoTranslate>
               </button>
               <button
-                className="bg-gray-500 text-white p-2 rounded-md"
+                className="btn-cancel"
                 onClick={() => {
                   setRejectReasonError(false);
                   setIsRejectReasonModalOpen(false);

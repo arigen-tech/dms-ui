@@ -569,7 +569,7 @@ const BranchDepartments = () => {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setModalVisible(false)}
-                className="bg-gray-300 text-gray-800 rounded-lg px-4 py-2 mr-2"
+                className="btn-cancel"
               >
                 <AutoTranslate>Cancel</AutoTranslate>
               </button>

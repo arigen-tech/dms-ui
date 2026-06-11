@@ -408,14 +408,14 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
             <div className="flex justify-end space-x-4">
               <button
                 onClick={cancelRoleSwitch}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                className="btn-cancel"
               >
                 <AutoTranslate>Cancel</AutoTranslate>
               </button>
               <button
                 onClick={confirmRoleSwitch}
                 disabled={isConfSwitch}
-                className={`bg-indigo-500 text-white px-4 py-2 rounded transition duration-300 no-print ${isConfSwitch ? "opacity-50 cursor-not-allowed" : "hover:bg-indigo-600"
+                className={`btn-primary no-print ${isConfSwitch ? "opacity-50 cursor-not-allowed" : ""
                   }`}
               >
                 {isConfSwitch ? (

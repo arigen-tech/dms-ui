@@ -1123,10 +1123,8 @@ const Import = () => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm">
-      <div className="min-h-screen bg-gradient-to-br bg-slate-100 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-
+    <div className="card">
+        <div className="max-w-6xl mx-auto pt-6">
           {/* Popup Component */}
           {popupMessage && (
             <Popup
@@ -1144,7 +1142,7 @@ const Import = () => {
                 <CloudUpload className="w-8 h-8 text-green-600" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold">
               <AutoTranslate>DMS Data Import</AutoTranslate>
             </h1>
             <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
@@ -1164,9 +1162,9 @@ const Import = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">
+                    <h2 className="font-semibold text-gray-900">
                       {progress < 100 ? <AutoTranslate>🔄 Importing DMS Data</AutoTranslate> : <AutoTranslate>✅ Import Complete</AutoTranslate>}
-                    </h3>
+                    </h2>
                     <p className="text-sm text-gray-600">
                       {importOptions.importDatabase && `${selectedTables.size} tables`}
                       {importOptions.importDatabase && importOptions.importFiles ? <AutoTranslate> and </AutoTranslate> : ''}
@@ -1212,9 +1210,9 @@ const Import = () => {
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
                   <AutoTranslate>Select DMS Export File</AutoTranslate>
-                </h3>
+                </h2>
                 <p className="text-gray-600 mb-4">
                   <AutoTranslate>Choose a ZIP file that was exported from your DMS system. The system will automatically detect available content</AutoTranslate> <AutoTranslate>database</AutoTranslate>, <AutoTranslate>files</AutoTranslate>, <AutoTranslate>or both</AutoTranslate>.
                 </p>
@@ -1573,7 +1571,6 @@ const Import = () => {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 };

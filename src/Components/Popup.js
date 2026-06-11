@@ -80,19 +80,7 @@ const Popup = ({
           <AutoTranslate>{message}</AutoTranslate> {/* Wrap message in AutoTranslate */}
         </h3>
         <button
-          className={`
-            ${styles.buttonColor}
-            text-white
-            font-bold
-            py-2
-            px-6
-            rounded-md
-            transition-colors
-            duration-300
-            focus:outline-none
-            focus:ring-2
-            focus:ring-opacity-50
-          `}
+          className={`btn-primary`}
           onClick={handleClose}
         >
           <AutoTranslate>OK</AutoTranslate> {/* Wrap button text in AutoTranslate */}

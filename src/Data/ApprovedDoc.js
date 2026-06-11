@@ -2234,7 +2234,7 @@ const ApprovedDoc = () => {
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setConfirmDeleteModalVisible(false)}
-                className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                className="btn-cancel"
                 disabled={isDeleteConfirmDisabled}
               >
                 <AutoTranslate>Cancel</AutoTranslate>
@@ -2282,7 +2282,7 @@ const ApprovedDoc = () => {
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setBulkFileDeleteModalVisible(false)}
-                className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                className="btn-cancel"
                 disabled={isBulkFileDeleting}
               >
                 <AutoTranslate>Cancel</AutoTranslate>
@@ -2354,7 +2354,7 @@ const ApprovedDoc = () => {
                 <div className="flex justify-end gap-4">
                   <button
                     onClick={() => setBulkDocDeleteModalVisible(false)}
-                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                    className="btn-cancel"
                     disabled={isBulkDocDeleting}
                   >
                     <AutoTranslate>Cancel</AutoTranslate>
@@ -2362,7 +2362,7 @@ const ApprovedDoc = () => {
                   <button
                     onClick={confirmBulkDocumentDelete}
                     disabled={isBulkDocDeleting}
-                    className={`px-4 py-2 rounded-md text-white ${isBulkDocDeleting
+                    className={`btn-primary ${isBulkDocDeleting
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-red-600 hover:bg-red-700'} transition-colors`}
                   >
@@ -2579,7 +2579,7 @@ const ApprovedDoc = () => {
                       setShareEndTime("");
                       setSelectedFileIds([]);
                     }}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+                    className="btn-cancel"
                     disabled={sharingDocument}
                   >
                     <AutoTranslate>Cancel</AutoTranslate>
@@ -2735,7 +2735,7 @@ const ApprovedDoc = () => {
                         setShareRecipients([]);
                         setShareEndTime("");
                       }}
-                      className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+                      className="btn-cancel"
                       disabled={isBulkSharing}
                     >
                       <AutoTranslate>Cancel</AutoTranslate>
@@ -2914,7 +2914,7 @@ const ApprovedDoc = () => {
                   setShareToRevoke(null);
                   setRevokeReason("");
                 }}
-                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
+                className="btn-cancel"
               >
                 <AutoTranslate>Cancel</AutoTranslate>
               </button>

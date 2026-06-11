@@ -1387,7 +1387,7 @@ const TrashDoc = () => {
                 <div className="flex justify-end gap-4">
                   <button
                     onClick={() => setConfirmRestoreModalVisible(false)}
-                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                    className="btn-cancel"
                     disabled={isRestoreConfirmDisabled}
                   >
                     <AutoTranslate>Cancel</AutoTranslate>
@@ -1448,7 +1448,7 @@ const TrashDoc = () => {
                 <div className="flex justify-end gap-4">
                   <button
                     onClick={() => setBulkFileRestoreModalVisible(false)}
-                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                    className="btn-cancel"
                     disabled={isBulkFileRestoring}
                   >
                     <AutoTranslate>Cancel</AutoTranslate>
@@ -1520,7 +1520,7 @@ const TrashDoc = () => {
                 <div className="flex justify-end gap-4">
                   <button
                     onClick={() => setBulkDocRestoreModalVisible(false)}
-                    className="bg-gray-300 hover:bg-gray-400 p-2 rounded-lg transition-colors"
+                    className="btn-cancel"
                     disabled={isBulkDocRestoring}
                   >
                     <AutoTranslate>Cancel</AutoTranslate>

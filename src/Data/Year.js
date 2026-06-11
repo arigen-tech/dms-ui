@@ -548,13 +548,13 @@ const Year = () => {
                     <AutoTranslate>activate</AutoTranslate>} <AutoTranslate>this year</AutoTranslate> <strong>{yearToToggle?.name}</strong>?
                 </p>
                 <div className="flex justify-end gap-4">
-                  <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">
+                  <button onClick={() => setModalVisible(false)} className="btn-cancel">
                     <AutoTranslate>Cancel</AutoTranslate>
                   </button>
                   <button
                     onClick={confirmToggleActiveStatus}
                     disabled={isConfirmDisabled}
-                    className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                    className={`btn-primary ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                   >
                     {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}

@@ -708,9 +708,8 @@ const ExportData = () => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm">
-      <div className="min-h-screen bg-gradient-to-br bg-slate-100 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
+    <div className="card">
+        <div className="max-w-6xl mx-auto mt-6">
           {popupMessage && (
             <Popup
               message={popupMessage.message}
@@ -827,13 +826,13 @@ const ExportData = () => {
           )}
 
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-6">
             <div className="flex items-center justify-center mb-6">
               <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200/50">
                 <Server className="w-8 h-8 text-blue-600" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold">
               <AutoTranslate>Data Management & Backup</AutoTranslate>
             </h1>
             <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
@@ -842,13 +841,13 @@ const ExportData = () => {
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-1 mb-8 max-w-md mx-auto">
+          <div className="tabs bg-white rounded-2xl shadow-sm border border-gray-200 p-1 mb-8 max-w-md mx-auto">
             <div className="flex space-x-1">
               <button
                 onClick={() => setActiveTab('quick')}
                 className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === 'quick'
                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  : 'bg-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-300'
                   }`}
               >
                 <AutoTranslate>Quick Backup</AutoTranslate>
@@ -857,7 +856,7 @@ const ExportData = () => {
                 onClick={() => setActiveTab('advanced')}
                 className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === 'advanced'
                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  : 'bg-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-300'
                   }`}
               >
                 <AutoTranslate>Date Range Export</AutoTranslate>
@@ -914,7 +913,7 @@ const ExportData = () => {
           {activeTab === 'quick' && (
             <div className="space-y-8 mb-8">
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-3"><AutoTranslate>Quick System Backup</AutoTranslate></h2>
+                <h2 className="text-2xl- font-bold mb-3"><AutoTranslate>Quick System Backup</AutoTranslate></h2>
                 <p className="text-gray-600 max-w-2xl mx-auto">
                   <AutoTranslate>Complete system backups for today's data. No date selection required.</AutoTranslate>
                 </p>
@@ -950,7 +949,7 @@ const ExportData = () => {
           {activeTab === 'advanced' && (
             <div className="space-y-8">
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-3"><AutoTranslate>Selective Data Export</AutoTranslate></h2>
+                <h2 className="text-2xl- font-bold mb-3"><AutoTranslate>Selective Data Export</AutoTranslate></h2>
                 <p className="text-gray-600 max-w-2xl mx-auto">
                   <AutoTranslate>Export data from specific time periods for compliance or analysis</AutoTranslate>
                 </p>
@@ -1141,7 +1140,7 @@ const ExportData = () => {
             </div>
           )}
         </div>
-      </div>
+      
     </div>
   );
 };

@@ -448,7 +448,7 @@ const AuditForm = () => {
               <div className="flex justify-end gap-4">
                 <button
                   onClick={() => setModalVisible(false)}
-                  className="bg-gray-300 p-2 rounded-lg hover:bg-gray-400"
+                  className="btn-cancel"
                 >
                   <AutoTranslate>Cancel</AutoTranslate>
                 </button>

@@ -9,7 +9,7 @@
     --black-color: #000;
 
     --secondary-color: #1E88E5;
-    --secondary-color-hover: #1B7FD7;
+    --secondary-color-hover: #1A68AD;
     --black-color-60: rgb(0 0 0/0.6);
     --black-color-80: rgb(0 0 0/0.8);
     --black-bg-2: #1a1a1a;
@@ -105,14 +105,33 @@ body {
     border-radius: 6px;
     font-size: 16px;
     color: var(--white-color);
-    padding: 8px 15px;
-    border: 0;
+    padding: 7px 15px;
+    border: solid 1px var(--secondary-color);
     transition: all 0.35s ease-in-out;
 
     &:hover {
         background-color: var(--secondary-color-hover);
+        border: solid 1px var(--secondary-color-hover);
     }
 }
+
+
+.btn-cancel {
+    border: 1px solid var(--border-color-15);
+    background-color: #f3f4f6;
+    font-size: 16px;
+    color: rgb(0 0 0/ 0.80);
+    border-radius: 6px;
+    padding: 7px 16px;
+    transition: all 0.35s ease-in-out;
+
+    &:hover {
+        background-color: #e5e7eb;
+    }
+}
+
+
+
 
 button:focus,
 input:focus,
@@ -223,6 +242,15 @@ a:focus {
             color: var(--white-color);
         }
     }
+}
+
+.checkBox {
+    display: flex;
+    align-items: center;
+    & input{
+    width: 24px;
+    height: 24px;
+}
 }
 
 
@@ -770,22 +798,22 @@ footer {
 
 main {
     padding-top: 15px !important;
+}
 
-    h1 {
-        font-size: 20px;
-        color: var(--black-color-80);
-        font-weight: 600;
-        line-height: 1.75rem;
-        margin-bottom: 15px;
-    }
+h1 {
+    font-size: 20px;
+    color: var(--black-color-80);
+    font-weight: 600;
+    line-height: 1.75rem;
+    margin-bottom: 15px;
+}
 
-    h2 {
-        font-size: 18px;
-        color: var(--black-color-80);
-        font-weight: 600;
-        line-height: 1.75rem;
-        margin-bottom: 15px;
-    }
+h2 {
+    font-size: 18px;
+    color: var(--black-color-80);
+    font-weight: 600;
+    line-height: 1.75rem;
+    margin-bottom: 15px;
 }
 
 .chartGrid {
@@ -1110,7 +1138,9 @@ main {
     & .status {
         background-color: rgb(0 0 0/ 0.10);
         border-radius: 30px;
-        padding: 5px 15px;
+        padding: 5px 12px;
+        white-space: nowrap;
+        font-weight: 600;
     }
 
     & .allowed {
@@ -1118,9 +1148,21 @@ main {
         color: var(--approved-color);
     }
 
+    & .pending {
+        background: var(--pending-gb);
+        color: var(--pending-color);
+    }
+
     & .denied {
         background: var(--rejected-bg);
         color: var(--rejected-color);
+    }
+
+    & .blueBg {
+        background: var(--rejected-bg);
+        color: var(--rejected-color);
+        background-color: rgb(219 234 254 / 1);
+        color: rgb(30 64 175 / 1);
     }
 }
 
@@ -1418,8 +1460,8 @@ main {
     border-radius: 8px;
     border: solid 1px var(--border-color-15);
     margin-bottom: 15px;
-
-    & .card {
+}
+.card-wp .card {
         padding: 12px;
         margin-bottom: 12px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.04);
@@ -1437,7 +1479,6 @@ main {
             transform: translateY(-2px);
         }
     }
-}
 
 .btn-add {
     background-color: var(--secondary-color);
@@ -1578,6 +1619,33 @@ main {
     margin-bottom: 15px;
 }
 
+.edit-doc-wrapper{
+    margin-bottom: 20px;
+    & ul{
+        margin-bottom: 15px;
+        padding: 0;
+        list-style: none;
+         & li{
+            display: grid;
+            grid-template-columns: 40% 1fr 1fr 1fr 1fr;
+            align-items: center;
+            gap: 12;
+            padding: 12px;
+            border-radius: 12px;
+            border: solid 1px var(--border-color-15);
+            box-shadow: 0px 0px 5px rgb(0 0 0/0.1);
+            &:hover{
+                border-color: var(--secondary-color);
+            }
+         }
+         & li:not(:last-child){
+            margin-bottom: 12px;
+         }
+    }
+}
+
+
+/* grid grid-cols-[40%_1fr_1fr_1fr_1fr] items-center gap-2 p-3 border rounded-xl shadow-sm bg-white hover:shadow-md transition */
 
 
 
@@ -1594,11 +1662,13 @@ main {
     align-items: end;
 }
 
+.selfEnd {
+    align-self: flex-end;
+}
+
 .mb-0 {
     margin-bottom: 0 !important;
 }
-
-
 
 
 /* ***************************** */

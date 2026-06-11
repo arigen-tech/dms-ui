@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import axios from "axios"
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import {
     PlusCircleIcon, PencilIcon, ArrowLeftIcon,
     ArrowRightIcon, MagnifyingGlassIcon
@@ -619,51 +619,50 @@ const NewRetaintionPolicy = () => {
     }
 
     return (
-        <div className="px-2">
-            <h1 className="text-2xl mb-1 font-semibold">
-                <AutoTranslate>Archival Policies</AutoTranslate>
-            </h1>
+        <div className="px-2-">
+            <div className="title">
+                <h1><AutoTranslate>Archival Policies</AutoTranslate></h1>
+            </div>
 
-            <div className="bg-white p-4 rounded-lg shadow-sm">
+            <div className="card">
                 {popupMessage && (
                     <Popup message={popupMessage.message} type={popupMessage.type} onClose={popupMessage.onClose} />
                 )}
 
                 {/* Policy Form with ref */}
-                <div ref={formRef} className="mb-4 bg-slate-100 p-2 rounded-lg">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>PolicyType</AutoTranslate> <span className="text-red-500">*</span>
+                <div ref={formRef} className="mb-8">
+                    <div className="grid grid-col-4 mb-4">
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>PolicyType</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <select
                                 name="policyType"
                                 value={formData.policyType}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                            >
+                                onChange={handleInputChange}>
                                 <option value="FILE_RETENTION"><AutoTranslate>File Retention Policy</AutoTranslate></option>
                                 <option value="DATA_RETENTION"><AutoTranslate>Data Retention Policy</AutoTranslate></option>
                             </select>
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>From Date</AutoTranslate> <span className="text-red-500">*</span>
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>From Date</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="date"
                                 name="fromdate"
                                 value={formData.fromdate || ''}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>To Date</AutoTranslate> <span className="text-red-500">*</span>
+                                onChange={handleInputChange} />
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>To Date</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="date"
                                 name="todate"
                                 value={formData.todate || ''}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                                 min={
                                     formData.fromdate
                                         ? (() => {
@@ -672,18 +671,17 @@ const NewRetaintionPolicy = () => {
                                             return d.toISOString().split("T")[0];
                                         })()
                                         : new Date().toISOString().split("T")[0]
-                                }
-                            />
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Date of Archival</AutoTranslate> <span className="text-red-500">*</span>
+                                } />
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Date of Archival</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="date"
                                 name="retentionDate"
                                 value={formData.retentionDate || ""}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                                 min={(() => {
                                     const today = new Date();
                                     today.setHours(0, 0, 0, 0);
@@ -705,27 +703,25 @@ const NewRetaintionPolicy = () => {
                                     }
                                 })()}
                             />
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Archival Time</AutoTranslate>
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Archival Time</AutoTranslate>
+                            </label>
                             <input
                                 type="time"
                                 name="retentionTime"
                                 value={formData.retentionTime || ""}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
+                                onChange={handleInputChange} />
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Branch</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <select
                                 name="branchId"
                                 value={formData.branchId}
-                                onChange={handleBranchChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                            >
+                                onChange={handleBranchChange}>
                                 <option value=""><AutoTranslate>All Branch</AutoTranslate></option>
                                 {branches.map((branch) => (
                                     <option key={branch.id} value={branch.id}>
@@ -733,17 +729,17 @@ const NewRetaintionPolicy = () => {
                                     </option>
                                 ))}
                             </select>
-                        </label>
+                        </div>
 
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Department</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <select
                                 name="departmentId"
                                 value={formData.departmentId}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                                disabled={!formData.branchId}
-                            >
+                                disabled={!formData.branchId}>
                                 <option value=""><AutoTranslate>All Departments</AutoTranslate></option>
                                 {departments.map((department) => (
                                     <option key={department.id} value={department.id}>
@@ -751,16 +747,15 @@ const NewRetaintionPolicy = () => {
                                     </option>
                                 ))}
                             </select>
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Category</AutoTranslate> <span className="text-red-500">*</span>
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Category</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <select
                                 name="categoryId"
                                 value={formData.categoryId}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                            >
+                                onChange={handleInputChange}>
                                 <option value=""><AutoTranslate>All Category</AutoTranslate></option>
                                 {categories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>
@@ -768,11 +763,11 @@ const NewRetaintionPolicy = () => {
                                     </option>
                                 ))}
                             </select>
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Archive Description</AutoTranslate>
-                            <textarea
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Archive Description</AutoTranslate>
+                            </label><textarea
                                 placeholder={getFallbackTranslation(
                                     'Enter policy description',
                                     currentLanguage
@@ -780,52 +775,46 @@ const NewRetaintionPolicy = () => {
                                 name="description"
                                 value={formData.description}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                                 rows="3"
                             />
-                        </label>
+                        </div>
+                        <div className="form-group flex itemEnd gap-4">
+                            {!isEditing ? (
+                                <button
+                                    onClick={handleAddPolicy}
+                                    className="btn-primary flex items-center justify-center"
+                                >
+                                    <PlusCircleIcon className="h-5 w-5 mr-1" />
+                                    <AutoTranslate>Add Policy</AutoTranslate>
+                                </button>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={handleSaveEdit}
+                                        className="btn-primary flex items-center justify-center"
+                                    >
+                                        <AutoTranslate>Update Policy</AutoTranslate>
+                                    </button>
+                                    <button onClick={resetForm} className="btn-cancel">
+                                        <AutoTranslate>Cancel</AutoTranslate>
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="mt-4 flex justify-start gap-4">
-                        {!isEditing ? (
-                            <button
-                                onClick={handleAddPolicy}
-                                className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
-                            >
-                                <PlusCircleIcon className="h-5 w-5 mr-1" />
-                                <AutoTranslate>Add Policy</AutoTranslate>
-                            </button>
-                        ) : (
-                            <>
-                                <button
-                                    onClick={handleSaveEdit}
-                                    className="bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
-                                >
-                                    <AutoTranslate>Update Policy</AutoTranslate>
-                                </button>
-                                <button
-                                    onClick={resetForm}
-                                    className="bg-gray-500 text-white rounded-2xl p-2 flex items-center text-sm justify-center"
-                                >
-                                    <AutoTranslate>Cancel</AutoTranslate>
-                                </button>
-                            </>
-                        )}
-                    </div>
+
                 </div>
 
+
                 {/* Search and Filter */}
-                <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-                        <label
-                            htmlFor="itemsPerPage"
-                            className="mr-2 ml-2 text-white text-sm"
-                        >
+                <div className="data-search-wrapper">
+                    <div className="form-group flex items-center gap-4">
+                        <label htmlFor="itemsPerPage">
                             <AutoTranslate>Show:</AutoTranslate>
                         </label>
                         <select
                             id="itemsPerPage"
-                            className="border rounded-r-lg p-1.5 outline-none w-full"
                             value={itemsPerPage}
                             onChange={(e) => {
                                 setItemsPerPage(Number(e.target.value));
@@ -840,49 +829,48 @@ const NewRetaintionPolicy = () => {
                         </select>
                     </div>
 
-                    <div className="flex items-center w-full md:w-auto flex-1">
+                    <div className="form-group">
                         <input
                             type="text"
                             placeholder={getFallbackTranslation(
                                 'Search...',
                                 currentLanguage
                             )}
-                            className="border rounded-l-md p-1 outline-none w-full"
+                            className="searchIcon"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
                     </div>
                 </div>
 
                 {/* Policies Table */}
-                <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
-                    <table className="table-fixed border-collapse border border-gray-300 min-w-[1400px]">
-                        <thead className="bg-gray-100 sticky top-0 z-10">
+                <div className="table-wrapper">
+                    <table className="">
+                        <thead>
                             <tr>
-                                <th className="border p-2 text-left w-12"><AutoTranslate>SN</AutoTranslate></th>
-                                <th className="border p-2 text-left w-44"><AutoTranslate>PolicyType</AutoTranslate></th>
-                                <th className="border p-2 text-left w-[650px]"><AutoTranslate>Archival Period</AutoTranslate></th>
-                                <th className="border p-2 text-left w-96"><AutoTranslate>Archive Date & Time</AutoTranslate></th>
-                                <th className="border p-2 text-left w-40"><AutoTranslate>Branch</AutoTranslate></th>
-                                <th className="border p-2 text-left w-40"><AutoTranslate>Department</AutoTranslate></th>
-                                <th className="border p-2 text-left w-40"><AutoTranslate>Category</AutoTranslate></th>
-                                <th className="border p-2 text-left w-60"><AutoTranslate>Description</AutoTranslate></th>
-                                <th className="border p-2 text-left w-28"><AutoTranslate>Status</AutoTranslate></th>
-                                <th className="border p-2 text-left w-20"><AutoTranslate>Edit</AutoTranslate></th>
+                                <th className="text-center"><AutoTranslate>SN</AutoTranslate></th>
+                                <th><AutoTranslate>PolicyType</AutoTranslate></th>
+                                <th><AutoTranslate>Archival Period</AutoTranslate></th>
+                                <th><AutoTranslate>Archive Date & Time</AutoTranslate></th>
+                                <th><AutoTranslate>Branch</AutoTranslate></th>
+                                <th><AutoTranslate>Department</AutoTranslate></th>
+                                <th><AutoTranslate>Category</AutoTranslate></th>
+                                <th><AutoTranslate>Description</AutoTranslate></th>
+                                <th className="text-center"><AutoTranslate>Status</AutoTranslate></th>
+                                <th className="text-center"><AutoTranslate>Edit</AutoTranslate></th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedPolicies.map((policy, index) => (
                                 <tr key={policy.id}>
-                                    <td className="border p-2 w-12">
+                                    <td className="text-center">
                                         {index + 1 + (currentPage - 1) * itemsPerPage}
                                     </td>
-                                    <td className="border p-2 w-44">
+                                    <td>
                                         <span
-                                            className={`px-2 py-1 rounded text-xs font-semibold ${policy.policyType === "FILE_RETENTION"
-                                                ? "bg-blue-100 text-blue-800"
-                                                : "bg-green-100 text-green-800"
+                                            className={`status ${policy.policyType === "FILE_RETENTION"
+                                                ? "blueBg"
+                                                : "pending"
                                                 }`}
                                         >
                                             {policy.policyType === "FILE_RETENTION"
@@ -890,42 +878,44 @@ const NewRetaintionPolicy = () => {
                                                 : "Data Retention"}
                                         </span>
                                     </td>
-                                    <td className="border p-2 w-[500px] text-center text-gray-700">
+                                    <td>
                                         {`${formatDate(policy.fromdate)} TO ${formatDate(policy.todate)}`}
                                     </td>
-                                    <td className="border p-2 w-96 text-center text-gray-700">
+                                    <td>
                                         {formatDateTime(policy.retentionDate, policy.retentionTime)}
                                     </td>
-                                    <td className="border p-2 w-40">
+                                    <td>
                                         {policy.branchName || getBranchNameById(policy.branchId)}
                                     </td>
-                                    <td className="border p-2 w-40">
+                                    <td>
                                         {policy.departmentName || getDepartmentNameById(policy.departmentId)}
                                     </td>
-                                    <td className="border p-2 w-40">
+                                    <td>
                                         {policy.categoryName || getCategoryNameById(policy.categoryId)}
                                     </td>
-                                    <td className="border p-2 w-60">
+                                    <td>
                                         {policy.description || "-"}
                                     </td>
-                                    <td className="border p-2 w-28">
+                                    <td className="text-center">
                                         <span
-                                            className={`px-2 py-1 rounded text-xs font-semibold ${policy.isActive
-                                                ? "bg-yellow-100 text-yellow-800"
-                                                : "bg-green-100 text-green-800"
+                                            className={`status ${policy.isActive
+                                                ? "pending"
+                                                : "allowed"
                                                 }`}
                                         >
                                             {policy.isActive ? "Waiting For Archive: " : "Archived"}
                                         </span>
                                     </td>
-                                    <td className="border p-2 w-20 text-center">
-                                        <button
-                                            onClick={() => handleEditPolicy(policy)}
-                                            disabled={!policy.isActive}
-                                            className={`${!policy.isActive ? "opacity-50 cursor-not-allowed" : ""}`}
-                                        >
-                                            <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
-                                        </button>
+                                    <td className="text-center">
+                                        <div className="btn-center">
+                                            <button
+                                                onClick={() => handleEditPolicy(policy)}
+                                                disabled={!policy.isActive}
+                                                className={`viewBtn ${!policy.isActive ? "opacity-50 cursor-not-allowed" : ""}`}
+                                            >
+                                                <PencilIcon />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -934,83 +924,93 @@ const NewRetaintionPolicy = () => {
                 </div>
 
                 {/* Pagination Controls */}
-                <div className="flex items-center mt-4">
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1 || totalPages === 0}
-                        className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                            }`}
-                    >
-                        <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                        <AutoTranslate>Previous</AutoTranslate>
-                    </button>
+                <div className="paginationWp">
+                    <div className="items">
+                        <div className="paginationText">
+                            <span className="text-sm text-gray-700">
+                                <AutoTranslate>
+                                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                                        } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                                </AutoTranslate>
+                            </span>
+                            {/* Page Count Info */}
+                            <span className="text-sm text-gray-700 mx-2">
+                                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                            </span>
+                        </div>
+                    </div>
+                    <div className="items">
+                        <div className="paginationBtn">
+                            {/* Previous Button */}
+                            <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1 || totalPages === 0}
+                                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                            >
+                                <IoIosArrowBack />
+                            </button>
 
-                    {totalPages > 0 && getPageNumbers().map((page) => (
-                        <button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                                }`}
-                        >
-                            {page}
-                        </button>
-                    ))}
+                            {/* Page Number Buttons */}
+                            {totalPages > 0 && getPageNumbers().map((page) => (
+                                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                                    {page}
+                                </button>
+                            ))}
 
-                    <span className="text-sm text-gray-700 mx-2">
-                        <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-                    </span>
-
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                            }`}
-                    >
-                        <AutoTranslate>Next</AutoTranslate>
-                        <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-                    </button>
-                    <div className="ml-4">
-                        <span className="text-sm text-gray-700">
-                            <AutoTranslate>
-                                {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries`}
-                            </AutoTranslate>
-                        </span>
+                            {/* Next Button */}
+                            <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages || totalPages === 0}
+                                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                            >
+                                <IoIosArrowForward />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Confirmation Modal */}
             {modalVisible && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-lg shadow-lg">
-                        <h2 className="text-lg font-semibold mb-4">
-                            <AutoTranslate>Confirm Status Change</AutoTranslate>
-                        </h2>
-                        <p className="mb-4">
-                            <AutoTranslate>
-                                Are you sure you want to {policyToToggle?.isActive ? "deactivate" : "activate"} this retention policy
-                            </AutoTranslate>
-                            <strong> "{policyToToggle?.policyType === "FILE_RETENTION" ?
-                                <AutoTranslate>File Retention</AutoTranslate> :
-                                <AutoTranslate>Data Retention</AutoTranslate>
-                            }"</strong>?
-                        </p>
-                        <div className="flex justify-end gap-4">
-                            <button
-                                onClick={() => {
-                                    setModalVisible(false)
-                                    setPolicyToToggle(null)
-                                }}
-                                className="bg-gray-300 p-2 rounded-lg"
-                            >
-                                <AutoTranslate>Cancel</AutoTranslate>
-                            </button>
-                            <button onClick={confirmToggleActiveStatus} className="bg-blue-500 text-white p-2 rounded-lg">
-                                <AutoTranslate>Confirm</AutoTranslate>
-                            </button>
+            <div className="overlayModal">
+                <div className="document-modal modal-md">
+                    {/* Header */}
+                    <div className="modal-header">
+                        <div className="modal-title">
+                            <h2><AutoTranslate>Confirm Status Change</AutoTranslate></h2>
+                        </div>
+                    </div>
+
+                    {/* Modal body Content */}
+                    <div className="modal-body">
+                        <div className="bodyScroller print:overflow-visible print:max-h-none">
+                            <p className="mb-4">
+                                <AutoTranslate>
+                                    Are you sure you want to {policyToToggle?.isActive ? "deactivate" : "activate"} this retention policy
+                                </AutoTranslate>
+                                <strong> "{policyToToggle?.policyType === "FILE_RETENTION" ?
+                                    <AutoTranslate>File Retention</AutoTranslate> :
+                                    <AutoTranslate>Data Retention</AutoTranslate>
+                                }"</strong>?
+                            </p>
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    onClick={() => {
+                                        setModalVisible(false)
+                                        setPolicyToToggle(null)
+                                    }}
+                                    className="btn-cancel"
+                                >
+                                    <AutoTranslate>Cancel</AutoTranslate>
+                                </button>
+                                <button onClick={confirmToggleActiveStatus} className="btn-primary">
+                                    <AutoTranslate>Confirm</AutoTranslate>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
             )}
         </div>
     )

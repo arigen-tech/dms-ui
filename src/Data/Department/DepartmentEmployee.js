@@ -950,7 +950,7 @@ const DepartmentEmployee = () => {
                         <div className="flex justify-end space-x-4">
                             <button
                                 onClick={() => setModalVisible(false)}
-                                className="bg-gray-500 text-white rounded-md px-4 py-2"
+                                className="btn-cancel"
                             >
                                 <AutoTranslate>Cancel</AutoTranslate>
                             </button>

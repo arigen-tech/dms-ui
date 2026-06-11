@@ -122,7 +122,7 @@ const ChatBotPopup = () => {
         <div className="inline-block">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="drag-handle relative p-4 md:p-5 rounded-full overflow-hidden group
+            className="drag-handle relative p-3 rounded-full overflow-hidden group
                       shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-500
                       hover:shadow-[0_8px_30px_rgba(59,130,246,0.6)]
                       active:scale-95 cursor-pointer transform-gpu"

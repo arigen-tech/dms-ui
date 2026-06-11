@@ -450,13 +450,12 @@ const AllowFunctionalityByRole = () => {
                 {/* Search and Filter Section */}
                 <div className="mb-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
                     {/* Show Dropdown */}
-                    <div className="flex items-center bg-blue-500 rounded-lg w-auto md:w-32 flex-shrink-0 h-12">
-                        <label htmlFor="itemsPerPage" className="mr-2 ml-2 text-white text-sm whitespace-nowrap">
+                    <div className="form-group flex items-center gap-4">
+                        <label htmlFor="itemsPerPage" className='mb-0'>
                             <AutoTranslate>Show:</AutoTranslate>
                         </label>
                         <select
                             id="itemsPerPage"
-                            className="border rounded-r-lg p-2 outline-none w-full h-full text-sm"
                             value={itemsPerPage}
                             onChange={(e) => {
                                 setItemsPerPage(Number(e.target.value));
@@ -546,15 +545,14 @@ const AllowFunctionalityByRole = () => {
                         </div>
 
                         {/* Text Search */}
-                        <div className="flex items-center flex-1 min-w-[200px] h-12">
+                        <div className="form-group">
                             <input
                                 type="text"
                                 placeholder={translatedPlaceholders.search}
-                                className="border rounded-l-md p-2 text-base outline-none w-full h-full"
+                                className="searchIcon"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-full w-12 border p-2 cursor-pointer" />
                         </div>
                     </div>
                 </div>
@@ -686,13 +684,13 @@ const AllowFunctionalityByRole = () => {
                                     <strong>{getRoleName(accessToToggle)}</strong> / <strong>{getApiName(accessToToggle)}</strong>?
                                 </p>
                                 <div className="flex justify-end gap-4">
-                                    <button onClick={() => setModalVisible(false)} className="bg-gray-300 p-2 rounded-lg">
+                                    <button onClick={() => setModalVisible(false)} className="btn-cancel">
                                         <AutoTranslate>Cancel</AutoTranslate>
                                     </button>
                                     <button
                                         onClick={confirmToggleAccess}
                                         disabled={isConfirmDisabled}
-                                        className={`rounded-md px-4 py-2 text-white ${accessToToggle?.status ? 'bg-green-500' : 'bg-red-500'} ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className={`btn-primary ${accessToToggle?.status ? 'bg-green-500' : 'bg-red-500'} ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
                                     </button>

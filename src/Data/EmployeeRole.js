@@ -516,17 +516,15 @@ const EmployeeRole = () => {
                   <div className="flex justify-end gap-4">
                     <button
                       onClick={() => setModalVisible(false)}
-                      className="bg-gray-300 p-2 rounded-lg hover:bg-gray-400"
+                      className="btn-cancel"
                       disabled={isSubmitting}
                     >
                       <AutoTranslate>Cancel</AutoTranslate>
                     </button>
                     <button
                       onClick={confirmRoleAssignment}
-                      className={`${isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
-                        } text-white p-2 rounded-lg`}
-                      disabled={isSubmitting}
-                    >
+                      className={`btn-primary ${isSubmitting ? "bg-gray-400 cursor-not-allowed" : ""}`}
+                      disabled={isSubmitting}>
                       {isSubmitting ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
                     </button>
                   </div>
