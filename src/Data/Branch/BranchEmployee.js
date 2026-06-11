@@ -271,148 +271,148 @@ const BranchEmployee = () => {
         }));
     };
 
-   const handleAddEmployee = async () => {
-    // Validate all fields before submission
-    if (!formData.name) {
-        setError("Name is required");
-        return;
-    }
-    if (!formData.email || !validateEmail(formData.email)) {
-        setEmailError("Please enter a valid email address");
-        return;
-    }
-    if (!formData.mobile || !validateMobile(formData.mobile)) {
-        setMobileError("Please enter exactly 10 digits");
-        return;
-    }
-    if (!formData.department.id) {
-        setError("Department is required");
-        return;
-    }
-
-    setIsSubmitting(true);
-    setIsButtonDisabled(true);
-
-    try {
-        const token = localStorage.getItem("tokenKey");
-        const userId = localStorage.getItem("id");
-
-        if (!userId) {
-            setError("User authentication error. Please log in again.");
-            setIsSubmitting(false);
-            setIsButtonDisabled(false);
+    const handleAddEmployee = async () => {
+        // Validate all fields before submission
+        if (!formData.name) {
+            setError("Name is required");
+            return;
+        }
+        if (!formData.email || !validateEmail(formData.email)) {
+            setEmailError("Please enter a valid email address");
+            return;
+        }
+        if (!formData.mobile || !validateMobile(formData.mobile)) {
+            setMobileError("Please enter exactly 10 digits");
+            return;
+        }
+        if (!formData.department.id) {
+            setError("Department is required");
             return;
         }
 
-        const createdBy = { id: userId };
-        const updatedBy = { id: userId };
+        setIsSubmitting(true);
+        setIsButtonDisabled(true);
 
-        // Generate password: first 4 letters of name + last 4 digits of mobile
-        const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
-        const mobileSuffix = formData.mobile.slice(-4);
-        const generatedPassword = `${namePrefix}${mobileSuffix}`;
+        try {
+            const token = localStorage.getItem("tokenKey");
+            const userId = localStorage.getItem("id");
 
-        const employeeData = {
-            password: generatedPassword,
-            mobile: formData.mobile,
-            email: formData.email,
-            name: formData.name,
-            isActive: 1,
-            createdOn: new Date().toISOString(),
-            updatedOn: new Date().toISOString(),
-            createdBy,
-            updatedBy,
-            department: {
-                id: formData.department.id,
-                name: formData.department.name,
-            },
-            branch: userBranch,
-        };
+            if (!userId) {
+                setError("User authentication error. Please log in again.");
+                setIsSubmitting(false);
+                setIsButtonDisabled(false);
+                return;
+            }
 
-        const response = await apiClient.post(
-            `${API_HOST}/register/create`,
-            employeeData,
-            {
-                headers: {
-                    "Content-Type": "application/json",
+            const createdBy = { id: userId };
+            const updatedBy = { id: userId };
+
+            // Generate password: first 4 letters of name + last 4 digits of mobile
+            const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
+            const mobileSuffix = formData.mobile.slice(-4);
+            const generatedPassword = `${namePrefix}${mobileSuffix}`;
+
+            const employeeData = {
+                password: generatedPassword,
+                mobile: formData.mobile,
+                email: formData.email,
+                name: formData.name,
+                isActive: 1,
+                createdOn: new Date().toISOString(),
+                updatedOn: new Date().toISOString(),
+                createdBy,
+                updatedBy,
+                department: {
+                    id: formData.department.id,
+                    name: formData.department.name,
                 },
-            }
-        );
+                branch: userBranch,
+            };
 
-        if (response.data) {
-            setEmployees([...employees, response.data]);
+            const response = await apiClient.post(
+                `${API_HOST}/register/create`,
+                employeeData,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
 
-            if (response.data.token) {
-                localStorage.setItem("tokenKey", response.data.token);
-            }
+            if (response.data) {
+                setEmployees([...employees, response.data]);
 
-            setFormData({
-                name: "",
-                email: "",
-                mobile: "",
-                department: { id: "", name: "" },
-            });
+                if (response.data.token) {
+                    localStorage.setItem("tokenKey", response.data.token);
+                }
 
-            setError("");
-            setShowPopup(true);
-            setPopupConfig({
-                message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
+                setFormData({
+                    name: "",
+                    email: "",
+                    mobile: "",
+                    department: { id: "", name: "" },
+                });
+
+                setError("");
+                setShowPopup(true);
+                setPopupConfig({
+                    message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
                          \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
-                type: "success",
-            });
+                    type: "success",
+                });
 
-            setTimeout(() => setShowPopup(false), 5000);
-        }
-    } catch (error) {
-        console.error("Error adding employee:", error);
-        
-        // Generate password for the message even in error case
-        const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
-        const mobileSuffix = formData.mobile.slice(-4);
-        const generatedPassword = `${namePrefix}${mobileSuffix}`;
+                setTimeout(() => setShowPopup(false), 5000);
+            }
+        } catch (error) {
+            console.error("Error adding employee:", error);
 
-        // Get the backend error message
-        const backendMessage = error.response?.data?.message || error.message || "";
-        
-        // Check if it's the specific "We encountered an issue..." message
-        if (backendMessage.includes("We encountered an issue while processing your request")) {
-            // Replace with password format message
-            setShowPopup(true);
-            setPopupConfig({
-                message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
+            // Generate password for the message even in error case
+            const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
+            const mobileSuffix = formData.mobile.slice(-4);
+            const generatedPassword = `${namePrefix}${mobileSuffix}`;
+
+            // Get the backend error message
+            const backendMessage = error.response?.data?.message || error.message || "";
+
+            // Check if it's the specific "We encountered an issue..." message
+            if (backendMessage.includes("We encountered an issue while processing your request")) {
+                // Replace with password format message
+                setShowPopup(true);
+                setPopupConfig({
+                    message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
                          \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
-                type: "success",
-            });
-        }
-        // Check if it's a mail server error
-        else if (backendMessage.includes("Mail server connection failed") || 
-            backendMessage.includes("MailConnectException") ||
-            backendMessage.includes("smtp.gmail.com") ||
-            backendMessage.includes("Couldn't connect to host")) {
-            
-            // If it's a mail server error, show success with password info
-            setShowPopup(true);
-            setPopupConfig({
-                message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
+                    type: "success",
+                });
+            }
+            // Check if it's a mail server error
+            else if (backendMessage.includes("Mail server connection failed") ||
+                backendMessage.includes("MailConnectException") ||
+                backendMessage.includes("smtp.gmail.com") ||
+                backendMessage.includes("Couldn't connect to host")) {
+
+                // If it's a mail server error, show success with password info
+                setShowPopup(true);
+                setPopupConfig({
+                    message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
                          \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}
                          \n(Note: Email notification could not be sent due to mail server issues)`,
-                type: "success",
-            });
-        } else {
-            // For other specific error messages (like duplicate email), show them
-            setShowPopup(true);
-            setPopupConfig({
-                message: backendMessage || "Email address is already registered. Please use a different one.",
-                type: "error",
-            });
+                    type: "success",
+                });
+            } else {
+                // For other specific error messages (like duplicate email), show them
+                setShowPopup(true);
+                setPopupConfig({
+                    message: backendMessage || "Email address is already registered. Please use a different one.",
+                    type: "error",
+                });
+            }
+
+            setTimeout(() => setShowPopup(false), 5000);
+        } finally {
+            setIsSubmitting(false);
+            setIsButtonDisabled(false);
         }
-        
-        setTimeout(() => setShowPopup(false), 5000);
-    } finally {
-        setIsSubmitting(false);
-        setIsButtonDisabled(false);
-    }
-};
+    };
 
     const handleEditEmployee = (employeeId) => {
         const employeeToEdit = employees.find((emp) => emp.id === employeeId);
@@ -686,11 +686,12 @@ const BranchEmployee = () => {
     const role = localStorage.getItem("role");
 
     return (
-        <div className="px-2">
-            <h1 className="text-2xl mb-1 font-semibold">
-                <AutoTranslate>Branch Users</AutoTranslate>
-            </h1>
-            <div className="bg-white p-4 rounded-lg shadow-sm">
+        <div className="px-2-">
+            <div className="title">
+                <h1><AutoTranslate>Branch Users</AutoTranslate></h1>
+            </div>
+
+            <div className="card">
                 {showPopup && (
                     <Popup
                         message={popupConfig.message}
@@ -699,10 +700,12 @@ const BranchEmployee = () => {
                     />
                 )}
 
-                <div ref={formRef} className="mb-4 bg-slate-100 p-4 rounded-lg">
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
+                <div ref={formRef} className="cardLight">
+                    <div className="grid grid-col-4 itemEnd">
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 placeholder={translatedPlaceholders.enterName}
@@ -710,13 +713,13 @@ const BranchEmployee = () => {
                                 value={formData.name || ""}
                                 onChange={handleInputChange}
                                 maxLength={30}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             />
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="email"
                                 placeholder={translatedPlaceholders.enterEmail}
@@ -724,21 +727,21 @@ const BranchEmployee = () => {
                                 value={formData.email || ""}
                                 onChange={handleInputChange}
                                 maxLength={30}
-                                className={`mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 ${emailError ? "border-red-500" : ""
-                                    }`}
+                                className={`${emailError ? "border-red-500" : ""}`}
                                 required
                             />
                             {emailError && (
                                 <p className="text-red-500 text-sm mt-1">{emailError}</p>
                             )}
-                        </label>
 
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Phone</AutoTranslate> <span className="text-red-500">*</span>
-                            <div className="flex mt-1">
-                                <span className="w-20 p-2 border rounded-l-md bg-gray-100 text-center text-gray-700">
-                                    +91
-                                </span>
+                        </div>
+
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Phone</AutoTranslate> <span className="text-red-500">*</span>
+                            </label>
+                            <div className="contactNo">
+                                <span>+91</span>
                                 <input
                                     type="tel"
                                     placeholder={translatedPlaceholders.enterPhone}
@@ -747,7 +750,7 @@ const BranchEmployee = () => {
                                     onChange={handleInputChange}
                                     maxLength={10}
                                     minLength={10}
-                                    className={`flex-1 p-2 border rounded-r-md outline-none focus:ring-2 focus:ring-blue-500 ${mobileError ? "border-red-500" : ""
+                                    className={` ${mobileError ? "border-red-500" : ""
                                         }`}
                                     required
                                 />
@@ -755,27 +758,26 @@ const BranchEmployee = () => {
                             {mobileError && (
                                 <p className="text-red-500 text-sm mt-1">{mobileError}</p>
                             )}
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Branch</AutoTranslate>
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Branch</AutoTranslate>
+                            </label>
                             <input
                                 type="text"
                                 name="branch"
                                 value={userBranch ? userBranch.name : "Loading..."}
                                 disabled
-                                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100 focus:ring-2 focus:ring-blue-500"
                             />
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Department</AutoTranslate>
+                        </div>
+                        <div className="form-group ">
+                            <label>
+                                <AutoTranslate>Department</AutoTranslate>
+                            </label>
                             <select
                                 name="department"
                                 value={formData.department?.id || ""}
-                                onChange={handleSelectChange}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                            >
+                                onChange={handleSelectChange}>
                                 <option value=""><AutoTranslate>Select Department</AutoTranslate></option>
                                 {departmentOptions.map((department) => (
                                     <option key={department.id} value={department.id}>
@@ -783,29 +785,29 @@ const BranchEmployee = () => {
                                     </option>
                                 ))}
                             </select>
-                        </label>
+                        </div>                        
                     </div>
-                    <div className="mt-3 flex justify-start">
-                        {editingIndex === null ? (
-                            <button
-                                onClick={handleAddEmployee}
-                                disabled={isButtonDisabled || isSubmitting}
-                                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                <PlusCircleIcon className="h-5 w-5 mr-1" />
-                                {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Add User</AutoTranslate>}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleSaveEdit}
-                                disabled={isButtonDisabled || isSubmitting}
-                                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                <CheckCircleIcon className="h-5 w-5 mr-1" />
-                                {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Update</AutoTranslate>}
-                            </button>
-                        )}
-                    </div>
+                    <div className="mt-6 flex flex-wrap gap-4">
+                            {editingIndex === null ? (
+                                <button
+                                    onClick={handleAddEmployee}
+                                    disabled={isButtonDisabled || isSubmitting}
+                                    className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    <PlusCircleIcon className="h-5 w-5 mr-1" />
+                                    {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Add User</AutoTranslate>}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleSaveEdit}
+                                    disabled={isButtonDisabled || isSubmitting}
+                                    className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    <CheckCircleIcon className="h-5 w-5 mr-1" />
+                                    {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Update</AutoTranslate>}
+                                </button>
+                            )}
+                        </div>
                 </div>
 
                 {role === BRANCH_ADMIN && (

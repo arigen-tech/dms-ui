@@ -1694,58 +1694,58 @@ const ApprovedDoc = () => {
               )}
             </tbody>
 
-          </table>   
+          </table>
         </div>
         {/* Pagination Controls */}
-          <div className="paginationWp">
-            <div className="items">
-              <div className="paginationText">
-                <span className="text-sm text-gray-700">
-                  <AutoTranslate>
-                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                      } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
-                  </AutoTranslate>
-                </span>
-                {/* Page Count Info */}
-                <span className="text-sm text-gray-700 mx-2">
-                  (<AutoTranslate>Pages</AutoTranslate> {totalPages})
-                </span>
-              </div>
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
             </div>
-            <div className="items">
-              <div className="paginationBtn">
-                {/* Previous Button */}
-                <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1 || totalPages === 0}
-                  className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-                >
-                  {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
-                  {/* <AutoTranslate>Previous</AutoTranslate> */}
-                  <IoIosArrowBack />
-                </button>
-
-                {/* Page Number Buttons */}
-                {totalPages > 0 && getPageNumbers().map((page) => (
-                  <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
-                    {page}
-                  </button>
-                ))}
-
-                {/* Next Button */}
-                <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
-                >
-                  {/* <AutoTranslate>Next</AutoTranslate> */}
-                  {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
-                  <IoIosArrowForward />
-                </button>
-              </div>
-            </div>
-
           </div>
+          <div className="items">
+            <div className="paginationBtn">
+              {/* Previous Button */}
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" /> */}
+                {/* <AutoTranslate>Previous</AutoTranslate> */}
+                <IoIosArrowBack />
+              </button>
+
+              {/* Page Number Buttons */}
+              {totalPages > 0 && getPageNumbers().map((page) => (
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                  {page}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+              >
+                {/* <AutoTranslate>Next</AutoTranslate> */}
+                {/* <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" /> */}
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+
+        </div>
 
         <FilePreviewModal
           isOpen={isModalOpen}
@@ -1763,8 +1763,6 @@ const ApprovedDoc = () => {
       {isOpen && selectedDoc && (
         <div className="overlayModal">
           <div className="document-modal">
-
-
             {/* Header */}
             <div className="modal-header">
               <div className="modal-title">
@@ -2221,85 +2219,106 @@ const ApprovedDoc = () => {
 
       {/* Confirmation Modal for Single File Deletion */}
       {confirmDeleteModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">
-              <AutoTranslate>Move to Trash</AutoTranslate>
-            </h2>
-            <p className="mb-4">
-              <AutoTranslate>Are you sure you want to move this file to trash?</AutoTranslate>
-              <br />
-              <strong>"{fileToDelete?.docName}"</strong>
-            </p>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setConfirmDeleteModalVisible(false)}
-                className="btn-cancel"
-                disabled={isDeleteConfirmDisabled}
-              >
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
-              <button
-                onClick={confirmDeleteFile}
-                disabled={isDeleteConfirmDisabled}
-                className={`px-4 py-2 rounded-md text-white ${isDeleteConfirmDisabled
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700'} transition-colors`}
-              >
-                {isDeleteConfirmDisabled ? (
-                  <AutoTranslate>Processing...</AutoTranslate>
-                ) : (
-                  <AutoTranslate>Move to Trash</AutoTranslate>
-                )}
-              </button>
+        <>
+          <div className="overlayModal">
+            <div className="document-modal modal-md">
+              {/* Header */}
+              <div className="modal-header">
+                <div className="modal-title">
+                  <h2><AutoTranslate>Move to Trash</AutoTranslate></h2>
+                </div>
+              </div>
+
+              {/* Modal body Content */}
+              <div className="modal-body">
+                <div className="bodyScroller print:overflow-visible print:max-h-none">
+                  <p className="mb-4">
+                    <AutoTranslate>Are you sure you want to move this file to trash?</AutoTranslate>
+                    <br />
+                    <strong>"{fileToDelete?.docName}"</strong>
+                  </p>
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => setConfirmDeleteModalVisible(false)}
+                      className="btn-cancel"
+                      disabled={isDeleteConfirmDisabled}
+                    >
+                      <AutoTranslate>Cancel</AutoTranslate>
+                    </button>
+                    <button
+                      onClick={confirmDeleteFile}
+                      disabled={isDeleteConfirmDisabled}
+                      className={`px-4 py-2 rounded-md text-white ${isDeleteConfirmDisabled
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700'} transition-colors`}
+                    >
+                      {isDeleteConfirmDisabled ? (
+                        <AutoTranslate>Processing...</AutoTranslate>
+                      ) : (
+                        <AutoTranslate>Move to Trash</AutoTranslate>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+
+        </>
       )}
 
       {/* Confirmation Modal for Bulk File Deletion (inside modal) */}
       {bulkFileDeleteModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">
-              <AutoTranslate>Bulk Move to Trash</AutoTranslate>
-            </h2>
-            <p className="mb-4">
-              <AutoTranslate>Are you sure you want to move {selectedFiles.length} file(s) to trash?</AutoTranslate>
-            </p>
-            <ul className="mb-4 max-h-40 overflow-y-auto">
-              {selectedFiles.slice(0, 5).map((file, index) => (
-                <li key={index} className="text-sm text-gray-600 truncate">
-                  • {file.docName}
-                </li>
-              ))}
-              {selectedFiles.length > 5 && (
-                <li className="text-sm text-gray-500">
-                  ... and {selectedFiles.length - 5} more
-                </li>
-              )}
-            </ul>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setBulkFileDeleteModalVisible(false)}
-                className="btn-cancel"
-                disabled={isBulkFileDeleting}
-              >
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
-              <button
-                onClick={confirmBulkFileDelete}
-                disabled={isBulkFileDeleting}
-                className={`px-4 py-2 rounded-md text-white ${isBulkFileDeleting
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700'} transition-colors`}
-              >
-                {isBulkFileDeleting ? (
-                  <AutoTranslate>Processing...</AutoTranslate>
-                ) : (
-                  <AutoTranslate>Move All to Trash</AutoTranslate>
-                )}
-              </button>
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Bulk Move to Trash</AutoTranslate></h2>
+              </div>
+            </div>
+
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <p className="mb-4">
+                  <AutoTranslate>Are you sure you want to move {selectedFiles.length} file(s) to trash?</AutoTranslate>
+                </p>
+                <ul className="mb-4 max-h-40 overflow-y-auto">
+                  {selectedFiles.slice(0, 5).map((file, index) => (
+                    <li key={index} className="text-sm text-gray-600 truncate">
+                      • {file.docName}
+                    </li>
+                  ))}
+                  {selectedFiles.length > 5 && (
+                    <li className="text-sm text-gray-500">
+                      ... and {selectedFiles.length - 5} more
+                    </li>
+                  )}
+                </ul>
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => setBulkFileDeleteModalVisible(false)}
+                    className="btn-cancel"
+                    disabled={isBulkFileDeleting}
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={confirmBulkFileDelete}
+                    disabled={isBulkFileDeleting}
+                    className={`px-4 py-2 rounded-md text-white ${isBulkFileDeleting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700'} transition-colors`}
+                  >
+                    {isBulkFileDeleting ? (
+                      <AutoTranslate>Processing...</AutoTranslate>
+                    ) : (
+                      <AutoTranslate>Move All to Trash</AutoTranslate>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2612,158 +2631,158 @@ const ApprovedDoc = () => {
 
       {/* Bulk Share Document Modal */}
       {bulkShareModalVisible && (
-          <div className="overlayModal">
-            <div className="document-modal modal-md">
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
 
-              {/* Header */}
-              <div className="modal-header">
-                <div className="modal-title">
-                  <h2><AutoTranslate>Bulk Share Documents</AutoTranslate></h2>
-                </div>
-                <div className="headerRight">
-                  {/* Close Button */}
-                  <button className="closeBtn" onClick={() => {
-                    setBulkShareModalVisible(false);
-                    setShareRecipients([]);
-                    setShareEndTime("");
-                  }} disabled={isBulkSharing} title="Close">
-                    <MdOutlineClose />
-                  </button>
-                </div>
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Bulk Share Documents</AutoTranslate></h2>
               </div>
+              <div className="headerRight">
+                {/* Close Button */}
+                <button className="closeBtn" onClick={() => {
+                  setBulkShareModalVisible(false);
+                  setShareRecipients([]);
+                  setShareEndTime("");
+                }} disabled={isBulkSharing} title="Close">
+                  <MdOutlineClose />
+                </button>
+              </div>
+            </div>
 
-              {/* Modal body Content */}
-              <div className="modal-body">
-                <div className="bodyScroller print:overflow-visible print:max-h-none">
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">
-                      <AutoTranslate>Sharing all approved files from {selectedDocuments.length} document(s) with employees in your department.</AutoTranslate>
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <AutoTranslate>Sharing all approved files from {selectedDocuments.length} document(s) with employees in your department.</AutoTranslate>
+                  </p>
+
+                  <div className="mb-3">
+                    <p className="text-sm font-medium text-gray-700">
+                      <AutoTranslate>Selected Documents:</AutoTranslate>
                     </p>
-
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700">
-                        <AutoTranslate>Selected Documents:</AutoTranslate>
-                      </p>
-                      <ul className="max-h-32 overflow-y-auto border rounded-lg p-2 mt-1">
-                        {selectedDocuments.slice(0, 5).map((doc, index) => {
-                          const approvedFilesCount = doc.documentDetails?.filter(f =>
-                            f.status === "APPROVED" && !f.isDeleted
-                          ).length || 0;
-                          return (
-                            <li key={doc.id} className="text-sm text-gray-600 truncate">
-                              • {doc.title} ({approvedFilesCount} approved file{approvedFilesCount !== 1 ? 's' : ''})
-                            </li>
-                          );
-                        })}
-                        {selectedDocuments.length > 5 && (
-                          <li className="text-sm text-gray-500">
-                            ... and {selectedDocuments.length - 5} more
+                    <ul className="max-h-32 overflow-y-auto border rounded-lg p-2 mt-1">
+                      {selectedDocuments.slice(0, 5).map((doc, index) => {
+                        const approvedFilesCount = doc.documentDetails?.filter(f =>
+                          f.status === "APPROVED" && !f.isDeleted
+                        ).length || 0;
+                        return (
+                          <li key={doc.id} className="text-sm text-gray-600 truncate">
+                            • {doc.title} ({approvedFilesCount} approved file{approvedFilesCount !== 1 ? 's' : ''})
                           </li>
-                        )}
-                      </ul>
-                    </div>
-
-                    <p className="text-sm text-blue-600">
-                      <AutoTranslate>This will share ALL approved files from each selected document.</AutoTranslate>
-                    </p>
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <AutoTranslate>Select Employees</AutoTranslate>
-                    </label>
-                    {loadingEmployees ? (
-                      <div className="flex items-center">
-                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                        <AutoTranslate>Loading employees...</AutoTranslate>
-                      </div>
-                    ) : (
-                      <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
-                        {availableEmployees.length === 0 ? (
-                          <p className="text-sm text-gray-500">
-                            <AutoTranslate>No other employees in this department</AutoTranslate>
-                          </p>
-                        ) : (
-                          availableEmployees.map(emp => (
-                            <div key={emp.id} className="flex items-center mb-2">
-                              <input
-                                type="checkbox"
-                                id={`bulk-emp-${emp.id}`}
-                                checked={shareRecipients.includes(emp.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setShareRecipients([...shareRecipients, emp.id]);
-                                  } else {
-                                    setShareRecipients(shareRecipients.filter(id => id !== emp.id));
-                                  }
-                                }}
-                                className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                              />
-                              <label htmlFor={`bulk-emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
-                                {emp.name} ({emp.email})
-                              </label>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <div className="flex items-center">
-                        <ClockIcon className="h-4 w-4 mr-1" />
-                        <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
-                      </div>
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={shareEndTime}
-                      onChange={(e) => setShareEndTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      min={getMinDateTime()} // FIXED: This prevents past dates/times
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      <AutoTranslate>Leave empty for permanent access</AutoTranslate>
-                    </p>
-                  </div>
-
-                  <div className="flex justify-end gap-4">
-                    <button
-                      onClick={() => {
-                        setBulkShareModalVisible(false);
-                        setShareRecipients([]);
-                        setShareEndTime("");
-                      }}
-                      className="btn-cancel"
-                      disabled={isBulkSharing}
-                    >
-                      <AutoTranslate>Cancel</AutoTranslate>
-                    </button>
-                    <button
-                      onClick={confirmBulkDocumentShare}
-                      disabled={isBulkSharing || shareRecipients.length === 0}
-                      className={`px-4 py-2 rounded-md text-white ${(isBulkSharing || shareRecipients.length === 0)
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700'} transition-colors flex items-center`}
-                    >
-                      {isBulkSharing ? (
-                        <>
-                          <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
-                          <AutoTranslate>Sharing...</AutoTranslate>
-                        </>
-                      ) : (
-                        <>
-                          <ShareIcon className="h-4 w-4 mr-2" />
-                          <AutoTranslate>Share {selectedDocuments.length} Document(s)</AutoTranslate>
-                        </>
+                        );
+                      })}
+                      {selectedDocuments.length > 5 && (
+                        <li className="text-sm text-gray-500">
+                          ... and {selectedDocuments.length - 5} more
+                        </li>
                       )}
-                    </button>
+                    </ul>
                   </div>
+
+                  <p className="text-sm text-blue-600">
+                    <AutoTranslate>This will share ALL approved files from each selected document.</AutoTranslate>
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <AutoTranslate>Select Employees</AutoTranslate>
+                  </label>
+                  {loadingEmployees ? (
+                    <div className="flex items-center">
+                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                      <AutoTranslate>Loading employees...</AutoTranslate>
+                    </div>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
+                      {availableEmployees.length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          <AutoTranslate>No other employees in this department</AutoTranslate>
+                        </p>
+                      ) : (
+                        availableEmployees.map(emp => (
+                          <div key={emp.id} className="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              id={`bulk-emp-${emp.id}`}
+                              checked={shareRecipients.includes(emp.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setShareRecipients([...shareRecipients, emp.id]);
+                                } else {
+                                  setShareRecipients(shareRecipients.filter(id => id !== emp.id));
+                                }
+                              }}
+                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                            />
+                            <label htmlFor={`bulk-emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
+                              {emp.name} ({emp.email})
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="flex items-center">
+                      <ClockIcon className="h-4 w-4 mr-1" />
+                      <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
+                    </div>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={shareEndTime}
+                    onChange={(e) => setShareEndTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min={getMinDateTime()} // FIXED: This prevents past dates/times
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    <AutoTranslate>Leave empty for permanent access</AutoTranslate>
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => {
+                      setBulkShareModalVisible(false);
+                      setShareRecipients([]);
+                      setShareEndTime("");
+                    }}
+                    className="btn-cancel"
+                    disabled={isBulkSharing}
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={confirmBulkDocumentShare}
+                    disabled={isBulkSharing || shareRecipients.length === 0}
+                    className={`px-4 py-2 rounded-md text-white ${(isBulkSharing || shareRecipients.length === 0)
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700'} transition-colors flex items-center`}
+                  >
+                    {isBulkSharing ? (
+                      <>
+                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                        <AutoTranslate>Sharing...</AutoTranslate>
+                      </>
+                    ) : (
+                      <>
+                        <ShareIcon className="h-4 w-4 mr-2" />
+                        <AutoTranslate>Share {selectedDocuments.length} Document(s)</AutoTranslate>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
+        </div>
       )}
 
       {/* View Shares Modal */}
@@ -2878,53 +2897,76 @@ const ApprovedDoc = () => {
 
       {/* Revoke Share Confirmation Modal */}
       {revokeShareModalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">
-              <AutoTranslate>Revoke Share Access</AutoTranslate>
-            </h2>
-            <div className="mb-4">
-              <p className="mb-2">
-                <AutoTranslate>Are you sure you want to revoke access for:</AutoTranslate>
-              </p>
-              <p className="font-semibold">{shareToRevoke?.sharedToName}</p>
-              <p className="text-sm text-gray-600 mt-1">
-                <AutoTranslate>Document:</AutoTranslate> {shareToRevoke?.documentName}
-              </p>
-              <p className="text-sm text-gray-600">
-                <AutoTranslate>Files shared:</AutoTranslate> {shareToRevoke?.totalFilesShared || 1}
-              </p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <AutoTranslate>Reason (Optional)</AutoTranslate>
-              </label>
-              <textarea
-                value={revokeReason}
-                onChange={(e) => setRevokeReason(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="3"
-                placeholder="Enter reason for revoking access..."
-              />
-            </div>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => {
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
+
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Revoke Share Access</AutoTranslate></h2>
+              </div>
+              <div className="headerRight">
+
+                {/* Close Button */}
+                <button className="closeBtn" onClick={() => {
                   setRevokeShareModalVisible(false);
                   setShareToRevoke(null);
                   setRevokeReason("");
-                }}
-                className="btn-cancel"
-              >
-                <AutoTranslate>Cancel</AutoTranslate>
-              </button>
-              <button
-                onClick={confirmRevokeShare}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
-              >
-                <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                <AutoTranslate>Revoke Access</AutoTranslate>
-              </button>
+                }} title="Close">
+                  <MdOutlineClose />
+                </button>
+              </div>
+
+            </div>
+
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                <div className="mb-4">
+                  <p className="mb-2">
+                    <AutoTranslate>Are you sure you want to revoke access for:</AutoTranslate>
+                  </p>
+                  <p className="font-semibold">{shareToRevoke?.sharedToName}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <AutoTranslate>Document:</AutoTranslate> {shareToRevoke?.documentName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <AutoTranslate>Files shared:</AutoTranslate> {shareToRevoke?.totalFilesShared || 1}
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <AutoTranslate>Reason (Optional)</AutoTranslate>
+                  </label>
+                  <textarea
+                    value={revokeReason}
+                    onChange={(e) => setRevokeReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                    placeholder="Enter reason for revoking access..."
+                  />
+                </div>
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => {
+                      setRevokeShareModalVisible(false);
+                      setShareToRevoke(null);
+                      setRevokeReason("");
+                    }}
+                    className="btn-cancel"
+                  >
+                    <AutoTranslate>Cancel</AutoTranslate>
+                  </button>
+                  <button
+                    onClick={confirmRevokeShare}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+                  >
+                    <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+                    <AutoTranslate>Revoke Access</AutoTranslate>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

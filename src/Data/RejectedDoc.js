@@ -1134,53 +1134,56 @@ function RejectedDoc() {
         )}
 
         {viewFileTypeModel && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-            <div className="w-80 sm:w-96 bg-white rounded-xl shadow-xl p-5 border border-gray-200 max-h-[80vh] overflow-y-auto transition-all">
-
-              {/* Header */}
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  <AutoTranslate>Supported File Types</AutoTranslate>
-                </h2>
-                <button
-                  onClick={handlecloseFileType}
-                  className="text-gray-400 hover:text-red-500 text-xl focus:outline-none"
-                  aria-label="Close"
-                >
-                  &times;
+        <div className="overlayModal">
+          <div className="document-modal modal-md">
+            {/* Header */}
+            <div className="modal-header">
+              <div className="modal-title">
+                <h2><AutoTranslate>Supported File Types</AutoTranslate></h2>
+              </div>
+              <div className="headerRight">
+                {/* Close Button */}
+                <button className="closeBtn" onClick={handlecloseFileType} title="Close">
+                  <MdOutlineClose />
                 </button>
               </div>
+            </div>
 
-              {/* Search Input */}
-              <input
-                type="text"
-                placeholder="Search file type..."
-                value={searchTerm}
-                onChange={(e) => setSearchFileTerm(e.target.value)}
-                maxLength={20}
-                className="w-full p-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              />
+            {/* Modal body Content */}
+            <div className="modal-body">
+              <div className="bodyScroller print:overflow-visible print:max-h-none">
+                {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search file type..."
+              value={searchTerm}
+              onChange={(e) => setSearchFileTerm(e.target.value)}
+              maxLength={20}
+              className="w-full p-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
 
-              {/* List */}
-              <ul className="space-y-2">
-                {filteredFiles.length > 0 ? (
-                  filteredFiles.map((file) => (
-                    <li
-                      key={file.id}
-                      className="flex justify-between items-center px-3 py-2 bg-gray-50 rounded-md hover:bg-blue-50 transition text-sm"
-                    >
-                      <span className="text-gray-800 font-medium">{file.filetype}</span>
-                      <span className="text-gray-500">{file.extension}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-center text-gray-500 text-sm">
-                    <AutoTranslate>No matching file types found</AutoTranslate>
+            {/* List */}
+            <ul className="space-y-2">
+              {filteredFiles.length > 0 ? (
+                filteredFiles.map((file) => (
+                  <li
+                    key={file.id}
+                    className="flex justify-between items-center px-3 py-2 bg-gray-50 rounded-md hover:bg-blue-50 transition text-sm"
+                  >
+                    <span className="text-gray-800 font-medium">{file.filetype}</span>
+                    <span className="text-gray-500">{file.extension}</span>
                   </li>
-                )}
-              </ul>
+                ))
+              ) : (
+                <li className="text-center text-gray-500 text-sm">
+                  <AutoTranslate>No matching file types found</AutoTranslate>
+                </li>
+              )}
+            </ul>
+              </div>
             </div>
           </div>
+        </div>
         )}
 
       </>

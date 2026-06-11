@@ -1291,7 +1291,7 @@ h2 {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 8990;
+    z-index: 9990;
     position: fixed;
     /* left: 0;
     top: 0;

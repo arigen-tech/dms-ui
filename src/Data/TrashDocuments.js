@@ -1350,11 +1350,6 @@ const TrashDoc = () => {
               </div>
             </div>
 
-
-
-
-
-
           </div>
         </div>
       )}

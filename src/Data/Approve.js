@@ -1141,21 +1141,21 @@ const Approve = () => {
 
       {/* Success Modal */}
       {isSuccessModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-md text-center w-1/3 relative">
-            <div className="spinner-border animate-spin text-green-500 w-6 h-6 mb-4"></div>
-            <h3 className="text-lg font-bold mb-4">
-              <AutoTranslate>{successMessage}</AutoTranslate>
-            </h3>
-            <button
-              className="bg-green-500 text-white p-2 rounded-md"
-              onClick={() => setIsSuccessModalOpen(false)}
-            >
-              <AutoTranslate>OK</AutoTranslate>
-            </button>
+          <div className="overlayModal">
+            <div className="bg-white p-6 rounded-md text-center w-1/3 relative">
+              <div className="spinner-border animate-spin text-green-500 w-6 h-6 mb-4"></div>
+              <h3 className="text-lg font-bold mb-4">
+                <AutoTranslate>{successMessage}</AutoTranslate>
+              </h3>
+              <button
+                className="bg-green-500 text-white p-2 rounded-md"
+                onClick={() => setIsSuccessModalOpen(false)}
+              >
+                <AutoTranslate>OK</AutoTranslate>
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+           )}
     </div>
   );
 };
