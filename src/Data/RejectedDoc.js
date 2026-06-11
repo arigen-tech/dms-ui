@@ -398,29 +398,24 @@ function RejectedDoc() {
   };
 
 
-  const downloadQRCode = async () => {
-    if (!selectedDoc.id) {
-      alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
-      return;
-    }
-
+   const downloadQRCode = async () => {
     try {
-
-      const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
-
-      const response = await apiClient.get(apiUrl, { responseType: "blob" });
-
-      const qrCodeBlob = response.data;
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-
+      const response = await apiClient.get(
+        `/api/documents/documents/download/qr/${selectedDoc.id}`,
+        { responseType: "blob" }
+      );
+  
+      const qrCodeUrl = window.URL.createObjectURL(response.data);
+  
       const link = document.createElement("a");
       link.href = qrCodeUrl;
       link.download = `QR_Code_${selectedDoc.id}.png`;
       link.click();
-
+  
       window.URL.revokeObjectURL(qrCodeUrl);
+  
     } catch (error) {
-      setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
+      console.error(error);
     }
   };
 
