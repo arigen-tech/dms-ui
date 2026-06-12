@@ -583,9 +583,7 @@ const DuplicateFilesPage = () => {
 
       <div className="card">
 
-        {/* Search and Pagination Controls */}
         <div className="grid grid-col-4 mb-4">
-
           {/* Show items */}
           <div className="form-group ">
             <label htmlFor="itemsPerPage">
@@ -597,8 +595,7 @@ const DuplicateFilesPage = () => {
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value))
                 setCurrentPage(1)
-              }}
-            >
+              }}>
               {[5, 10, 15, 20].map((num) => (
                 <option key={num} value={num}>
                   {num}
@@ -636,7 +633,7 @@ const DuplicateFilesPage = () => {
         </div>
 
         {/* Duplicate Groups List */}
-        <div className="space-y-4">
+        <div className="space-y-4 mb-4">
           {isLoading ? (
             <div className="p-8 text-center"><LoadingComponent /></div>
           ) : paginatedDuplicates.length === 0 ? (

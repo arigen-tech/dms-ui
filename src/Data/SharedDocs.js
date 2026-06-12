@@ -736,10 +736,10 @@ const fetchQRCode = async (documentId) => {
   }
 
   return (
-    <div className="px-1">
-      <h1 className="text-xl mb-4 font-semibold">
-        <AutoTranslate>Shared Documents</AutoTranslate>
-      </h1>
+    <div className="px-1-">
+      <div className="title">
+        <h1><AutoTranslate>Shared Documents</AutoTranslate></h1>
+      </div>
 
       {popupMessage && (
         <Popup
@@ -749,20 +749,18 @@ const fetchQRCode = async (documentId) => {
         />
       )}
 
-      <div className="bg-white p-4 rounded-lg shadow-sm">
+      <div className="card">
         {error && <div className="text-red-500 mb-4">{error}</div>}
 
-        <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
+        <div className="data-search-wrapper">
+          <div className="form-group flex items-center gap-4">
             <label
               htmlFor="itemsPerPage"
-              className="mr-2 ml-2 text-white text-sm"
             >
               <AutoTranslate>Show:</AutoTranslate>
             </label>
             <select
               id="itemsPerPage"
-              className="border rounded-r-lg p-1.5 outline-none w-full"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
@@ -777,41 +775,40 @@ const fetchQRCode = async (documentId) => {
             </select>
           </div>
 
-          <div className="flex items-center w-full md:w-auto flex-1">
+          <div className="form-group">
             <input
               type="text"
               placeholder="Search..."
-              className="border rounded-l-md p-1 outline-none w-full"
+              className="searchIcon"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border">
+        <div className="table-wrapper">
+          <table className="">
             <thead>
-              <tr className="bg-slate-100">
-                <th className="border p-2 text-left">
+              <tr>
+                <th>
                   <AutoTranslate>SN</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>File No</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Title</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Subject</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Shared By</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Shared Files</AutoTranslate>
                 </th>
-                <th className="border p-2 text-left">
+                <th>
                   <AutoTranslate>Actions</AutoTranslate>
                 </th>
               </tr>
@@ -831,13 +828,13 @@ const fetchQRCode = async (documentId) => {
                       key={doc.id}
                       className={isHighlighted ? 'bg-yellow-100' : ''}
                     >
-                      <td className="border p-2">
+                      <td>
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
-                      <td className="border p-2">{documentHeader.fileNo || "N/A"}</td>
-                      <td className="border p-2">{documentHeader.title || "N/A"}</td>
-                      <td className="border p-2">{documentHeader.subject || "N/A"}</td>
-                      <td className="border p-2">
+                      <td>{documentHeader.fileNo || "N/A"}</td>
+                      <td>{documentHeader.title || "N/A"}</td>
+                      <td>{documentHeader.subject || "N/A"}</td>
+                      <td>
                         <div className="flex flex-col">
                           <span>{sharedByName}</span>
                           <span className="text-xs text-gray-500">
@@ -845,7 +842,7 @@ const fetchQRCode = async (documentId) => {
                           </span>
                         </div>
                       </td>
-                      <td className="border p-2">
+                      <td>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 text-xs font-medium mr-2">
@@ -1482,14 +1479,14 @@ const fetchQRCode = async (documentId) => {
                       <tbody>
                         {selectedDocShares.map((share, index) => (
                           <tr key={share.id} className="hover:bg-gray-50">
-                            <td className="border p-2">{index + 1}</td>
-                            <td className="border p-2">{share.sharedByName}</td>
-                            <td className="border p-2">{share.sharedToName}</td>
-                            <td className="border p-2">{formatDateArray(share.sharedDate)}</td>
-                            <td className="border p-2">
+                            <td>{index + 1}</td>
+                            <td>{share.sharedByName}</td>
+                            <td>{share.sharedToName}</td>
+                            <td>{formatDateArray(share.sharedDate)}</td>
+                            <td>
                               {share.endTime ? formatDateArray(share.endTime) : "Permanent"}
                             </td>
-                            <td className="border p-2">
+                            <td>
                               <div className="flex items-center">
                                 <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 text-xs font-medium mr-2">
                                   {share.sharedFileNames?.length || share.totalFilesShared || 0}
@@ -1499,13 +1496,13 @@ const fetchQRCode = async (documentId) => {
                                 </span>
                               </div>
                             </td>
-                            <td className="border p-2">
+                            <td>
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${share.expired || share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                                 }`}>
                                 {share.expired || share.isExpired ? 'Expired' : 'Active'}
                               </span>
                             </td>
-                            {/* <td className="border p-2">
+                            {/* <td>
                               {share.sharedByName !== localStorage.getItem("userName") ? (
                                 <span className="text-gray-500 text-sm">
                                   <AutoTranslate>Shared by others</AutoTranslate>

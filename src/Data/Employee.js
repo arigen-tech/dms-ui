@@ -842,7 +842,7 @@ const UserAddEmployee = () => {
         <div className='mb-8'>
           <div ref={formRef} className="cardLight">
             {error && <p className="text-red-500">{error}</p>}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-col-4 itemEnd">
               <div className="form-group">
                 <label>
                   <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
@@ -953,18 +953,16 @@ const UserAddEmployee = () => {
                   </div>
                 )}
               </div>
-
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-4">
+              <div className="form-group">
               {editingIndex === null ? (
                 <button
                   onClick={handleAddEmployee}
                   disabled={isButtonDisabled || isSubmitting || emailError || mobileError}
-                  className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting || emailError || mobileError
+                  className={`btn-primary flex items-center text-sm justify-center w-full ${isButtonDisabled || isSubmitting || emailError || mobileError
                     ? "opacity-50 cursor-not-allowed"
                     : ""
                     }`}
+                    style={{padding: "9px 15px"}}
                 >
                   <PlusCircleIcon className="h-5 w-5 mr-2" />
                   {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Add User</AutoTranslate>}
@@ -973,16 +971,21 @@ const UserAddEmployee = () => {
                 <button
                   onClick={handleSaveEdit}
                   disabled={isButtonDisabled || isSubmitting || emailError || mobileError}
-                  className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting || emailError || mobileError
+                  className={`btn-primary flex items-center text-sm justify-center w-full ${isButtonDisabled || isSubmitting || emailError || mobileError
                     ? "opacity-50 cursor-not-allowed"
                     : ""
                     }`}
+                    style={{padding: "9px 15px"}}
                 >
                   <CheckCircleIcon className="h-5 w-5 mr-2" />
                   {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Update</AutoTranslate>}
                 </button>
               )}
             </div>
+
+            </div>
+
+            
           </div>
         </div>
 

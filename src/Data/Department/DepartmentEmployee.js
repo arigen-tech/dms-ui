@@ -17,8 +17,7 @@ import AutoTranslate from '../../i18n/AutoTranslate';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { getFallbackTranslation } from '../../i18n/autoTranslator';
 import apiClient from "../../API/apiClient"
-
-
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 
 const DepartmentEmployee = () => {
     const {
@@ -235,122 +234,122 @@ const DepartmentEmployee = () => {
     };
 
     const handleAddEmployee = async () => {
-    // Validate all fields before submission
-    if (!formData.name) {
-        setError("Name is required");
-        return;
-    }
-    if (!formData.email || !validateEmail(formData.email)) {
-        setEmailError("Please enter a valid email address");
-        return;
-    }
-    if (!formData.mobile || !validateMobile(formData.mobile)) {
-        setMobileError("Please enter exactly 10 digits");
-        return;
-    }
-
-    setIsSubmitting(true);
-    setIsButtonDisabled(true);
-
-    try {
-        const token = localStorage.getItem("tokenKey");
-        const userId = localStorage.getItem("id");
-
-        if (!userId) {
-            setError("User authentication error. Please log in again.");
-            setIsSubmitting(false);
-            setIsButtonDisabled(false);
+        // Validate all fields before submission
+        if (!formData.name) {
+            setError("Name is required");
+            return;
+        }
+        if (!formData.email || !validateEmail(formData.email)) {
+            setEmailError("Please enter a valid email address");
+            return;
+        }
+        if (!formData.mobile || !validateMobile(formData.mobile)) {
+            setMobileError("Please enter exactly 10 digits");
             return;
         }
 
-        const createdBy = { id: userId };
-        const updatedBy = { id: userId };
+        setIsSubmitting(true);
+        setIsButtonDisabled(true);
 
-        // Generate password: first 4 letters of name + last 4 digits of mobile
-        const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
-        const mobileSuffix = formData.mobile.slice(-4);
-        const generatedPassword = `${namePrefix}${mobileSuffix}`;
+        try {
+            const token = localStorage.getItem("tokenKey");
+            const userId = localStorage.getItem("id");
 
-        const employeeData = {
-            password: generatedPassword,
-            mobile: formData.mobile,
-            email: formData.email,
-            name: formData.name,
-            isActive: 1,
-            createdOn: new Date().toISOString(),
-            updatedOn: new Date().toISOString(),
-            createdBy,
-            updatedBy,
-            department: userDepartment,
-            branch: userBranch,
-        };
-
-        const response = await apiClient.post(
-            `${API_HOST}/register/create`,
-            employeeData,
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                },
+            if (!userId) {
+                setError("User authentication error. Please log in again.");
+                setIsSubmitting(false);
+                setIsButtonDisabled(false);
+                return;
             }
-        );
 
-        if (response.data) {
-            setEmployees([...employees, response.data]);
+            const createdBy = { id: userId };
+            const updatedBy = { id: userId };
 
-            setFormData({
-                name: "",
-                email: "",
-                mobile: "",
-                branch: userBranch,
+            // Generate password: first 4 letters of name + last 4 digits of mobile
+            const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
+            const mobileSuffix = formData.mobile.slice(-4);
+            const generatedPassword = `${namePrefix}${mobileSuffix}`;
+
+            const employeeData = {
+                password: generatedPassword,
+                mobile: formData.mobile,
+                email: formData.email,
+                name: formData.name,
+                isActive: 1,
+                createdOn: new Date().toISOString(),
+                updatedOn: new Date().toISOString(),
+                createdBy,
+                updatedBy,
                 department: userDepartment,
-            });
-            setError("");
+                branch: userBranch,
+            };
 
-            setShowPopup(true);
-            setPopupConfig({
-                message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
+            const response = await apiClient.post(
+                `${API_HOST}/register/create`,
+                employeeData,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (response.data) {
+                setEmployees([...employees, response.data]);
+
+                setFormData({
+                    name: "",
+                    email: "",
+                    mobile: "",
+                    branch: userBranch,
+                    department: userDepartment,
+                });
+                setError("");
+
+                setShowPopup(true);
+                setPopupConfig({
+                    message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
                          \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
-                type: "success",
-            });
+                    type: "success",
+                });
+
+                setTimeout(() => setShowPopup(false), 5000);
+            }
+        } catch (error) {
+            console.error("Error adding employee:", error);
+
+            // Generate password for the message even in error case
+            const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
+            const mobileSuffix = formData.mobile.slice(-4);
+            const generatedPassword = `${namePrefix}${mobileSuffix}`;
+
+            // Get the backend error message
+            const backendMessage = error.response?.data?.message || "";
+
+            // Check if it's the generic "We encountered an issue..." message
+            if (backendMessage.includes("We encountered an issue while processing your request")) {
+                // Replace with password format message
+                setShowPopup(true);
+                setPopupConfig({
+                    message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
+                         \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
+                    type: "success",
+                });
+            } else {
+                // For other specific error messages (like duplicate email), show them
+                setShowPopup(true);
+                setPopupConfig({
+                    message: backendMessage || "Email address is already registered. Please use a different one.",
+                    type: "error",
+                });
+            }
 
             setTimeout(() => setShowPopup(false), 5000);
+        } finally {
+            setIsSubmitting(false);
+            setIsButtonDisabled(false);
         }
-    } catch (error) {
-        console.error("Error adding employee:", error);
-        
-        // Generate password for the message even in error case
-        const namePrefix = formData.name.slice(0, 4).toUpperCase().padEnd(4, ' ');
-        const mobileSuffix = formData.mobile.slice(-4);
-        const generatedPassword = `${namePrefix}${mobileSuffix}`;
-
-        // Get the backend error message
-        const backendMessage = error.response?.data?.message || "";
-        
-        // Check if it's the generic "We encountered an issue..." message
-        if (backendMessage.includes("We encountered an issue while processing your request")) {
-            // Replace with password format message
-            setShowPopup(true);
-            setPopupConfig({
-                message: `Dear User, Your password is first 4 characters of your name and last 4 digits of your mobile number. 
-                         \nName: ${formData.name}, Mobile No.: ${formData.mobile}, then password: ${generatedPassword}`,
-                type: "success",
-            });
-        } else {
-            // For other specific error messages (like duplicate email), show them
-            setShowPopup(true);
-            setPopupConfig({
-                message: backendMessage || "Email address is already registered. Please use a different one.",
-                type: "error",
-            });
-        }
-        
-        setTimeout(() => setShowPopup(false), 5000);
-    } finally {
-        setIsSubmitting(false);
-        setIsButtonDisabled(false);
-    }
-};
+    };
 
     const handleEditEmployee = (employeeId) => {
         const employeeToEdit = employees.find((emp) => emp.id === employeeId);
@@ -616,11 +615,12 @@ const DepartmentEmployee = () => {
     }
 
     return (
-        <div className="px-2">
-            <h1 className="text-2xl mb-1 font-semibold">
-                <AutoTranslate>Department Users</AutoTranslate>
-            </h1>
-            <div className="bg-white p-4 rounded-lg shadow-sm">
+        <div className="px-2-">
+            <div className="title">
+                <h1><AutoTranslate>Department Users</AutoTranslate></h1>
+            </div>
+
+            <div className="card">
                 {showPopup && (
                     <Popup
                         message={popupConfig.message}
@@ -629,121 +629,127 @@ const DepartmentEmployee = () => {
                     />
                 )}
 
-                <div ref={formRef} className="mb-4 bg-slate-100 p-4 rounded-lg">
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
-                            <input
-                                type="text"
-                                placeholder={translatedPlaceholders.enterName}
-                                name="name"
-                                value={formData.name || ""}
-                                onChange={handleInputChange}
-                                maxLength={30}
-                                className="mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                            />
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
-                            <input
-                                type="email"
-                                placeholder={translatedPlaceholders.enterEmail}
-                                name="email"
-                                value={formData.email || ""}
-                                onChange={handleInputChange}
-                                maxLength={30}
-                                className={`mt-1 block w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 ${emailError ? "border-red-500" : ""
-                                    }`}
-                                required
-                            />
-                            {emailError && (
-                                <p className="text-red-500 text-sm mt-1">{emailError}</p>
-                            )}
-                        </label>
-
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Phone</AutoTranslate> <span className="text-red-500">*</span>
-                            <div className="flex mt-1">
-                                <span className="w-20 p-2 border rounded-l-md bg-gray-100 text-center text-gray-700">
-                                    +91
-                                </span>
+                <div className='mb-8'>
+                    <div ref={formRef} className="cardLight">
+                        <div className="grid grid-col-4 itemEnd">
+                            <div className="form-group">
+                                <label>
+                                    <AutoTranslate>Name</AutoTranslate> <span className="text-red-500">*</span>
+                                </label>
                                 <input
-                                    type="tel"
-                                    placeholder={translatedPlaceholders.enterPhone}
-                                    name="mobile"
-                                    value={formData.mobile || ""}
+                                    type="text"
+                                    placeholder={translatedPlaceholders.enterName}
+                                    name="name"
+                                    value={formData.name || ""}
                                     onChange={handleInputChange}
-                                    maxLength={10}
-                                    minLength={10}
-                                    className={`flex-1 p-2 border rounded-r-md outline-none focus:ring-2 focus:ring-blue-500 ${mobileError ? "border-red-500" : ""
-                                        }`}
+                                    maxLength={30}
                                     required
                                 />
                             </div>
-                            {mobileError && (
-                                <p className="text-red-500 text-sm mt-1">{mobileError}</p>
-                            )}
-                        </label>
 
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Branch</AutoTranslate>
-                            <input
-                                type="text"
-                                name="branch"
-                                value={userBranch ? userBranch.name : "Loading..."}
-                                disabled
-                                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100"
-                            />
-                        </label>
+                            <div className="form-group">
+                                <label>
+                                    <AutoTranslate>Email</AutoTranslate> <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    placeholder={translatedPlaceholders.enterEmail}
+                                    name="email"
+                                    value={formData.email || ""}
+                                    onChange={handleInputChange}
+                                    maxLength={30}
+                                    className={`${emailError ? "border-red-500" : ""
+                                        }`}
+                                    required
+                                />
+                                {emailError && (
+                                    <p className="text-red-500 text-sm mt-1">{emailError}</p>
+                                )}
+                            </div>
 
-                        <label className="block text-md font-medium text-gray-700">
-                            <AutoTranslate>Department</AutoTranslate>
-                            <input
-                                type="text"
-                                name="department"
-                                value={userDepartment ? userDepartment.name : "Loading..."}
-                                disabled
-                                className="mt-1 block w-full p-2 border rounded-md outline-none bg-gray-100"
-                            />
-                        </label>
-                    </div>
+                            <div className="form-group">
+                                <label>
+                                    <AutoTranslate>Phone</AutoTranslate> <span className="text-red-500">*</span>
+                                </label>
+                                <div className="contactNo">
+                                    <span>
+                                        +91
+                                    </span>
+                                    <input
+                                        type="tel"
+                                        placeholder={translatedPlaceholders.enterPhone}
+                                        name="mobile"
+                                        value={formData.mobile || ""}
+                                        onChange={handleInputChange}
+                                        maxLength={10}
+                                        minLength={10}
+                                        className={`${mobileError ? "border-red-500" : ""
+                                            }`}
+                                        required
+                                    />
+                                </div>
+                                {mobileError && (
+                                    <p className="text-red-500 text-sm mt-1">{mobileError}</p>
+                                )}
 
-                    <div className="mt-3 flex justify-start">
-                        {editingIndex === null ? (
-                            <button
-                                onClick={handleAddEmployee}
-                                disabled={isButtonDisabled || isSubmitting}
-                                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                <PlusCircleIcon className="h-5 w-5 mr-1" />
-                                {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Add User</AutoTranslate>}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleSaveEdit}
-                                disabled={isButtonDisabled || isSubmitting}
-                                className={`bg-blue-900 text-white rounded-2xl p-2 flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                <CheckCircleIcon className="h-5 w-5 mr-1" />
-                                {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Update</AutoTranslate>}
-                            </button>
-                        )}
+                            </div>
+
+                            <div className="form-group">
+                                <label>
+                                    <AutoTranslate>Branch</AutoTranslate>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="branch"
+                                    value={userBranch ? userBranch.name : "Loading..."}
+                                    disabled
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>
+                                    <AutoTranslate>Department</AutoTranslate>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="department"
+                                    value={userDepartment ? userDepartment.name : "Loading..."}
+                                    disabled
+                                />
+                            </div>
+                            <div className="form-group">
+                                {editingIndex === null ? (
+                                    <button
+                                        onClick={handleAddEmployee}
+                                        disabled={isButtonDisabled || isSubmitting}
+                                        className={`btn-primary flex items-center text-sm justify-center w-full ${isButtonDisabled || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        style={{ padding: "9px 15px" }}>
+                                        <PlusCircleIcon className="h-5 w-5 mr-1" />
+                                        {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Add User</AutoTranslate>}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleSaveEdit}
+                                        disabled={isButtonDisabled || isSubmitting}
+                                        className={`btn-primary flex items-center text-sm justify-center ${isButtonDisabled || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        style={{ padding: "9px 15px" }}>
+                                        <CheckCircleIcon className="h-5 w-5 mr-1" />
+                                        {isSubmitting ? <AutoTranslate>Submitting...</AutoTranslate> : <AutoTranslate>Update</AutoTranslate>}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mb-4 bg-slate-100 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/2">
-                        <label
-                            htmlFor="itemsPerPage"
-                            className="mr-2 ml-2 text-white text-sm"
-                        >
+
+                <div className="grid grid-col-4 mb-4">
+                    <div className="form-group ">
+                        <label htmlFor="itemsPerPage">
                             <AutoTranslate>Show:</AutoTranslate>
                         </label>
                         <select
                             id="itemsPerPage"
-                            className="border rounded-r-lg p-1.5 outline-none w-full"
                             value={itemsPerPage}
                             onChange={(e) => {
                                 setItemsPerPage(Number(e.target.value));
@@ -759,13 +765,12 @@ const DepartmentEmployee = () => {
                     </div>
 
                     {/* Branch Filter */}
-                    <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
-                        <label htmlFor="branchFilter" className="mr-2 ml-2 text-white text-sm">
+                    <div className="form-group ">
+                        <label htmlFor="branchFilter" >
                             <AutoTranslate>Branch</AutoTranslate>
                         </label>
                         <select
                             id="branchFilter"
-                            className="border rounded-r-lg p-1.5 outline-none w-full"
                             value={selectedBranch}
                             onChange={(e) => {
                                 setSelectedBranch(e.target.value);
@@ -784,13 +789,12 @@ const DepartmentEmployee = () => {
 
 
                     {/* Department Filter */}
-                    <div className="flex items-center bg-blue-500 rounded-lg w-full flex-1 md:w-1/4">
-                        <label htmlFor="departmentFilter" className="mr-2 ml-2 text-white text-sm">
+                    <div className="form-group ">
+                        <label htmlFor="departmentFilter" >
                             <AutoTranslate>Department</AutoTranslate>
                         </label>
                         <select
                             id="departmentFilter"
-                            className="border rounded-r-lg p-1.5 outline-none w-full"
                             value={selectedDepartment}
                             onChange={(e) => {
                                 setSelectedDepartment(e.target.value);
@@ -807,71 +811,74 @@ const DepartmentEmployee = () => {
                         </select>
                     </div>
 
-
-
                     {/* Search */}
-                    <div className="flex items-center w-full md:w-1/4 flex-1">
+                    <div className="form-group ">
+                        <label htmlFor="searchId" >
+                            <AutoTranslate>Search</AutoTranslate>
+                        </label>
                         <input
                             type="text"
+                            id="searchId"
                             placeholder={translatedPlaceholders.search}
-                            className="border rounded-l-md p-1 outline-none w-full"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            className="searchIcon"
                         />
-                        <MagnifyingGlassIcon className="text-white bg-blue-500 rounded-r-lg h-8 w-8 border p-1.5" />
                     </div>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border">
-                        <thead className="bg-gray-100">
+                <div className="table-wrapper">
+                    <table className="">
+                        <thead>
                             <tr>
-                                <th className="border p-2 text-left"><AutoTranslate>SN</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Name</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Email</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Phone No.</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Branch</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Department</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Role</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Created Date</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Updated Date</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>CreatedBy</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>UpdatedBy</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Status</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Edit</AutoTranslate></th>
-                                <th className="border p-2 text-left"><AutoTranslate>Action</AutoTranslate></th>
+                                <th className="text-center"><AutoTranslate>SN</AutoTranslate></th>
+                                <th><AutoTranslate>Name</AutoTranslate></th>
+                                <th><AutoTranslate>Email</AutoTranslate></th>
+                                <th><AutoTranslate>Phone No.</AutoTranslate></th>
+                                <th><AutoTranslate>Branch</AutoTranslate></th>
+                                <th><AutoTranslate>Department</AutoTranslate></th>
+                                <th><AutoTranslate>Role</AutoTranslate></th>
+                                <th><AutoTranslate>Created Date</AutoTranslate></th>
+                                <th><AutoTranslate>Updated Date</AutoTranslate></th>
+                                <th><AutoTranslate>CreatedBy</AutoTranslate></th>
+                                <th><AutoTranslate>UpdatedBy</AutoTranslate></th>
+                                <th><AutoTranslate>Status</AutoTranslate></th>
+                                <th className="text-center"><AutoTranslate>Edit</AutoTranslate></th>
+                                <th className="text-center"><AutoTranslate>Action</AutoTranslate></th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedEmployees.map((employee, index) => (
                                 <tr key={employee.id}>
-                                    <td className="border p-2">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
-                                    <td className="border p-2">{employee.name}</td>
-                                    <td className="border p-2">{employee.email}</td>
-                                    <td className="border p-2">{employee.mobile}</td>
-                                    <td className="border p-2">
+                                    <td className="text-center">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
+                                    <td>{employee.name}</td>
+                                    <td>{employee.email}</td>
+                                    <td>{employee.mobile}</td>
+                                    <td>
                                         {employee.branch?.name || "N/A"}
                                     </td>
-                                    <td className="border p-2">{employee.department?.name || "N/A"}</td>
-                                    <td className="border p-2">{employee.role?.role || "No Role"}</td>
-                                    <td className="border p-2">{formatDate(employee.createdOn)}</td>
-                                    <td className="border p-2">{formatDate(employee.updatedOn)}</td>
-                                    <td className="border p-2">
+                                    <td>{employee.department?.name || "N/A"}</td>
+                                    <td>{employee.role?.role || "No Role"}</td>
+                                    <td>{formatDate(employee.createdOn)}</td>
+                                    <td>{formatDate(employee.updatedOn)}</td>
+                                    <td>
                                         {employee.createdBy?.name || "Unknown"}
                                     </td>
-                                    <td className="border p-2">
+                                    <td>
                                         {employee.updatedBy?.name || "Unknown"}
                                     </td>
-                                    <td className="border p-2">{employee.active ? "Active" : "Inactive"}</td>
-                                    <td className="border p-2 text-center">
-                                        <button
-                                            onClick={() => handleEditEmployee(employee.id)}
-                                            disabled={employee.active === false}
-                                            className={`${employee.active === false ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            <PencilIcon className="h-6 w-6 text-white bg-yellow-400 rounded-xl p-1" />
-                                        </button>
+                                    <td>{employee.active ? "Active" : "Inactive"}</td>
+                                    <td className="text-center">
+                                        <div className="btn-center">
+                                            <button
+                                                onClick={() => handleEditEmployee(employee.id)}
+                                                disabled={employee.active === false}
+                                                className={`viewBtn ${employee.active === false ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                <PencilIcon />
+                                            </button>
+                                        </div>
                                     </td>
-                                    <td className="border p-2">
+                                    <td className="text-center">
                                         <button
                                             onClick={() => handleToggleActive(employee)}
                                             className={`p-1 rounded-full ${employee.active ? "bg-green-500" : "bg-red-500"}`}
@@ -889,79 +896,93 @@ const DepartmentEmployee = () => {
                     </table>
                 </div>
 
-                <div className="flex items-center mt-4">
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1 || totalPages === 0}
-                        className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                            }`}
-                    >
-                        <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-                        <AutoTranslate>Previous</AutoTranslate>
-                    </button>
+                {/* Pagination Controls */}
+                <div className="paginationWp">
+                    <div className="items">
+                        <div className="paginationText">
+                            <span className="text-sm text-gray-700">
+                                <AutoTranslate>
+                                    {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                                        } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                                </AutoTranslate>
+                            </span>
+                            {/* Page Count Info */}
+                            <span className="text-sm text-gray-700 mx-2">
+                                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+                            </span>
+                        </div>
+                    </div>
+                    <div className="items">
+                        <div className="paginationBtn">
+                            {/* Previous Button */}
+                            <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1 || totalPages === 0}
+                                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                            >
+                                <IoIosArrowBack />
+                            </button>
 
-                    {totalPages > 0 && getPageNumbers().map((page) => (
-                        <button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                                }`}
-                        >
-                            {page}
-                        </button>
-                    ))}
 
-                    <span className="text-sm text-gray-700 mx-2">
-                        <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-                    </span>
+                            {/* Page Number Buttons */}
+                            {totalPages > 0 && getPageNumbers().map((page) => (
+                                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                                    {page}
+                                </button>
+                            ))}
 
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                            }`}
-                    >
-                        <AutoTranslate>Next</AutoTranslate>
-                        <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-                    </button>
-                    <div className="ml-4">
-                        <span className="text-sm text-gray-700">
-                            <AutoTranslate>
-                                {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries`}
-                            </AutoTranslate>
-                        </span>
+
+                            {/* Next Button */}
+                            <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages || totalPages === 0}
+                                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}
+                            >
+                                <IoIosArrowForward />
+                            </button>
+
+                        </div>
                     </div>
                 </div>
             </div>
 
             {modalVisible && (
-                <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-                        <h2 className="text-lg font-semibold mb-4">
-                            <AutoTranslate>Confirm Status Change</AutoTranslate>
-                        </h2>
-                        <p>
-                            <AutoTranslate>Are you sure you want to</AutoTranslate>{" "}
-                            <strong>
-                                {employeeToToggle.active === true ? <AutoTranslate>deactivate</AutoTranslate> : <AutoTranslate>activate</AutoTranslate>}
-                            </strong>{" "}
-                            <AutoTranslate>the employee</AutoTranslate> <strong>{employeeToToggle.name}</strong> ?
-                        </p>
-                        <div className="flex justify-end space-x-4">
-                            <button
-                                onClick={() => setModalVisible(false)}
-                                className="btn-cancel"
-                            >
-                                <AutoTranslate>Cancel</AutoTranslate>
-                            </button>
-                            <button
-                                onClick={confirmToggleActive}
-                                disabled={isConfirmDisabled}
-                                className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                            >
-                                {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
-                            </button>
+                <div className="overlayModal">
+                    <div className="document-modal modal-md">
+                        {/* Header */}
+                        <div className="modal-header">
+                            <div className="modal-title">
+                                <h2><AutoTranslate>Confirm Status Change</AutoTranslate></h2>
+                            </div>
+                        </div>
+
+                        {/* Modal body Content */}
+                        <div className="modal-body">
+                            <div className="bodyScroller print:overflow-visible print:max-h-none">
+                                <p>
+                                    <AutoTranslate>Are you sure you want to</AutoTranslate>{" "}
+                                    <strong>
+                                        {employeeToToggle.active === true ? <AutoTranslate>deactivate</AutoTranslate> : <AutoTranslate>activate</AutoTranslate>}
+                                    </strong>{" "}
+                                    <AutoTranslate>the employee</AutoTranslate> <strong>{employeeToToggle.name}</strong> ?
+                                </p>
+                                <div className="flex justify-end space-x-4 mt-4">
+                                    <button
+                                        onClick={() => setModalVisible(false)}
+                                        className="btn-cancel"
+                                    >
+                                        <AutoTranslate>Cancel</AutoTranslate>
+                                    </button>
+                                    <button
+                                        onClick={confirmToggleActive}
+                                        disabled={isConfirmDisabled}
+                                        className={`bg-blue-500 text-white rounded-md px-4 py-2 ${isConfirmDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                                            }`}
+                                    >
+                                        {isConfirmDisabled ? <AutoTranslate>Processing...</AutoTranslate> : <AutoTranslate>Confirm</AutoTranslate>}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

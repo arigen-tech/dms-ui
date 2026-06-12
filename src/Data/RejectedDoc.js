@@ -946,7 +946,7 @@ function RejectedDoc() {
                     ) : selectedDoc && filteredDocFiles.length > 0 ? (
                       <div className="border border-gray-200 rounded-lg overflow-hidden">
                         {/* Table Header - Hidden on mobile */}
-                        <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
+                        <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3 gap-2">
                           <span className="text-left">
                             <AutoTranslate>File Name</AutoTranslate>
                           </span>
@@ -978,8 +978,8 @@ function RejectedDoc() {
                           {filteredDocFiles.map((file, index) => (
                             <div key={index} className="hover:bg-gray-50 transition-colors duration-150">
                               {/* Desktop View */}
-                              <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] items-center px-6 py-4 text-sm">
-                                <div className="text-left text-gray-800 break-words">
+                              <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] items-center px-6 py-4 text-sm gap-2">
+                                <div className="text-left text-gray-800 break-words flex items-center">
                                   <strong>{index + 1}.</strong> {file.docName}
                                 </div>
                                 <div className="text-center text-gray-700">{file.year}</div>

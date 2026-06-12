@@ -1005,7 +1005,7 @@ const FileCompare = () => {
           </div>
         )}
 
-        <div className="mb-4 p-4 rounded-lg" style={{ background: "rgb(0 0 0/0.05)" }}>
+        <div className="cardLight">
           <div className="grid-cols-1 lg:grid-cols-2 gap-8" style={{display:"grid"}}>
             {/* First File */}
             <div className="space-y-4">
@@ -1108,7 +1108,7 @@ const FileCompare = () => {
             <button
               onClick={compareFiles}
               disabled={isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2}
-              className={`bg-blue-900 text-white rounded-2xl px-6 py-3 text-sm flex items-center justify-center transition-all ${isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2
+              className={`btn-primary flex items-center justify-center ${isComparing || selectedFirstFileIds.length + selectedSecondFileIds.length !== 2
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:bg-blue-800 hover:scale-105"
                 }`}
