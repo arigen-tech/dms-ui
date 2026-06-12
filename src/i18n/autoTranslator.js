@@ -89,6 +89,8 @@ const fallbackTranslations = {
     'Enter Department Name': 'विभाग का नाम दर्ज करें',
     '(optional)': '(वैकल्पिक)',
     'DASHBOARD': 'डैशबोर्ड',
+    'Inactive': 'निष्क्रिय',
+    'Active': 'सक्रिय',
     'Drag & drop ,files, here, or choose from your device.': 'फाइलें यहाँ ड्रैग और ड्रॉप करें, या अपने डिवाइस से चुनें।',
     'Upload ,Files': 'फाइलें अपलोड करें',
     'Enter Mobile Number': 'मोबाइल नंबर दर्ज करें',
