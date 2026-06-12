@@ -1365,31 +1365,26 @@ const DocumentManagement = ({ fieldsDisabled }) => {
   };
 
 
-  const downloadQRCode = async () => {
-    if (!selectedDoc.id) {
-      alert(<AutoTranslate>Please enter a document ID</AutoTranslate>);
-      return;
-    }
+     const downloadQRCode = async () => {
+  try {
+    const response = await apiClient.get(
+      `/api/documents/documents/download/qr/${selectedDoc.id}`,
+      { responseType: "blob" }
+    );
 
-    try {
+    const qrCodeUrl = window.URL.createObjectURL(response.data);
 
-      const apiUrl = `/documents/download/qr/${selectedDoc.id}`;
+    const link = document.createElement("a");
+    link.href = qrCodeUrl;
+    link.download = `QR_Code_${selectedDoc.id}.png`;
+    link.click();
 
-      const response = await apiClient.get(apiUrl, { responseType: "blob" });
+    window.URL.revokeObjectURL(qrCodeUrl);
 
-      const qrCodeBlob = response.data;
-      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-
-      const link = document.createElement("a");
-      link.href = qrCodeUrl;
-      link.download = `QR_Code_${selectedDoc.id}.png`;
-      link.click();
-
-      window.URL.revokeObjectURL(qrCodeUrl);
-    } catch (error) {
-      setError(<AutoTranslate>Error downloading QR Code:</AutoTranslate> + error.message);
-    }
-  };
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 
   const getPageNumbers = () => {
