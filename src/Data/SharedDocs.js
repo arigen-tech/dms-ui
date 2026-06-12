@@ -599,7 +599,7 @@ const SharedDocs = () => {
     // Auto-hide after 5 seconds
     setTimeout(() => {
       setShareInfoVisible(false);
-    }, 20000);
+    }, 5000);
   };
 
   const handleRevokeShare = (share) => {
@@ -950,7 +950,7 @@ const SharedDocs = () => {
               </h3>
               <button
                 onClick={() => setShareInfoVisible(false)}
-                className="closeBtnSm text-gray-400- hover:text-gray-600-"
+                className="closeBtnSm"
               >
                 <XMarkIcon className="h-4 w-4" />
               </button>
@@ -1004,7 +1004,7 @@ const SharedDocs = () => {
             <div className="mt-3 flex justify-end">
               <button
                 onClick={() => handleViewShares(selectedDocShareInfo)}
-                className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                className="btn-blue-light-sm- text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
               >
                 <AutoTranslate>View All Shares</AutoTranslate>
               </button>
