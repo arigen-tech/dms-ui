@@ -62,12 +62,12 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
   const [imageSrc, setImageSrc] = useState(null);
   const dropdownRef = useRef(null);
   const UserName = localStorage.getItem("UserName") || userName;
-  const role = localStorage.getItem("role");
+  const [currentRole, setCurrentRole] = useState(localStorage.getItem("role") || "");
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [targetRoleName, setTargetRoleName] = useState("");
   const [isConfSwitch, setIsConfSwitch] = useState(false);
-  const [currentRole, setCurrentRole] = useState("");
   const [selectedLang, setSelectedLang] = useState(currentLanguage);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(true);
 
   // Debug language status
   useEffect(() => {
@@ -111,10 +111,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
   const fetchImageSrc = async () => {
     try {
       const employeeId = localStorage.getItem("id");
-
-      // Call standalone function
       const imageArrayBuffer = await getEmployeeImage(employeeId);
-
       const imageBlob = new Blob([imageArrayBuffer], { type: "image/jpeg" });
       const imageUrl = URL.createObjectURL(imageBlob);
       setImageSrc(imageUrl);
@@ -125,6 +122,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
 
   const fetchUserRole = async () => {
     try {
+      setIsLoadingRoles(true);
       const employeeId = localStorage.getItem("id");
 
       const response = await apiClient.get(`${API_HOST}/api/EmpRole/${employeeId}/roles/active`);
@@ -135,10 +133,33 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
         (a, b) => rolePriority.indexOf(a) - rolePriority.indexOf(b)
       );
 
-      setCurrentRole(response.data.employeeRole);
+      const employeeRole = response.data.employeeRole;
+      
+      // Set current role from API response
+      setCurrentRole(employeeRole);
+      
+      // Also update localStorage with the current role
+      localStorage.setItem("role", employeeRole);
+      
+      // Store all available roles
       setRoleName(sortedRoles);
+      
+      console.log("✅ Roles fetched:", {
+        currentRole: employeeRole,
+        availableRoles: sortedRoles,
+        storedRole: localStorage.getItem("role")
+      });
+      
     } catch (error) {
-      console.error(<AutoTranslate>Error fetching user roles</AutoTranslate>, error);
+      console.error("Error fetching user roles", error);
+      // Fallback to localStorage if API fails
+      const storedRole = localStorage.getItem("role");
+      if (storedRole) {
+        setCurrentRole(storedRole);
+        setRoleName([storedRole]);
+      }
+    } finally {
+      setIsLoadingRoles(false);
     }
   };
 
@@ -153,7 +174,7 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
       const employeeId = localStorage.getItem("id");
       const response = await apiClient.put(
         `/employee/${employeeId}/role/switch`,
-        { targetRoleName } // request body
+        { targetRoleName }
       );
 
       const roleId = response.data?.response?.role?.id;
@@ -161,16 +182,24 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
         localStorage.setItem("currRoleId", roleId);
       }
 
+      // Update localStorage with new role
       localStorage.setItem("role", targetRoleName);
+      
+      // Update state
+      setCurrentRole(targetRoleName);
       setRole(targetRoleName);
+      
       showPopup("Role switched successfully", "success");
       setShowConfirmationPopup(false);
 
-      // ✅ Trigger Sidebar to refresh menu
+      // Trigger Sidebar to refresh menu
       triggerMenuRefresh();
 
-      fetchUserRole();
+      // Refresh roles list
+      await fetchUserRole();
+      
     } catch (error) {
+      console.error("Error switching role:", error);
       showPopup("Error switching role", "error");
       setShowConfirmationPopup(false);
     } finally {
@@ -200,7 +229,6 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
 
   const getLanguageNativeNameByCode = (languageCode) => {
     if (!availableLanguages.length) {
-      // Default fallbacks
       switch (languageCode) {
         case 'en': return 'English';
         case 'hi': return 'हिंदी';
@@ -225,22 +253,31 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
 
   const handleLanguageChange = async (languageCode) => {
     try {
-      // Show loading state
       setDropdownLanguageOpen(false);
-
-      // Get language name for popup
       const languageName = getLanguageNativeNameByCode(languageCode);
-
-      // Change the language
       await changeLanguage(languageCode);
-
-      // Show success message with language name
       showPopup(`Language changed to ${languageName}`, "success");
-
     } catch (error) {
       console.error('Error changing language:', error);
       showPopup("Error changing language!", "error");
     }
+  };
+
+  // Get display role name (shows actual role, not just "Role")
+  const getDisplayRoleName = () => {
+    if (isLoadingRoles) {
+      return <AutoTranslate>Loading...</AutoTranslate>;
+    }
+    if (currentRole && currentRole !== "") {
+      // Format role name for display (remove underscores, capitalize)
+      let displayRole = currentRole;
+      if (currentRole === "SYSTEM_ADMIN") displayRole = "System Admin";
+      else if (currentRole === "BRANCH_ADMIN") displayRole = "Branch Admin";
+      else if (currentRole === "DEPARTMENT_ADMIN") displayRole = "Department Admin";
+      else if (currentRole === "USER") displayRole = "User";
+      return displayRole;
+    }
+    return <AutoTranslate>Role</AutoTranslate>;
   };
 
   useEffect(() => {
@@ -274,13 +311,12 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
       <div className="topRightMenu">
         {/* Language Dropdown */}
         <div className="dropdown-toggle">
-
           <button className="dropDownIcon" onClick={() => setDropdownLanguageOpen(!dropdownLanguageOpen)}>
             <span className="iconBg"><FaEarthAmericas /></span>
             <span>{getCurrentLanguageName()}</span>
           </button>
-          {/* {dropdownLanguageOpen && ( DropdownMenu - component )} */}
-          <DropdownMenu className="max-h-48 overflow-y-auto"
+          <DropdownMenu 
+            className="max-h-48 overflow-y-auto"
             items={
               availableLanguages && availableLanguages.length > 0
                 ? availableLanguages
@@ -297,43 +333,51 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
                     ),
                     onClick: () => handleLanguageChange(lang.code),
                   }))
-                :
-
-                []
+                : []
             }
             onSelect={(item) => item.onClick && item.onClick()}
             emptyMessage={<AutoTranslate>No languages available</AutoTranslate>}
           />
-
         </div>
 
-        {/* Role Dropdown */}
+        {/* Role Dropdown - Shows actual role instead of just "Role" */}
         <div className="dropdown-toggle">
           <button className="dropDownIcon" onClick={() => setDropdownRoleOpen(!dropdownRoleOpen)}>
             <span className="iconBg">
               <PiUserSwitchFill />
             </span>
-            <span>{role || <AutoTranslate>Role</AutoTranslate>}</span>
+            <span>{getDisplayRoleName()}</span>
           </button>
 
-          {/* {dropdownRoleOpen && ( DropdownMenu - component )} */}
           <DropdownMenu
             className="max-h-48 overflow-y-auto"
             items={
-              Array.isArray(roleName)
+              Array.isArray(roleName) && roleName.length > 0
                 ? roleName
                   .filter((roleItem) => roleItem !== currentRole)
                   .map((roleItem) => {
                     let IconComponent = FiUser;
-                    if (roleItem === SYSTEM_ADMIN) IconComponent = TbPasswordUser;
-                    else if (roleItem === BRANCH_ADMIN) IconComponent = TbUserCog;
-                    else if (roleItem === DEPARTMENT_ADMIN) IconComponent = PiUserCircleGear;
+                    let displayRoleName = roleItem;
+                    
+                    if (roleItem === SYSTEM_ADMIN) {
+                      IconComponent = TbPasswordUser;
+                      displayRoleName = "System Admin";
+                    } else if (roleItem === BRANCH_ADMIN) {
+                      IconComponent = TbUserCog;
+                      displayRoleName = "Branch Admin";
+                    } else if (roleItem === DEPARTMENT_ADMIN) {
+                      IconComponent = PiUserCircleGear;
+                      displayRoleName = "Department Admin";
+                    } else if (roleItem === USER) {
+                      IconComponent = FiUser;
+                      displayRoleName = "User";
+                    }
 
                     return {
                       label: (
                         <span className="flex items-center text-sm text-gray-800 hover:bg-gray-100 rounded">
                           <IconComponent className="h-5 w-5 mr-3" />
-                          <span>{roleItem}</span>
+                          <span>{displayRoleName}</span>
                         </span>
                       ),
                       onClick: () => {
@@ -345,9 +389,12 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
                 : []
             }
             onSelect={(item) => item.onClick && item.onClick()}
-            emptyMessage={<AutoTranslate>No Multiple roles available</AutoTranslate>}
+            emptyMessage={
+              isLoadingRoles 
+                ? <AutoTranslate>Loading roles...</AutoTranslate> 
+                : <AutoTranslate>No multiple roles available</AutoTranslate>
+            }
           />
-
         </div>
 
         {/* Notification component */}
@@ -365,7 +412,6 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
               alt={getFallbackTranslation('Profile', currentLanguage)}
             />
           </button>
-          {/* {dropdownOpen && ( DropdownMenu - component )} */}
           <DropdownMenu
             items={[
               {
@@ -391,7 +437,6 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
             emptyMessage={<AutoTranslate>No options available</AutoTranslate>}
           />
         </div>
-
       </div>
 
       {/* Confirmation Popup */}
@@ -403,7 +448,12 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
             </h2>
             <p className="text-gray-700 mb-6">
               <AutoTranslate>Are you sure you want to switch to the role:</AutoTranslate>{" "}
-              <strong>{targetRoleName}</strong>?
+              <strong>
+                {targetRoleName === SYSTEM_ADMIN ? "System Admin" :
+                 targetRoleName === BRANCH_ADMIN ? "Branch Admin" :
+                 targetRoleName === DEPARTMENT_ADMIN ? "Department Admin" :
+                 targetRoleName === USER ? "User" : targetRoleName}
+              </strong>?
             </p>
             <div className="flex justify-end space-x-4">
               <button
@@ -430,7 +480,6 @@ function Header({ toggleSidebar, userName, triggerMenuRefresh }) {
           </div>
         </div>
       )}
-
     </header>
   );
 }
