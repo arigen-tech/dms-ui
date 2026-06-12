@@ -624,11 +624,11 @@ function Sidebar({ roleChanged }) {
         return (
           <div className="dropdownNav" key={item.appId}>
             <button onClick={() => handleMenuToggle(item.appId)} className="btnDropdown">
-              <div className="flex items-center">
+              <div className="">
                 {IconComponent ? (
-                  <IconComponent className="h-5 w-5 mr-3" />
+                  <IconComponent />
                 ) : (
-                  <div className="w-5 h-5 mr-2 aaa" /> // Empty placeholder for spacing
+                  <div className="w-4 h-4 mr-2" /> // Empty placeholder for spacing
                 )}
                 <AutoTranslate>{item.name}</AutoTranslate>
               </div>

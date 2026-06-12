@@ -1916,7 +1916,7 @@ const ApprovedDoc = () => {
                   ) : selectedDoc && filteredDocFiles.length > 0 ? (
                     <div className="border border-gray-200 rounded-lg overflow-hidden">
                       {/* Desktop View Table Header - Added Checkbox columns */}
-                      <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
+                      <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3 gap-2">
                         <span className="text-left">
                           <input
                             type="checkbox"
@@ -1980,7 +1980,7 @@ const ApprovedDoc = () => {
                           return (
                             <div key={index} className={`hover:bg-gray-50 transition-colors duration-150 ${isSelectedForTrash ? 'bg-blue-50' : ''}`}>
                               {/* Desktop View */}
-                              <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] items-center px-6 py-4 text-sm">
+                              <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] items-center px-6 py-4 text-sm gap-2">
                                 <div className="text-left">
                                   {canDelete ? (
                                     <input
@@ -2011,7 +2011,7 @@ const ApprovedDoc = () => {
                                     <span className="text-gray-400">-</span>
                                   )}
                                 </div>
-                                <div className="text-left text-gray-800 break-words">
+                                <div className="text-left text-gray-800 break-words flex items-center">
                                   <strong>{index + 1}.</strong> {file.docName}
                                 </div>
                                 <div className="text-center text-gray-700">{file.yearMaster?.name || "--"}</div>
@@ -2066,7 +2066,7 @@ const ApprovedDoc = () => {
                                   {canDelete && (
                                     <button
                                       onClick={() => handleDeleteFile(file)}
-                                      className="p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
+                                      className="ml-2 p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
                                       title="Move to Trash"
                                     >
                                       <TrashIcon className="h-5 w-5" />

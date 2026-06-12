@@ -499,7 +499,7 @@ footer {
         & .commonNavLink {
             width: 100%;
             height: 38px;
-            font-size: 16px;
+            font-size: 15px;
             color: var(--menu-text-color);
             font-weight: 600;
             display: flex;
@@ -526,9 +526,9 @@ footer {
             }
 
             & .menu-icon {
-                width: 20px;
-                height: 20px;
-                margin-right: 8px;
+                width: 18px;
+                height: 18px;
+                margin-right: 6px;
             }
         }
 
@@ -566,7 +566,7 @@ footer {
         & button {
             width: 100%;
             height: 38px;
-            font-size: 16px;
+            font-size: 15px;
             color: var(--menu-text-color);
             font-weight: 600;
             display: flex;
@@ -574,12 +574,17 @@ footer {
             align-items: center;
             padding: 10px 6px;
             border-radius: 5px;
+            /* background-color: rgb(0 0 0/0.4); */
 
-            &>div {
+            & > div {
                 display: flex;
                 align-items: center;
+                & svg{
+                    width: 18px;
+                    height: 18px;
+                    margin-right: 6px;
+                }
             }
-
             &:hover {
                 background-color: rgb(0 0 0/0.12);
                 color: var(--white-color);
@@ -597,22 +602,22 @@ footer {
                 /* background: url(../src/Assets/icons/arrow-right.svg) no-repeat left center; */
                 background-size: 11px;
                 height: 36px;
-                padding-left: 16px;
+                padding-left: 11px;
                 margin-left: -4px;
 
                 &:hover {
                     background-color: rgb(0 0 0/0.12);
                     color: var(--white-color);
                 }
-
                 & .menu-icon {
                     display: none;
                 }
             }
 
             & .active {
-                background: var(--white-color) url(../src/Assets/icons/arrow-right-active.svg) no-repeat left center;
-                background-size: 12px;
+                /* background: var(--white-color) url(../src/Assets/icons/arrow-right-active.svg) no-repeat left center; */
+                background: var(--white-color);
+                /* background-size: 12px; */
                 color: var(--primary-color);
 
                 & .count {
@@ -636,6 +641,10 @@ footer {
             /* fill: var(--secondary-color); */
             fill: #4FC3F7;
         }
+    }
+
+    & .dropdownNav .dropdownSubMenu .dropdownNav .dropdownSubMenu a{
+        font-size: 14.5px;
     }
 
     & .count {
@@ -1713,7 +1722,7 @@ h2 {
 .bg-blue-verticle {
     /* background: linear-gradient(183deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%); */
     background-color: var(--primary-color);
-    width: 16rem;
+    width: 18rem;
 }
 
 .text-white {
