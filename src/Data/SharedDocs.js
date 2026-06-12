@@ -599,7 +599,7 @@ const SharedDocs = () => {
     // Auto-hide after 5 seconds
     setTimeout(() => {
       setShareInfoVisible(false);
-    }, 500000);
+    }, 5000);
   };
 
   const handleRevokeShare = (share) => {
