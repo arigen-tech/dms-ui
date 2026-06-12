@@ -1092,256 +1092,269 @@ const TrashDoc = () => {
                 </div>
 
                 {/* Attached Files Section */}
-                <div className="mt-8">
-                  <div className="attachedWp relative">
-                    <h2 className="mb-0">
-                      <AutoTranslate>Deleted Files</AutoTranslate>
-                      <span className="ml-2- text-sm font-normal text-gray-600">
-                        ({selectedFiles.length} selected)
-                      </span>
-                    </h2>
-                    <div className="flex items-center gap-4">
-                      {selectedFiles.length > 0 && (
-                        <button
-                          onClick={handleBulkFileRestore}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
-                        >
-                          <ArrowUturnLeftIcon className="h-4 w-4" />
-                          <span><AutoTranslate>Restore ({selectedFiles.length})</AutoTranslate></span>
-                        </button>
-                      )}
-                      <div className="form-group">
-                        <input
-                          type="text"
-                          placeholder="Search files..."
-                          value={searchFileTerm}
-                          onChange={(e) => setSearchFileTerm(e.target.value)}
-                          className="searchIcon"
-                        />
-                      </div>
+{/* Deleted Files Section */}
+<div className="mt-8">
+  <div className="attachedWp relative">
+    <h2 className="mb-0">
+      <AutoTranslate>Deleted Files</AutoTranslate>
+      <span className="ml-2 text-sm font-normal text-gray-600">
+        ({selectedFiles.length} selected)
+      </span>
+    </h2>
+    <div className="flex items-center gap-4">
+      {selectedFiles.length > 0 && (
+        <button
+          onClick={handleBulkFileRestore}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+        >
+          <ArrowUturnLeftIcon className="h-4 w-4" />
+          <span><AutoTranslate>Restore ({selectedFiles.length})</AutoTranslate></span>
+        </button>
+      )}
+      <div className="form-group">
+        <input
+          type="text"
+          placeholder="Search files..."
+          value={searchFileTerm}
+          onChange={(e) => setSearchFileTerm(e.target.value)}
+          className="searchIcon"
+        />
+      </div>
+    </div>
+  </div>
+
+  {loadingFiles ? (
+    <div className="flex justify-center items-center py-12">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <span className="ml-3 text-gray-600">
+        <AutoTranslate>Loading files...</AutoTranslate>
+      </span>
+    </div>
+  ) : selectedDoc && filteredDocFiles.length > 0 ? (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      {/* Desktop View Table Header */}
+      <div 
+        className="hidden md:grid bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3 border-b border-gray-200"
+        style={{ 
+          gridTemplateColumns: "40px minmax(200px, 2.5fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr) minmax(100px, 0.8fr) minmax(130px, 1.2fr) minmax(110px, 1fr) minmax(150px, 1.2fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr)" 
+        }}
+      >
+        <span className="text-left">
+          <input
+            type="checkbox"
+            checked={selectAllFilesChecked}
+            onChange={handleSelectAllFiles}
+            className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+            title="Select all files"
+          />
+        </span>
+        <span className="text-left">
+          <AutoTranslate>File Name</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Year</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Version</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Status</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Action By</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Action Date</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Reason</AutoTranslate>
+        </span>
+        <span className="text-center no-print">
+          <AutoTranslate>View</AutoTranslate>
+        </span>
+        <span className="text-center no-print">
+          <AutoTranslate>Action</AutoTranslate>
+        </span>
+      </div>
+
+      <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+        {filteredDocFiles.map((file, index) => {
+          const isSelected = selectedFiles.some(f => f.id === file.id);
+          return (
+            <div key={file.id || index} className={`hover:bg-gray-50 transition-colors duration-150 ${isSelected ? 'bg-blue-50' : ''}`}>
+              {/* Desktop View */}
+              <div 
+                className="hidden md:grid items-center px-6 py-4 text-sm"
+                style={{ 
+                  gridTemplateColumns: "40px minmax(200px, 2.5fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr) minmax(100px, 0.8fr) minmax(130px, 1.2fr) minmax(110px, 1fr) minmax(150px, 1.2fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr)" 
+                }}
+              >
+                <div className="text-left">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => handleSelectFile(file)}
+                    className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </div>
+                <div className="text-left text-gray-800 break-words">
+                  <strong>{index + 1}.</strong> {file.docName}
+                </div>
+                <div className="text-center text-gray-700">{file.yearMaster?.name || file.year || "--"}</div>
+                <div className="text-center text-gray-700">{file.version || "--"}</div>
+                <div className="text-center">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap
+                    ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                      "bg-yellow-100 text-yellow-800"}`}
+                  >
+                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                  </span>
+                </div>
+                <div className="text-center text-gray-700 truncate" title={file.approvedBy || file.deletedBy}>
+                  {file.approvedBy || file.deletedBy || "--"}
+                </div>
+                <div className="text-center text-gray-700">{formatDate(file.approvedOn || file.deletedOn)}</div>
+                <div className="text-center text-gray-700 break-words">{file.rejectionReason || file.deletionReason || "--"}</div>
+                <div className="flex justify-center no-print">
+                  <button
+                    onClick={() => {
+                      setOpeningFileIndex(index);
+                      setSelectedDocFiles(file);
+                      openFile(file).finally(() => setOpeningFileIndex(null));
+                    }}
+                    disabled={openingFileIndex !== null}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 whitespace-nowrap
+                      ${openingFileIndex === index ?
+                        "bg-indigo-400 cursor-not-allowed" :
+                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                  >
+                    {openingFileIndex === index ? (
+                      <>
+                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                        <AutoTranslate>Opening...</AutoTranslate>
+                      </>
+                    ) : (
+                      <>
+                        <EyeIcon className="h-3 w-3" />
+                        <AutoTranslate>View</AutoTranslate>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="flex justify-center no-print">
+                  <button
+                    onClick={() => handleRestoreFile(file)}
+                    className="p-1.5 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200"
+                    title="Restore File"
+                  >
+                    <ArrowUturnLeftIcon className="h-4 w-4 text-green-700" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center flex-1 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectFile(file)}
+                      className="h-4 w-4 mr-2 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer flex-shrink-0"
+                    />
+                    <div className="text-left text-gray-800 break-words">
+                      <strong>{index + 1}.</strong> {file.docName}
                     </div>
                   </div>
-
-                  {loadingFiles ? (
-                    <div className="flex justify-center items-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                      <span className="ml-3 text-gray-600">
-                        <AutoTranslate>Loading files...</AutoTranslate>
-                      </span>
-                    </div>
-                  ) : selectedDoc && filteredDocFiles.length > 0 ? (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      {/* Desktop View Table Header - Added Checkbox column */}
-                      <div className="hidden md:grid grid-cols-[25fr_30fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
-                        <span className="text-left">
-                          <input
-                            type="checkbox"
-                            checked={selectAllFilesChecked}
-                            onChange={handleSelectAllFiles}
-                            className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                            title="Select all files"
-                          />
-                        </span>
-                        <span className="text-left">
-                          <AutoTranslate>File Name</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Year</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Version</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Status</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Action By</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Action Date</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Reason</AutoTranslate>
-                        </span>
-                        <span className="text-center no-print">
-                          <AutoTranslate>View</AutoTranslate>
-                        </span>
-                        <span className="text-center no-print">
-                          <AutoTranslate>Action</AutoTranslate>
-                        </span>
-                      </div>
-
-                      <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                        {filteredDocFiles.map((file, index) => {
-                          const isSelected = selectedFiles.some(f => f.id === file.id);
-                          return (
-                            <div key={index} className={`hover:bg-gray-50 transition-colors duration-150 ${isSelected ? 'bg-blue-50' : ''}`}>
-                              {/* Desktop View */}
-                              <div className="hidden md:grid grid-cols-[25fr_30fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] items-center px-6 py-4 text-sm">
-                                <div className="text-left">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => handleSelectFile(file)}
-                                    className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                  />
-                                </div>
-                                <div className="text-left text-gray-800 break-words">
-                                  <strong>{index + 1}.</strong> {file.docName}
-                                </div>
-                                <div className="text-center text-gray-700">{file.yearMaster?.name || "--"}</div>
-                                <div className="text-center text-gray-700">{file.version}</div>
-                                <div className="text-center">
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                        "bg-yellow-100 text-yellow-800"}`}
-                                  >
-                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                  </span>
-                                </div>
-                                <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
-                                <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
-                                <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
-                                <div className="flex justify-center no-print">
-                                  <button
-                                    onClick={() => {
-                                      setOpeningFileIndex(index);
-                                      setSelectedDocFiles(file);
-                                      openFile(file).finally(() => setOpeningFileIndex(null));
-                                    }}
-                                    disabled={openingFileIndex !== null}
-                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                          ${openingFileIndex === index ?
-                                        "bg-indigo-400 cursor-not-allowed" :
-                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                  >
-                                    {openingFileIndex === index ? (
-                                      <>
-                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                        <AutoTranslate>Opening...</AutoTranslate>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <EyeIcon className="h-3 w-3" />
-                                        <AutoTranslate>View</AutoTranslate>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                                <div className="flex justify-center no-print">
-                                  <button
-                                    onClick={() => handleRestoreFile(file)}
-                                    className="p-1.5 rounded-full bg-green-100 hover:bg-green-200 text-green-700"
-                                    title="Restore File"
-                                  >
-                                    <ArrowUturnLeftIcon className="h-5 w-5" />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Mobile View */}
-                              <div className="md:hidden p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                  <div className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() => handleSelectFile(file)}
-                                      className="h-4 w-4 mr-2 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                    />
-                                    <div className="text-left text-gray-800 break-words flex-1">
-                                      <strong>{index + 1}.</strong> {file.docName}
-                                    </div>
-                                  </div>
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
-                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                        "bg-yellow-100 text-yellow-800"}`}
-                                  >
-                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                  </span>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 text-sm mt-3">
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.yearMaster?.name || "--"}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.version}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.approvedBy || "--"}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
-                                    <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
-                                  </div>
-                                  <div className="col-span-2">
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
-                                    <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
-                                  </div>
-                                </div>
-
-                                <div className="mt-3 flex justify-between items-center">
-                                  <button
-                                    onClick={() => {
-                                      setOpeningFileIndex(index);
-                                      setSelectedDocFiles(file);
-                                      openFile(file).finally(() => setOpeningFileIndex(null));
-                                    }}
-                                    disabled={openingFileIndex !== null}
-                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                          ${openingFileIndex === index ?
-                                        "bg-indigo-400 cursor-not-allowed" :
-                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                  >
-                                    {openingFileIndex === index ? (
-                                      <>
-                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                        <AutoTranslate>Opening...</AutoTranslate>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <EyeIcon className="h-3 w-3" />
-                                        <AutoTranslate>View File</AutoTranslate>
-                                      </>
-                                    )}
-                                  </button>
-
-                                  <div className="flex gap-2">
-                                    <button
-                                      onClick={() => handleRestoreFile(file)}
-                                      className="p-1.5 rounded-full bg-green-100 hover:bg-green-200"
-                                      title="Restore File"
-                                    >
-                                      <ArrowUturnLeftIcon className="h-5 w-5 text-green-700" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
-                      <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                      <p className="text-gray-500">
-                        <AutoTranslate>No deleted files found</AutoTranslate>
-                      </p>
-                      {searchFileTerm && (
-                        <p className="text-sm text-gray-400 mt-1">
-                          <AutoTranslate>Try adjusting your search term</AutoTranslate>
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2 whitespace-nowrap
+                    ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                      "bg-yellow-100 text-yellow-800"}`}
+                  >
+                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                  </span>
                 </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                  <div>
+                    <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
+                    <p className="text-gray-700">{file.yearMaster?.name || file.year || "--"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
+                    <p className="text-gray-700">{file.version || "--"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
+                    <p className="text-gray-700 truncate" title={file.approvedBy || file.deletedBy}>
+                      {file.approvedBy || file.deletedBy || "--"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
+                    <p className="text-gray-700">{formatDate(file.approvedOn || file.deletedOn)}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
+                    <p className="text-gray-700 break-words">{file.rejectionReason || file.deletionReason || "--"}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex justify-between items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setOpeningFileIndex(index);
+                      setSelectedDocFiles(file);
+                      openFile(file).finally(() => setOpeningFileIndex(null));
+                    }}
+                    disabled={openingFileIndex !== null}
+                    className={`flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                      ${openingFileIndex === index ?
+                        "bg-indigo-400 cursor-not-allowed" :
+                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                  >
+                    {openingFileIndex === index ? (
+                      <>
+                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                        <AutoTranslate>Opening...</AutoTranslate>
+                      </>
+                    ) : (
+                      <>
+                        <EyeIcon className="h-3 w-3" />
+                        <AutoTranslate>View File</AutoTranslate>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => handleRestoreFile(file)}
+                    className="p-1.5 rounded-full bg-green-100 hover:bg-green-200 transition-colors duration-200 flex-shrink-0"
+                    title="Restore File"
+                  >
+                    <ArrowUturnLeftIcon className="h-5 w-5 text-green-700" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  ) : (
+    <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
+      <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+      <p className="text-gray-500">
+        <AutoTranslate>No deleted files found</AutoTranslate>
+      </p>
+      {searchFileTerm && (
+        <p className="text-sm text-gray-400 mt-1">
+          <AutoTranslate>Try adjusting your search term</AutoTranslate>
+        </p>
+      )}
+    </div>
+  )}
+</div>
               </div>
             </div>
 

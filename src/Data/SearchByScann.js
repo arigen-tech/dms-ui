@@ -898,175 +898,176 @@ const SearchByScan = () => {
           </div>
 
           {/* Attached Files Section */}
-          <div className="mt-8">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">
-                <AutoTranslate>Attached Files</AutoTranslate>
-              </h3>
-              <div className="relative w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search files..."
-                  value={searchFileTerm}
-                  onChange={(e) => setSearchFileTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                {searchFileTerm && (
-                  <button
-                    onClick={() => setSearchFileTerm("")}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+<div className="mt-8">
+  <div className="flex justify-between items-center mb-4">
+    <h3 className="text-lg font-semibold text-gray-800">
+      <AutoTranslate>Attached Files</AutoTranslate>
+    </h3>
+    <div className="relative w-64">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <FiSearch className="text-gray-400" />
+      </div>
+      <input
+        type="text"
+        placeholder="Search files..."
+        value={searchFileTerm}
+        onChange={(e) => setSearchFileTerm(e.target.value)}
+        className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+      {searchFileTerm && (
+        <button
+          onClick={() => setSearchFileTerm("")}
+          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+        >
+          <FiX className="text-gray-400 hover:text-gray-600" />
+        </button>
+      )}
+    </div>
+  </div>
+
+  {filteredDocFiles?.length > 0 ? (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-indigo-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-16">
+                <AutoTranslate>S.N.</AutoTranslate>
+              </th>
+
+              <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider min-w-[200px]">
+                <AutoTranslate>Document Name</AutoTranslate>
+              </th>
+
+              <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-24">
+                <AutoTranslate>Year</AutoTranslate>
+              </th>
+
+              <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-24">
+                <AutoTranslate>Version</AutoTranslate>
+              </th>
+
+              {showAppro && (
+                <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider min-w-[150px]">
+                  <AutoTranslate>Approved By</AutoTranslate>
+                </th>
+              )}
+
+              {showRejInfo && (
+                <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider min-w-[150px]">
+                  <AutoTranslate>Rejected By</AutoTranslate>
+                </th>
+              )}
+
+              {showRejectionReason && (
+                <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider min-w-[200px]">
+                  <AutoTranslate>Rejection Reason</AutoTranslate>
+                </th>
+              )}
+
+              <th className="px-4 py-3 text-center text-xs font-medium text-indigo-700 uppercase tracking-wider w-40">
+                <AutoTranslate>Actions</AutoTranslate>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredDocFiles.map((file, index) => {
+              const displayName = file.docName?.includes("_")
+                ? file.docName.split("_").slice(1).join("_")
+                : file.docName;
+
+              return (
+                <tr key={file.id || index} className="hover:bg-gray-50 transition-colors duration-150">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {index + 1}
+                  </td>
+
+                  <td
+                    className="px-4 py-4 text-sm text-gray-800 max-w-xs truncate"
+                    title={displayName}
                   >
-                    <FiX className="text-gray-400 hover:text-gray-600" />
-                  </button>
-                )}
-              </div>
-            </div>
+                    {displayName}
+                  </td>
 
-            {filteredDocFiles?.length > 0 ? (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto bg-indigo-50">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                          <AutoTranslate>S.N.</AutoTranslate>
-                        </th>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {file.yearMaster?.name || file.year || "N/A"}
+                  </td>
 
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                          <AutoTranslate>Document Name</AutoTranslate>
-                        </th>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {file.version || "N/A"}
+                  </td>
 
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                          <AutoTranslate>Year</AutoTranslate>
-                        </th>
+                  {showAppro && (
+                    <td
+                      className="px-4 py-4 text-sm text-gray-800 max-w-xs truncate"
+                      title={file?.approvedBy}
+                    >
+                      {file?.approvedBy || "N/A"}
+                    </td>
+                  )}
 
-                        <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                          <AutoTranslate>Version</AutoTranslate>
-                        </th>
+                  {showRejInfo && (
+                    <td
+                      className="px-4 py-4 text-sm text-gray-800 max-w-xs truncate"
+                      title={file?.rejectedBy}
+                    >
+                      {file?.rejectedBy || "N/A"}
+                    </td>
+                  )}
 
-                        {showAppro && (
-                          <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                            <AutoTranslate>Approved By</AutoTranslate>
-                          </th>
+                  {showRejectionReason && (
+                    <td
+                      className="px-4 py-4 text-sm text-gray-800 max-w-xs truncate"
+                      title={file?.rejectionReason}
+                    >
+                      {file?.rejectionReason || "N/A"}
+                    </td>
+                  )}
+
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex justify-center items-center gap-2">
+                      <button
+                        onClick={() => openFile(file)}
+                        disabled={isOpeningFile}
+                        className={`inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white transition-colors duration-200 ${
+                          isOpeningFile
+                            ? "bg-indigo-300 cursor-not-allowed"
+                            : "bg-indigo-600 hover:bg-indigo-700"
+                        }`}
+                      >
+                        <FiEye className="mr-1 h-3 w-3" />
+                        {isOpeningFile ? (
+                          <AutoTranslate>Opening...</AutoTranslate>
+                        ) : (
+                          <AutoTranslate>View</AutoTranslate>
                         )}
+                      </button>
 
-                        {showRejInfo && (
-                          <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                            <AutoTranslate>Rejected By</AutoTranslate>
-                          </th>
-                        )}
-
-                        {showRejectionReason && (
-                          <th className="px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase">
-                            <AutoTranslate>Rejection Reason</AutoTranslate>
-                          </th>
-                        )}
-
-                        <th className="px-6 py-3 text-center text-xs font-medium text-indigo-700 uppercase">
-                          <AutoTranslate>Actions</AutoTranslate>
-                        </th>
-                      </tr>
-                    </thead>
-
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredDocFiles.map((file, index) => {
-                        const displayName = file.docName?.includes("_")
-                          ? file.docName.split("_").slice(1).join("_")
-                          : file.docName;
-
-                        return (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {index + 1}
-                            </td>
-
-                            <td
-                              className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate"
-                              title={displayName}
-                            >
-                              {displayName}
-                            </td>
-
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {file.yearMaster?.name || "N/A"}
-                            </td>
-
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {file.version}
-                            </td>
-
-                            {showAppro && (
-                              <td
-                                className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate"
-                                title={file?.approvedBy}
-                              >
-                                {file?.approvedBy || "N/A"}
-                              </td>
-                            )}
-
-                            {showRejInfo && (
-                              <td
-                                className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate"
-                                title={file?.rejectedBy}
-                              >
-                                {file?.rejectedBy || "N/A"}
-                              </td>
-                            )}
-
-                            {showRejectionReason && (
-                              <td
-                                className="px-6 py-4 text-sm text-gray-800 max-w-xs truncate"
-                                title={file?.rejectionReason}
-                              >
-                                {file?.rejectionReason || "N/A"}
-                              </td>
-                            )}
-
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex justify-end space-x-2 flex-nowrap">
-                                <button
-                                  onClick={() => openFile(file)}
-                                  disabled={isOpeningFile}
-                                  className={`inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${isOpeningFile
-                                    ? "bg-indigo-300 cursor-not-allowed"
-                                    : "bg-indigo-600 hover:bg-indigo-700"
-                                    }`}
-                                >
-                                  <FiEye className="mr-1" />
-                                  {isOpeningFile ? (
-                                    <AutoTranslate>Opening...</AutoTranslate>
-                                  ) : (
-                                    <AutoTranslate>View</AutoTranslate>
-                                  )}
-                                </button>
-
-                                <button
-                                  onClick={() => handleDownload(file, 'download')}
-                                  className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                >
-                                  <FiDownload className="mr-1" />
-                                  <AutoTranslate>Download</AutoTranslate>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">
-                  <AutoTranslate>No attached files available</AutoTranslate>
-                </p>
-              </div>
-            )}
-          </div>
+                      <button
+                        onClick={() => handleDownload(file, 'download')}
+                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <FiDownload className="mr-1 h-3 w-3" />
+                        <AutoTranslate>Download</AutoTranslate>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ) : (
+    <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+      <p className="text-gray-500">
+        <AutoTranslate>No attached files available</AutoTranslate>
+      </p>
+    </div>
+  )}
+</div>
         </div>
       )}
 

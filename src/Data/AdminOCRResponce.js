@@ -178,9 +178,9 @@ const AdminOCRResponse = () => {
     console.log("🔙 handleback called");
     const role = localStorage.getItem("role");
     
-    if (role === "SYSTEM_ADMIN") {
+    if (role === "ADMIN") {
       navigate("/adminOcr");
-    } else if (role === "BRANCH_ADMIN") {
+    } else if (role === "BRANCH ADMIN") {
       navigate("/brAdminOcr");
     } else {
       navigate("/searchOcr");
@@ -415,7 +415,7 @@ const fetchQRCode = async (documentId) => {
                   <th className="border p-2 text-left">Title</th>
                   <th className="border p-2 text-left">File No</th>
                   <th className="border p-2 text-left">Subject</th>
-                  <th className="border p-2 text-left">Year</th>
+                  {/* <th className="border p-2 text-left">Year</th> */}
                   <th className="border p-2 text-left">Category</th>
                   <th className="border p-2 text-left">Branch</th>
                   <th className="border p-2 text-left">Department</th>
@@ -430,7 +430,7 @@ const fetchQRCode = async (documentId) => {
                     <td className="border p-2">{doc.data?.title || "N/A"}</td>
                     <td className="border p-2">{doc.data?.fileNo || "N/A"}</td>
                     <td className="border p-2">{doc.data?.subject || "N/A"}</td>
-                    <td className="border p-2">{doc.data?.yearMaster?.name || "N/A"}</td>
+                    {/* <td className="border p-2">{doc.data?.yearMaster?.name || "N/A"}</td> */}
                     <td className="border p-2">{doc.data?.categoryMaster?.name || "N/A"}</td>
                     <td className="border p-2">{doc.data?.employee?.branch?.name || ""}</td>
                     <td className="border p-2">{doc.data?.employee?.department?.name || ""}</td>

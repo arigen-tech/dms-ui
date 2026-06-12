@@ -2307,188 +2307,199 @@ const DocumentManagement = ({ fieldsDisabled }) => {
                       </div>
                     </div>
 
-                    {/* Attached Files Section */}
-                    <div className="mt-8">
-                      <div className="attachedWp relative">
-                        <h2 className="mb-0">
-                          <AutoTranslate>Attached Files</AutoTranslate>
-                        </h2>
-                        <div className="form-group">
-                          <input
-                            type="text"
-                            placeholder={getFallbackTranslation(
-                              'Search files...',
-                              currentLanguage
-                            )}
-                            value={searchFileTerm}
-                            onChange={(e) => setSearchFileTerm(e.target.value)}
-                            className="searchIcon"
-                          />
-                        </div>
-                      </div>
+                 {/* Attached Files Section */}
+<div className="mt-8">
+  <div className="attachedWp relative">
+    <h2 className="mb-0">
+      <AutoTranslate>Attached Files</AutoTranslate>
+    </h2>
+    <div className="form-group">
+      <input
+        type="text"
+        placeholder={getFallbackTranslation(
+          'Search files...',
+          currentLanguage
+        )}
+        value={searchFileTerm}
+        onChange={(e) => setSearchFileTerm(e.target.value)}
+        className="searchIcon"
+      />
+    </div>
+  </div>
 
-                      {loadingFiles ? (
-                        <div className="flex justify-center items-center py-12">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                          <span className="ml-3 text-gray-600">
-                            <AutoTranslate>Loading files...</AutoTranslate>
-                          </span>
-                        </div>
-                      ) : selectedDoc && filteredDocFiles.length > 0 ? (
-                        <div className="border border-gray-200 rounded-lg overflow-hidden">
-                          {/* Table Header - Hidden on mobile */}
-                          <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
-                            <span className="text-left"><AutoTranslate>File Name</AutoTranslate></span>
-                            <span className="text-center"><AutoTranslate>Year</AutoTranslate></span>
-                            <span className="text-center"><AutoTranslate>Version</AutoTranslate></span>
-                            <span className="text-center"><AutoTranslate>Status</AutoTranslate></span>
-                            <span className="text-center"><AutoTranslate>Action By</AutoTranslate></span>
-                            <span className="text-center"><AutoTranslate>Action Date</AutoTranslate></span>
-                            <span className="text-center"><AutoTranslate>Reason</AutoTranslate></span>
-                            <span className="text-center no-print"><AutoTranslate>View</AutoTranslate></span>
-                          </div>
+  {loadingFiles ? (
+    <div className="flex justify-center items-center py-12">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <span className="ml-3 text-gray-600">
+        <AutoTranslate>Loading files...</AutoTranslate>
+      </span>
+    </div>
+  ) : selectedDoc && filteredDocFiles.length > 0 ? (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      {/* Table Header - Hidden on mobile */}
+      <div 
+        className="hidden md:grid bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3" 
+        style={{ 
+          gridTemplateColumns: "minmax(200px, 3fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr) minmax(100px, 0.8fr) minmax(130px, 1.2fr) minmax(110px, 1fr) minmax(150px, 1.2fr) minmax(80px, 0.8fr)" 
+        }}
+      >
+        <span className="text-left"><AutoTranslate>File Name</AutoTranslate></span>
+        <span className="text-center"><AutoTranslate>Year</AutoTranslate></span>
+        <span className="text-center"><AutoTranslate>Version</AutoTranslate></span>
+        <span className="text-center"><AutoTranslate>Status</AutoTranslate></span>
+        <span className="text-center"><AutoTranslate>Action By</AutoTranslate></span>
+        <span className="text-center"><AutoTranslate>Action Date</AutoTranslate></span>
+        <span className="text-center"><AutoTranslate>Reason</AutoTranslate></span>
+        <span className="text-center no-print"><AutoTranslate>View</AutoTranslate></span>
+      </div>
 
-                          {/* File List */}
-                          <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                            {filteredDocFiles.map((file, index) => (
-                              <div key={index} className="hover:bg-gray-50 transition-colors duration-150">
-                                {/* Desktop View */}
-                                <div className="hidden md:grid grid-cols-[35fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] items-center px-6 py-4 text-sm">
-                                  <div className="text-left text-gray-800 break-words">
-                                    <strong>{index + 1}.</strong> {file.docName}
-                                  </div>
-                                  <div className="text-center text-gray-700">{file.year}</div>
-                                  <div className="text-center text-gray-700">{file.version}</div>
-                                  <div className="text-center">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                        file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                          "bg-yellow-100 text-yellow-800"}`}
-                                    >
-                                      {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                    </span>
-                                  </div>
-                                  <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
-                                  <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
-                                  <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
-                                  <div className="flex justify-center no-print">
-                                    <button
-                                      onClick={() => {
-                                        setOpeningFileIndex(index);
-                                        setSelectedDocFiles(file);
-                                        openFile(file).finally(() => setOpeningFileIndex(null));
-                                      }}
-                                      disabled={openingFileIndex !== null}
-                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-      ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                    >
-                                      {openingFileIndex === index ? (
-                                        <>
-                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                          <AutoTranslate>
-                                            {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-                                          </AutoTranslate>
-                                        </>
-                                      ) : (
-                                        <>
-                                          {file.ltoArchived && !file.restored ? (
-                                            <ArrowPathIcon className="h-3 w-3" />
-                                          ) : (
-                                            <EyeIcon className="h-3 w-3" />
-                                          )}
-                                          <AutoTranslate>
-                                            {file.ltoArchived && !file.restored ? "Restore" : "View"}
-
-                                          </AutoTranslate>
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Mobile View */}
-                                <div className="md:hidden p-4">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <div className="text-left text-gray-800 break-words flex-1">
-                                      <strong>{index + 1}.</strong> {file.docName}
-                                    </div>
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
-                          ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                        file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                          "bg-yellow-100 text-yellow-800"}`}
-                                    >
-                                      {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                    </span>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-2 text-sm mt-3">
-                                    <div>
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
-                                      <p className="text-gray-700">{file.year}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
-                                      <p className="text-gray-700">{file.version}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
-                                      <p className="text-gray-700">{file.approvedBy || "--"}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
-                                      <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
-                                    </div>
-                                    <div className="col-span-2">
-                                      <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
-                                      <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-3 flex justify-end">
-                                    <button
-                                      onClick={() => {
-                                        setOpeningFileIndex(index);
-                                        setSelectedDocFiles(file);
-                                        openFile(file).finally(() => setOpeningFileIndex(null));
-                                      }}
-                                      disabled={openingFileIndex !== null}
-                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                            ${openingFileIndex === index ?
-                                          "bg-indigo-400 cursor-not-allowed" :
-                                          "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                    >
-                                      {openingFileIndex === index ? (
-                                        <>
-                                          <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                          <AutoTranslate>Opening...</AutoTranslate>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <EyeIcon className="h-3 w-3" />
-                                          <AutoTranslate>View File</AutoTranslate>
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+      {/* File List */}
+      <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+        {filteredDocFiles.map((file, index) => (
+          <div key={index} className="hover:bg-gray-50 transition-colors duration-150">
+            {/* Desktop View - Same column widths as header */}
+            <div 
+              className="hidden md:grid items-center px-6 py-4 text-sm" 
+              style={{ 
+                gridTemplateColumns: "minmax(200px, 3fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr) minmax(100px, 0.8fr) minmax(130px, 1.2fr) minmax(110px, 1fr) minmax(150px, 1.2fr) minmax(80px, 0.8fr)" 
+              }}
+            >
+              <div className="text-left text-gray-800 break-words">
+                <strong>{index + 1}.</strong> {file.docName}
+              </div>
+              <div className="text-center text-gray-700">{file.year}</div>
+              <div className="text-center text-gray-700">{file.version}</div>
+              <div className="text-center">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                  ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                    file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                    "bg-yellow-100 text-yellow-800"}`}
+                >
+                  {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                </span>
+              </div>
+              <div className="text-center text-gray-700 truncate" title={file.approvedBy}>
+                {file.approvedBy || "--"}
+              </div>
+              <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
+              <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
+              <div className="flex justify-center no-print">
+                <button
+                  onClick={() => {
+                    setOpeningFileIndex(index);
+                    setSelectedDocFiles(file);
+                    openFile(file).finally(() => setOpeningFileIndex(null));
+                  }}
+                  disabled={openingFileIndex !== null}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                    ${openingFileIndex === index ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                >
+                  {openingFileIndex === index ? (
+                    <>
+                      <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                      <AutoTranslate>
+                        {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                      </AutoTranslate>
+                    </>
+                  ) : (
+                    <>
+                      {file.ltoArchived && !file.restored ? (
+                        <ArrowPathIcon className="h-3 w-3" />
                       ) : (
-                        <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
-                          <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                          <p className="text-gray-500">
-                            <AutoTranslate>No attached files found</AutoTranslate>
-                          </p>
-                          {searchFileTerm && (
-                            <p className="text-sm text-gray-400 mt-1">
-                              <AutoTranslate>Try adjusting your search term</AutoTranslate>
-                            </p>
-                          )}
-                        </div>
+                        <EyeIcon className="h-3 w-3" />
                       )}
-                    </div>
+                      <AutoTranslate>
+                        {file.ltoArchived && !file.restored ? "Restore" : "View"}
+                      </AutoTranslate>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div className="text-left text-gray-800 break-words flex-1">
+                  <strong>{index + 1}.</strong> {file.docName}
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
+                  ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                    file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                    "bg-yellow-100 text-yellow-800"}`}
+                >
+                  {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                <div>
+                  <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
+                  <p className="text-gray-700">{file.year}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
+                  <p className="text-gray-700">{file.version}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
+                  <p className="text-gray-700 truncate" title={file.approvedBy}>{file.approvedBy || "--"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
+                  <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
+                  <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => {
+                    setOpeningFileIndex(index);
+                    setSelectedDocFiles(file);
+                    openFile(file).finally(() => setOpeningFileIndex(null));
+                  }}
+                  disabled={openingFileIndex !== null}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
+                    ${openingFileIndex === index ?
+                      "bg-indigo-400 cursor-not-allowed" :
+                      "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                >
+                  {openingFileIndex === index ? (
+                    <>
+                      <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                      <AutoTranslate>Opening...</AutoTranslate>
+                    </>
+                  ) : (
+                    <>
+                      <EyeIcon className="h-3 w-3" />
+                      <AutoTranslate>View File</AutoTranslate>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : (
+    <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
+      <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+      <p className="text-gray-500">
+        <AutoTranslate>No attached files found</AutoTranslate>
+      </p>
+      {searchFileTerm && (
+        <p className="text-sm text-gray-400 mt-1">
+          <AutoTranslate>Try adjusting your search term</AutoTranslate>
+        </p>
+      )}
+    </div>
+  )}
+</div>
                   </div>
                 </div>
               </div>

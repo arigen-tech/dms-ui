@@ -456,7 +456,7 @@ const ArchiveDashboardP5 = () => {
         <Layout>
             <div className="px-2-">
                 <div className="title">
-                    <h1><AutoTranslate>ARCHIVAL DASHBOARD P5</AutoTranslate></h1>
+                    <h1><AutoTranslate>ARCHIVAL DASHBOARD</AutoTranslate></h1>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">

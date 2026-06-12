@@ -1852,359 +1852,346 @@ const ApprovedDoc = () => {
                   </div>
                 </div>
 
-                {/* Attached Files Section */}
-                <div className="border-t border-gray-200 pt-6">
-                  <div className="attachedWp relative">
-                    <h2 className="mb-0">
-                      <AutoTranslate>Attached Files</AutoTranslate>
-                      <span className="text-sm font-normal text-gray-600">
-                        ({selectedFiles.length} selected for trash, {selectedFileIds.length} selected for sharing)
-                      </span>
-                    </h2>
-                    <div className="flex items-center gap-4">
-                      <div className="form-group">
-                        <input
-                          type="text"
-                          placeholder="Search files..."
-                          value={searchFileTerm}
-                          onChange={(e) => setSearchFileTerm(e.target.value)}
-                          className="searchIcon"
-                        />
-                      </div>
+               {/* Attached Files Section */}
+<div className="border-t border-gray-200 pt-6">
+  <div className="attachedWp relative">
+    <h2 className="mb-0">
+      <AutoTranslate>Attached Files</AutoTranslate>
+      <span className="text-sm font-normal text-gray-600">
+        ({selectedFiles.length} selected for trash)
+      </span>
+    </h2>
+    <div className="flex items-center gap-4">
+      <div className="form-group">
+        <input
+          type="text"
+          placeholder="Search files..."
+          value={searchFileTerm}
+          onChange={(e) => setSearchFileTerm(e.target.value)}
+          className="searchIcon"
+        />
+      </div>
 
-                      {/* Share Button - Moved here between search and trash */}
-                      <button
-                        onClick={() => handleShareDocument(selectedDoc)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
-                        title="Share document"
-                      >
-                        <ShareIcon className="h-4 w-4" />
-                        <AutoTranslate>Share ({selectedFileIds.length} files)</AutoTranslate>
-                      </button>
+      {/* Share Button */}
+      <button
+        onClick={() => handleShareDocument(selectedDoc)}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+        title="Share document"
+      >
+        <ShareIcon className="h-4 w-4" />
+        <AutoTranslate>Share</AutoTranslate>
+      </button>
 
-                      {/* View Shares Button */}
-                      {documentsWithShares.has(selectedDoc.id) && (
-                        <button
-                          onClick={() => handleViewShares(selectedDoc)}
-                          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
-                          title="View shared access"
-                        >
-                          <UserGroupIcon className="h-4 w-4" />
-                          <AutoTranslate>View Shares ({documentShares[selectedDoc.id]?.length || 0})</AutoTranslate>
-                        </button>
-                      )}
+      {/* View Shares Button */}
+      {documentsWithShares.has(selectedDoc.id) && (
+        <button
+          onClick={() => handleViewShares(selectedDoc)}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+          title="View shared access"
+        >
+          <UserGroupIcon className="h-4 w-4" />
+          <AutoTranslate>View Shares ({documentShares[selectedDoc.id]?.length || 0})</AutoTranslate>
+        </button>
+      )}
 
-                      {selectedFiles.length > 0 && (
-                        <button
-                          onClick={handleBulkFileDelete}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                          <span><AutoTranslate>Move to Trash ({selectedFiles.length})</AutoTranslate></span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+      {selectedFiles.length > 0 && (
+        <button
+          onClick={handleBulkFileDelete}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 whitespace-nowrap"
+        >
+          <TrashIcon className="h-4 w-4" />
+          <span><AutoTranslate>Move to Trash ({selectedFiles.length})</AutoTranslate></span>
+        </button>
+      )}
+    </div>
+  </div>
 
-                  {loadingFiles ? (
-                    <div className="flex justify-center items-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                      <span className="ml-3 text-gray-600">
-                        <AutoTranslate>Loading files...</AutoTranslate>
-                      </span>
-                    </div>
-                  ) : selectedDoc && filteredDocFiles.length > 0 ? (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      {/* Desktop View Table Header - Added Checkbox columns */}
-                      <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3 gap-2">
-                        <span className="text-left">
-                          <input
-                            type="checkbox"
-                            checked={selectAllFilesChecked}
-                            onChange={handleSelectAllFiles}
-                            className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                            title="Select all APPROVED files for trash"
-                          />
-                        </span>
-                        <span className="text-left">
-                          <input
-                            type="checkbox"
-                            checked={selectedFileIds.length === getApprovedFileIds(selectedDoc).length}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedFileIds(getApprovedFileIds(selectedDoc));
-                              } else {
-                                setSelectedFileIds([]);
-                              }
-                            }}
-                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                            title="Select all APPROVED files for sharing"
-                          />
-                        </span>
-                        <span className="text-left">
-                          <AutoTranslate>File Name</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Year</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Version</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Status</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Action By</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Action Date</AutoTranslate>
-                        </span>
-                        <span className="text-center">
-                          <AutoTranslate>Reason</AutoTranslate>
-                        </span>
-                        <span className="text-center no-print">
-                          <AutoTranslate>View</AutoTranslate>
-                        </span>
-                        <span className="text-center no-print">
-                          <AutoTranslate>Action</AutoTranslate>
-                        </span>
-                      </div>
+  {loadingFiles ? (
+    <div className="flex justify-center items-center py-12">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <span className="ml-3 text-gray-600">
+        <AutoTranslate>Loading files...</AutoTranslate>
+      </span>
+    </div>
+  ) : selectedDoc && filteredDocFiles.length > 0 ? (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      {/* Desktop View Table Header - Single Checkbox */}
+      <div 
+        className="hidden md:grid bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3 border-b border-gray-200"
+        style={{ 
+          gridTemplateColumns: "40px minmax(200px, 2.5fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr) minmax(100px, 0.8fr) minmax(130px, 1.2fr) minmax(110px, 1fr) minmax(150px, 1.2fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr)" 
+        }}
+      >
+        {/* Single Checkbox Column for Trash */}
+        <div className="text-left">
+          <input
+            type="checkbox"
+            checked={selectAllFilesChecked}
+            onChange={handleSelectAllFiles}
+            className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+            title="Select all APPROVED files for trash"
+          />
+        </div>
+        
+        <span className="text-left">
+          <AutoTranslate>File Name</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Year</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Version</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Status</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Action By</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Action Date</AutoTranslate>
+        </span>
+        <span className="text-center">
+          <AutoTranslate>Reason</AutoTranslate>
+        </span>
+        <span className="text-center no-print">
+          <AutoTranslate>View</AutoTranslate>
+        </span>
+        <span className="text-center no-print">
+          <AutoTranslate>Action</AutoTranslate>
+        </span>
+      </div>
 
-                      <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                        {filteredDocFiles.map((file, index) => {
-                          const isSelectedForTrash = selectedFiles.some(f => f.id === file.id);
-                          const isSelectedForShare = selectedFileIds.includes(file.id);
-                          const canDelete = file.status === "APPROVED";
-                          const canShare = file.status === "APPROVED" && !file.isDeleted;
+      {/* File List */}
+      <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+        {filteredDocFiles.map((file, index) => {
+          const isSelectedForTrash = selectedFiles.some(f => f.id === file.id);
+          const canDelete = file.status === "APPROVED";
 
-                          return (
-                            <div key={index} className={`hover:bg-gray-50 transition-colors duration-150 ${isSelectedForTrash ? 'bg-blue-50' : ''}`}>
-                              {/* Desktop View */}
-                              <div className="hidden md:grid grid-cols-[15fr_25fr_25fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr_10fr] items-center px-6 py-4 text-sm gap-2">
-                                <div className="text-left">
-                                  {canDelete ? (
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelectedForTrash}
-                                      onChange={() => handleSelectFile(file)}
-                                      className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                    />
-                                  ) : (
-                                    <span className="text-gray-400">-</span>
-                                  )}
-                                </div>
-                                <div className="text-left">
-                                  {canShare ? (
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelectedForShare}
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          setSelectedFileIds(prev => [...prev, file.id]);
-                                        } else {
-                                          setSelectedFileIds(prev => prev.filter(id => id !== file.id));
-                                        }
-                                      }}
-                                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                                    />
-                                  ) : (
-                                    <span className="text-gray-400">-</span>
-                                  )}
-                                </div>
-                                <div className="text-left text-gray-800 break-words flex items-center">
-                                  <strong>{index + 1}.</strong> {file.docName}
-                                </div>
-                                <div className="text-center text-gray-700">{file.yearMaster?.name || "--"}</div>
-                                <div className="text-center text-gray-700">{file.version}</div>
-                                <div className="text-center">
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                        "bg-yellow-100 text-yellow-800"}`}
-                                  >
-                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                  </span>
-                                </div>
-                                <div className="text-center text-gray-700">{file.approvedBy || "--"}</div>
-                                <div className="text-center text-gray-700">{formatDate(file.approvedOn)}</div>
-                                <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
-                                <div className="flex justify-center no-print">
-                                  <button
-                                    onClick={() => {
-                                      setOpeningFileIndex(index);
-                                      setSelectedDocFiles(file);
-                                      openFile(file).finally(() => setOpeningFileIndex(null));
-                                    }}
-                                    disabled={openingFileIndex !== null}
-                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                          ${openingFileIndex === index ?
-                                        "bg-indigo-400 cursor-not-allowed" :
-                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                  >
-                                    {openingFileIndex === index ? (
-                                      <>
-                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                        <AutoTranslate>
-                                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-                                        </AutoTranslate>
-                                      </>
-                                    ) : (
-                                      <>
-                                        {file.ltoArchived && !file.restored ? (
-                                          <ArrowPathIcon className="h-3 w-3" />
-                                        ) : (
-                                          <EyeIcon className="h-3 w-3" />
-                                        )}
-                                        <AutoTranslate>
-                                          {file.ltoArchived && !file.restored ? "Restore" : "View"}
-                                        </AutoTranslate>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                                <div className="flex justify-center no-print">
-                                  {canDelete && (
-                                    <button
-                                      onClick={() => handleDeleteFile(file)}
-                                      className="ml-2 p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
-                                      title="Move to Trash"
-                                    >
-                                      <TrashIcon className="h-5 w-5" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Mobile View */}
-                              <div className="md:hidden p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                  <div className="flex items-center">
-                                    <div className="flex items-center mr-2">
-                                      {canDelete && (
-                                        <input
-                                          type="checkbox"
-                                          checked={isSelectedForTrash}
-                                          onChange={() => handleSelectFile(file)}
-                                          className="h-4 w-4 mr-1 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                        />
-                                      )}
-                                      {canShare && (
-                                        <input
-                                          type="checkbox"
-                                          checked={isSelectedForShare}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setSelectedFileIds(prev => [...prev, file.id]);
-                                            } else {
-                                              setSelectedFileIds(prev => prev.filter(id => id !== file.id));
-                                            }
-                                          }}
-                                          className="h-4 w-4 mr-1 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                                        />
-                                      )}
-                                    </div>
-                                    <div className="text-left text-gray-800 break-words flex-1">
-                                      <strong>{index + 1}.</strong> {file.docName}
-                                    </div>
-                                  </div>
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2
-                        ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                        "bg-yellow-100 text-yellow-800"}`}
-                                  >
-                                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
-                                  </span>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 text-sm mt-3">
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.yearMaster?.name || "--"}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.version}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
-                                    <p className="text-gray-700">{file.approvedBy || "--"}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
-                                    <p className="text-gray-700">{formatDate(file.approvedOn)}</p>
-                                  </div>
-                                  <div className="col-span-2">
-                                    <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
-                                    <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
-                                  </div>
-                                </div>
-
-                                <div className="mt-3 flex justify-between items-center">
-                                  <button
-                                    onClick={() => {
-                                      setOpeningFileIndex(index);
-                                      setSelectedDocFiles(file);
-                                      openFile(file).finally(() => setOpeningFileIndex(null));
-                                    }}
-                                    disabled={openingFileIndex !== null}
-                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200
-                          ${openingFileIndex === index ?
-                                        "bg-indigo-400 cursor-not-allowed" :
-                                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
-                                  >
-                                    {openingFileIndex === index ? (
-                                      <>
-                                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                        <AutoTranslate>
-                                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
-                                        </AutoTranslate>
-                                      </>
-                                    ) : (
-                                      <>
-                                        {file.ltoArchived && !file.restored ? (
-                                          <ArrowPathIcon className="h-3 w-3" />
-                                        ) : (
-                                          <EyeIcon className="h-3 w-3" />
-                                        )}
-                                        <AutoTranslate>
-                                          {file.ltoArchived && !file.restored ? "Restore" : "View File"}
-                                        </AutoTranslate>
-                                      </>
-                                    )}
-                                  </button>
-
-                                  <div className="flex gap-2">
-                                    {canDelete && (
-                                      <button
-                                        onClick={() => handleDeleteFile(file)}
-                                        className="p-1.5 rounded-full bg-red-100 hover:bg-red-200"
-                                        title="Move to Trash"
-                                      >
-                                        <TrashIcon className="h-5 w-5 text-red-700" />
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+          return (
+            <div key={file.id || index} className={`hover:bg-gray-50 transition-colors duration-150 ${isSelectedForTrash ? 'bg-blue-50' : ''}`}>
+              {/* Desktop View */}
+              <div 
+                className="hidden md:grid items-center px-6 py-4 text-sm"
+                style={{ 
+                  gridTemplateColumns: "40px minmax(200px, 2.5fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr) minmax(100px, 0.8fr) minmax(130px, 1.2fr) minmax(110px, 1fr) minmax(150px, 1.2fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr)" 
+                }}
+              >
+                {/* Single Checkbox for Trash */}
+                <div className="text-left">
+                  {canDelete ? (
+                    <input
+                      type="checkbox"
+                      checked={isSelectedForTrash}
+                      onChange={() => handleSelectFile(file)}
+                      className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                    />
                   ) : (
-                    <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
-                      <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                      <p className="text-gray-500">
-                        <AutoTranslate>No attached files found</AutoTranslate>
-                      </p>
-                      {searchFileTerm && (
-                        <p className="text-sm text-gray-400 mt-1">
-                          <AutoTranslate>Try adjusting your search term</AutoTranslate>
-                        </p>
-                      )}
-                    </div>
+                    <span className="text-gray-300">—</span>
                   )}
                 </div>
+                
+                {/* File Name */}
+                <div className="text-left text-gray-800 break-words">
+                  <strong>{index + 1}.</strong> {file.docName}
+                </div>
+                
+                {/* Year */}
+                <div className="text-center text-gray-700">{file.yearMaster?.name || file.year || "--"}</div>
+                
+                {/* Version */}
+                <div className="text-center text-gray-700">{file.version || "--"}</div>
+                
+                {/* Status */}
+                <div className="text-center">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap
+                    ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                      "bg-yellow-100 text-yellow-800"}`}
+                  >
+                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                  </span>
+                </div>
+                
+                {/* Action By */}
+                <div className="text-center text-gray-700 truncate" title={file.approvedBy || file.updetedBy}>
+                  {file.approvedBy || file.updetedBy || "--"}
+                </div>
+                
+                {/* Action Date */}
+                <div className="text-center text-gray-700">{formatDate(file.approvedOn || file.updatedOn)}</div>
+                
+                {/* Reason */}
+                <div className="text-center text-gray-700 break-words">{file.rejectionReason || "--"}</div>
+                
+                {/* View Button */}
+                <div className="flex justify-center no-print">
+                  <button
+                    onClick={() => {
+                      setOpeningFileIndex(index);
+                      setSelectedDocFiles(file);
+                      openFile(file).finally(() => setOpeningFileIndex(null));
+                    }}
+                    disabled={openingFileIndex !== null}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 whitespace-nowrap
+                      ${openingFileIndex === index ?
+                        "bg-indigo-400 cursor-not-allowed" :
+                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                  >
+                    {openingFileIndex === index ? (
+                      <>
+                        <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                        <AutoTranslate>
+                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                        </AutoTranslate>
+                      </>
+                    ) : (
+                      <>
+                        {file.ltoArchived && !file.restored ? (
+                          <ArrowPathIcon className="h-3 w-3" />
+                        ) : (
+                          <EyeIcon className="h-3 w-3" />
+                        )}
+                        <AutoTranslate>
+                          {file.ltoArchived && !file.restored ? "Restore" : "View"}
+                        </AutoTranslate>
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                {/* Action/Delete Button */}
+                <div className="flex justify-center no-print">
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDeleteFile(file)}
+                      className="p-1.5 rounded-full bg-red-100 hover:bg-red-200 transition-colors duration-200"
+                      title="Move to Trash"
+                    >
+                      <TrashIcon className="h-4 w-4 text-red-600" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1 min-w-0">
+                    {/* Single Checkbox for Mobile */}
+                    {canDelete && (
+                      <label className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+                        <input
+                          type="checkbox"
+                          checked={isSelectedForTrash}
+                          onChange={() => handleSelectFile(file)}
+                          className="h-4 w-4 text-indigo-600 rounded border-gray-300"
+                        />
+                        <span>Select for Trash</span>
+                      </label>
+                    )}
+                    <p className="text-gray-800 font-medium break-words">
+                      <strong>{index + 1}.</strong> {file.docName}
+                    </p>
+                  </div>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ml-2
+                    ${file.status === "APPROVED" ? "bg-green-100 text-green-800" :
+                      file.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                      "bg-yellow-100 text-yellow-800"}`}
+                  >
+                    {file.status || <AutoTranslate>PENDING</AutoTranslate>}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm mt-3">
+                  <div>
+                    <p className="text-xs text-gray-500"><AutoTranslate>Year</AutoTranslate></p>
+                    <p className="text-gray-700">{file.yearMaster?.name || file.year || "--"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500"><AutoTranslate>Version</AutoTranslate></p>
+                    <p className="text-gray-700">{file.version || "--"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500"><AutoTranslate>Action By</AutoTranslate></p>
+                    <p className="text-gray-700 truncate" title={file.approvedBy || file.updetedBy}>
+                      {file.approvedBy || file.updetedBy || "--"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500"><AutoTranslate>Action Date</AutoTranslate></p>
+                    <p className="text-gray-700">{formatDate(file.approvedOn || file.updatedOn)}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500"><AutoTranslate>Reason</AutoTranslate></p>
+                    <p className="text-gray-700 break-words">{file.rejectionReason || "--"}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-between items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setOpeningFileIndex(index);
+                      setSelectedDocFiles(file);
+                      openFile(file).finally(() => setOpeningFileIndex(null));
+                    }}
+                    disabled={openingFileIndex !== null}
+                    className={`flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200
+                      ${openingFileIndex === index ?
+                        "bg-indigo-400 cursor-not-allowed" :
+                        "bg-indigo-600 hover:bg-indigo-700"} text-white`}
+                  >
+                    {openingFileIndex === index ? (
+                      <>
+                        <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                        <AutoTranslate>
+                          {file.ltoArchived && !file.restored ? "Restoring..." : "Opening..."}
+                        </AutoTranslate>
+                      </>
+                    ) : (
+                      <>
+                        {file.ltoArchived && !file.restored ? (
+                          <ArrowPathIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeIcon className="h-4 w-4" />
+                        )}
+                        <AutoTranslate>
+                          {file.ltoArchived && !file.restored ? "Restore" : "View File"}
+                        </AutoTranslate>
+                      </>
+                    )}
+                  </button>
+
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDeleteFile(file)}
+                      className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition-colors duration-200"
+                      title="Move to Trash"
+                    >
+                      <TrashIcon className="h-5 w-5 text-red-600" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  ) : (
+    <div className="text-center py-12 border border-dashed border-gray-300 rounded-lg">
+      <DocumentIcon className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+      <p className="text-gray-500">
+        <AutoTranslate>No attached files found</AutoTranslate>
+      </p>
+      {searchFileTerm && (
+        <p className="text-sm text-gray-400 mt-1">
+          <AutoTranslate>Try adjusting your search term</AutoTranslate>
+        </p>
+      )}
+    </div>
+  )}
+</div>
 
               </div>
             </div>
