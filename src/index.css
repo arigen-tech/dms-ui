@@ -694,6 +694,7 @@ footer {
     & .gridItems {
         transition: all 0.2s ease-in-out;
         border-radius: 5px;
+        height: 100%;
 
         &:hover {
             -ms-transform: scale(1.03);
@@ -717,10 +718,11 @@ footer {
 
     & .card {
         border-radius: 5px;
-        padding: 10px 15px;
+        padding: 10px;
         display: grid;
         grid-template-columns: 1fr 110px;
         align-items: center;
+        height: 100%;
 
         &>div:first-child {
             border-right: solid 1px var(--border-color-15);
@@ -740,6 +742,7 @@ footer {
                 font-size: 16px;
                 color: var(--black-color-80);
                 font-weight: 600;
+                text-align: center;
             }
         }
 
@@ -789,7 +792,7 @@ footer {
         font-size: 16px;
         color: var(--black-color-80);
         font-weight: 600;
-        flex: 1;
+        white-space: nowrap;
     }
 
     & input {
