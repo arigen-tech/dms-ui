@@ -76,6 +76,9 @@ function Dashboard() {
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [isBranchLoading, setIsBranchLoading] = useState(false);
+
+  const [showYearPicker, setShowYearPicker] = useState(false);
+
   const [stats, setStats] = useState({
     branchUser: 0,
     totalUser: 0,
@@ -117,7 +120,7 @@ function Dashboard() {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+  const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
   const [employeesStatusData, setEmployeesStatusData] = useState([]);
   const [topTenFileType, setTopTenFileType] = useState([]);
 
@@ -128,6 +131,17 @@ function Dashboard() {
     fetchUserDetails();
     fetchEmployeesStatus();
     fetchTopTenFileType();
+  }, []);
+
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.dateInput')) {
+        setShowYearPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchEmployeesStatus = async () => {
@@ -526,7 +540,7 @@ function Dashboard() {
 
   const SkeletonBox = () => (
     <div className="loading bg-gray-200 animate-pulse rounded-lg h-[300px] w-full">
-      <span><img src={lodingIcon} alt="loading..." /></span>      
+      <span><img src={lodingIcon} alt="loading..." /></span>
     </div>
   );
 
@@ -585,13 +599,13 @@ function Dashboard() {
 
               <Link to="/create-fileType">
                 <div className="gridItems">
-                  <StatBlock title="Total Files Types" value={stats.totalFilesType} Icon={ PiFilesFill } />  
+                  <StatBlock title="Total Files Types" value={stats.totalFilesType} Icon={PiFilesFill} />
                 </div>
               </Link>
 
               <div className="gridItems">
                 <StatBlock title="Total Documents" value={stats.totalDocument} Icon={IoDocuments} />
-              </div>             
+              </div>
 
               <Link to="/approve-documents">
                 <div className="gridItems pending">
@@ -747,27 +761,55 @@ function Dashboard() {
             </label>
             <div className="relative">
               <input
-                list="year-options"
                 type="text"
-                inputMode="numeric"
-                pattern="\d{4}"
+                readOnly
                 placeholder="YYYY"
                 value={selectedYear || ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (/^\d{0,4}$/.test(val)) {
-                    setSelectedYear(val ? Number(val) : "");
-                  }
-                }}
-                className="w-full border border-gray-300 rounded px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                onClick={() => setShowYearPicker(prev => !prev)}
+                className="w-full border border-gray-300 rounded px-3 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer pr-8"
               />
-              <datalist id="year-options">
-                {years.map((year) => (
-                  <option key={year} value={year} />
-                ))}
-              </datalist>
-              <span></span>
+              <span
+  className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-indigo-600 cursor-pointer"
+  onClick={() => setShowYearPicker(prev => !prev)}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+    />
+  </svg>
+</span>
 
+              {showYearPicker && (
+                <div className="absolute z-50 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-3 w-56">
+                  <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                    {years.map((year) => (
+                      <button
+                        key={year}
+                        onClick={() => {
+                          setSelectedYear(year);
+                          setShowYearPicker(false);
+                        }}
+                        className={`px-2 py-1.5 rounded text-sm font-medium transition-colors
+                  ${selectedYear === year
+                            ? "bg-indigo-600 text-white"
+                            : "hover:bg-indigo-50 text-gray-700"
+                          }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
