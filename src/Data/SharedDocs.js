@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from 'react-router-dom';
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { MdOutlineClose } from "react-icons/md";
 import {
   MagnifyingGlassIcon,
   EyeIcon,
@@ -491,47 +493,47 @@ const SharedDocs = () => {
     });
   }, [selectedDoc, searchFileTerm]);
 
-const fetchQRCode = async (documentId) => {
-  try {
-    
-    const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
+  const fetchQRCode = async (documentId) => {
+    try {
 
-    const response = await apiClient.get(apiUrl, { responseType: "blob" });
+      const apiUrl = `/api/documents/documents/download/qr/${documentId}`;
 
-    const qrCodeBlob = response.data;
+      const response = await apiClient.get(apiUrl, { responseType: "blob" });
 
-    if (!qrCodeBlob.type.includes("image/png")) {
-      throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
+      const qrCodeBlob = response.data;
+
+      if (!qrCodeBlob.type.includes("image/png")) {
+        throw new Error(<AutoTranslate>Received data is not a valid image</AutoTranslate>);
+      }
+
+      const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
+      setQrCodeUrl(qrCodeUrl);
+    } catch (error) {
+      setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
     }
-
-    const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
-    setQrCodeUrl(qrCodeUrl);
-  } catch (error) {
-    setError(<AutoTranslate>Error displaying QR Code:</AutoTranslate> + error.message);
-  }
-};
+  };
 
 
- const downloadQRCode = async () => {
-  try {
-    const response = await apiClient.get(
-      `/api/documents/documents/download/qr/${selectedDoc.id}`,
-      { responseType: "blob" }
-    );
+  const downloadQRCode = async () => {
+    try {
+      const response = await apiClient.get(
+        `/api/documents/documents/download/qr/${selectedDoc.id}`,
+        { responseType: "blob" }
+      );
 
-    const qrCodeUrl = window.URL.createObjectURL(response.data);
+      const qrCodeUrl = window.URL.createObjectURL(response.data);
 
-    const link = document.createElement("a");
-    link.href = qrCodeUrl;
-    link.download = `QR_Code_${selectedDoc.id}.png`;
-    link.click();
+      const link = document.createElement("a");
+      link.href = qrCodeUrl;
+      link.download = `QR_Code_${selectedDoc.id}.png`;
+      link.click();
 
-    window.URL.revokeObjectURL(qrCodeUrl);
+      window.URL.revokeObjectURL(qrCodeUrl);
 
-  } catch (error) {
-    console.error(error);
-  }
-};
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handlePrintReport = async (id) => {
     if (!id) return;
@@ -597,7 +599,7 @@ const fetchQRCode = async (documentId) => {
     // Auto-hide after 5 seconds
     setTimeout(() => {
       setShareInfoVisible(false);
-    }, 5000);
+    }, 20000);
   };
 
   const handleRevokeShare = (share) => {
@@ -790,7 +792,7 @@ const fetchQRCode = async (documentId) => {
           <table className="">
             <thead>
               <tr>
-                <th>
+                <th className="text-center">
                   <AutoTranslate>SN</AutoTranslate>
                 </th>
                 <th>
@@ -808,7 +810,7 @@ const fetchQRCode = async (documentId) => {
                 <th>
                   <AutoTranslate>Shared Files</AutoTranslate>
                 </th>
-                <th>
+                <th className="text-center">
                   <AutoTranslate>Actions</AutoTranslate>
                 </th>
               </tr>
@@ -828,7 +830,7 @@ const fetchQRCode = async (documentId) => {
                       key={doc.id}
                       className={isHighlighted ? 'bg-yellow-100' : ''}
                     >
-                      <td>
+                      <td className="text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td>{documentHeader.fileNo || "N/A"}</td>
@@ -859,21 +861,19 @@ const fetchQRCode = async (documentId) => {
                           )}
                         </div>
                       </td>
-                      <td className="border p-3 items-center">
-                        <div className="flex gap-2">
+                      <td className="text-center">
+                        <div className="btn-center">
                           <button
                             onClick={() => openModal(doc)}
                             title={`View details for ${documentHeader.title || "this document"}`}
-                            className="p-1 rounded hover:bg-green-100"
-                          >
-                            <EyeIcon className="h-5 w-5 text-green-600" />
+                            className="viewBtn">
+                            <EyeIcon />
                           </button>
                           <button
                             onClick={(e) => handleShowShareInfo(doc, e)}
                             title="Show share information"
-                            className="p-1 rounded hover:bg-blue-100 relative"
-                          >
-                            <InformationCircleIcon className="h-5 w-5 text-blue-600" />
+                            className="viewBtn">
+                            <InformationCircleIcon style={{ width: "22px", height: "22px" }} />
                           </button>
                         </div>
                       </td>
@@ -882,160 +882,178 @@ const fetchQRCode = async (documentId) => {
                 })
               ) : (
                 <tr>
-                  <td
-                    colSpan="7"
-                    className="border p-4 text-center text-gray-500"
-                  >
+                  <td colSpan="7" className="border p-4 text-center text-gray-500">
                     <AutoTranslate>No shared documents found.</AutoTranslate>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-
-          {/* Share Info Tooltip */}
-          {shareInfoVisible && selectedDocShareInfo && (
-            <div
-              className="fixed z-[9999] bg-white border border-gray-300 rounded-lg shadow-xl p-4 max-w-sm"
-              style={{
-                left: `${shareInfoPosition.x}px`,
-                top: `${shareInfoPosition.y + 10}px`,
-                transform: 'translateX(-50%)'
-              }}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-gray-800">
-                  <AutoTranslate>Share Information</AutoTranslate>
-                </h3>
-                <button
-                  onClick={() => setShareInfoVisible(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600"><AutoTranslate>Total Shares:</AutoTranslate></span>
-                  <span className="font-medium">{selectedDocShareInfo.totalSharesCount || 1}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600"><AutoTranslate>Shared Files:</AutoTranslate></span>
-                  <span className="font-medium">{selectedDocShareInfo.allSharedFileNames?.length || selectedDocShareInfo.totalFilesShared || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600"><AutoTranslate>Shared By:</AutoTranslate></span>
-                  <span className="font-medium">{selectedDocShareInfo.sharedByName || "N/A"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600"><AutoTranslate>Last Shared:</AutoTranslate></span>
-                  <span className="font-medium">{formatDateArray(selectedDocShareInfo.sharedDate)}</span>
-                </div>
-
-                {selectedDocShareInfo.shares && selectedDocShareInfo.shares.length > 1 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <h4 className="font-medium text-gray-700 mb-1">
-                      <AutoTranslate>Share Details:</AutoTranslate>
-                    </h4>
-                    <div className="max-h-40 overflow-y-auto">
-                      {selectedDocShareInfo.shares.slice(0, 3).map((share, idx) => (
-                        <div key={idx} className="text-xs mb-1 p-1 bg-gray-50 rounded">
-                          <div className="flex justify-between">
-                            <span>Share {idx + 1}:</span>
-                            <span className="font-medium">{share.sharedFileNames?.length || 0} files</span>
-                          </div>
-                          <div className="text-gray-500">
-                            {formatDateArray(share.sharedDate)}
-                          </div>
-                        </div>
-                      ))}
-                      {selectedDocShareInfo.shares.length > 3 && (
-                        <div className="text-xs text-gray-500 text-center">
-                          + {selectedDocShareInfo.shares.length - 3} more shares
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-3 flex justify-end">
-                <button
-                  onClick={() => handleViewShares(selectedDocShareInfo)}
-                  className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-                >
-                  <AutoTranslate>View All Shares</AutoTranslate>
-                </button>
-              </div>
+        </div>
+        {/* Pagination Controls */}
+        <div className="paginationWp">
+          <div className="items">
+            <div className="paginationText">
+              <span className="text-sm text-gray-700">
+                <AutoTranslate>
+                  {`Showing ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} entries.`}
+                </AutoTranslate>
+              </span>
+              {/* Page Count Info */}
+              <span className="text-sm text-gray-700 mx-2">
+                (<AutoTranslate>Pages</AutoTranslate> {totalPages})
+              </span>
             </div>
-          )}
+          </div>
+          <div className="items">
+            <div className="paginationBtn">
+              {/* Previous Button */}
+              <button title={`${currentPage === 1 || totalPages === 0 ? "End" : "Previous"}`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || totalPages === 0}
+                className={`${currentPage === 1 || totalPages === 0 ? "cursor-not-allowed" : ""}`}>
+                <IoIosArrowBack />
+              </button>
+              {/* Page Number Buttons */}
+              {totalPages > 0 && getPageNumbers().map((page) => (
+                <button key={page} onClick={() => setCurrentPage(page)} className={`${currentPage === page ? "active" : ""}`}>
+                  {page}
+                </button>
+              ))}
+              {/* Next Button */}
+              <button title={`${currentPage === totalPages || totalPages === 0 ? "End" : "Next"}`}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`${currentPage === totalPages || totalPages === 0 ? "cursor-not-allowed" : ""}`}>
+                <IoIosArrowForward />
+              </button>
+            </div>
+          </div>
+        </div>
 
-          <FilePreviewModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onDownload={handleDownload}
-            fileType={contentType}
-            fileUrl={blobUrl}
-            fileName={selectedDocFile?.docName}
-            fileData={selectedDocFile}
-          />
 
-          {/* Document Details Modal */}
-          {isOpen && selectedDoc && (
-            <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900/80 backdrop-blur-sm print:bg-white overflow-y-auto p-4">
-              <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl p-6 my-8 mx-auto">
-                <div className="max-h-[90vh] overflow-y-auto print:overflow-visible print:max-h-none">
+        {/* Share Info Tooltip */}
+        {shareInfoVisible && selectedDocShareInfo && (
+          <div
+            className="fixed z-[9985] bg-white border border-gray-300 rounded-lg shadow-xl p-3 max-w-sm"
+            style={{
+              width: "300px",
+              left: `${shareInfoPosition.x - 130}px`,
+              top: `${shareInfoPosition.y + 15}px`,
+              transform: 'translateX(-50%)'
+            }}
+          >
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-semibold text-gray-800">
+                <AutoTranslate>Share Information</AutoTranslate>
+              </h3>
+              <button
+                onClick={() => setShareInfoVisible(false)}
+                className="closeBtnSm text-gray-400- hover:text-gray-600-"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            </div>
 
-                  <div className="flex justify-between items-center mb-6 no-print">
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-indigo-600 text-white rounded-lg p-2">
-                        <span className="text-lg font-bold">D</span>
-                        <span className="text-lg font-bold">MS</span>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600"><AutoTranslate>Total Shares:</AutoTranslate></span>
+                <span className="font-medium">{selectedDocShareInfo.totalSharesCount || 1}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600"><AutoTranslate>Shared Files:</AutoTranslate></span>
+                <span className="font-medium">{selectedDocShareInfo.allSharedFileNames?.length || selectedDocShareInfo.totalFilesShared || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600"><AutoTranslate>Shared By:</AutoTranslate></span>
+                <span className="font-medium">{selectedDocShareInfo.sharedByName || "N/A"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600"><AutoTranslate>Last Shared:</AutoTranslate></span>
+                <span className="font-medium">{formatDateArray(selectedDocShareInfo.sharedDate)}</span>
+              </div>
+
+              {selectedDocShareInfo.shares && selectedDocShareInfo.shares.length > 1 && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <h4 className="font-medium text-gray-700 mb-1">
+                    <AutoTranslate>Share Details:</AutoTranslate>
+                  </h4>
+                  <div className="max-h-40 overflow-y-auto">
+                    {selectedDocShareInfo.shares.slice(0, 3).map((share, idx) => (
+                      <div key={idx} className="text-xs mb-1 p-1 bg-gray-50 rounded">
+                        <div className="flex justify-between">
+                          <span>Share {idx + 1}:</span>
+                          <span className="font-medium">{share.sharedFileNames?.length || 0} files</span>
+                        </div>
+                        <div className="text-gray-500">
+                          {formatDateArray(share.sharedDate)}
+                        </div>
                       </div>
-                      <h1 className="text-2xl font-bold text-gray-800">
-                        <AutoTranslate>Document Details</AutoTranslate>
-                      </h1>
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleViewShares(selectedDoc)}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200"
-                        title="View shared access"
-                      >
-                        <ShareIcon className="h-5 w-5" />
-                        <AutoTranslate>View Shares</AutoTranslate>
-                      </button>
-                      <button
-                        onClick={() => handleShareDocument(selectedDoc)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-                        title="Share document with others"
-                      >
-                        <ShareIcon className="h-5 w-5" />
-                        <AutoTranslate>Share</AutoTranslate>
-                      </button>
-                      <button
-                        onClick={() => handlePrintReport(selectedDoc?.id)}
-                        className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
-                        title="Print document"
-                      >
-                        <PrinterIcon className="h-5 w-5" />
-                        <span><AutoTranslate>Print</AutoTranslate></span>
-                      </button>
-                      <button
-                        onClick={closeModal}
-                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 transition-colors duration-200 bg-gray-100 hover:bg-gray-200 rounded-lg"
-                        title="Close modal"
-                      >
-                        <XMarkIcon className="h-5 w-5" />
-                        <span><AutoTranslate>Close</AutoTranslate></span>
-                      </button>
-                    </div>
+                    ))}
+                    {selectedDocShareInfo.shares.length > 3 && (
+                      <div className="text-xs text-gray-500 text-center">
+                        + {selectedDocShareInfo.shares.length - 3} more shares
+                      </div>
+                    )}
                   </div>
+                </div>
+              )}
+            </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <div className="lg:col-span-2 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={() => handleViewShares(selectedDocShareInfo)}
+                className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+              >
+                <AutoTranslate>View All Shares</AutoTranslate>
+              </button>
+            </div>
+          </div>
+        )}
+
+        <FilePreviewModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onDownload={handleDownload}
+          fileType={contentType}
+          fileUrl={blobUrl}
+          fileName={selectedDocFile?.docName}
+          fileData={selectedDocFile}
+        />
+
+        {/* Document Details Modal */}
+        {isOpen && selectedDoc && (
+          <div className="overlayModal">
+            <div className="document-modal">
+              {/* Header */}
+              <div className="modal-header">
+                <div className="modal-title">
+                  <div className="bg-indigo-600 text-white rounded-lg p-2">
+                    <span className="text-lg font-bold">D</span>
+                    <span className="text-lg font-bold">MS</span>
+                  </div>
+                  <h2><AutoTranslate>Document Details</AutoTranslate></h2>
+                </div>
+                <div className="headerRight">
+                  {/* Print Button */}
+                  <button className="printBtn no-print-" onClick={() => handlePrintReport(selectedDoc?.id)} title="Print">
+                    <PrinterIcon className="h-6 w-6" />
+                  </button>
+                  {/* Close Button */}
+                  <button className="closeBtn" onClick={closeModal} title="Close">
+                    <MdOutlineClose />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal body Content */}
+              <div className="modal-body">
+                <div className="bodyScroller print:overflow-visible print:max-h-none">
+
+                  <div className="top-section">
+                    <div className="info-card">
+                      <div className="info-grid">
                         {[
                           { label: "Branch", value: selectedDoc.documentHeader?.employee?.branch?.name || selectedDoc.documentHeader?.branchName },
                           { label: "Department", value: selectedDoc.documentHeader?.employee?.department?.name || selectedDoc.documentHeader?.departmentName },
@@ -1049,30 +1067,19 @@ const fetchQRCode = async (documentId) => {
                           { label: "Total Files Shared", value: selectedDoc.allSharedFileNames?.length || selectedDoc.totalFilesShared },
                           { label: "Total Shares", value: selectedDoc.totalSharesCount || 1 },
                         ].map((item, idx) => (
-                          <div key={idx} className="space-y-1">
-                            <p className="text-sm font-medium text-gray-500">
-                              <AutoTranslate>{item.label}</AutoTranslate>
-                            </p>
-                            <p className="text-gray-900 font-medium">
-                              {item.value || <span className="text-gray-400"><AutoTranslate>N/A</AutoTranslate></span>}
-                            </p>
-                          </div>
+                          <p key={idx} className="text-md text-gray-700">
+                            <AutoTranslate>{item.label}</AutoTranslate> <AutoTranslate>{item.value || "N/A"}</AutoTranslate>
+                          </p>
                         ))}
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                        <AutoTranslate>QR Code</AutoTranslate>
-                      </h3>
+                    <div className="qr-card">
+                      <h2 className="mb-4"><AutoTranslate>QR Code:</AutoTranslate></h2>
                       {selectedDoc?.documentHeader?.qrPath ? (
                         <>
-                          <div className="p-3 bg-white rounded-lg border border-gray-300">
-                            <img
-                              src={qrCodeUrl}
-                              alt="QR Code"
-                              className="w-32 h-32 object-contain"
-                            />
+                          <div className="imgWp">
+                            <img src={qrCodeUrl} alt="QR Code" />
                           </div>
                           <button
                             onClick={downloadQRCode}
@@ -1092,27 +1099,40 @@ const fetchQRCode = async (documentId) => {
                   </div>
 
                   {/* Shared Files Section */}
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          <AutoTranslate>Shared Files</AutoTranslate>
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
+                  <div className="mt-8">
+                    <div className="attachedWp relative">
+                      <h2 className="mb-0">
+                        <AutoTranslate>Shared Files</AutoTranslate>
+                        <span className="text-sm font-normal text-gray-600">
                           <AutoTranslate>Showing</AutoTranslate> {selectedDoc.allSharedFileNames?.length || 0} <AutoTranslate>shared files</AutoTranslate>
-                        </p>
-                      </div>
+                        </span>
+                      </h2>
                       <div className="flex items-center gap-4">
-                        <div className="relative w-full sm:w-64">
-                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <div className="form-group">
                           <input
                             type="text"
                             placeholder="Search files..."
                             value={searchFileTerm}
                             onChange={(e) => setSearchFileTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            className="searchIcon"
                           />
                         </div>
+                        <button
+                          onClick={() => handleViewShares(selectedDoc)}
+                          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200"
+                          title="View shared access"
+                        >
+                          <ShareIcon className="h-5 w-5" />
+                          <AutoTranslate>View Shares</AutoTranslate>
+                        </button>
+                        <button
+                          onClick={() => handleShareDocument(selectedDoc)}
+                          className="btn-primary flex items-center gap-2"
+                          title="Share document with others"
+                        >
+                          <ShareIcon className="h-5 w-5" />
+                          <AutoTranslate>Share</AutoTranslate>
+                        </button>
                       </div>
                     </div>
 
@@ -1126,7 +1146,7 @@ const fetchQRCode = async (documentId) => {
                     ) : selectedDoc && filteredDocFiles.length > 0 ? (
                       <div className="border border-gray-200 rounded-lg overflow-hidden">
                         {/* Desktop View Table Header */}
-                        <div className="hidden md:grid grid-cols-[30fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3">
+                        <div className="hidden md:grid grid-cols-[30fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] bg-gray-50 text-gray-600 font-medium text-sm px-6 py-3 gap-2">
                           <span className="text-left">
                             <AutoTranslate>File Name</AutoTranslate>
                           </span>
@@ -1157,8 +1177,8 @@ const fetchQRCode = async (documentId) => {
                           {filteredDocFiles.map((file, index) => (
                             <div key={index} className="hover:bg-gray-50 transition-colors duration-150">
                               {/* Desktop View */}
-                              <div className="hidden md:grid grid-cols-[30fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] items-center px-6 py-4 text-sm">
-                                <div className="text-left text-gray-800 break-words">
+                              <div className="hidden md:grid grid-cols-[30fr_10fr_10fr_10fr_15fr_15fr_20fr_10fr] items-center px-6 py-4 text-sm gap-2">
+                                <div className="text-left text-gray-800 break-words flex items-center">
                                   <strong>{index + 1}.</strong> {file.docName}
                                 </div>
                                 <div className="text-center text-gray-700">{file.yearMaster?.name || "--"}</div>
@@ -1305,204 +1325,221 @@ const fetchQRCode = async (documentId) => {
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Share Document Modal */}
-          {shareModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Share Document</AutoTranslate>
-                </h2>
-
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <AutoTranslate>Document:</AutoTranslate> {documentToShare?.documentHeader?.title}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <AutoTranslate>Selected {selectedFileIds.length} shared file(s) to share with employees in your department.</AutoTranslate>
-                  </p>
+        {/* Share Document Modal */}
+        {shareModalVisible && (
+          <>
+            <div className="overlayModal">
+              <div className="document-modal modal-sm">
+                {/* Header */}
+                <div className="modal-header">
+                  <div className="modal-title">
+                    <h2><AutoTranslate>Share Document</AutoTranslate></h2>
+                  </div>
                 </div>
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <AutoTranslate>Select Employees</AutoTranslate>
-                  </label>
-                  {loadingEmployees ? (
-                    <div className="flex items-center">
-                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                      <AutoTranslate>Loading employees...</AutoTranslate>
+                {/* Modal body Content */}
+                <div className="modal-body">
+                  <div className="bodyScroller print:overflow-visible print:max-h-none">
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        <AutoTranslate>Document:</AutoTranslate> {documentToShare?.documentHeader?.title}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <AutoTranslate>Selected {selectedFileIds.length} shared file(s) to share with employees in your department.</AutoTranslate>
+                      </p>
                     </div>
-                  ) : (
-                    <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
-                      {availableEmployees.length === 0 ? (
-                        <p className="text-sm text-gray-500">
-                          <AutoTranslate>No other employees in this department</AutoTranslate>
-                        </p>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <AutoTranslate>Select Employees</AutoTranslate>
+                      </label>
+                      {loadingEmployees ? (
+                        <div className="flex items-center">
+                          <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                          <AutoTranslate>Loading employees...</AutoTranslate>
+                        </div>
                       ) : (
-                        availableEmployees.map(emp => (
-                          <div key={emp.id} className="flex items-center mb-2">
-                            <input
-                              type="checkbox"
-                              id={`emp-${emp.id}`}
-                              checked={shareRecipients.includes(emp.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setShareRecipients([...shareRecipients, emp.id]);
-                                } else {
-                                  setShareRecipients(shareRecipients.filter(id => id !== emp.id));
-                                }
-                              }}
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                            />
-                            <label htmlFor={`emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
-                              {emp.name} ({emp.email})
-                            </label>
-                          </div>
-                        ))
+                        <div className="max-h-48 overflow-y-auto border rounded-lg p-2">
+                          {availableEmployees.length === 0 ? (
+                            <p className="text-sm text-gray-500">
+                              <AutoTranslate>No other employees in this department</AutoTranslate>
+                            </p>
+                          ) : (
+                            availableEmployees.map(emp => (
+                              <div key={emp.id} className="flex items-center mb-2">
+                                <input
+                                  type="checkbox"
+                                  id={`emp-${emp.id}`}
+                                  checked={shareRecipients.includes(emp.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setShareRecipients([...shareRecipients, emp.id]);
+                                    } else {
+                                      setShareRecipients(shareRecipients.filter(id => id !== emp.id));
+                                    }
+                                  }}
+                                  className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                />
+                                <label htmlFor={`emp-${emp.id}`} className="ml-2 text-sm text-gray-700">
+                                  {emp.name} ({emp.email})
+                                </label>
+                              </div>
+                            ))
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <div className="flex items-center">
-                      <ClockIcon className="h-4 w-4 mr-1" />
-                      <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="flex items-center">
+                          <ClockIcon className="h-4 w-4 mr-1" />
+                          <AutoTranslate>Expiration Time (Optional)</AutoTranslate>
+                        </div>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={shareEndTime}
+                        onChange={(e) => setShareEndTime(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min={getMinDateTime()}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        <AutoTranslate>Leave empty for permanent access</AutoTranslate>
+                      </p>
                     </div>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={shareEndTime}
-                    onChange={(e) => setShareEndTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min={getMinDateTime()}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    <AutoTranslate>Leave empty for permanent access</AutoTranslate>
-                  </p>
-                </div>
 
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => {
-                      setShareModalVisible(false);
-                      setDocumentToShare(null);
-                      setShareRecipients([]);
-                      setShareEndTime("");
-                      setSelectedFileIds([]);
-                    }}
-                    className="btn-cancel"
-                    disabled={sharingDocument}
-                  >
-                    <AutoTranslate>Cancel</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={handleShareSubmit}
-                    disabled={sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0}
-                    className={`px-4 py-2 rounded-md text-white ${(sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0)
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'} transition-colors flex items-center`}
-                  >
-                    {sharingDocument ? (
-                      <>
-                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
-                        <AutoTranslate>Sharing...</AutoTranslate>
-                      </>
-                    ) : (
-                      <>
-                        <ShareIcon className="h-4 w-4 mr-2" />
-                        <AutoTranslate>Share {selectedFileIds.length} File(s)</AutoTranslate>
-                      </>
-                    )}
-                  </button>
+                    <div className="flex justify-end gap-4">
+                      <button
+                        onClick={() => {
+                          setShareModalVisible(false);
+                          setDocumentToShare(null);
+                          setShareRecipients([]);
+                          setShareEndTime("");
+                          setSelectedFileIds([]);
+                        }}
+                        className="btn-cancel"
+                        disabled={sharingDocument}
+                      >
+                        <AutoTranslate>Cancel</AutoTranslate>
+                      </button>
+                      <button
+                        onClick={handleShareSubmit}
+                        disabled={sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0}
+                        className={`px-4 py-2 rounded-md text-white ${(sharingDocument || shareRecipients.length === 0 || selectedFileIds.length === 0)
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700'} transition-colors flex items-center`}
+                      >
+                        {sharingDocument ? (
+                          <>
+                            <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                            <AutoTranslate>Sharing...</AutoTranslate>
+                          </>
+                        ) : (
+                          <>
+                            <ShareIcon className="h-4 w-4 mr-2" />
+                            <AutoTranslate>Share {selectedFileIds.length} File(s)</AutoTranslate>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* View Shares Modal */}
-          {viewSharesModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">
-                    <AutoTranslate>Shared Access Details</AutoTranslate>
-                  </h2>
-                  <button
-                    onClick={() => setViewSharesModalVisible(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <XMarkIcon className="h-6 w-6" />
+
+          </>
+        )}
+
+        {/* View Shares Modal (Shared Access Details) */}
+        {viewSharesModalVisible && (
+          <div className="overlayModal">
+            <div className="document-modal modal-md">
+              {/* Header */}
+              <div className="modal-header">
+                <div className="modal-title">
+                  <h2><AutoTranslate>Shared Access Details</AutoTranslate></h2>
+                </div>
+                <div className="headerRight">
+                  {/* Close Button */}
+                  <button className="closeBtn" onClick={() => setViewSharesModalVisible(false)} title="Close">
+                    <MdOutlineClose />
                   </button>
                 </div>
+              </div>
 
-                {selectedDocShares.length === 0 ? (
-                  <div className="text-center py-8">
-                    <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                    <p className="text-gray-500">
-                      <AutoTranslate>No shares found for this document</AutoTranslate>
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>SN</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Shared By</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Shared To</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Shared Date</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Expiration Time</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Files</AutoTranslate>
-                          </th>
-                          <th className="border p-2 text-left">
-                            <AutoTranslate>Status</AutoTranslate>
-                          </th>
-                          {/* <th className="border p-2 text-left">
+              {/* Modal body Content */}
+              <div className="modal-body">
+                <div className="bodyScroller print:overflow-visible print:max-h-none">
+                  {selectedDocShares.length === 0 ? (
+                    <div className="text-center py-8">
+                      <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                      <p className="text-gray-500">
+                        <AutoTranslate>No shares found for this document</AutoTranslate>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="table-wrapper">
+                      <table className="">
+                        <thead>
+                          <tr>
+                            <th className="text-center">
+                              <AutoTranslate>SN</AutoTranslate>
+                            </th>
+                            <th>
+                              <AutoTranslate>Shared By</AutoTranslate>
+                            </th>
+                            <th>
+                              <AutoTranslate>Shared To</AutoTranslate>
+                            </th>
+                            <th>
+                              <AutoTranslate>Shared Date</AutoTranslate>
+                            </th>
+                            <th>
+                              <AutoTranslate>Expiration Time</AutoTranslate>
+                            </th>
+                            <th className="text-center">
+                              <AutoTranslate>Files</AutoTranslate>
+                            </th>
+                            <th className="text-center">
+                              <AutoTranslate>Status</AutoTranslate>
+                            </th>
+                            {/* <th>
                             <AutoTranslate>Actions</AutoTranslate>
                           </th> */}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedDocShares.map((share, index) => (
-                          <tr key={share.id} className="hover:bg-gray-50">
-                            <td>{index + 1}</td>
-                            <td>{share.sharedByName}</td>
-                            <td>{share.sharedToName}</td>
-                            <td>{formatDateArray(share.sharedDate)}</td>
-                            <td>
-                              {share.endTime ? formatDateArray(share.endTime) : "Permanent"}
-                            </td>
-                            <td>
-                              <div className="flex items-center">
-                                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 text-xs font-medium mr-2">
-                                  {share.sharedFileNames?.length || share.totalFilesShared || 0}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedDocShares.map((share, index) => (
+                            <tr key={share.id} className="hover:bg-gray-50">
+                              <td className="text-center">{index + 1}</td>
+                              <td>{share.sharedByName}</td>
+                              <td>{share.sharedToName}</td>
+                              <td>{formatDateArray(share.sharedDate)}</td>
+                              <td>
+                                {share.endTime ? formatDateArray(share.endTime) : "Permanent"}
+                              </td>
+                              <td className="text-center">
+                                <div className="flex items-center justify-center">
+                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 text-xs font-medium mr-2">
+                                    {share.sharedFileNames?.length || share.totalFilesShared || 0}
+                                  </span>
+                                  <span className="text-sm">
+                                    file{(share.sharedFileNames?.length || share.totalFilesShared || 0) !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="text-center">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${share.expired || share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                  }`}>
+                                  {share.expired || share.isExpired ? 'Expired' : 'Active'}
                                 </span>
-                                <span className="text-sm">
-                                  file{(share.sharedFileNames?.length || share.totalFilesShared || 0) !== 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            </td>
-                            <td>
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${share.expired || share.isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                }`}>
-                                {share.expired || share.isExpired ? 'Expired' : 'Active'}
-                              </span>
-                            </td>
-                            {/* <td>
+                              </td>
+                              {/* <td>
                               {share.sharedByName !== localStorage.getItem("userName") ? (
                                 <span className="text-gray-500 text-sm">
                                   <AutoTranslate>Shared by others</AutoTranslate>
@@ -1521,116 +1558,80 @@ const fetchQRCode = async (documentId) => {
                                 </button>
                               )}
                             </td> */}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Revoke Share Confirmation Modal */}
-          {revokeShareModalVisible && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  <AutoTranslate>Revoke Share Access</AutoTranslate>
-                </h2>
-                <div className="mb-4">
-                  <p className="mb-2">
-                    <AutoTranslate>Are you sure you want to revoke access for:</AutoTranslate>
-                  </p>
-                  <p className="font-semibold">{shareToRevoke?.sharedToName}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    <AutoTranslate>Document:</AutoTranslate> {shareToRevoke?.documentName}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <AutoTranslate>Files:</AutoTranslate> {shareToRevoke?.sharedFileNames?.length || shareToRevoke?.totalFilesShared || 0}
-                  </p>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <AutoTranslate>Reason (Optional)</AutoTranslate>
-                  </label>
-                  <textarea
-                    value={revokeReason}
-                    onChange={(e) => setRevokeReason(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows="3"
-                    placeholder="Enter reason for revoking access..."
-                  />
-                </div>
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => {
-                      setRevokeShareModalVisible(false);
-                      setShareToRevoke(null);
-                      setRevokeReason("");
-                    }}
-                    className="btn-cancel"
-                  >
-                    <AutoTranslate>Cancel</AutoTranslate>
-                  </button>
-                  <button
-                    onClick={confirmRevokeShare}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
-                  >
-                    <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                    <AutoTranslate>Revoke Access</AutoTranslate>
-                  </button>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Pagination */}
-          <div className="flex items-center mt-4">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1 || totalPages === 0}
-              className={`px-3 py-1 rounded mr-3 ${currentPage === 1 || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <ArrowLeftIcon className="inline h-4 w-4 mr-2 mb-1" />
-              <AutoTranslate>Previous</AutoTranslate>
-            </button>
-
-            {totalPages > 0 && getPageNumbers().map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded mx-1 ${currentPage === page ? "bg-blue-500 text-white" : "bg-slate-200 hover:bg-blue-100"
-                  }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <span className="text-sm text-gray-700 mx-2">
-              <AutoTranslate>of</AutoTranslate> {totalPages} <AutoTranslate>pages</AutoTranslate>
-            </span>
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className={`px-3 py-1 rounded ml-3 ${currentPage === totalPages || totalPages === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-slate-200 hover:bg-slate-300"
-                }`}
-            >
-              <AutoTranslate>Next</AutoTranslate>
-              <ArrowRightIcon className="inline h-4 w-4 ml-2 mb-1" />
-            </button>
-            <div className="ml-4">
-              <span className="text-sm text-gray-700">
-                <AutoTranslate>
-                  {`Here are items ${totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
-                    } to ${Math.min(currentPage * itemsPerPage, totalItems)} out of ${totalItems}.`}
-                </AutoTranslate>
-              </span>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Revoke Share Confirmation Modal */}
+        {revokeShareModalVisible && (
+          <div className="overlayModal">
+            <div className="document-modal modal-sm">
+              {/* Header */}
+              <div className="modal-header">
+                <div className="modal-title">
+                  <h2><AutoTranslate>Revoke Share Access</AutoTranslate></h2>
+                </div>
+              </div>
+
+              {/* Modal body Content */}
+              <div className="modal-body">
+                <div className="bodyScroller print:overflow-visible print:max-h-none">
+                  <div className="mb-4">
+                    <p className="mb-2">
+                      <AutoTranslate>Are you sure you want to revoke access for:</AutoTranslate>
+                    </p>
+                    <p className="font-semibold">{shareToRevoke?.sharedToName}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      <AutoTranslate>Document:</AutoTranslate> {shareToRevoke?.documentName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <AutoTranslate>Files:</AutoTranslate> {shareToRevoke?.sharedFileNames?.length || shareToRevoke?.totalFilesShared || 0}
+                    </p>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <AutoTranslate>Reason (Optional)</AutoTranslate>
+                    </label>
+                    <textarea
+                      value={revokeReason}
+                      onChange={(e) => setRevokeReason(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows="3"
+                      placeholder="Enter reason for revoking access..."
+                    />
+                  </div>
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => {
+                        setRevokeShareModalVisible(false);
+                        setShareToRevoke(null);
+                        setRevokeReason("");
+                      }}
+                      className="btn-cancel"
+                    >
+                      <AutoTranslate>Cancel</AutoTranslate>
+                    </button>
+                    <button
+                      onClick={confirmRevokeShare}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+                    >
+                      <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+                      <AutoTranslate>Revoke Access</AutoTranslate>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

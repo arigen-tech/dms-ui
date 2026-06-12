@@ -529,7 +529,7 @@ const DocumentReport = () => {
       {showModal && (
         <>
           <div className="overlayModal">
-            <div className="document-modal modal-md">
+            <div className="document-modal modal-sm">
               {/* Header */}
               <div className="modal-header">
                 <div className="modal-title">

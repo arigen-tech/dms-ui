@@ -1853,7 +1853,7 @@ const ApprovedDoc = () => {
                 </div>
 
                {/* Attached Files Section */}
-<div className="border-t border-gray-200 pt-6">
+<div className="mt-8">
   <div className="attachedWp relative">
     <h2 className="mb-0">
       <AutoTranslate>Attached Files</AutoTranslate>
@@ -2203,7 +2203,7 @@ const ApprovedDoc = () => {
       {confirmDeleteModalVisible && (
         <>
           <div className="overlayModal">
-            <div className="document-modal modal-md">
+            <div className="document-modal modal-sm">
               {/* Header */}
               <div className="modal-header">
                 <div className="modal-title">
@@ -2252,7 +2252,7 @@ const ApprovedDoc = () => {
       {/* Confirmation Modal for Bulk File Deletion (inside modal) */}
       {bulkFileDeleteModalVisible && (
         <div className="overlayModal">
-          <div className="document-modal modal-md">
+          <div className="document-modal modal-sm">
             {/* Header */}
             <div className="modal-header">
               <div className="modal-title">
@@ -2309,7 +2309,7 @@ const ApprovedDoc = () => {
       {/* Confirmation Modal for Bulk Document Deletion (main table) */}
       {bulkDocDeleteModalVisible && (
         <div className="overlayModal">
-          <div className="document-modal modal-md">
+          <div className="document-modal modal-sm">
 
             {/* Header */}
             <div className="modal-header">
@@ -2383,7 +2383,7 @@ const ApprovedDoc = () => {
       {/* Share Document Modal (Single Document) */}
       {shareModalVisible && (
         <div className="overlayModal">
-          <div className="document-modal modal-md">
+          <div className="document-modal modal-sm">
 
             {/* Header */}
             <div className="modal-header">
@@ -2614,7 +2614,7 @@ const ApprovedDoc = () => {
       {/* Bulk Share Document Modal */}
       {bulkShareModalVisible && (
         <div className="overlayModal">
-          <div className="document-modal modal-md">
+          <div className="document-modal modal-sm">
 
             {/* Header */}
             <div className="modal-header">
@@ -2880,7 +2880,7 @@ const ApprovedDoc = () => {
       {/* Revoke Share Confirmation Modal */}
       {revokeShareModalVisible && (
         <div className="overlayModal">
-          <div className="document-modal modal-md">
+          <div className="document-modal modal-sm">
 
             {/* Header */}
             <div className="modal-header">

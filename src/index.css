@@ -100,6 +100,8 @@ body {
     border: solid 1px rgb(0 0 0/0.1);
 }
 
+/* buttons css beginning here */
+
 button {
     border-radius: 5px;
     cursor: pointer;
@@ -120,7 +122,6 @@ button {
     }
 }
 
-
 .btn-cancel {
     border: 1px solid var(--border-color-15);
     background-color: #f3f4f6;
@@ -132,6 +133,23 @@ button {
 
     &:hover {
         background-color: #e5e7eb;
+    }
+}
+
+.closeBtnSm {
+    background-color: rgb(0 0 0/ 0.05);
+    width: 24px;
+    height: 24px;
+    border-radius: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--black-color-60);
+    padding: 5px;
+    transition: all .25s ease-in-out;
+    &:hover {
+        background-color: var(--close-color);
+        color: var(--white-color);
     }
 }
 
@@ -772,7 +790,9 @@ footer {
 }
 
 @media(max-width: 1580px) {
-    .dashboardGrid .card > div h3 { font-size: 14px !important;}
+    .dashboardGrid .card>div h3 {
+        font-size: 14px !important;
+    }
 }
 
 .dateInput {
@@ -902,6 +922,7 @@ h2 {
                 padding: 5px 10px;
                 background-color: rgb(0 0 0/0.06);
                 font-size: 16px;
+
                 /* font-size: clamp(12px, 1.02vw, 16px); */
                 & svg {
                     display: none !important;
@@ -916,6 +937,7 @@ h2 {
         font-size: 14px;
     }
 }
+
 @media(max-width: 1400px) {
     .chartGrid .recharts-legend-wrapper ul li {
         font-size: 13px;
@@ -1447,7 +1469,7 @@ h2 {
             & .info-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 15px;
+                gap: 10px;
 
                 & p {
                     font-size: 14px;
@@ -1486,8 +1508,14 @@ h2 {
 }
 
 .modal-md {
+    width: 56rem;
+}
+
+.modal-sm {
     width: 30rem;
 }
+
+
 
 .pendingStyle {
     background-color: var(--pending-gb);
@@ -1712,6 +1740,9 @@ h2 {
         background: #eff6ff;
     }
 }
+
+
+
 
 
 

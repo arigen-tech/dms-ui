@@ -1365,7 +1365,7 @@ const TrashDoc = () => {
       {/* Confirmation Modal for Single File Restoration */}
       {confirmRestoreModalVisible && (
         <div className="overlayModal">
-          <div className="document-modal modal-md">
+          <div className="document-modal modal-sm">
 
             {/* Header */}
             <div className="modal-header">
@@ -1418,7 +1418,7 @@ const TrashDoc = () => {
       {/* Confirmation Modal for Bulk File Restoration (inside modal) */}
       {bulkFileRestoreModalVisible && (
         <div className="overlayModal">
-          <div className="document-modal modal-md">
+          <div className="document-modal modal-sm">
             {/* Header */}
             <div className="modal-header">
               <div className="modal-title">
@@ -1479,7 +1479,7 @@ const TrashDoc = () => {
       {/* Confirmation Modal for Bulk Document Restoration (main table) */}
       {bulkDocRestoreModalVisible && (
         <div className="overlayModal">
-          <div className="document-modal modal-md">
+          <div className="document-modal modal-sm">
 
             {/* Header */}
             <div className="modal-header">
