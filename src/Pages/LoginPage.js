@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   EyeIcon,
   UserIcon,
@@ -40,12 +40,10 @@ const LoginPage = () => {
     confirmPassword: "",
   });
 
-
-
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [optBlockIsEnabled, setOptBlockIsEnabled] = useState(false);
-  const [captcha, setCaptcha] = useState([]);
+  const [captchaText, setCaptchaText] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("error");
   const navigate = useNavigate();
@@ -57,6 +55,7 @@ const LoginPage = () => {
   const [resendTimer, setResendTimer] = useState(30);
   const [showTooltip, setShowTooltip] = useState(false);
   const [otpIsEnabled, setOtpIsEnabled] = useState(false);
+  const canvasRef = useRef(null);
 
   // Use language context
   const {
@@ -103,12 +102,13 @@ const LoginPage = () => {
 
   const [selectedLanguageId, setSelectedLanguageId] = useState(null);
 
-  const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const LENGTH = 5;
+  // CHARACTERS for captcha - removed ambiguous ones
+  const CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const CAPTCHA_LENGTH = 6;
 
   // Load languages and set selected language
   useEffect(() => {
-    setCaptcha(generateCaptcha());
+    generateCaptcha();
 
     // Set selected language based on current language in context
     if (availableLanguages.length > 0) {
@@ -172,32 +172,168 @@ const LoginPage = () => {
     return () => clearInterval(interval);
   }, [isOtpRequested, currentView, resendTimer, canResendOtp]);
 
+  // PROPER CAPTCHA GENERATION WITH CANVAS
   const generateCaptcha = () => {
-    let captchaArray = [];
-    const colors = ['#2563eb', '#dc2626', '#059669', '#7c3aed', '#ea580c'];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    for (let i = 0; i < LENGTH; i++) {
-      const character = CHARACTERS.charAt(
-        Math.floor(Math.random() * CHARACTERS.length)
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Generate random text (6 characters)
+    let text = "";
+    for (let i = 0; i < CAPTCHA_LENGTH; i++) {
+      text += CHARACTERS.charAt(Math.floor(Math.random() * CHARACTERS.length));
+    }
+    setCaptchaText(text);
+
+    // Background - gradient
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, '#f8fafc');
+    gradient.addColorStop(0.5, '#e2e8f0');
+    gradient.addColorStop(1, '#f1f5f9');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw noise - random dots
+    for (let i = 0; i < 150; i++) {
+      ctx.fillStyle = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(
+        Math.random() * width,
+        Math.random() * height,
+        Math.random() * 2 + 1,
+        0,
+        Math.PI * 2
       );
-      const rotation = Math.floor(Math.random() * 30) - 15;
-      const fontSize = Math.floor(Math.random() * 8) + 18;
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const offsetY = Math.floor(Math.random() * 10) - 5;
-      const skew = Math.floor(Math.random() * 20) - 10;
-
-      captchaArray.push({
-        character,
-        rotation,
-        fontSize,
-        color,
-        offsetY,
-        skew,
-        id: i
-      });
+      ctx.fill();
     }
 
-    return captchaArray;
+    // Draw random lines (noise)
+    for (let i = 0; i < 6; i++) {
+      ctx.strokeStyle = `rgba(${Math.random() * 200}, ${Math.random() * 200}, ${Math.random() * 200}, ${Math.random() * 0.3 + 0.1})`;
+      ctx.lineWidth = Math.random() * 2 + 1;
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * width, Math.random() * height);
+      ctx.lineTo(Math.random() * width, Math.random() * height);
+      ctx.stroke();
+    }
+
+    // Draw text with distortion
+    const colors = [
+      '#2563eb', '#dc2626', '#059669', '#7c3aed', 
+      '#ea580c', '#0891b2', '#db2777', '#4f46e5'
+    ];
+    
+    const fonts = [
+      'Arial', 'Helvetica', 'Verdana', 'Tahoma', 
+      'Georgia', 'Times New Roman', 'Courier New'
+    ];
+
+    // Draw each character with individual styling
+    const charWidth = width / CAPTCHA_LENGTH;
+    const charHeight = height;
+
+    for (let i = 0; i < text.length; i++) {
+      const x = i * charWidth + charWidth / 2;
+      const y = height / 2 + (Math.random() * 10 - 5);
+      
+      // Random rotation
+      const angle = (Math.random() - 0.5) * 0.6;
+      
+      // Random font size
+      const fontSize = Math.floor(Math.random() * 8) + 26;
+      
+      // Random color from palette
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
+      // Random font
+      const font = fonts[Math.floor(Math.random() * fonts.length)];
+      
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      
+      // Add shadow for depth
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+      ctx.shadowBlur = 3;
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+      
+      // Draw character
+      ctx.font = `bold ${fontSize}px ${font}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Add slight offset
+      const offsetX = (Math.random() - 0.5) * 6;
+      const offsetY = (Math.random() - 0.5) * 6;
+      
+      ctx.fillStyle = color;
+      ctx.fillText(text[i], offsetX, offsetY);
+      
+      // Add outline for better readability
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 0.5;
+      ctx.strokeText(text[i], offsetX, offsetY);
+      
+      ctx.restore();
+    }
+
+    // Add more noise (curved lines)
+    for (let i = 0; i < 3; i++) {
+      ctx.strokeStyle = `rgba(${Math.random() * 150}, ${Math.random() * 150}, ${Math.random() * 150}, 0.2)`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      const startX = Math.random() * width;
+      const startY = Math.random() * height;
+      ctx.moveTo(startX, startY);
+      
+      for (let j = 0; j < 4; j++) {
+        ctx.quadraticCurveTo(
+          Math.random() * width,
+          Math.random() * height,
+          Math.random() * width,
+          Math.random() * height
+        );
+      }
+      ctx.stroke();
+    }
+
+    // Add a grid pattern (very subtle)
+    ctx.strokeStyle = 'rgba(100, 100, 100, 0.05)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < width; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, height);
+      ctx.stroke();
+    }
+    for (let i = 0; i < height; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(width, i);
+      ctx.stroke();
+    }
+
+    // Add a subtle blur effect
+    ctx.filter = 'blur(0.5px)';
+    ctx.fillStyle = 'rgba(0,0,0,0.02)';
+    ctx.fillRect(0, 0, width, height);
+    ctx.filter = 'none';
+  };
+
+  // Regenerate captcha
+  const refreshCaptcha = () => {
+    generateCaptcha();
+    setIsRotated(true);
+    setFormData(prev => ({ ...prev, captcha: "" }));
+    setTimeout(() => setIsRotated(false), 1000);
   };
 
   const formatTime = (seconds) => {
@@ -239,12 +375,6 @@ const LoginPage = () => {
       setCanResendOtp(false);
       setResendTimer(30);
     }
-  };
-
-  const handleRefresh = () => {
-    setCaptcha(generateCaptcha());
-    setIsRotated(true);
-    setTimeout(() => setIsRotated(false), 1000);
   };
 
   const handleInputChange = (e) => {
@@ -597,9 +727,10 @@ const LoginPage = () => {
       return;
     }
 
-    if (formData.captcha !== captcha.map((item) => item.character).join("")) {
+    // Verify captcha
+    if (formData.captcha.toUpperCase() !== captchaText) {
       showAlert("Invalid captcha. Please try again.");
-      handleRefresh();
+      refreshCaptcha();
       setFormData(prev => ({ ...prev, captcha: "" }));
       return;
     }
@@ -861,7 +992,6 @@ const LoginPage = () => {
                   <InformationCircleIcon className="h-5 w-5" />
                 </button>
                 {showTooltip && (
-                  //<AutoTranslate>This website is running on Release Version 1.20, which is currently under testing.</AutoTranslate>
                   <div className="toolTip">
                     <AutoTranslate>This website is running on Release Version 3.0, which is currently under testing.</AutoTranslate>
                   </div>
@@ -878,44 +1008,6 @@ const LoginPage = () => {
               <AutoTranslate>{alertMessage}</AutoTranslate>
             </div>
           )}
-
-          {/* Language Dropdown */}
-          {/* {currentView === "login" && !isOtpRequested && (
-            <div className="space-y-1 mb-3">
-              <label className="block text-sm font-medium text-gray-700">
-                <AutoTranslate>Language</AutoTranslate>
-              </label>
-              {isLoadingLanguages ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
-                  <span className="text-sm text-gray-500">
-                    <AutoTranslate>Loading languages...</AutoTranslate>
-                  </span>
-                </div>
-              ) : (
-                <select
-                  value={selectedLanguageId || ""}
-                  onChange={(e) => {
-                    const langId = e.target.value;
-                    const selectedLang = availableLanguages.find(l => l.id == langId);
-                    if (selectedLang) {
-                      setSelectedLanguageId(selectedLang.id);
-                      changeLanguage(selectedLang.code); // Update language in context
-                      console.log(`🔤 Language changed to: ${selectedLang.code}`);
-                    }
-                  }}
-                  className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                >
-                  <option value=""><AutoTranslate>Select Language</AutoTranslate></option>
-                  {availableLanguages.map((lang) => (
-                    <option key={lang.id} value={lang.id}>
-                      {lang.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          )} */}
 
           {/* Login Form */}
           {currentView === "login" && !isOtpRequested && (
@@ -977,67 +1069,77 @@ const LoginPage = () => {
                 </div>
               </div>
 
+              {/* PROFESSIONAL CAPTCHA WITH CANVAS */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  <AutoTranslate>Captcha</AutoTranslate>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <AutoTranslate>Security Check</AutoTranslate>
+                  </label>
+                  <span className="text-xs text-gray-500">
+                    <AutoTranslate>Enter the characters shown</AutoTranslate>
+                  </span>
+                </div>
 
-                <div className="flex items-center space-x-2">
-                  {/* CAPTCHA BOX */}
-                  <div className="flex-1 p-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-md select-none border-2 border-dashed border-gray-300 relative overflow-hidden h-10">
-                    <div className="absolute inset-0 pointer-events-none">
-                      <svg className="w-full h-full opacity-20">
-                        <line x1="0" y1="15" x2="100%" y2="8" stroke="#6b7280" strokeWidth="1" />
-                        <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#6b7280" strokeWidth="1" />
-                        <line x1="60%" y1="0" x2="40%" y2="100%" stroke="#6b7280" strokeWidth="1" />
-                      </svg>
-                    </div>
-
-                    <div className="relative flex justify-evenly items-center h-full z-10">
-                      {captcha.map((item, index) => (
-                        <span
-                          key={item.id}
-                          style={{
-                            display: "inline-block",
-                            transform: `rotate(${item.rotation}deg) skew(${item.skew}deg) translateY(${item.offsetY}px)`,
-                            fontSize: `${Math.min(item.fontSize, 16)}px`,
-                            color: item.color,
-                            fontWeight: Math.random() > 0.5 ? "bold" : "normal",
-                            fontFamily: Math.random() > 0.5 ? "serif" : "sans-serif",
-                            textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
-                          }}
-                          className="select-none"
-                        >
-                          {item.character}
-                        </span>
-                      ))}
-                    </div>
+                <div className="flex items-center gap-3">
+                  {/* Canvas Captcha */}
+                  <div className="flex-1 relative overflow-hidden rounded-lg border-2 border-gray-300 shadow-md bg-white">
+                    <canvas
+                      ref={canvasRef}
+                      width={300}
+                      height={60}
+                      className="w-full h-[60px]"
+                    />
+                    {/* Play/Pause overlay effect */}
+                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-50"></div>
                   </div>
 
+                  {/* Refresh Button */}
                   <button
                     type="button"
-                    onClick={handleRefresh}
-                    className="refreshBtn"
+                    onClick={refreshCaptcha}
+                    className="flex-shrink-0 w-12 h-[60px] bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg border-2 border-blue-200 hover:border-blue-300 transition-all duration-200 flex items-center justify-center group"
                     title="Refresh Captcha"
                   >
-                    <ArrowPathIcon className={`${isRotated ? "animate-spin" : ""}`} />
+                    <ArrowPathIcon className={`w-5 h-5 ${isRotated ? "animate-spin" : "group-hover:rotate-90"} transition-transform duration-300`} />
                   </button>
                 </div>
 
-                <input
-                  type="text"
-                  name="captcha"
-                  value={formData.captcha}
-                  onChange={handleInputChange}
-                  onPaste={handleCaptchaPaste}
-                  className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                  placeholder={getFallbackTranslation(
-                    'Enter captcha',
-                    currentLanguage
-                  ) || 'Enter captcha'}
+                {/* Captcha Input */}
+                <div className="relative mt-1">
+                  <input
+                    type="text"
+                    name="captcha"
+                    value={formData.captcha}
+                    onChange={handleInputChange}
+                    onPaste={handleCaptchaPaste}
+                    className="w-full p-2.5 pl-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm uppercase tracking-wider"
+                    placeholder={getFallbackTranslation(
+                      'Type the characters you see',
+                      currentLanguage
+                    ) || 'Type the characters you see'}
+                    maxLength={CAPTCHA_LENGTH}
+                    autoComplete="off"
+                    autoFocus={false}
+                    required
+                  />
+                  {formData.captcha && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium">
+                      <span className={`px-2 py-0.5 rounded ${
+                        formData.captcha.length === CAPTCHA_LENGTH 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {formData.captcha.length}/{CAPTCHA_LENGTH}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-                  required
-                />
+                {/* Captcha hint for accessibility */}
+                <div className="text-xs text-gray-400 flex items-center gap-1">
+                  <InformationCircleIcon className="w-3 h-3" />
+                  <AutoTranslate>Captcha is case-insensitive</AutoTranslate>
+                </div>
               </div>
 
               <button
@@ -1050,16 +1152,6 @@ const LoginPage = () => {
                   {isButtonDisabled ? "Login..." : "Login"}
                 </AutoTranslate>
               </button>
-
-              {/* <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setCurrentView("forgot-password")}
-                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  <AutoTranslate>Forgot Password?</AutoTranslate>
-                </button>
-              </div> */}
             </form>
           )}
 
