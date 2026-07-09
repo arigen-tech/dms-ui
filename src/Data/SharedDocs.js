@@ -1004,8 +1004,7 @@ const SharedDocs = () => {
             <div className="mt-3 flex justify-end">
               <button
                 onClick={() => handleViewShares(selectedDocShareInfo)}
-                className="btn-blue-light-sm- text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-              >
+                className="btn-light-blue-sm text-xs- px-2- py-1- bg-purple-100- text-purple-700- rounded- hover:bg-purple-200-">
                 <AutoTranslate>View All Shares</AutoTranslate>
               </button>
             </div>
