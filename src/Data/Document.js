@@ -1587,7 +1587,7 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             <div className="col-span-full mt-4">
               <div
                 {...getRootProps()}
-                className={`upload-box border-2 border-dashed rounded-lg p-6 cursor-pointer transition
+                className={`upload-box border-2 border-dashed rounded-lg p-6 cursor-pointer transition inputPosition
                   ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-100"}`}
               >
                 <input {...getInputProps()} />
@@ -1806,15 +1806,13 @@ const DocumentManagement = ({ fieldsDisabled }) => {
           {/* ========== SAVE / UPDATE BUTTONS ========== */}
           <div className="edit-doc-wrapper mt-6">
             <div className="flex justify-between items-center">
-              {uploadedFilePath.length > 0 && (
-                <div className="itemBtn">
+            <div className="itemBtn">
+              {uploadedFilePath.length > 0 && (                
                   <button onClick={handleDiscardAll} className="btn-discard">
                     <AutoTranslate>Discard All</AutoTranslate>
-                  </button>
-                </div>
+                  </button>               
               )}
 
-              <div className="itemBtns">
                 {location.state?.fromWaitingRoom ? (
                   <button
                     type="button"
@@ -1844,6 +1842,15 @@ const DocumentManagement = ({ fieldsDisabled }) => {
             </div>
           </div>
         </div>
+
+
+
+
+
+
+
+
+
 
         {/* ========== SEARCH & TABLE ========== */}
         <div className="data-search-wrapper">
